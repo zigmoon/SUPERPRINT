@@ -1,0 +1,32 @@
+# Prépresse (preflight) : vérifier un document avant de l'imprimer.
+#
+# Ce crate ne dessine rien et ne corrige rien. Il **lit** un document et rend une
+# liste de constats : ce qui, dans le fichier tel qu'il est, empêchera un
+# imprimeur de l'accepter — ou lui fera perdre du papier.
+#
+# C'est du calcul pur : il lui faut les images (taille en pixels et taille
+# posée), les couleurs (couverture d'encre, noir quadrichrome), les polices
+# (embarquées ou non) et la géométrie des pages (fond perdu, repères). Tout est
+# déjà dans le noyau Rust.
+#
+# Aucune dépendance externe : le crate prend `superprint-pdf` en entrée.
+
+[package]
+name = "superprint-preflight"
+description = "Controle prepresse : resolution, encres, noir quadrichrome, debordements, polices"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+superprint-core = { path = "../superprint-core" }
+superprint-pdf = { path = "../superprint-pdf" }
+
+[dev-dependencies]
+# Les tests fabriquent de vraies images pour mesurer des résolutions réelles,
+# et une vraie police pour les contrôles de texte.
+superprint-image = { path = "../superprint-image" }
+superprint-font = { path = "../superprint-font" }

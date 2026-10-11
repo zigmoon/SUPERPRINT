@@ -22,4 +22,5 @@ superprint-font = { path = "../superprint-font" }
 superprint-image = { path = "../superprint-image" }
 superprint-impose = { path = "../superprint-impose" }
 superprint-pdf = { path = "../superprint-pdf" }
+superprint-preflight = { path = "../superprint-preflight" }
 superprint-text = { path = "../superprint-text" }

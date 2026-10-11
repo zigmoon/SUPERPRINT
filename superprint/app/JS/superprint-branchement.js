@@ -20,17 +20,18 @@
  * | Composant | Ce qui est remplacé | Mesure |
  * |---|---|---|
  * | **Césure** | `window.hyphenators[lang]` — le point d'accroche du produit | identique à `Hypher`, 5 langues |
- * | **Imposition** | offerte, pas encore branchée : `calculateImposition` n'est pas exposée par `main.js` | ordre, feuille et traits de coupe identiques |
- * | **Réduction d'image** | offerte : la réduire correctement, à la place de `drawImage` | motif préservé là où l'échantillonnage le perd |
+ * | **Imposition** | offerte : `calculateImposition` n'est pas exposée par `main.js` | ordre, feuille et traits de coupe identiques |
+ * | **Réduction d'image** | offerte : réduire correctement, à la place de `drawImage` | motif préservé là où l'échantillonnage le perd |
+ * | **Prépresse** | offert : le produit n'a aucun contrôle avant impression | chaque défaut détecté, et silence sur un document sain |
  *
- * ### Pourquoi l'imposition et la réduction ne sont pas branchées
+ * ### La règle du branchement
  *
- * La règle du branchement est **ajouter, jamais modifier**. Or les fonctions
- * d'imposition de `main.js` (`calculateImposition`, `renderImposedSheet`,
- * `buildImposedSheetCanvas`) sont **privées à son IIFE** : rien ne les expose sur
- * `window`, donc rien ne peut les remplacer sans toucher au fichier.
+ * **Ajouter, jamais modifier.** Or les fonctions d'imposition de `main.js`
+ * (`calculateImposition`, `renderImposedSheet`, `buildImposedSheetCanvas`) sont
+ * **privées à son IIFE** : rien ne les expose sur `window`, donc rien ne peut les
+ * remplacer sans toucher au fichier.
  *
- * Plutôt que de forcer, ces deux composants sont **offerts** ici, mesurés, et
+ * Plutôt que de forcer, ces trois composants sont **offerts** ici, mesurés, et
  * prêts. Voir `docs/PORTAGE.md`, section F, pour la ligne exacte à changer le
  * jour où l'utilisateur décidera de les brancher pour de bon.
  *
@@ -102,7 +103,7 @@
   'use strict';
 
   /** Version de ce branchement (sert aussi de paramètre `?v=` dans `index.html`). */
-  var VERSION = '20261011-v613-rust-imposition-reduction';
+  var VERSION = '20261011-v614-rust-prepresse';
 
   /** Langues branchables, et nom du dictionnaire dans `window.Hyphenation`. */
   var LANGUES = { fr: 'fr', en: 'en-us', de: 'de', es: 'es', it: 'it' };
@@ -406,6 +407,48 @@
         journal('réduction : ' + erreur.message);
         return null;
       }
+    },
+
+    /**
+     * Le **rapport prépresse** d'un document **du noyau**, ou `null` si le
+     * branchement n'est pas actif.
+     *
+     * ⚠️ Ce n'est pas le document en cours d'édition. Le prépresse examine un
+     * `Document` construit dans le noyau — celui que rend
+     * `SuperPrintCore.createDocument()` — et ce document-là n'existe pas encore
+     * dans l'application : la composition vit dans Fabric, et rien ne la
+     * convertit. Cette fonction est donc utilisable par ce qui *construit* un
+     * document du noyau ; la relier à l'espace de travail demande un pont qui
+     * reste à faire.
+     *
+     * ```js
+     * const doc = SuperPrintCore.createDocument();
+     * doc.addPage({ widthMm: 210, heightMm: 297, bleedMm: 3, markMm: 10 });
+     * doc.fillRect({ x: -3, y: -3, width: 216, height: 303, paint: noir });
+     *
+     * const rapport = SuperPrintBranchement.prepresse(doc);
+     * rapport.acceptable;              // le fichier passerait-il ?
+     * rapport.constats;                // la liste, gravité décroissante
+     * rapport.parCode('FondPerduAbsent');
+     * ```
+     *
+     * `regles` est une spécification textuelle facultative ; les valeurs par
+     * défaut sont celles d'un offset **couché** :
+     *
+     * ```text
+     * !preset<TAB>journal          encre serrée, à la place des défauts
+     * !image<TAB>300               résolution minimale des images (dpi)
+     * !encre<TAB>300               couverture d'encre maximale (%)
+     * !exiger<TAB>profil<TAB>1     exiger un profil de sortie
+     * ```
+     *
+     * Une règle illisible est **refusée** — l'appel lève, il ne rend pas un
+     * rapport approximatif. Un rapport qui décrit autre chose que ce qu'on a
+     * demandé est pire qu'une absence de rapport, parce qu'il est plausible.
+     */
+    prepresse: function (document, regles) {
+      if (!etat.moteur || !document || typeof document.preflight !== 'function') return null;
+      return regles === undefined ? document.preflight() : document.preflight(regles);
     },
   };
 

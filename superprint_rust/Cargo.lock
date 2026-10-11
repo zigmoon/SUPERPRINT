@@ -45,6 +45,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-preflight"
+version = "0.2.0"
+dependencies = [
+ "superprint-core",
+ "superprint-font",
+ "superprint-image",
+ "superprint-pdf",
+]
+
+[[package]]
 name = "superprint-text"
 version = "0.2.0"
 dependencies = [
@@ -61,5 +71,6 @@ dependencies = [
  "superprint-image",
  "superprint-impose",
  "superprint-pdf",
+ "superprint-preflight",
  "superprint-text",
 ]

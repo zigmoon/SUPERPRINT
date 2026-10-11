@@ -344,6 +344,12 @@
       reduceForPlacement: indisponible('reduceForPlacement', raison),
       orderPages: indisponible('orderPages', raison),
       plan: indisponible('imposition', raison),
+      // Le prépresse non plus : ce qu'il vaut tient à la **méthode** de chaque
+      // contrôle (une moyenne de surface, une boîte englobante, un seuil). Une
+      // seconde implémentation approximative donnerait un rapport plausible et
+      // faux — exactement le contraire du but.
+      preflight: indisponible('preflight', raison),
+      preflightVersion: indisponible('preflightVersion', raison),
     };
   }
 
@@ -741,6 +747,21 @@
       /** Envoie les formes en attente. Appelé automatiquement par `write()`. */
       flush: envoyer,
 
+      /**
+       * Le **rapport prépresse** du document, formes en attente comprises.
+       *
+       * C'est la forme à préférer : les formes composées mais non encore
+       * transmises (le lot part à `write()`) sont envoyées **avant** la
+       * vérification. Sans cela, un `fillRect` ajouté juste avant serait
+       * invisible au contrôle, et le rapport décrirait un autre document que
+       * celui qu'on vient de composer — le pire des rapports, puisqu'il est
+       * plausible.
+       */
+      preflight(regles) {
+        envoyer();
+        return outils.preflight(regles);
+      },
+
       /** Écrit le PDF et renvoie ses octets. */
       write() {
         envoyer();
@@ -1126,6 +1147,37 @@
     }
 
     /**
+     * Le **rapport prépresse** du document en cours.
+     *
+     * Le prépresse **lit** le document et ne corrige rien : il rend un rapport,
+     * et c'est l'auteur qui décide. Les règles sont un texte, une ligne par
+     * champ, séparés par des tabulations :
+     *
+     * ```js
+     * moteur.preflight();                       // règles par défaut (offset couché)
+     * moteur.preflight('!preset\tjournal');     // papier journal : encre serrée
+     * moteur.preflight('!encre\t260\n!exiger\tprofil\t1');
+     * ```
+     *
+     * Un texte vide ou absent demande les règles par défaut. Une clé inconnue est
+     * **refusée** par le noyau, jamais ignorée : un contrôle qu'on croit actif
+     * mais qui ne s'applique pas est pire qu'un contrôle absent.
+     *
+     * Le rapport rendu porte `acceptable`, `compte`, `constats`, `texte`, et les
+     * deux raccourcis `contient(code)` / `parCode(code)`.
+     */
+    function preflight(regles) {
+      var octets =
+        typeof regles === 'string' && regles.length ? encoder.encode(regles) : null;
+      var texte = deuxPasses('preflight', function (ctx, dst, cap, lenPtr) {
+        if (!octets) return exports.sp_preflight(0, 0, dst, cap, lenPtr);
+        var p = ctx.poser(octets);
+        return exports.sp_preflight(p, octets.length, dst, cap, lenPtr);
+      });
+      return lireRapportPrepresse(decodeur.decode(texte));
+    }
+
+    /**
      * La taille utile d'une image **posée**, et la réduction par moyenne.
      *
      * Définies ici, au niveau du moteur, et non dans l'objet rendu :
@@ -1407,6 +1459,31 @@
       /** Le **plan d'une planche** : feuille, places, traits de coupe. */
       plan: planDePlanche,
 
+      /**
+       * Le **rapport prépresse** du document en cours.
+       *
+       * ```js
+       * const doc = moteur.createDocument();
+       * doc.addPage({ trimWidthMm: 170, trimHeightMm: 240, bleedMm: 3 });
+       * doc.fillRect({ x: 0, y: 0, width: 170, height: 240, paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+       * const rapport = moteur.preflight();
+       * rapport.acceptable;                 // true
+       * rapport.contient('fond-perdu-absent')
+       * ```
+       *
+       * Le document n'est **pas** refermé : on peut vérifier, corriger, et
+       * vérifier encore.
+       */
+      preflight: preflight,
+
+      /**
+       * Le nombre de contrôles connus du noyau chargé.
+       *
+       * À comparer à celui que l'appelant connaît avant de ranger les constats
+       * par code : un code nouveau ne se range pas tout seul.
+       */
+      preflightVersion: exports.sp_preflight_version(),
+
       ptToMm: function (pt) {
         return exports.sp_pt_to_mm(pt);
       },
@@ -1505,6 +1582,7 @@
           portee: portee,
           encoder: encoder,
           verifier: verifier,
+          preflight: preflight,
         });
       },
 
@@ -1645,6 +1723,99 @@
       };
     }
     return plan;
+  }
+
+  /**
+   * Les mots d'une gravité, dans l'ordre des rangs du noyau.
+   *
+   * Le noyau transporte un **rang** (0, 1, 2) et non un mot : l'interface peut
+   * donc changer de langue sans changer de protocole. La table est la seule
+   * traduction, et elle est ici — pas dispersée dans les appelants.
+   */
+  var GRAVITES = ['Information', 'Avertissement', 'Erreur'];
+
+  /**
+   * Lit le **rapport prépresse** en texte que rend le noyau.
+   *
+   * Format (voir `superprint-preflight/src/constats.rs`) :
+   *
+   * ```text
+   * !acceptable<TAB>0|1
+   * !compte<TAB>erreurs<TAB>avertissements<TAB>informations
+   * !constat<TAB>code<TAB>rang<TAB>page<TAB>message
+   * ```
+   *
+   * Le message est le **dernier** champ : il peut contenir n'importe quoi sauf
+   * une tabulation, donc découper sur les trois premiers séparateurs suffit.
+   *
+   * `acceptable` est recalculé ici à partir des constats **au lieu** d'être
+   * recopié du `!acceptable` du noyau : une seule définition de « acceptable »
+   * existe alors, celle de la gravité la plus haute. Recopier la valeur du noyau
+   * ferait deux sources de vérité pour la même décision.
+   */
+  function lireRapportPrepresse(texte) {
+    var rapport = {
+      acceptable: true,
+      compte: { erreurs: 0, avertissements: 0, informations: 0 },
+      constats: [],
+    };
+    var lignes = texte.split('\n');
+    for (var i = 0; i < lignes.length; i++) {
+      var ligne = lignes[i];
+      if (!ligne) continue;
+      var champs = ligne.split('\t');
+      if (champs[0] === '!constat') {
+        // `split` avec limite : le message garde ses propres tabulations s'il en
+        // avait, et l'appelant n'a jamais à recoller des morceaux.
+        var morceaux = ligne.split('\t', 5);
+        var rang = Number(morceaux[2]);
+        var gravite = GRAVITES[rang] === undefined ? 'Information' : GRAVITES[rang];
+        rapport.constats.push({
+          code: morceaux[1],
+          gravite: gravite,
+          rang: rang,
+          // `0` veut dire « document entier » : on rend `null`, qui se teste
+          // franchement, comme pour les places vides de l'imposition.
+          page: Number(morceaux[3]) === 0 ? null : Number(morceaux[3]),
+          message: morceaux[4] === undefined ? '' : morceaux[4],
+        });
+      }
+    }
+    for (var j = 0; j < rapport.constats.length; j++) {
+      var c = rapport.constats[j];
+      if (c.rang >= 2) {
+        rapport.acceptable = false;
+        rapport.compte.erreurs += 1;
+      } else if (c.rang === 1) {
+        rapport.compte.avertissements += 1;
+      } else {
+        rapport.compte.informations += 1;
+      }
+    }
+    /**
+     * Le rapport contient-il ce code ?
+     *
+     * Raccourci d'usage : c'est la question que pose tout appelant — « y a-t-il
+     * une image trop basse ? » — et la lui faire écrire à la main invite à
+     * comparer des chaînes de caractères un peu partout.
+     */
+    rapport.contient = function (code) {
+      for (var k = 0; k < rapport.constats.length; k++) {
+        if (rapport.constats[k].code === code) return true;
+      }
+      return false;
+    };
+    /** Les constats d'un code donné. */
+    rapport.parCode = function (code) {
+      var trouves = [];
+      for (var k = 0; k < rapport.constats.length; k++) {
+        if (rapport.constats[k].code === code) trouves.push(rapport.constats[k]);
+      }
+      return trouves;
+    };
+    /** Le rapport en texte, celui que la frontière a rendu — sans retraitement. */
+    rapport.texte = texte;
+    return rapport;
   }
 
   /**

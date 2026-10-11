@@ -1022,6 +1022,82 @@ pub extern "C" fn sp_doc_substitues() -> i32 {
     }
 }
 
+// ───────────────────────────── prépresse ─────────────────────────────
+//
+// Le prépresse **lit** le document en cours et rend un **rapport**. Il ne
+// corrige rien, ne modifie rien, et n'est donc pas dans la section « document » :
+// il a sa propre version de codes, [`sp_preflight_version`], parce qu'ajouter un
+// contrôle change ce que l'appelant reçoit sans changer la façon dont il appelle.
+
+/// Nombre de contrôles connus de cette version du noyau.
+///
+/// Un appelant qui range les constats par code doit comparer ce nombre à celui
+/// qu'il connaît : un code nouveau ne se range pas tout seul.
+#[no_mangle]
+pub extern "C" fn sp_preflight_version() -> i32 {
+    superprint_preflight::VERSION_CONTROLES as i32
+}
+
+/// Passe les contrôles prépresse sur le **document en cours**.
+///
+/// `regles` est un texte UTF-8 de règles (une ligne par champ, tabulations) :
+/// voir `superprint_preflight::Regles::lire`. Un pointeur nul ou une longueur
+/// nulle demandent les règles par défaut — c'est le cas courant, et exiger une
+/// chaîne de configuration pour vérifier un document découragerait de vérifier.
+///
+/// La sortie est le rapport en texte, une ligne par constat, décrit par
+/// `superprint_preflight::Rapport::texte`. Même protocole en deux passes que les
+/// autres sorties : appeler avec un tampon vide rend [`SP_ERR_TOO_SMALL`] et
+/// renseigne `out_len`.
+///
+/// Un document vide n'est **pas** une erreur d'appel : c'est un constat
+/// (`document-vide`), et il passe par la sortie comme les autres. En revanche,
+/// aucun document ouvert, ou des règles illisibles, sont refusés —
+/// [`SP_ERR_BAD_INPUT`].
+///
+/// # Safety
+///
+/// `regles` doit désigner `regles_len` octets lisibles ; `dst` `dst_cap` octets
+/// inscriptibles ; `out_len` un `u32`.
+#[no_mangle]
+pub unsafe extern "C" fn sp_preflight(
+    regles: *const u8,
+    regles_len: usize,
+    dst: *mut u8,
+    dst_cap: usize,
+    out_len: *mut u32,
+) -> i32 {
+    if out_len.is_null() {
+        return SP_ERR_NULL;
+    }
+    let seuils = if regles.is_null() || regles_len == 0 {
+        superprint_preflight::Regles::default()
+    } else {
+        let Some(octets) = (unsafe { as_slice(regles, regles_len) }) else {
+            return SP_ERR_NULL;
+        };
+        let Ok(texte) = core::str::from_utf8(octets) else {
+            return SP_ERR_BAD_INPUT;
+        };
+        match superprint_preflight::Regles::lire(texte) {
+            Some(seuils) => seuils,
+            None => return SP_ERR_BAD_INPUT,
+        }
+    };
+
+    let constats = match with_doc(|doc| superprint_preflight::verifier(doc, &seuils)) {
+        Some(constats) => constats,
+        None => return SP_ERR_BAD_INPUT,
+    };
+    let sortie = superprint_preflight::Rapport::nouveau(constats).texte();
+    let besoin = sortie.len();
+    unsafe { *out_len = besoin as u32 };
+    if besoin > dst_cap {
+        return SP_ERR_TOO_SMALL;
+    }
+    unsafe { copy_out(sortie.as_bytes(), dst, dst_cap) }
+}
+
 // ───────────────────────────── césure ─────────────────────────────
 //
 // La césure est appelée pour **chaque mot** d'un texte : c'est la fonction la
@@ -2847,5 +2923,230 @@ mod tests {
         // identiques — le plan reste calculable.
         assert!(texte.contains("!place\t0\tVide\t10.0000"), "{texte}");
         assert!(texte.contains("!place\t1\tVide\t220.0000"), "{texte}");
+    }
+
+    // ─────────────────────────── prépresse ───────────────────────────
+
+    /// Passe les contrôles prépresse et rend le rapport en texte.
+    ///
+    /// `regles` vide demande les règles par défaut — c'est le cas courant, et
+    /// c'est aussi le cas où la frontière ne doit **rien** exiger d'autre qu'un
+    /// document ouvert.
+    fn rapport_prepresse(regles: &str) -> String {
+        let (p, len) = if regles.is_empty() {
+            (ptr::null(), 0usize)
+        } else {
+            (regles.as_ptr(), regles.len())
+        };
+        let mut besoin = 0u32;
+        let premier = unsafe { sp_preflight(p, len, ptr::null_mut(), 0, &mut besoin) };
+        assert_eq!(
+            premier, SP_ERR_TOO_SMALL,
+            "le premier appel doit réclamer un tampon, pas écrire"
+        );
+        assert!(besoin > 0, "un rapport porte au moins ses deux entêtes");
+        let mut tampon = vec![0u8; besoin as usize];
+        let mut ecrit = 0u32;
+        let code = unsafe { sp_preflight(p, len, tampon.as_mut_ptr(), tampon.len(), &mut ecrit) };
+        assert_eq!(code as u32, besoin);
+        assert_eq!(ecrit, besoin);
+        String::from_utf8(tampon).expect("le rapport est de l'UTF-8")
+    }
+
+    /// Une ligne de constat décomposée : `(code, rang, page)`.
+    fn constats(rapport: &str) -> Vec<(String, u8, u32)> {
+        rapport
+            .lines()
+            .filter(|l| l.starts_with("!constat\t"))
+            .map(|l| {
+                let champs: Vec<&str> = l.splitn(5, '\t').collect();
+                (
+                    champs[1].to_string(),
+                    champs[2].parse().expect("un rang de gravité"),
+                    champs[3].parse().expect("un numéro de page"),
+                )
+            })
+            .collect()
+    }
+
+    /// Un document vide est un **constat**, pas une erreur d'appel : la frontière
+    /// doit le dire par sa sortie, jamais par un code d'erreur. C'est ce qui
+    /// permet à l'appelant de traiter tous les cas de la même façon.
+    #[test]
+    fn frontiere_prepresse_document_vide() {
+        assert_eq!(sp_doc_reset(), 0);
+        let rapport = rapport_prepresse("");
+        assert!(rapport.starts_with("!acceptable\t0"), "{rapport}");
+        assert!(rapport.contains("!compte\t1\t0\t0"), "{rapport}");
+        assert_eq!(
+            constats(&rapport),
+            vec![("document-vide".to_string(), 2, 0)],
+            "une erreur, sur le document entier (page 0)"
+        );
+    }
+
+    /// Un document correct ne produit **aucun** constat. C'est la moitié du
+    /// contrôle qui compte le plus : un prépresse qui signale tout le temps se
+    /// fait désactiver, et ne sert alors plus à rien.
+    #[test]
+    fn frontiere_prepresse_document_sain() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(170.0, 240.0, 3.0, 10.0, 0), 1);
+        assert_eq!(op("rect\t0\t0\t170\t240\tfill\t0\tq4\t0\t0\t0\t1000"), 1);
+        let profil = [0u8; 128];
+        assert_eq!(
+            unsafe {
+                sp_doc_output_intent(
+                    4,
+                    b"profil-test".as_ptr(),
+                    11,
+                    b"profil de test".as_ptr(),
+                    14,
+                    profil.as_ptr(),
+                    profil.len(),
+                )
+            },
+            0
+        );
+        let rapport = rapport_prepresse("");
+        assert!(rapport.starts_with("!acceptable\t1"), "{rapport}");
+        assert!(rapport.contains("!compte\t0\t0\t0"), "{rapport}");
+        assert!(constats(&rapport).is_empty(), "{rapport}");
+    }
+
+    /// Une image posée trop grandement pour ses pixels est signalée, avec ses
+    /// deux nombres : la résolution mesurée et le seuil.
+    #[test]
+    fn frontiere_prepresse_image_basse_resolution() {
+        assert_eq!(sp_doc_reset(), 0);
+        let pixels = vec![128u8; 40 * 30 * 3];
+        let rang = unsafe { sp_doc_add_image_rgb(pixels.as_ptr(), 40, 30, 0) };
+        assert_eq!(rang, 0);
+        assert_eq!(sp_doc_add_page(170.0, 240.0, 3.0, 10.0, 0), 1);
+        // 40 px sur 120 mm : 8,5 dpi, très au-dessous de 300.
+        assert_eq!(op("image\t0\t10\t10\t120\t90"), 1);
+        let rapport = rapport_prepresse("");
+        let codes: Vec<String> = constats(&rapport).into_iter().map(|c| c.0).collect();
+        assert!(
+            codes.contains(&"image-basse-resolution".to_string()),
+            "{rapport}"
+        );
+        assert!(
+            rapport.contains("300 dpi"),
+            "le seuil doit être cité : {rapport}"
+        );
+    }
+
+    /// Les règles changent ce que le même document produit : un texte peint en
+    /// noir quadrichrome est bénin à 8 pt en numérique, risqué à 14 pt en journal.
+    #[test]
+    fn frontiere_prepresse_les_regles_changent_les_constats() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(170.0, 240.0, 3.0, 10.0, 0), 1);
+        // 70/70/70/70 : 280 % d'encre. Accepté en offset (300), refusé en journal (240).
+        assert_eq!(op("rect\t0\t0\t50\t50\tfill\t0\tq4\t700\t700\t700\t700"), 1);
+
+        let offset = rapport_prepresse("");
+        let defauts: Vec<String> = constats(&offset).into_iter().map(|c| c.0).collect();
+        assert!(
+            !defauts.contains(&"couverture-encre-excessive".to_string()),
+            "{offset}"
+        );
+
+        let journal = rapport_prepresse("!preset\tjournal");
+        let severe: Vec<String> = constats(&journal).into_iter().map(|c| c.0).collect();
+        assert!(
+            severe.contains(&"couverture-encre-excessive".to_string()),
+            "les mêmes pixels, un autre imprimeur : {journal}"
+        );
+    }
+
+    /// Des règles illisibles sont **refusées**, jamais approximées : appliquer
+    /// des seuils devinés produirait un rapport qu'on croirait fondé sur les
+    /// règles demandées.
+    #[test]
+    fn frontiere_prepresse_regles_illisibles_refusees() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(170.0, 240.0, 3.0, 10.0, 0), 1);
+        let mut besoin = 0u32;
+        let mut tampon = vec![0u8; 4096];
+        for regles in [
+            "!inconnue\t1",
+            "!image",
+            "!image\tbeaucoup",
+            "!image\tNaN",
+            "!preset\tbidon",
+            "!exiger\tfond\t2",
+            "!exiger\tautre\t1",
+            "!texte\toui",
+            // Incohérentes : on ne peut pas exiger plus d'une image que d'un trait.
+            "!image\t600\n!trace\t300",
+            // Absurdes : une résolution nulle ne veut rien dire.
+            "!image\t0",
+        ] {
+            assert_eq!(
+                unsafe {
+                    sp_preflight(
+                        regles.as_ptr(),
+                        regles.len(),
+                        tampon.as_mut_ptr(),
+                        tampon.len(),
+                        &mut besoin,
+                    )
+                },
+                SP_ERR_BAD_INPUT,
+                "« {regles} » doit etre refuse"
+            );
+        }
+        // Un texte de règles qui n'est pas de l'UTF-8 valide l'est aussi.
+        let octets = [0xFFu8, 0xFE];
+        assert_eq!(
+            unsafe {
+                sp_preflight(
+                    octets.as_ptr(),
+                    octets.len(),
+                    tampon.as_mut_ptr(),
+                    tampon.len(),
+                    &mut besoin,
+                )
+            },
+            SP_ERR_BAD_INPUT
+        );
+        // Et `out_len` reste obligatoire, comme partout ailleurs.
+        assert_eq!(
+            unsafe {
+                sp_preflight(
+                    ptr::null(),
+                    0,
+                    tampon.as_mut_ptr(),
+                    tampon.len(),
+                    ptr::null_mut(),
+                )
+            },
+            SP_ERR_NULL
+        );
+    }
+
+    /// Les règles par défaut sont bien celles de l'offset couché, et
+    /// `sp_preflight_version` dit combien de contrôles cette version connaît.
+    #[test]
+    fn frontiere_prepresse_version_et_defauts() {
+        assert_eq!(
+            sp_preflight_version(),
+            superprint_preflight::VERSION_CONTROLES as i32
+        );
+
+        // Zéro règles = règles par défaut = même rapport qu'une configuration
+        // qui les écrit noir sur blanc.
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(170.0, 240.0, 0.0, 0.0, 0), 1);
+        let implicites = rapport_prepresse("");
+        let explicites = rapport_prepresse(
+            "!image\t300\n!trace\t1200\n!encre\t300\n!corps\t12\n!trait\t0.5\n\
+             !exiger\tfond\t1\n!exiger\tprofil\t0\n!exiger\treperes\t0\n!texte\t1",
+        );
+        assert_eq!(implicites, explicites);
+        // Le fond perdu nul est bien signalé par les règles par défaut.
+        assert!(implicites.contains("fond-perdu-absent"), "{implicites}");
     }
 }

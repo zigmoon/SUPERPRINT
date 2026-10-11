@@ -16,24 +16,24 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-11) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 8 crates, tests compris) | **15 126 lignes** |
-| dont annotations `#[test]` | 329 |
-| exemples et scripts de contrôle | 688 lignes |
-| exports `sp_*` de la frontière C | **41** (0 import) |
-| module livrable | 342 Ko |
+| Rust (`crates/`, 9 crates, tests compris) | **16 802 lignes** |
+| dont annotations `#[test]` | 380 |
+| exemples et scripts de contrôle | 4 770 lignes |
+| exports `sp_*` de la frontière C | **43** (0 import) |
+| module livrable | 369 Ko |
 | JavaScript applicatif (hors bibliothèques tierces) | **125 944 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
 
 **Avancement : il n'y a pas un pourcentage, il y en a quatre** — et ils ne mesurent
-pas la même chose. Dire « 13 % » sans préciser serait trompeur.
+pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 
 | Métrique | Mesure | Ce qu'elle dit |
 |---|---|---|
-| **Domaines terminés** | **3,5 / 11** → **32 %** | l'avancement réel du travail identifié |
-| dont **branchés** dans l'application | **1 / 4** construits → **25 %** | ce qui sert vraiment à l'utilisateur |
+| **Domaines terminés** | **4,5 / 11** → **41 %** | l'avancement réel du travail identifié |
+| dont **branchés** dans l'application | **1 / 5** construits → **20 %** | ce qui sert vraiment à l'utilisateur |
 | **Volume JS porté** (somme des plages citées) | **2 791 / 18 803** → **15 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 15 126 / 111 501 → **13,6 %** | ⚠️ le plus trompeur des quatre |
+| **Lignes** Rust / JS | 16 802 / 111 501 → **15,1 %** | ⚠️ le plus trompeur des quatre |
 
 Pourquoi le ratio par lignes trompe : il compare du Rust qui contient ses tests, un
 écrivain PDF complet **sans équivalent JS**, et 4 000 lignes de lecteur de polices,
@@ -42,11 +42,12 @@ pas quand un module est fini, et il bougerait beaucoup si on portait une plage
 facile. **Le seul chiffre à suivre est le premier : les domaines.**
 
 > ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **la césure
-> est le seul composant que l'application utilise réellement**. La compression est
-> employée par notre propre exporteur ; l'imposition et la réduction d'image sont
-> **mesurées et offertes** par `SuperPrintBranchement`, mais ne remplacent rien
-> (voir la section F, et la raison : les fonctions correspondantes de `main.js`
-> sont privées à son IIFE).
+> est le seul composant que l'application utilise réellement.** La compression est
+> employée par notre propre exporteur ; l'imposition, la réduction d'image et le
+> prépresse sont **mesurés et offerts** par `SuperPrintBranchement`, mais ne
+> remplacent rien (voir la section F, et la raison : les fonctions correspondantes
+> de `main.js` sont privées à son IIFE, et le prépresse attend un pont qui n'existe
+> pas encore).
 
 ---
 
@@ -73,6 +74,7 @@ facile. **Le seul chiffre à suivre est le premier : les domaines.**
 | 17 | **Compression DEFLATE / zlib** | `compress::{deflate,inflate,zlib}` | croisé avec `zlib` de Node, 15 jeux, 2 sens | 🟢 exporteur |
 | 18 | **Imposition** (ordre, feuille, repères) | `superprint-impose` | `main.js` **extrait tel quel** : 25 tailles, 3 copies, 16 traits | 🟢 offert |
 | 19 | **Réduction par moyenne de surface** | `image::resample::downscale_area` | exact **au bit près**, anti-crénelage mesuré | 🟢 offert |
+| 20 | **Prépresse** (9 contrôles) | `superprint-preflight` | détection **et** silence, 45 tests, refus des règles illisibles | 🟢 offert |
 
 ---
 
@@ -167,14 +169,45 @@ la signature/cahier et le dos carré collé. Le produit ne les a pas non plus :
 le mode actuel est un livret 2 poses. Les porter serait ajouter une fonction,
 pas en déplacer une.
 
-### B4. Contrôle prépresse (preflight) 🟡
+### B4. Contrôle prépresse (preflight) 🟡 → ✅ (fait, et mesuré)
 
-Aucun équivalent aujourd'hui dans le noyau Rust. À faire : image sous
-300 dpi (connue par `image::resample::taille_cible`), tons directs déclarés
-mais absents, noir quadrichrome sur un texte fin, dépassement du fond perdu,
-police non embarquée, transparence non aplatie, Total Ink Coverage > 300 %.
-Tout est calcul — et c'est exactement ce qu'un imprimeur veut lire avant
-d'imprimer.
+Le produit n'avait **aucun** contrôle avant impression : on pouvait envoyer à un
+imprimeur un fichier sans fond perdu, avec une photo à 85 dpi et du noir
+quadrichrome sur du 6 pt. Le noyau le dit maintenant, avant l'envoi.
+
+| Contrôle | Rust | Ce qu'il attrape |
+|---|---|---|
+| Résolution des images | `preflight::verificateurs` | la **pire** des deux dimensions, à la taille **posée** (85 dpi pour une photo de 400 × 300 px sur 120 mm) |
+| Couverture d'encre | idem | total > 300 % (240 % en offset couché, 260 % en journal) |
+| Noir quadrichrome | idem | noir riche sur un texte fin ou un trait fin — le défaut qui fait bouger la mise en register |
+| Fond perdu, réserve de repères | idem | page sans fond perdu, réserve plus courte que les 5 mm d'un trait |
+| Débordement | idem | objet qui sort du fond perdu |
+| Polices | idem | police référencée mais absente, police embarquée mais inutilisée |
+| Profil de sortie | idem | `OutputIntent` absent, ou dont le nombre de canaux ne correspond pas à la quadri |
+| Texte vivant | idem | texte non vectorisé, signalé **une fois** par page |
+
+**Preuve mesurée** : `scripts/validate-preflight.mjs` construit les documents
+par les **mêmes** outils que l'application (`createDocument`), et lit le rapport
+avec le **même** lecteur. Il mesure les **deux moitiés** de chaque contrôle :
+
+- ce qu'il doit **détecter** — un fichier fautif produit bien ses constats ;
+- ce sur quoi il doit **se taire** — un document correct ne produit **rien**. Un
+  contrôle qui signale tout le temps se fait désactiver et devient aussi inutile
+  qu'un contrôle qui ne détecte rien, en pire : il aura fait perdre la confiance.
+
+S'y ajoutent le tri par gravité, le refus des règles illisibles (10 formes
+éprouvées), et la vérification que contrôler **ne modifie pas** le document.
+
+**Limites, mesurées et assumées** : le prépresse **ne voit pas** ce qui n'est pas
+dans le document du noyau — transparence non aplatie, surimpression, séparation
+des tons directs par canal, épaisseur de trait en dessous de 0,25 pt. Ces
+contrôles demandent des informations que le modèle ne porte pas encore.
+
+**Non branché, et pourquoi** : le prépresse examine un `Document` **du noyau**,
+et ce document n'existe pas dans l'application — la composition vit dans Fabric,
+et rien ne la convertit. `SuperPrintBranchement.prepresse(doc)` est donc offert
+et mesuré, mais la relier à l'espace de travail demande le pont
+Fabric → `Document` qui reste à faire.
 
 ### B5. Nuanciers et bibliothèques de tons directs 🟡
 
@@ -299,8 +332,8 @@ Du plus utile au moins utile, en tenant compte du risque :
 | ~~1~~ | ~~Césure (module 5)~~ | ✅ **fait**, et ✅ **branché** dans l'application (5 langues) |
 | ~~2~~ | ~~Compression Flate~~ | ✅ **fait** — 108× sur du vectoriel, 2,4× sur le `.wasm` |
 | ~~3~~ | ~~Imposition (planches)~~ | ✅ **fait et mesuré** — ordre, feuille et traits de coupe contre `main.js` |
+| ~~4~~ | ~~Preflight~~ | ✅ **fait et mesuré** — 9 contrôles, détection **et** silence |
 | ~~8~~ | ~~Réduction d'image~~ | ✅ **fait et mesuré** — remonte ici : c'est le défaut de **justesse** le plus net |
-| 4 | **Preflight** | c'est ce qui fait accepter un fichier par un imprimeur |
 | 5 | **Nuanciers** | les tons directs existent déjà côté Rust : il manque les données |
 | 6 | PDF/X : XMP | dernier verrou de conformité |
 | 7 | Pagination / chaînage | débloqué par les modules 5 et 6, désormais présents |
@@ -344,9 +377,11 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | **Compression** | `zlib` de Node | **aller-retour croisé**, 15 jeux, 2 sens |
 | **Imposition** | `calculateImposition`, les 3 copies de la taille de feuille et les `pdf.line()` **extraits de `main.js`** | **25 tailles d'ordre, 3 copies × 4 configurations, 16 traits de coupe** |
 | **Réduction d'image** | moyenne arithmétique entière calculée indépendamment | **au bit près**, motif fin préservé, énergie conservée |
+| **Prépresse** | documents construits et rapport relu par les **mêmes** outils que l'application | **détection *et* silence** : 9 contrôles, chacune des deux moitiés mesurée |
 | **Branchement césure (colle)** | `hypher.js` + dictionnaires du produit | **5 langues, 2 433 mots identiques** |
 | **Branchement césure (livré)** | fichiers réels de `superprint/app/JS/` | **2 129 mots × 5 langues, réversibilité et repli** |
 | **Branchement imposition + réduction** | fichiers réels, dans un bac à sable navigateur | **plan conforme, composants indépendants de la césure** |
+| **Branchement prépresse** | fichiers réels, dans le **navigateur** | document correct accepté, document fautif **dénoncé** (4 constats), règle illisible **refusée** |
 
 Les scripts correspondants sont dans `scripts/` et sont tous enchaînés par
 `scripts/check.ps1`.
@@ -446,9 +481,28 @@ La valeur de la réduction d'image, elle, se branche **dans notre propre
 exporteur** : `sp_reduce_for_placement` réduit avant d'embarquer l'image, et ce
 chemin-là est entièrement à nous — aucune ligne de `main.js` en jeu.
 
+### Le prépresse : offert, et volontairement pas branché
+
+`SuperPrintBranchement.prepresse(document)` examine un document **du noyau** :
+
+```js
+const rapport = SuperPrintBranchement.prepresse(doc);
+rapport.acceptable;        // false si au moins une erreur
+rapport.compte;            // { erreurs, avertissements, informations }
+rapport.constats;          // [{ code, gravite, page, message, … }]
+```
+
+Il n'est **pas** branché, et cette fois la raison n'est pas une fonction privée :
+c'est que **le document n'existe pas**. La composition vit dans Fabric ; rien ne
+la convertit en `Document` du noyau. Brancher le prépresse pour de bon demande
+donc d'abord un pont Fabric → `Document` — un vrai morceau de travail, et pas une
+ligne dans `main.js`. Tant que ce pont n'existe pas, un prépresse « branché »
+rendrait un rapport vide sur un document vide : exactement le genre de contrôle
+qui fait perdre confiance. Il attend donc son pont, et il le dit.
+
 ### La mesure, et l'anti-dérive
 
-Trois contrôles, tous dans `check.ps1` :
+Trois contrôles de branchement, tous dans `check.ps1` :
 
 - `scripts/validate-branchement.mjs` — la colle et le noyau contre les
   dictionnaires du produit, cinq langues.

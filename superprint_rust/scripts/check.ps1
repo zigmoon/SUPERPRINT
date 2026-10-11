@@ -120,6 +120,12 @@ Step 'imposition : ordre, feuille et traits de coupe contre main.js' {
 # fait disparaitre, conservation de l'energie, et invariants.
 Step 'reduction d''image : exactitude, anti-crenelage, energie' { node scripts/validate-reduction.mjs }
 
+# Validation du PREPRESSE : chaque controle doit se declencher sur le defaut
+# qu'il cherche — et, tout aussi important, un document correct ne doit RIEN
+# produire. Les deux moities sont mesurees, sur les documents construits par la
+# colle elle-meme.
+Step 'prepresse : detection, silence, tri et refus des regles illisibles' { node scripts/validate-preflight.mjs }
+
 Pop-Location
 
 if ($ok) {
