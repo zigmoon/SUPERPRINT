@@ -16,11 +16,11 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-11) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 16 crates, tests compris) | **37 189 lignes** |
-| dont annotations `#[test]` | 847 tests, tous verts |
-| exports `sp_*` de la frontière C | **43** (0 import) |
-| module livrable | 379 Ko |
-| étapes de contrôle (`scripts/check.ps1`) | **25** |
+| Rust (`crates/`, 16 crates, tests compris) | **37 550 lignes** |
+| dont annotations `#[test]` | 858 tests, tous verts |
+| exports `sp_*` de la frontière C | **44** (0 import) |
+| module livrable | 380 Ko |
+| étapes de contrôle (`scripts/check.ps1`) | **26** |
 | JavaScript applicatif (hors bibliothèques tierces) | **125 944 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
@@ -31,9 +31,9 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | Métrique | Mesure | Ce qu'elle dit |
 |---|---|---|
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
-| dont **branchés** dans l'application | **1 / 11** construits → **9 %** | ce qui sert vraiment à l'utilisateur |
-| **Volume JS porté** (somme des plages citées) | **12 526 / 18 803** → **67 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 37 189 / 111 501 → **33,4 %** | ⚠️ le plus trompeur des quatre |
+| dont **branchés** dans l'application | **2 / 11** construits → **18 %** | ce qui sert vraiment à l'utilisateur |
+| **Volume JS porté** (somme des plages citées) | **13 000 / 18 803** → **69 %** | le poids du travail restant |
+| **Lignes** Rust / JS | 37 550 / 111 501 → **33,7 %** | ⚠️ le plus trompeur des quatre |
 
 Les 11 domaines, nommés, avec leur état : **césure** ✅ (le seul branché) ·
 **compression Flate** ✅ · **imposition** ✅ · **prépresse** ✅ · **nuanciers** ✅ ·
@@ -60,8 +60,9 @@ Pourquoi le ratio par lignes trompe : il compare du Rust qui contient ses tests,
 pas quand un module est fini, et il bougerait beaucoup si on portait une plage
 facile. **Le seul chiffre à suivre est le premier : les domaines.**
 
-> ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **la césure
-> reste le seul composant que l'application utilise réellement.** La compression
+> ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **deux
+> composants tournent réellement en Rust** : la césure et la conversion RVB →
+> CMJN. La compression
 > est employée par notre propre exporteur ; l'imposition, la réduction d'image,
 > le prépresse, les nuanciers, les filtres d'image, la lecture ICC, la
 déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
@@ -699,6 +700,8 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | **Import PostScript** | interpréteur PostScript écrit à part (lexeur, pile, matrice, aplatissement) | **174 sommets identiques à 1e-6**, aires connues exactes, tolérance mesurée sur la courbe vraie |
 | **Branchement césure (colle)** | `hypher.js` + dictionnaires du produit | **5 langues, 2 433 mots identiques** |
 | **Branchement césure (livré)** | fichiers réels de `superprint/app/JS/` | **2 129 mots × 5 langues, réversibilité et repli** |
+| **Branchement couleurs (livré)** | `_spCmykConvert` **extraite de `main.js`**, colle et module réels | **40 000 cas, écart 0**, et `desactiver()` repose l'originale |
+| **Couleurs (noyau)** | `_spCmykConvert` extraite de `main.js`, 8 jeux de réglages | **655 024 conversions, écart 0,00e+0** ; défaut du GCR mesuré sur 80 856 cas |
 | **Branchement imposition + réduction** | fichiers réels, dans un bac à sable navigateur | **plan conforme, composants indépendants de la césure** |
 | **Branchement prépresse** | fichiers réels, dans le **navigateur** | document correct accepté, document fautif **dénoncé** (4 constats), règle illisible **refusée** |
 
@@ -753,15 +756,57 @@ césure serait absente.
 2. **Bascule, jamais substitution.** Quand le noyau est prêt, chaque moteur
 commence à répondre par Rust. Ce n'est pas un remplacement d'objet : le moteur
 posé garde la même forme, donc toute référence déjà prise continue de
-fonctionner.
+fonctionner. La conversion de couleurs suit la même règle : la fonction posée a
+la **même signature** que `_spCmykConvert` et rend le même objet `{c, m, y, k}`.
 3. **Repli automatique.** Si un appel au noyau échoue en cours de route, le
 moteur repasse **sur-le-champ** à `Hypher` et le signale une fois. La
-composition en cours ne casse pas.
+composition en cours ne casse pas. La conversion fait de même : elle rend la
+main à la fonction de `main.js`, et l'impression reste possible.
 4. **Réversibilité.** `SuperPrintBranchement.desactiver()` repasse tout sur
-`Hypher` ; retirer les deux lignes de `index.html` retire le branchement.
+`Hypher` **et** repose la conversion de `main.js` ; retirer les deux lignes de
+`index.html` retire le branchement.
 5. **Découpage en points de code.** Les positions rendues par le noyau comptent
 des caractères, pas des unités UTF-16 : le découpage se fait sur
 `Array.from(mot)`. C'est documenté aux deux bouts (Rust et colle).
+
+### La conversion de couleurs : le premier calcul de masse passé en Rust
+
+`main.js` **appelle déjà** la conversion à travers `window._spCmykConvert`
+(`main.js:35707`, avec un garde `typeof`). C'est un point d'accroche prévu par le
+produit : le branchement n'a eu qu'à poser une fonction du même nom, et **aucune
+ligne de `main.js` n'a été touchée**.
+
+Et cette fonction est partout : la couleur d'un objet, l'aperçu CMJN de l'écran,
+l'export. La remplacer, c'est toute la chaîne colorimétrique qui passe en Rust.
+
+**La preuve est bit à bit**, et c'est le seuil que la nature du calcul impose :
+cette couleur part dans le PDF livré, donc « presque pareil » n'existe pas.
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| parité contre `_spCmykConvert` **extrait de `main.js`** | **655 024 conversions, écart maximal 0,00e+0** |
+| jeux de réglages couverts | 8 (GCR vrai, 0, 0,5, limite 3,0 / 1,5 / 0, combinaison) |
+| parité à travers la colle et le module | **40 000 cas, écart 0** |
+| composantes hors `[0, 1]` ou non finies | 0 sur 81 878 |
+| réversibilité | `desactiver()` repose **l'originale**, la même, pas une copie |
+
+**Un défaut du produit, trouvé en écrivant la copie.** Le remplacement de la
+composante grise (l'option « GCR » de l'interface) **n'a aucun effet**. La raison
+est démontrable : après la conversion naïve, le canal d'énergie maximale donne
+`c = (1 - max - k) / (1 - k)` avec `k = 1 - max`, donc `c = 0`. Le minimum de
+C, M, J vaut donc **toujours** zéro, `newK = max(k, 0 × montant) = k`, et
+l'étape ne mord jamais.
+
+Vérifié sur **80 856 cas : 0 où le GCR agit.** Le noyau **reproduit ce
+comportement** au lieu de le corriger : la parité passe avant la correction,
+parce que changer le résultat ici changerait le PDF livré sans que personne ne
+l'ait demandé. Le défaut est publié, et le contrôle le mesure à chaque
+exécution.
+
+**Une divergence assumée, et une seule.** Sur une entrée non finie, le produit
+propage un `NaN` jusque dans le PDF ; le noyau **refuse** (`BAD_INPUT`) et
+n'écrit rien dans le tampon. Un code d'erreur laisse l'appelant se rabattre,
+alors qu'un `NaN` dans un fichier livré ne se voit qu'à l'impression.
 
 ### Ce que le branchement ne fait pas
 
@@ -821,17 +866,20 @@ qui fait perdre confiance. Il attend donc son pont, et il le dit.
 
 ### La mesure, et l'anti-dérive
 
-Trois contrôles de branchement, tous dans `check.ps1` :
-
+Quatre contrôles de branchement, tous dans `check.ps1` :
 - `scripts/validate-branchement.mjs` — la colle et le noyau contre les
   dictionnaires du produit, cinq langues.
 - `scripts/validate-branchement-app.mjs` — les **fichiers livrés** évalués dans
   un contexte qui imite le navigateur (ordre de `index.html`, `fetch` simulé),
   puis comparés à `Hypher` : parité, **réversibilité**, **repli** quand le noyau
-  manque, et **indépendance des composants** — l'imposition et la réduction
-  doivent marcher même si les dictionnaires de césure sont absents.
+  manque, et **indépendance des composants** — l'imposition, la réduction et la
+  conversion de couleurs doivent marcher même si les dictionnaires de césure sont
+  absents. La conversion RVB → CMJN y est comparée à `_spCmykConvert` **extraite
+  de `main.js`**, sur 40 000 cas, à travers la colle et le module.
 - `scripts/validate-imposition.mjs` — l'ordre, la taille de feuille et les
   traits de coupe contre le **code de `main.js` extrait tel quel**.
+- `scripts/validate-cmyk.mjs` — la conversion RVB → CMJN du noyau contre celle
+  du produit, sur **655 024 conversions**, et le défaut du GCR **mesuré**.
 
 Un composant qui en rend un autre dépendant est un défaut : c'est ce que le
 troisième contrôle ci-dessus interdit. Lier le chargement du noyau à la présence

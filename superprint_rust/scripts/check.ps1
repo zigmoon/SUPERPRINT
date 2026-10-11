@@ -228,6 +228,17 @@ Step 'postscript : en-tete DSC, dessins, tolerance mesuree et refus nommes' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-ps.mjs }
 }
 
+# Validation de la CONVERSION RVB -> CMJN, en Rust et branchee.
+# La fonction du produit est EXTRAITE de main.js (lu sans etre modifie) et
+# confrontee au noyau sur 655 000 conversions, pour huit jeux de reglages :
+# l'ecart doit etre NUL, parce que cette couleur part dans le PDF livre. Le
+# controle mesure aussi le defaut du produit — le GCR n'a aucun effet, le
+# minimum de C, M, J etant toujours nul — et verifie que le noyau le reproduit
+# plutot que de le corriger en silence.
+Step 'couleurs : parite bit a bit avec main.js, et le defaut du GCR mesure' {
+  node scripts/validate-cmyk.mjs
+}
+
 Pop-Location
 
 if ($ok) {

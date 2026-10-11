@@ -103,7 +103,7 @@
   'use strict';
 
   /** Version de ce branchement (sert aussi de paramètre `?v=` dans `index.html`). */
-  var VERSION = '20261011-v614-rust-prepresse';
+  var VERSION = '20261011-v615-rust-couleurs';
 
   /** Langues branchables, et nom du dictionnaire dans `window.Hyphenation`. */
   var LANGUES = { fr: 'fr', en: 'en-us', de: 'de', es: 'es', it: 'it' };
@@ -122,6 +122,14 @@
     moteur: null,
     /** Les moteurs posés dans `window.hyphenators`, par langue. */
     poses: {},
+    /**
+     * Les fonctions de `main.js` réellement remplacées, et leur original.
+     *
+     * Garder l'original est ce qui rend le branchement **réversible** : si le
+     * noyau échoue en cours de route, on rend la main à la fonction du produit
+     * au lieu de planter, et l'utilisateur ne voit rien.
+     */
+    composants: {},
   };
 
   var dejaJournalise = false;
@@ -254,19 +262,89 @@
           }
         }
         etat.actif = Object.keys(etat.rangs).length > 0;
+        // La conversion de couleurs ne dépend PAS des dictionnaires de césure :
+        // elle s'installe dès que le noyau est là. C'est la règle du fichier —
+        // un composant ne doit pas échouer parce qu'un autre n'a pas trouvé ses
+        // données.
+        var couleurs = installerCouleurs();
         // Une seule ligne, quel que soit le nombre de composants : un
         // branchement qui réussit n'a rien à raconter pendant la frappe, et un
         // branchement qui échoue n'a pas à remplir la console.
-        var composants = ['imposition', 'réduction d’image'];
+        var composants = [];
+        if (couleurs) composants.push('couleurs');
+        composants.push('imposition', 'réduction d’image');
         if (etat.actif) composants.push('césure (' + Object.keys(etat.rangs).join(', ') + ')');
         journal('noyau Rust branché — ' + composants.join(', '));
-        return etat.actif;
+        return etat.actif || couleurs > 0;
       })
       .catch(function (erreur) {
         etat.raison = erreur;
         journal('noyau indisponible, l’application garde ses chemins habituels (' + erreur.message + ')');
         return false;
       });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  La conversion de couleurs
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Remplace `window._spCmykConvert` par la version Rust, en gardant celle de
+   * `main.js` sous la main.
+   *
+   * ## Pourquoi cette fonction, et pas une autre
+   *
+   * `main.js` **appelle** déjà la conversion à travers `window._spCmykConvert`
+   * (`main.js:35707`, avec un garde `typeof`). C'est un point d'accroche prévu
+   * par le produit : la remplacer ne demande de toucher à rien.
+   *
+   * Et elle est partout : la couleur d'un objet, l'aperçu, l'export, la
+   * simulation CMJN de l'écran. Une seule fonction, et c'est toute la chaîne
+   * colorimétrique qui passe en Rust.
+   *
+   * ## Ce qui rend le remplacement sûr
+   *
+   * La fonction posée a la **même forme** que l'originale : mêmes arguments,
+   * même objet rendu (`{c, m, y, k}` en 0–1). Un appelant qui a gardé une
+   * référence avant le chargement du noyau continue de fonctionner — il appelle
+   * la même fonction, dont le comportement change quand le noyau devient prêt.
+   *
+   * Et si le noyau échoue **en cours d'exécution**, on le désactive et on rend
+   * la main à `main.js` : l'impression reste possible, et le message le dit
+   * une fois.
+   *
+   * @returns {number} 1 si la conversion est passée au noyau, 0 sinon.
+   */
+  function installerCouleurs() {
+    if (etat.backend !== 'wasm' || !etat.moteur) return 0;
+    var original = global._spCmykConvert;
+    if (typeof original !== 'function') {
+      // `main.js` n'a pas encore défini la fonction : on n'installe rien
+      // plutôt que de poser une fonction que personne n'appellerait. Le
+      // chargement du noyau a lieu après `DOMContentLoaded`, donc ce cas ne
+      // devrait pas se produire — mais le constater vaut mieux que de le
+      // supposer.
+      return 0;
+    }
+    var convert = function (r, g, b, opts) {
+      if (etat.backend === 'wasm' && etat.moteur) {
+        try {
+          return etat.moteur.cmykConvert(r, g, b, opts);
+        } catch (erreur) {
+          journal(
+            'couleurs : le noyau a échoué, retour à main.js (' +
+              (erreur && erreur.message ? erreur.message : erreur) +
+              ')',
+          );
+          etat.raison = erreur;
+          etat.backend = 'js';
+        }
+      }
+      return original(r, g, b, opts);
+    };
+    global._spCmykConvert = convert;
+    etat.composants.couleurs = { pose: true, original: original };
+    return 1;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -281,11 +359,29 @@
         backend: etat.backend,
         rangs: etat.rangs,
         raison: etat.raison,
+        /** Les fonctions de `main.js` réellement remplacées. */
+        composants: Object.keys(etat.composants),
       };
     },
-    /** Repasse tout sur `Hypher` — retour en arrière d'une ligne. */
+    /**
+     * Repasse tout sur `main.js` — retour en arrière d'une ligne.
+     *
+     * Ce n'est pas seulement la césure : **chaque** fonction remplacée rend la
+     * main à son original. C'est la promesse de réversibilité, et elle doit
+     * tenir à chaud : un utilisateur qui constate un défaut doit pouvoir
+     * revenir en arrière sans recharger la page, et sans qu'il reste un
+     * composant branché quelque part.
+     */
     desactiver: function () {
       etat.actif = false;
+      for (var nom in etat.composants) {
+        if (!Object.prototype.hasOwnProperty.call(etat.composants, nom)) continue;
+        var entree = etat.composants[nom];
+        if (nom === 'couleurs' && entree && typeof entree.original === 'function') {
+          global._spCmykConvert = entree.original;
+        }
+      }
+      etat.composants = {};
       journal('branchement désactivé');
       return api.etat;
     },

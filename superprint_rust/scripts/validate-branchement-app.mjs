@@ -124,6 +124,29 @@ titre('chargement dans l’ordre de index.html');
 vm.runInContext(await readFile(fichiers.colle, 'utf8'), bac, { filename: 'superprint-core.js' });
 check('la colle est chargée', typeof bac.SuperPrintCore?.load === 'function');
 
+// `main.js` pèse 95 000 lignes : il n'est pas chargé ici, parce qu'il est fait
+// de DOM et d'événements. Mais sa conversion RVB → CMJN est du **calcul pur**,
+// et c'est elle que le branchement remplace. On l'extrait donc du fichier réel,
+// lu sans être modifié, et on la pose **avant** le branchement — exactement
+// comme `main.js` la pose avant que le noyau n'arrive.
+const sourceMain = await readFile(join(js, 'main.js'), 'utf8');
+const debutCmyk = sourceMain.indexOf('function _spCmykConvert(');
+const finCmyk = sourceMain.indexOf('window._spCmykConvert =', debutCmyk);
+if (debutCmyk < 0 || finCmyk <= debutCmyk) {
+  console.error('_spCmykConvert introuvable dans main.js : la comparaison ne veut rien dire');
+  process.exit(2);
+}
+// eslint-disable-next-line no-new-func
+const cmykDuProduit = new Function(
+  `${sourceMain.slice(debutCmyk, finCmyk)}\nreturn _spCmykConvert;`,
+)();
+bac._spCmykConvert = cmykDuProduit;
+check(
+  'la conversion de main.js est extraite du fichier réel et posée',
+  typeof bac._spCmykConvert === 'function',
+  `${sourceMain.slice(debutCmyk, finCmyk).split('\n').length} lignes extraites`,
+);
+
 vm.runInContext(await readFile(fichiers.branchement, 'utf8'), bac, { filename: 'superprint-branchement.js' });
 check('le branchement est chargé', typeof bac.SuperPrintBranchement === 'object');
 
@@ -322,10 +345,67 @@ titre('les composants ne dépendent pas les uns des autres');
   );
 }
 
+// ── 3 quater. La conversion de couleurs ────────────────────────────────────
+titre('conversion RVB → CMJN : le noyau a pris la main');
+
+check(
+  'elle est annoncée comme branchée dans l’état public',
+  Array.isArray(bac.SuperPrintBranchement.etat.composants) &&
+    bac.SuperPrintBranchement.etat.composants.includes('couleurs'),
+  `composants = ${JSON.stringify(bac.SuperPrintBranchement.etat.composants)}`,
+);
+check(
+  'window._spCmykConvert n’est plus la fonction de main.js',
+  typeof bac._spCmykConvert === 'function' && bac._spCmykConvert !== cmykDuProduit,
+);
+
+// La parité, sur un balayage : mêmes arguments, même objet rendu. C'est le
+// contrôle qui compte — une couleur fausse part directement dans le PDF livré.
+{
+  const jeux = [
+    undefined,
+    { gcr: true },
+    { gcr: 0.5 },
+    { inkLimit: 3 },
+    { gcr: 0.8, inkLimit: 2.5 },
+  ];
+  let ecart = 0;
+  let pire = null;
+  let cas = 0;
+  let graine = 20261011;
+  const suivant = () => {
+    graine = (graine * 1103515245 + 12345) & 0x7fffffff;
+    return (graine % 100000) / 100000;
+  };
+  for (let i = 0; i < 8000; i += 1) {
+    const r = suivant() * 255;
+    const v = suivant() * 255;
+    const b = suivant() * 255;
+    for (const opts of jeux) {
+      const attendu = cmykDuProduit(r, v, b, opts);
+      const obtenu = bac._spCmykConvert(r, v, b, opts);
+      cas += 1;
+      for (const canal of ['c', 'm', 'y', 'k']) {
+        const e = Math.abs(attendu[canal] - obtenu[canal]);
+        if (e > ecart) {
+          ecart = e;
+          pire = { r, v, b, opts, canal, attendu: attendu[canal], obtenu: obtenu[canal] };
+        }
+      }
+    }
+  }
+  check(
+    `la conversion branchée rend exactement la même chose (${cas.toLocaleString('fr-FR')} cas)`,
+    ecart === 0 && pire === null,
+    pire ? `écart ${ecart} sur ${JSON.stringify(pire)}` : 'écart 0',
+  );
+}
+
 // ── 4. Réversibilité ────────────────────────────────────────────────────────
 titre('réversibilité');
 
 const avant = bac.hyphenators.fr.hyphenate('bibliothèque');
+const cmykAvantDesactivation = bac._spCmykConvert;
 bac.SuperPrintBranchement.desactiver();
 const apres = bac.hyphenators.fr.hyphenate('bibliothèque');
 check(
@@ -334,6 +414,19 @@ check(
   `${forme(avant)} → ${forme(apres)}`,
 );
 check('etat.actif repasse à faux', bac.SuperPrintBranchement.etat.actif === false);
+// La promesse n'est pas « la césure revient » mais « TOUT revient » : la
+// conversion de couleurs doit rendre la main à la fonction de `main.js`,
+// exactement celle qu'on a posée au départ — pas une copie, la même.
+check(
+  'la conversion de couleurs rend la main à main.js, à l’identique',
+  bac._spCmykConvert === cmykDuProduit && cmykAvantDesactivation !== cmykDuProduit,
+  'c’est bien l’originale qui est reposée, et elle était bien remplacée avant',
+);
+check(
+  'et l’état public ne prétend plus rien avoir remplacé',
+  bac.SuperPrintBranchement.etat.composants.length === 0,
+  JSON.stringify(bac.SuperPrintBranchement.etat.composants),
+);
 
 // ── 5. Le repli : le noyau manque ───────────────────────────────────────────
 titre('repli : le noyau manque');

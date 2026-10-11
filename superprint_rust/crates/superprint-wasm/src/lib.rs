@@ -58,7 +58,7 @@ use std::alloc::{alloc, dealloc, Layout};
 use std::sync::Mutex;
 
 use superprint_core::color8;
-use superprint_core::{units, Cmyk, PageSize, Rgb};
+use superprint_core::{color, units, Cmyk, PageSize, Rgb};
 use superprint_font::FontFace;
 use superprint_image::{compress, resample, GrayImage, RgbImage};
 use superprint_impose::{Emplacement, Plan, Reglages};
@@ -168,6 +168,65 @@ pub extern "C" fn sp_mm_to_px(mm: f64, dpi: f64) -> f64 {
 #[no_mangle]
 pub extern "C" fn sp_px_to_mm(px: f64, dpi: f64) -> f64 {
     units::px_to_mm(px, dpi)
+}
+
+/// Conversion RVB → CMJN **scalaire**, avec les réglages du produit.
+///
+/// C'est la fonction que `main.js` appelle `_spCmykConvert`, et elle doit rendre
+/// **exactement** la même chose : sa sortie part dans le PDF livré.
+///
+/// `gcr` et `limite_encre` suivent la convention de `_spCmykConvert` : une
+/// valeur nulle (ou négative) **désactive** l'étape, une valeur positive
+/// l'active avec ce montant. C'est la sémantique de `if (opts.gcr)` en
+/// JavaScript, où `0` est faux.
+///
+/// Les quatre composantes sont écrites dans `sortie` dans l'ordre C, M, J, N.
+///
+/// # Safety
+///
+/// `sortie` doit pointer sur au moins 4 `f64` inscriptibles et alignés.
+#[no_mangle]
+pub unsafe extern "C" fn sp_cmyk_convert(
+    r: f64,
+    g: f64,
+    b: f64,
+    gcr: f64,
+    limite_encre: f64,
+    sortie: *mut f64,
+) -> i32 {
+    if sortie.is_null() {
+        return SP_ERR_NULL;
+    }
+    // Un canal non fini est **refusé**, et non propagé.
+    //
+    // Le produit, lui, laisse passer : `Math.max(NaN, …)` rend NaN, la
+    // conversion rend quatre NaN, et ces NaN partent dans le PDF. Le noyau
+    // préfère échouer : un appelant qui reçoit un code d'erreur peut se
+    // rabattre sur son propre chemin, alors qu'un NaN dans un fichier livré ne
+    // se voit qu'à l'impression. C'est la seule divergence assumée de cette
+    // fonction, et `scripts/validate-cmyk.mjs` la mesure.
+    if !(r.is_finite() && g.is_finite() && b.is_finite()) {
+        return SP_ERR_BAD_INPUT;
+    }
+    let reglages = color::Reglages {
+        gcr: if gcr > 0.0 { Some(gcr) } else { None },
+        limite_encre: if limite_encre > 0.0 {
+            Some(limite_encre)
+        } else {
+            None
+        },
+    };
+    let cmyk = color::convertir(r, g, b, reglages);
+    // `sortie` est aligné sur 8 octets par le contrat : les quatre écritures
+    // sont donc des `f64` valides. Le test de non-nullité plus haut est le seul
+    // garde nécessaire, comme pour `sp_rgb_to_cmyk`.
+    unsafe {
+        sortie.write(cmyk.c);
+        sortie.add(1).write(cmyk.m);
+        sortie.add(2).write(cmyk.y);
+        sortie.add(3).write(cmyk.k);
+    }
+    0
 }
 
 // ─────────────────────────── couleurs sur octets ───────────────────────────

@@ -344,6 +344,11 @@
       reduceForPlacement: indisponible('reduceForPlacement', raison),
       orderPages: indisponible('orderPages', raison),
       plan: indisponible('imposition', raison),
+      // La conversion CMJN **du produit** (seuil neutre, GCR, limite d'encre)
+      // n'est pas non plus simulée : sa sortie part dans le PDF livré, et une
+      // seconde implémentation divergerait au premier arrondi. Le branchement
+      // laisse alors `main.js` faire son travail, comme pour la césure.
+      cmykConvert: indisponible('cmykConvert', raison),
       // Le prépresse non plus : ce qu'il vaut tient à la **méthode** de chaque
       // contrôle (une moyenne de surface, une boîte englobante, un seuil). Une
       // seconde implémentation approximative donnerait un rapport plausible et
@@ -1248,6 +1253,42 @@
           var dst = ctx.allouer(n);
           verifier(exports.sp_luma_rgb(src, dst, n), 'luma');
           return ctx.lire(dst, n);
+        });
+      },
+
+      /**
+       * Conversion RVB → CMJN **avec les réglages du produit** : seuil neutre,
+       * remplacement de la composante grise, limite d'encre.
+       *
+       * C'est la fonction que `main.js` appelle `_spCmykConvert`. Elle accepte
+       * `r`, `g`, `b` en 0–1 **ou** en 0–255 (la détection est globale, comme
+       * dans le produit) et rend `{ c, m, y, k }` en 0–1.
+       *
+       * `options.gcr` accepte un nombre (0 désactive, comme `if (opts.gcr)`) ou
+       * `true`, qui vaut 0,8. `options.inkLimit` accepte un nombre en canaux
+       * (3,0 = 300 %) ; 0 ou absent désactive.
+       */
+      cmykConvert: function (r, g, b, options) {
+        var o = options || {};
+        var gcr =
+          o.gcr === true
+            ? 0.8
+            : typeof o.gcr === 'number' && isFinite(o.gcr)
+              ? o.gcr
+              : 0;
+        var limite =
+          typeof o.inkLimit === 'number' && isFinite(o.inkLimit) ? o.inkLimit : 0;
+        return portee(function (ctx) {
+          // 4 `f64` : l'alignement de 8 octets est garanti par `sp_alloc`.
+          var p = ctx.allouer(32);
+          verifier(
+            exports.sp_cmyk_convert(nombre(r, 0), nombre(g, 0), nombre(b, 0), gcr, limite, p),
+            'cmykConvert',
+          );
+          // La vue est construite APRÈS l'appel : c'est la règle de la maison,
+          // même si cette fonction n'alloue pas.
+          var vue = new Float64Array(memory.buffer, p, 4);
+          return { c: vue[0], m: vue[1], y: vue[2], k: vue[3] };
         });
       },
 
