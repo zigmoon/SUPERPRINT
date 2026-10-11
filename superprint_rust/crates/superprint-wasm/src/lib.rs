@@ -59,6 +59,7 @@ use std::sync::Mutex;
 
 use superprint_core::color8;
 use superprint_core::{units, Cmyk, PageSize, Rgb};
+use superprint_font::FontFace;
 use superprint_image::{compress, resample, GrayImage, RgbImage};
 use superprint_pdf::colorspace::{ColorStack, QuadriSpace};
 use superprint_pdf::doc::{write_spot_page, write_spot_page_with_image};
@@ -522,6 +523,20 @@ pub unsafe extern "C" fn sp_write_spot_page_gray(
 /// été appelé.
 static DOC: Mutex<Option<Document>> = Mutex::new(None);
 
+/// Ce que la dernière écriture a constaté sur le texte composé.
+///
+/// Un document peut être écrit et pourtant incomplet — si la police ne dessine
+/// pas un caractère. Le taire serait le pire des services : l'imprimeur
+/// recevrait un fichier apparemment bon avec un blanc au milieu du texte.
+#[derive(Clone, Copy, Debug, Default)]
+struct Rapport {
+    /// Nombre de caractères remplacés par le glyphe « manquant ».
+    substitues: u32,
+}
+
+/// Rapport de la dernière écriture, ou `None` si aucun document n'a été écrit.
+static RAPPORT: Mutex<Option<Rapport>> = Mutex::new(None);
+
 /// Prend le document en cours, ou `None` si aucun n'est ouvert.
 fn with_doc<T>(action: impl FnOnce(&mut Document) -> T) -> Option<T> {
     // Un verrou empoisonné (panique survenue pendant un appel précédent) ne doit
@@ -537,6 +552,11 @@ fn with_doc<T>(action: impl FnOnce(&mut Document) -> T) -> Option<T> {
 pub extern "C" fn sp_doc_reset() -> i32 {
     let mut garde = DOC.lock().unwrap_or_else(|e| e.into_inner());
     *garde = Some(Document::new());
+    // Le rapport de la dernière écriture concerne le document qu'on vient de
+    // jeter : le garder ferait croire à un texte manquant dans le suivant.
+    if let Ok(mut rapport) = RAPPORT.lock() {
+        *rapport = None;
+    }
     0
 }
 
@@ -681,6 +701,56 @@ pub unsafe extern "C" fn sp_doc_add_ink(spec: *const u8, spec_len: usize) -> i32
     }
 }
 
+/// Enregistre une police embarquée et renvoie son rang.
+///
+/// `data` contient un fichier de police **TrueType** (`.ttf`) — ou OpenType à
+/// contours TrueType. Les polices à contours CFF (`.otf`, `.otc`), comme les
+/// collections `.ttc`, sont **refusées** : le format n'est pas lu, et prétendre
+/// le contraire produirait un PDF dont le texte ne s'imprime pas.
+///
+/// La police est embarquée en entier : le sous-ensemble (ne garder que les
+/// glyphes utilisés) n'est pas fait. Le fichier est plus lourd, mais aucun
+/// glyphe ne peut manquer à l'impression.
+///
+/// Renvoie le rang de la police (à citer ensuite dans une ligne `text`), ou un
+/// code d'erreur.
+///
+/// # Safety
+///
+/// `data` doit désigner `len` octets lisibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_doc_add_font(data: *const u8, len: usize) -> i32 {
+    let Some(octets) = (unsafe { as_slice(data, len) }) else {
+        return SP_ERR_NULL;
+    };
+    if octets.is_empty() {
+        return SP_ERR_BAD_INPUT;
+    }
+    // L'analyse refuse un fichier tronqué ou d'un format non géré, sans
+    // paniquer : une police illisible à la frontière doit être un code
+    // d'erreur, pas un plantage du moteur.
+    let Ok(face) = FontFace::parse(octets.to_vec()) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    match with_doc(|doc| doc.add_font(face) as i32) {
+        Some(rang) => rang,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Nombre de caractères que la **dernière** écriture n'a pas su dessiner.
+///
+/// Zéro veut dire « tout s'imprimera ». Toute autre valeur signale un texte
+/// composé avec une police qui n'a pas les dessins voulus : le PDF est écrit,
+/// mais il est incomplet — et il le dit.
+#[no_mangle]
+pub extern "C" fn sp_doc_substitues() -> i32 {
+    match RAPPORT.lock() {
+        Ok(garde) => garde.as_ref().map_or(0, |r| r.substitues as i32),
+        Err(_) => 0,
+    }
+}
+
 /// Ajoute une ou plusieurs opérations de dessin à la page courante.
 ///
 /// `spec` contient **une ligne par opération**, champs séparés par une
@@ -694,7 +764,15 @@ pub unsafe extern "C" fn sp_doc_add_ink(spec: *const u8, spec_len: usize) -> i32
 /// polygon<TAB><fill|stroke><TAB>EPAISSEUR<TAB><PEINTURE><TAB>X1<TAB>Y1<TAB>X2<TAB>Y2…
 /// line<TAB>X1<TAB>Y1<TAB>X2<TAB>Y2<TAB>stroke<TAB>EPAISSEUR<TAB><PEINTURE>
 /// image<TAB>RANG<TAB>X<TAB>Y<TAB>W<TAB>H
+/// text<TAB>POLICE<TAB>TAILLE_PT<TAB>X<TAB>Y<TAB><PEINTURE><TAB>LE_TEXTE
 /// ```
+///
+/// Pour `text`, le texte est **le dernier champ et rien d'autre** : une
+/// tabulation à l'intérieur, ou un champ en trop, fait refuser la ligne. Ses
+/// espaces de début et de fin sont conservés — eux seuls comptent dans une
+/// composition. Un `\\n` dans le texte vaut un passage à la ligne (l'interligne
+/// valant 1,2 fois le corps) : le protocole étant ligne par ligne, un vrai
+/// retour à la ligne terminerait la commande.
 ///
 /// Le champ `EPAISSEUR` vaut `0` pour un remplissage : il est présent partout
 /// pour que la lecture reste **de position fixe**, sans branchement.
@@ -728,7 +806,10 @@ pub unsafe extern "C" fn sp_doc_op(spec: *const u8, spec_len: usize) -> i32 {
     // illisible, la page ne reçoit rien du tout.
     let mut operations = Vec::new();
     for ligne in texte.lines() {
-        let ligne = ligne.trim();
+        // On ne rogne **que** le début : les espaces de fin d'une ligne de texte
+        // font partie de la composition, et un texte indenté en a aussi au
+        // début. Les champs numériques, eux, sont rognés un par un à la lecture.
+        let ligne = ligne.trim_start();
         if ligne.is_empty() {
             continue;
         }
@@ -889,12 +970,19 @@ pub unsafe extern "C" fn sp_doc_write(dst: *mut u8, dst_cap: usize, out_len: *mu
     if out_len.is_null() {
         return SP_ERR_NULL;
     }
-    let resultat = with_doc(|doc| doc.write());
+    let resultat = with_doc(|doc| doc.write_with_report());
     let Some(resultat) = resultat else {
         return SP_ERR_BAD_INPUT;
     };
     match resultat {
-        Ok(pdf) => {
+        Ok((pdf, usage)) => {
+            // Le rapport est conservé : l'appelant peut ensuite demander si le
+            // texte a été rendu en entier (voir `sp_doc_substitues`).
+            if let Ok(mut garde) = RAPPORT.lock() {
+                *garde = Some(Rapport {
+                    substitues: usage.substitues as u32,
+                });
+            }
             unsafe { *out_len = pdf.len() as u32 };
             unsafe { copy_out(&pdf, dst, dst_cap) }
         }
@@ -983,6 +1071,12 @@ fn parse_paint(champs: &[&str], debut: usize) -> Option<(Paint, usize)> {
 
 /// Lit une opération de dessin.
 fn parse_op(ligne: &str) -> Option<Op> {
+    // Le texte est le seul champ dont les espaces comptent : on l'isole avant
+    // de découper, sinon `str::trim` mangerait les espaces de début et de fin
+    // de la chaîne composée.
+    if ligne.starts_with("text\t") {
+        return parse_op_texte(ligne);
+    }
     let c: Vec<&str> = ligne.split('\t').map(str::trim).collect();
     match c.first().copied()? {
         "rect" if c.len() >= 8 => {
@@ -1035,6 +1129,73 @@ fn parse_op(ligne: &str) -> Option<Op> {
         }),
         _ => None,
     }
+}
+
+/// Lit une ligne `text` : `text<TAB>POLICE<TAB>TAILLE_PT<TAB>X<TAB>Y<TAB><PEINTURE><TAB>TEXTE`.
+///
+/// Le texte est **le dernier champ et rien d'autre**. On coupe donc au
+/// **dernier** séparateur — et non après un nombre fixe de champs — parce que la
+/// peinture en occupe un nombre variable (3 pour `q3`, 6 pour `q4`). Une
+/// tabulation dans le texte décalerait la coupe et la peinture ne serait plus
+/// lisible jusqu'au bout : la ligne est alors refusée.
+///
+/// Dans le texte, `\\n` vaut un passage à la ligne et `\\\\` une barre oblique
+/// inverse : le protocole est ligne par ligne, un vrai retour à la ligne y
+/// terminerait la commande.
+fn parse_op_texte(ligne: &str) -> Option<Op> {
+    let (entete, texte) = ligne.rsplit_once('\t')?;
+    let c: Vec<&str> = entete.split('\t').map(str::trim).collect();
+
+    let police: usize = c.get(1)?.parse().ok()?;
+    let taille_pt = nombre_mm(c.get(2)?)?;
+    // `nombre_mm` a déjà écarté l'infini et le non-nombre : la comparaison
+    // suffit donc à refuser un corps nul ou négatif.
+    if taille_pt <= 0.0 {
+        return None;
+    }
+    let x = nombre_mm(c.get(3)?)?;
+    let y = nombre_mm(c.get(4)?)?;
+    let (paint, consommes) = parse_paint(&c, 5)?;
+    // La peinture doit terminer l'en-tête : un champ en trop signale un appel
+    // mal formé, et un appel mal formé se refuse.
+    if 5 + consommes != c.len() {
+        return None;
+    }
+
+    Some(Op::Text {
+        font: police,
+        size_pt: taille_pt,
+        x,
+        y,
+        paint,
+        text: deplier_texte(texte),
+    })
+}
+
+/// Déplie les échappements du champ texte (`\n`, `\\`).
+///
+/// Un caractère inconnu précédé d'une barre oblique est laissé tel quel : mieux
+/// vaut composer un texte contenant une barre oblique visible que de perdre
+/// silencieusement un caractère.
+fn deplier_texte(brut: &str) -> String {
+    let mut sortie = String::with_capacity(brut.len());
+    let mut iter = brut.chars();
+    while let Some(caractere) = iter.next() {
+        if caractere != '\\' {
+            sortie.push(caractere);
+            continue;
+        }
+        match iter.next() {
+            Some('n') => sortie.push('\n'),
+            Some('\\') => sortie.push('\\'),
+            Some(autre) => {
+                sortie.push('\\');
+                sortie.push(autre);
+            }
+            None => sortie.push('\\'),
+        }
+    }
+    sortie
 }
 
 /// Lit `fill`/`stroke`, l'épaisseur et la peinture, puis construit l'opération.
@@ -1617,5 +1778,156 @@ mod tests {
         assert_eq!(ecrire_document().unwrap_err(), SP_ERR_BAD_INPUT);
         // On laisse le module dans un état utilisable pour les autres tests.
         assert_eq!(sp_doc_reset(), 0);
+    }
+
+    // ───────────────────────── texte et polices ─────────────────────────
+
+    /// Un fichier de police TrueType valide, fabriqué pour le test.
+    fn police_synthetique() -> Vec<u8> {
+        superprint_font::synth::construire(&superprint_font::synth::PoliceSynth::default())
+    }
+
+    /// Enregistre une police par la frontière C.
+    fn ajouter_police(octets: &[u8]) -> i32 {
+        unsafe { sp_doc_add_font(octets.as_ptr(), octets.len()) }
+    }
+
+    #[test]
+    fn texte_complet_de_bout_en_bout() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(170.0, 240.0, 3.0, 10.0, 0), 1);
+
+        let octets = police_synthetique();
+        let rang = ajouter_police(&octets);
+        assert_eq!(rang, 0, "première police au rang 0");
+
+        // `text<TAB>POLICE<TAB>TAILLE_PT<TAB>X<TAB>Y<TAB><PEINTURE><TAB>TEXTE`
+        // La police de test dessine «  », « A », « B », « a », « b » et « é » :
+        // le texte est choisi là-dedans pour ne rien substituer.
+        assert_eq!(
+            op("text\t0\t12\t20\t200\tq4\t0\t0\t0\t1000\tAé B"),
+            1,
+            "une opération de texte"
+        );
+
+        let pdf = ecrire_document().expect("document valide");
+        let flux = String::from_utf8_lossy(&pdf);
+
+        // La chaîne embarquée : les cinq objets de police sont là.
+        assert!(flux.contains("/Subtype /Type0"));
+        assert!(flux.contains("/Encoding /Identity-H"));
+        assert!(flux.contains("/Subtype /CIDFontType2"));
+        assert!(flux.contains("/FontFile2 "));
+        // La ressource de page cite la police.
+        assert!(flux.contains("/Font << /F0 "), "ressources : {flux}");
+        // Le texte part en identifiants de glyphe, pas en caractères.
+        assert!(flux.contains(" Tj"), "opérateur Tj attendu");
+        // Et la table qui rend le texte extractible est bien écrite.
+        assert!(flux.contains("/ToUnicode ") && flux.contains("begincmap"));
+        // Tous les caractères sont dessinés : rien à signaler.
+        assert_eq!(sp_doc_substitues(), 0, "aucun caractère manquant");
+    }
+
+    #[test]
+    fn texte_avec_un_caractere_absent_est_signale() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+        let octets = police_synthetique();
+        assert_eq!(ajouter_police(&octets), 0);
+
+        // « Z » n'est pas dans la police de test : le document s'écrit, mais il
+        // doit le dire au lieu de laisser un blanc inexpliqué.
+        assert_eq!(op("text\t0\t10\t10\t50\tq4\t0\t0\t0\t1000\tAZ"), 1);
+
+        // Le rapport n'existe qu'après une écriture : c'est elle qui compose.
+        let pdf = ecrire_document().expect("document écrit malgré tout");
+        assert!(String::from_utf8_lossy(&pdf).contains("/Type /Page "));
+        assert_eq!(sp_doc_substitues(), 1, "un caractère non dessiné");
+
+        // La composition est déterministe : une seconde écriture du même
+        // document redonne le même compte.
+        assert!(ecrire_document().is_ok());
+        assert_eq!(sp_doc_substitues(), 1);
+
+        // Le rapport suit le document : après reset, plus rien à signaler.
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_substitues(), 0);
+    }
+
+    #[test]
+    fn texte_refuse_sans_police() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+        // Police n° 3 jamais enregistrée : refus explicite à l'écriture.
+        assert_eq!(op("text\t3\t10\t10\t50\tq4\t0\t0\t0\t1000\tA"), 1);
+        assert_eq!(ecrire_document().unwrap_err(), SP_ERR_BAD_INPUT);
+    }
+
+    #[test]
+    fn police_illisible_refusee_sans_paniquer() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+
+        // Fichier vide, en-tête inconnu, fichier tronqué : trois refus francs.
+        assert_eq!(ajouter_police(&[]), SP_ERR_BAD_INPUT);
+        assert_eq!(ajouter_police(b"JUNKJUNKJUNK"), SP_ERR_BAD_INPUT);
+        let tronque = &police_synthetique()[..80];
+        assert_eq!(ajouter_police(tronque), SP_ERR_BAD_INPUT);
+
+        // Une police CFF (`OTTO`) n'est pas lue : on le dit au lieu d'embarquer
+        // un programme que le lecteur PDF refuserait.
+        assert_eq!(ajouter_police(b"OTTO\x00\x00\x00\x00"), SP_ERR_BAD_INPUT);
+    }
+
+    #[test]
+    fn texte_mal_forme_refuse() {
+        // Tabulation dans le texte : la ligne ne peut pas être découpée.
+        assert!(parse_op("text\t0\t12\t20\t200\tq4\t0\t0\t0\t1000\tA\tB").is_none());
+        // Champ en trop après le texte : refus plutôt qu'interprétation.
+        assert!(parse_op("text\t0\t12\t20\t200\tq4\t0\t0\t0\t1000\tABC\tZ").is_none());
+        // Corps nul ou négatif.
+        assert!(parse_op("text\t0\t0\t20\t200\tq4\t0\t0\t0\t1000\tA").is_none());
+        assert!(parse_op("text\t0\t-3\t20\t200\tq4\t0\t0\t0\t1000\tA").is_none());
+        // Texte vide : la ligne reste lisible, mais n'ajoute rien au flux.
+        assert!(parse_op("text\t0\t12\t20\t200\tq4\t0\t0\t0\t1000\t").is_some());
+    }
+
+    #[test]
+    fn espaces_du_texte_conserves() {
+        // Les espaces de début et de fin comptent en composition : le découpage
+        // ne doit pas les rogner comme il rogne les champs numériques.
+        let Some(Op::Text { text, .. }) =
+            parse_op("text\t0\t12\t20\t200\tq4\t0\t0\t0\t1000\t  A B  ")
+        else {
+            panic!("la ligne de texte doit être lisible");
+        };
+        assert_eq!(text, "  A B  ");
+    }
+
+    #[test]
+    fn retour_a_la_ligne_echappe() {
+        // Deux lignes composées, l'interligne venant du corps.
+        let Some(Op::Text { text, .. }) =
+            parse_op("text\t0\t12\t20\t200\tq4\t0\t0\t0\t1000\tA\\nB")
+        else {
+            panic!("la ligne de texte doit être lisible");
+        };
+        assert_eq!(text, "A\nB", "\\n doit devenir un vrai retour à la ligne");
+
+        // La barre oblique inverse elle-même s'échappe : `\\\\` vaut `\\`.
+        let Some(Op::Text { text, .. }) =
+            parse_op("text\t0\t12\t20\t200\tq4\t0\t0\t0\t1000\tC:\\\\tmp")
+        else {
+            panic!("la ligne de texte doit être lisible");
+        };
+        assert_eq!(text, "C:\\tmp");
+
+        // Un échappement inconnu est laissé visible plutôt que mangé en silence.
+        let Some(Op::Text { text, .. }) =
+            parse_op("text\t0\t12\t20\t200\tq4\t0\t0\t0\t1000\t50\\%")
+        else {
+            panic!("la ligne de texte doit être lisible");
+        };
+        assert_eq!(text, "50\\%");
     }
 }

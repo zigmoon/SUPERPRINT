@@ -430,6 +430,38 @@
   }
 
   /**
+   * Prépare un texte pour le protocole ligne par ligne.
+   *
+   * Le protocole sépare les champs par des tabulations et les lignes par des
+   * retours : une tabulation ou un vrai retour à la ligne **dans le texte**
+   * casserait la commande. On refuse donc l'un et on échappe l'autre (`\n`,
+   * `\\`). Les autres caractères de contrôle sont refusés ici, avec un message
+   * clair, plutôt que par un « entrée illisible » venu du noyau.
+   */
+  function echapperTexte(valeur) {
+    // Un `\r\n` de Windows est une fin de ligne, pas un caractère à composer.
+    const brut = String(valeur == null ? '' : valeur).replace(/\r\n/g, '\n');
+    for (const c of brut) {
+      if (c === '\n') continue;
+      const code = c.codePointAt(0);
+      if (c === '\t') {
+        throw new CoreError(
+          'le texte ne peut pas contenir de tabulation : elle sépare les champs du protocole',
+          { code: ERR.BAD_INPUT, fn: 'document.text' },
+        );
+      }
+      if (code < 0x20 || code === 0x7f) {
+        throw new CoreError(
+          'le texte contient le caractère de contrôle U+' +
+            code.toString(16).toUpperCase().padStart(4, '0'),
+          { code: ERR.BAD_INPUT, fn: 'document.text' },
+        );
+      }
+    }
+    return brut.replace(/\\/g, '\\\\').replace(/\n/g, '\\n');
+  }
+
+  /**
    * Construit l'API de document d'un moteur WebAssembly.
    *
    * Les opérations sont **accumulées** puis envoyées par lots : une ligne par
@@ -532,6 +564,45 @@
         return ajouterImage(exports.sp_doc_add_image_rgb, pixels, width, height, filter, 3);
       },
 
+      /**
+       * Embarque une police TrueType ; renvoie son rang.
+       *
+       * À passer ensuite à `text({ font })`. La police est embarquée **en
+       * entier** : le sous-ensemble n'est pas fait, le fichier est donc plus
+       * lourd mais aucun glyphe ne peut manquer à l'impression.
+       *
+       * Formats refusés, et pourquoi : `.otf`/`.ttc` (contours CFF ou plusieurs
+       * polices), `.woff`/`.woff2` (compressés). Le message le dit plutôt que
+       * d'embarquer un programme que le lecteur PDF refuserait.
+       */
+      addFont(donnees) {
+        const octets =
+          donnees instanceof Uint8Array
+            ? donnees
+            : donnees instanceof ArrayBuffer
+              ? new Uint8Array(donnees)
+              : null;
+        if (!octets || octets.length === 0) {
+          throw new CoreError('addFont exige les octets d’un fichier de police', {
+            code: ERR.BAD_INPUT,
+            fn: 'document.addFont',
+          });
+        }
+        return portee(function (ctx) {
+          const p = ctx.poser(octets);
+          const code = exports.sp_doc_add_font(p, octets.length);
+          if (code < 0) {
+            throw new CoreError(
+              'police illisible : attendu un fichier TrueType (.ttf). ' +
+                'Les polices à contours CFF (.otf), les collections (.ttc) et ' +
+                'les formats compressés (.woff) ne sont pas pris en charge.',
+              { code: code, fn: 'document.addFont' },
+            );
+          }
+          return code;
+        });
+      },
+
       /** Déclare la destination de sortie avec un profil ICC réel. */
       outputIntent(options) {
         const o = options || {};
@@ -597,6 +668,57 @@
       },
       placeImage(o) {
         return forme(['image', String(o.image | 0), fmt(o.x), fmt(o.y), fmt(o.width), fmt(o.height)]);
+      },
+
+      /**
+       * Pose du texte.
+       *
+       * ```js
+       * const f = doc.addFont(octets);           // rang de la police
+       * doc.text({ font: f, size: 12, x: 20, y: 200, text: 'Bonjour\ncafé',
+       *            paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+       * ```
+       *
+       * `x` et `y` sont en millimètres du format fini ; `y` est la ligne de
+       * base de la **première** ligne. `size` est en points. Un `\n` passe à la
+       * ligne, l'interligne valant 1,2 fois le corps.
+       */
+      text(o) {
+        const t = o || {};
+        if (!Number.isInteger(t.font) || t.font < 0) {
+          throw new CoreError('text exige le rang d’une police déjà embarquée', {
+            code: ERR.BAD_INPUT,
+            fn: 'document.text',
+          });
+        }
+        const corps = nombre(t.size, 0);
+        if (!(corps > 0)) {
+          throw new CoreError('text exige un corps positif, en points', {
+            code: ERR.BAD_INPUT,
+            fn: 'document.text',
+          });
+        }
+        return forme([
+          'text',
+          String(t.font),
+          fmt(corps),
+          fmt(t.x),
+          fmt(t.y),
+          peintureTexte(t.paint),
+          echapperTexte(t.text),
+        ]);
+      },
+
+      /**
+       * Combien de caractères la dernière écriture n'a **pas** su dessiner.
+       *
+       * Zéro veut dire « tout s'imprimera ». Toute autre valeur signale un texte
+       * composé avec une police qui n'a pas les dessins voulus : le PDF est
+       * écrit, mais il est incomplet — et il le dit plutôt que de laisser un
+       * blanc inexpliqué sur la plaque.
+       */
+      substitutions() {
+        return exports.sp_doc_substitues();
       },
 
       /** Envoie les formes en attente. Appelé automatiquement par `write()`. */
@@ -980,6 +1102,9 @@
        * doc.info('title', 'Affiche').addPage({ trimWidthMm: 170, trimHeightMm: 240 });
        * doc.addInk({ space: 'cmyk', name: 'PANTONE WARM RED C', c: 0, m: .9, y: .8, k: 0 });
        * doc.fillRect({ x: 10, y: 20, width: 50, height: 30, paint: { spot: { index: 0, tint: .5 } } });
+       * const f = doc.addFont(octetsDePolice);          // TrueType requis
+       * doc.text({ font: f, size: 12, x: 20, y: 200, text: 'café',
+       *            paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
        * const pdf = doc.write();   // Uint8Array
        * ```
        */
@@ -999,6 +1124,32 @@
           encoder: encoder,
           verifier: verifier,
         });
+      },
+
+      /**
+       * Télécharge un fichier de police et rend ses octets.
+       *
+       * Raccourci pour `doc.addFont()` :
+       *
+       * ```js
+       * const moteur = await SuperPrintCore.load({ url: 'superprint_core.wasm' });
+       * const doc = moteur.createDocument();
+       * doc.addPage({});
+       * doc.addFont(await moteur.loadFont('fonts/IBMPlexMono-Regular.ttf'));
+       * ```
+       *
+       * Le fichier est lu **tel quel** : aucune conversion n'est faite, et un
+       * format non pris en charge est refusé au moment de `addFont`.
+       */
+      loadFont: async function (url) {
+        const reponse = await fetch(url);
+        if (!reponse.ok) {
+          throw new CoreError(
+            'police introuvable : ' + url + ' (' + reponse.status + ')',
+            { code: ERR.BAD_INPUT, fn: 'loadFont' },
+          );
+        }
+        return new Uint8Array(await reponse.arrayBuffer());
       },
     };
   }

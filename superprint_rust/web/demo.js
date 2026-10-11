@@ -114,6 +114,62 @@
     document.getElementById('telechargements').appendChild(a);
   }
 
+  /** Charge un script classique et attend qu'il soit prêt. */
+  function chargerScript(url) {
+    return new Promise(function (resoudre, rejeter) {
+      var s = document.createElement('script');
+      s.src = url;
+      s.onload = function () {
+        resoudre();
+      };
+      s.onerror = function () {
+        rejeter(new Error('script introuvable : ' + url));
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  /**
+   * Fait relire le PDF de texte par `pdf.js` et compare au texte composé.
+   *
+   * C'est la seule preuve qui compte pour du texte : un PDF peut afficher des
+   * caractères sans qu'un lecteur puisse les extraire — c'est le cas quand on
+   * écrit des identifiants de glyphe sans table `/ToUnicode`. Ici un lecteur
+   * INDÉPENDANT du noyau (celui de Mozilla, emprunté à l'application, jamais
+   * modifié) doit rendre les mêmes caractères, accents compris.
+   */
+  async function afficherPreuveDeTexte(pdf, attendu) {
+    await chargerScript('/superprint/app/JS/pdf.min.js');
+    var pdfjs = globalThis.pdfjsLib;
+    if (!pdfjs) {
+      essai('pdf.js relit le texte en clair', false, 'pdf.js non chargé');
+      return;
+    }
+    pdfjs.GlobalWorkerOptions.workerSrc = '/superprint/app/JS/pdf.worker.min.js';
+    // `slice()` : pdf.js prend possession du tampon qu'on lui passe.
+    var charge = await pdfjs.getDocument({ data: pdf.slice() }).promise;
+    var page = await charge.getPage(1);
+    var contenu = await page.getTextContent();
+    var relu = contenu.items
+      .map(function (item) {
+        return item.str;
+      })
+      .join('\n');
+    // pdf.js recompose les espaces depuis les déplacements : on compare donc les
+    // caractères, pas la mise en page. Ce qui compte, c'est qu'ils REVIENNENT.
+    var normaliser = function (s) {
+      return s.replace(/\s+/g, ' ').trim();
+    };
+    var obtenu = normaliser(relu);
+    var voulu = normaliser(attendu);
+    preuve.texteRelu = obtenu;
+    essai(
+      'pdf.js relit le texte en clair (accents, apostrophe, tiret cadratin)',
+      obtenu === voulu,
+      'lu : « ' + obtenu + ' »',
+    );
+  }
+
   function dessinerApercu(rgb, gris) {
     var c = document.getElementById('canvas-gris');
     if (!c) return;
@@ -365,6 +421,83 @@
       preuve.document = { octets: pdfDoc.length, titleLisible: /\/Title \(/.test(texteDoc) };
     } catch (erreur) {
       essai('document 2 pages, 2 tons directs, image, métadonnées', false, erreur.message);
+    }
+
+    // ── Texte et police embarquée ───────────────────────────────────────
+    //
+    // Une page avec du texte composé, dans une vraie police TrueType du dépôt.
+    // Le PDF produit est ensuite ouvert par pdf.js (bouton « Preuve de texte »)
+    // pour vérifier que les caractères REVIENNENT en clair : c'est `/ToUnicode`
+    // qui le permet, et sans lui le PDF s'afficherait sans être lisible.
+    titre('Texte et police embarquée');
+    // Le serveur de démonstration prend la racine du dépôt : la police de
+    // l'application est donc atteignable, et lue sans être modifiée.
+    var CHEMIN_POLICE = '/superprint/app/CSS/fonts/IBMPlexSans-400-normal.ttf';
+    var TEXTE_COMPOSE = 'À l’imprimeur\ncafé — déjà vu, çà et là\nPANTONE 300 C';
+    preuve.texte = null;
+    try {
+      var octetsPolice = await api.loadFont(CHEMIN_POLICE);
+      essai(
+        'police TrueType téléchargée (' + octetsPolice.length.toLocaleString('fr-FR') + ' octets)',
+        octetsPolice.length > 10000 && octetsPolice[0] === 0 && octetsPolice[1] === 1,
+        'signature sfnt 0x00010000',
+      );
+
+      var docTexte = api.createDocument();
+      docTexte.info('title', 'SuperPrint — page de texte');
+      docTexte.addPage({ trimWidthMm: 170, trimHeightMm: 240, bleedMm: 3, markMm: 10, quadri: 'cmyk' });
+      var encreTexte = docTexte.addInk({ space: 'cmyk', name: 'PANTONE 300 C', c: 0.9, m: 0.5, y: 0, k: 0 });
+      var rangPolice = docTexte.addFont(octetsPolice);
+      essai('police acceptée par le noyau', rangPolice === 0, 'rang ' + rangPolice);
+
+      docTexte.text({
+        font: rangPolice,
+        size: 12,
+        x: 20,
+        y: 200,
+        paint: { spot: { index: encreTexte, tint: 1 } },
+        text: TEXTE_COMPOSE,
+      });
+
+      var pdfTexte = docTexte.write();
+      var texteEmbarque = new TextDecoder('latin1').decode(pdfTexte);
+      essai(
+        'police embarquée en entier (/FontFile2, /Identity-H, /ToUnicode)',
+        texteEmbarque.indexOf('/FontFile2 ') > 0 &&
+          texteEmbarque.indexOf('/Encoding /Identity-H') > 0 &&
+          texteEmbarque.indexOf('/ToUnicode ') > 0,
+        'Type0 + CIDFontType2 + table d’extraction',
+      );
+      essai(
+        'le texte ne part PAS en caractères lisibles',
+        texteEmbarque.indexOf('(' + TEXTE_COMPOSE) < 0,
+        'un PDF Identity-H écrit des identifiants de glyphe',
+      );
+      essai(
+        'aucun caractère substitué : la page s’imprime en entier',
+        docTexte.substitutions() === 0,
+        'compteur de caractères manquants : ' + docTexte.substitutions(),
+      );
+      essai(
+        'une tabulation dans le texte est refusée',
+        leve(function () {
+          docTexte.text({ font: rangPolice, size: 10, x: 10, y: 10, text: 'a\tb', paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+        }),
+        'elle casserait le protocole ligne par ligne',
+      );
+      essai(
+        'une police CFF (.otf) est refusée avec un message qui dit pourquoi',
+        leve(function () {
+          docTexte.addFont(new Uint8Array([0x4f, 0x54, 0x54, 0x4f, 0, 0, 0, 0]));
+        }),
+        'mieux vaut refuser que produire un PDF illisible',
+      );
+
+      proposerTelechargement('texte.pdf', pdfTexte);
+      preuve.texte = { octets: pdfTexte.length, attendu: TEXTE_COMPOSE };
+      await afficherPreuveDeTexte(pdfTexte, TEXTE_COMPOSE);
+    } catch (erreur) {
+      essai('page de texte avec police embarquée', false, erreur.message);
     }
 
     // ── Garde-fous ──────────────────────────────────────────────────────

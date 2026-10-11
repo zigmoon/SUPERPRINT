@@ -25,7 +25,7 @@ de page que les tests unitaires laissaient passer.
 | 3 | Séparation des tons directs / écriture PDF | très haute | élevée | cible du rapport de test interne (non publié) |
 | 4 | Traitement d'image (N&B, CMJN, réduction, JPEG/Flate) | haute | moyenne | images **brutes** = cause du PDF de 131 Mo — ✅ réduction et RunLength faits ; reste le **décodage** (JPEG/PNG) et Flate |
 | 5 | Césure + habillage du texte | moyenne | moyenne | `Hypher` actuel |
-| 6 | Analyse de police + typographie vectorielle | moyenne | élevée | `opentype.js` actuel |
+| 6 | Analyse de police + typographie vectorielle | moyenne | élevée | `opentype.js` actuel — ✅ **analyse faite**, contours toujours rendus par le navigateur |
 | 7 | Profil ICC | moyenne | élevée | `lcms.wasm` (C) déjà présent dans l'app |
 
 ## Phases
@@ -55,12 +55,12 @@ du défaut « PDF de 131 Mo ».
 **`superprint-wasm`** est le **seul** déclaré en `cdylib`. Il produit
 `dist/superprint_core.wasm`, **sans aucun import** : un navigateur le charge
 avec `WebAssembly.instantiate(bytes, {})`, sans WASI ni fonction hôte. Il
-expose 33 fonctions derrière une frontière C écrite à la main — unités,
+expose 32 fonctions derrière une frontière C écrite à la main — unités,
 couleurs sur octets, luminance, filtre RunLength, réduction d'image, page de
-démonstration, et **construction de document** — **sans `wasm-bindgen`**, pour
-tenir la règle « zéro dépendance ». C'est aussi le seul endroit du workspace où
-il y a de l'`unsafe` : les trois crates du noyau restent
-`#![forbid(unsafe_code)]`.
+démonstration, **construction de document** et **texte** — **sans
+`wasm-bindgen`**, pour tenir la règle « zéro dépendance ». C'est aussi le seul
+endroit du workspace où il y a de l'`unsafe` : les quatre crates du noyau
+restent `#![forbid(unsafe_code)]`.
 
 **Phase 2c — l'exporteur de document.** ✅ `superprint-pdf::document` remplace la
 page unique par un **document** : plusieurs pages de formats différents, formes
@@ -70,15 +70,39 @@ métadonnées, traits de coupe et `OutputIntent` avec profil ICC fourni.
 
 La frontière expose un **constructeur de document** (`sp_doc_reset`,
 `sp_doc_add_page`, `sp_doc_add_ink`, `sp_doc_op`, `sp_doc_add_image_*`,
-`sp_doc_info`, `sp_doc_output_intent`, `sp_doc_write`) : un seul document en
-cours, comme un curseur. Les opérations de dessin arrivent en **lignes
-tabulées**, ce qui évite d'inventer une structure binaire et garde le protocole
-lisible dans un journal d'erreur.
+`sp_doc_add_font`, `sp_doc_substitues`, `sp_doc_info`, `sp_doc_output_intent`,
+`sp_doc_write`) : un seul document en cours, comme un curseur. Les opérations de
+dessin arrivent en **lignes tabulées**, ce qui évite d'inventer une structure
+binaire et garde le protocole lisible dans un journal d'erreur.
 
-> **Ce qui manque pour un exporteur complet** : le **texte**. Sans analyse de
-> police (module n° 6), on ne place que des aplats et des images. Manquent aussi
-> `/FlateDecode` et `/DCTDecode` (RunLength seul), les chaînes UTF-16BE, et
-> l'écriture XMP sans laquelle aucune conformité PDF/X n'est revendiquée.
+> **Ce qui manque encore** : la **césure** et l'habillage du texte (module n° 5),
+> le **sous-ensemble de police**, `/FlateDecode` et `/DCTDecode` (RunLength
+> seul), et l'écriture XMP sans laquelle aucune conformité PDF/X n'est
+> revendiquée.
+
+**Phase 2d — le texte et les polices.** ✅ Le crate **`superprint-font`**
+(module n° 6) lit un fichier TrueType **sans jamais dépasser les bornes** :
+répertoire de tables, `.head`, `.hhea`, `.hmtx`, `.maxp`, `.name` et `.cmap`
+(formats 0, 4, 6 et 12, avec la règle exacte d'`idRangeOffset`). L'exporteur
+embarque alors la police en `/FontFile2`, écrit le texte en polices
+**composites** (`/Type0` + `/Identity-H` + `/CIDFontType2`), déclare les
+largeurs `/W` des seuls glyphes **réellement employés**, et pose une table
+**`/ToUnicode`** — sans laquelle le PDF s'afficherait sans être extractible.
+
+Le contrôle ne se contente pas de vérifier que le PDF s'ouvre :
+`scripts/validate-text.mjs` demande à **`pdf.js` (Mozilla) de relire les
+caractères**, accents, apostrophe typographique et tiret cadratin compris.
+C'est la seule preuve qui vaille pour du texte — et c'est aussi ce qui a
+confirmé la lecture d'`idRangeOffset`.
+
+> **Limites énoncées, pas passées sous silence** : la police est embarquée
+> **en entier** (pas de sous-ensemble : le fichier est plus lourd, mais aucun
+> glyphe ne peut manquer) ; les contours **CFF** (`OTTO`), les collections
+> (`.ttc`) et les formats compressés (`woff`) sont **refusés explicitement** ;
+> il n'y a **ni crénage, ni écriture complexe** (arabe, devanagari), ni
+> bidirectionnel. `sp_doc_substitues()` compte les caractères que la police n'a
+> pas su dessiner : un document incomplet le dit au lieu de laisser un blanc
+> inexpliqué.
 
 **Phase 3 — bascule progressive.** ⏳ À venir. Un module à la fois, derrière un
 drapeau, avec **repli JS** si le module Rust n'est pas chargé.
@@ -90,7 +114,7 @@ charge pas, la colle **retombe sur des implémentations JavaScript** en le
 signalant (`api.backend` vaut `'js'`) — et l'écriture PDF, qu'on ne réécrit pas
 en JavaScript, **lève une erreur claire** au lieu d'approximer. Elle est validée
 par `scripts/validate-web.mjs` (parité octet pour octet du repli, garde-fous,
-endurance) et par `web/demo.html`, un banc d'essai de 17 mesures exécuté dans un
+endurance) et par `web/demo.html`, un banc d'essai de 27 mesures exécuté dans un
 vrai navigateur.
 
 > **`superprint/` n'a pas été modifié.** C'est un choix explicite : le dossier est
@@ -139,6 +163,7 @@ noyaux, et mesurée **en chargement navigateur des deux côtés** :
 | unités (mm/pt/px) | formule recalculée | 42 conversions | identique au bit près |
 | RunLength | décodeur écrit depuis l’ISO 32000-2 | 4 jeux | flux relu à l’identique |
 | écriture PDF | `pdf-lib` | 2 documents | ouvrables, conformes |
+| **texte composé** | **`pdf.js` (extraction)** | 1 page, 3 lignes | caractères **relus en clair**, accents compris |
 
 Le reste du noyau n’a **pas** encore de mesure de parité contre le JavaScript de
 SuperPrint lui-même : c’est la phase 3.
@@ -152,9 +177,9 @@ SuperPrint lui-même : c’est la phase 3.
 | 3 | Séparation des tons directs / PDF | ✅ `superprint-pdf::document` — **exporteur de document** |
 | 4 | Traitement d'image | ✅ `superprint-image` (réduction, DPI, RunLength) |
 | 5 | Césure + habillage du texte | ⏳ |
-| 6 | Analyse de police / typo vectorielle | ⏳ |
+| 6 | Analyse de police / typo vectorielle | ✅ `superprint-font` — `cmap`, `head`, `hhea`, `hmtx`, `maxp`, `name` ; CFF refusé |
 | 7 | Profil ICC | ⏳ (`OutputIntent` posable avec un profil fourni, pas de gestion) |
-| — | **Frontière WebAssembly (le livrable)** | ✅ `superprint-wasm` — `cdylib`, 33 fonctions, **0 import**, 164 Ko |
+| — | **Frontière WebAssembly (le livrable)** | ✅ `superprint-wasm` — `cdylib`, 32 fonctions, **0 import**, 262 Ko |
 | — | **Colle de branchement + repli** | ✅ `web/superprint-core.js` — parité du repli mesurée, PDF refusé sans le noyau |
 
 ### Ce que l'exporteur couvre, et ce qu'il ne couvre pas
@@ -170,18 +195,22 @@ SuperPrint lui-même : c’est la phase 3.
 | Images placées et mises à l'échelle (gris, RVB) | ✅ |
 | Métadonnées `/Info` en PDFDocEncoding | ✅ accents **et** typographie française |
 | `OutputIntent` + profil ICC fourni | ✅ |
-| **Texte et polices** | ❌ module n° 6 — **c'est le manque principal** |
+| **Texte dans une police embarquée** | ✅ `Type0` + `Identity-H` + `FontFile2` |
+| **Texte extractible** (`/ToUnicode`) | ✅ vérifié à la relecture par `pdf.js` |
+| **Sous-ensemble de police** | ❌ police entière embarquée (plus lourd, jamais incomplet) |
+| Crénage, écritures complexes, bidirectionnel | ❌ |
 | `/FlateDecode`, `/DCTDecode` | ❌ RunLength seul |
-| Chaînes UTF-16BE (CJK) | ❌ hors PDFDocEncoding → `?` |
+| Chaînes UTF-16BE (CJK) | ⚠️ dans un **CMap** `/ToUnicode` de police, oui ; en **métadonnée**, non (hors PDFDocEncoding → `?`) |
 | Validation PDF/X complète (XMP) | ❌ non écrite, donc **non revendiquée** |
 
 > Le module n° 3 n'est plus une fondation : l'exporteur produit de vrais documents
-> multi-pages relus par `pdf-lib`, avec tons directs teintés, vectoriel, images et
-> métadonnées. Le manque qui compte désormais est le **texte** : sans analyse de
-> police (module n° 6), on ne place que des aplats et des images.
+> multi-pages relus par `pdf-lib`, avec tons directs teintés, vectoriel, images,
+> métadonnées **et texte extractible**. Ce qui reste à faire pour une
+> composition complète tient à la **césure** (module n° 5) et au
+> **sous-ensemble** de police — deux chantiers nommés, aucun caché.
 >
-> Le noyau Rust représente à ce jour **environ 3 %** du JavaScript de SuperPrint
-> (≈ 4 000 lignes contre ≈ 104 000, dont `main.js` à lui seul ≈ 95 000). C'est un
+> Le noyau Rust représente à ce jour **environ 4 %** du JavaScript de SuperPrint
+> (≈ 5 900 lignes contre ≈ 104 000, dont `main.js` à lui seul ≈ 95 000). C'est un
 > début solide, pas une refactorisation achevée — et **aucune ligne n'est encore
 > appelée par l'application**.
 
@@ -208,6 +237,17 @@ SuperPrint lui-même : c’est la phase 3.
    sérialiser à chaque appel coûterait plus cher que de garder un curseur. D'où
    `sp_doc_reset` / … / `sp_doc_write`, plutôt qu'une fonction unique à quinze
    paramètres.
+7. **Texte en `Identity-H`, pas en police simple.** Un PDF peut écrire du texte
+   de deux façons : la plus simple (police simple à `WinAnsiEncoding`) est
+   plafonnée à 256 caractères et complique l'embarquement ; la voie retenue est
+   celle des **polices composites**. Conséquence assumée : le flux de contenu ne
+   porte pas des caractères mais des **identifiants de glyphe**, ce qui rend la
+   table `/ToUnicode` **obligatoire** — et c'est elle qui est vérifiée à la
+   relecture.
+8. **La police est embarquée en entier.** Le sous-ensemble demanderait de
+   réécrire `glyf`, `loca`, `hmtx` et `cmap` ; c'est un chantier à part. En
+   attendant, on préfère un fichier plus lourd à un fichier où **une lettre
+   manque** — et `sp_doc_substitues()` dit quand c'est le cas.
 
 ## Décisions encore ouvertes
 

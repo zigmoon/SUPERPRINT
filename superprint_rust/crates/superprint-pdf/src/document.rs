@@ -28,21 +28,28 @@
 //! | Rectangles, cercles, polygones, segments | ✅ |
 //! | Remplissage et contour, épaisseurs | ✅ |
 //! | Images placées et mises à l'échelle (gris, RVB) | ✅ |
+//! | **Texte et polices embarquées** (`Type0` / `Identity-H`) | ✅ |
+//! | Texte **extractible** (`/ToUnicode`, accents compris) | ✅ |
 //! | Métadonnées (`/Info`) | ✅ |
 //! | `OutputIntent` + profil ICC fourni | ✅ |
-//! | **Texte et polices** | ❌ (module n° 6, non fait) |
+//! | Sous-ensemble de police (subsetting) | ❌ (police entière embarquée) |
 //! | `/FlateDecode`, `/DCTDecode` | ❌ (RunLength seul) |
+//! | Crénage, écritures complexes, chasse optique | ❌ |
 //! | Validation PDF/X complète | ❌ (XMP non écrit) |
 //!
 //! Les limites sont écrites telles quelles plutôt que passées sous silence : un
 //! exporteur qui laisse croire qu'il fait du PDF/X certifié serait un piège pour
 //! un imprimeur.
 
+use std::collections::{BTreeMap, BTreeSet};
+
 use superprint_core::units::mm_to_pt;
 use superprint_core::{Cmyk, PageSize, Rgb};
+use superprint_font::FontFace;
 
 use crate::boxes::PageBoxes;
 use crate::colorspace::{ColorStack, QuadriSpace, StackError};
+use crate::font::{self, FontUsage};
 use crate::image::ImageXObject;
 use crate::object;
 use crate::writer::{UnfilledObject, Writer};
@@ -316,6 +323,27 @@ pub enum Op {
         /// Hauteur affichée.
         height: f64,
     },
+    /// Pose du texte, en millimètres du format fini.
+    ///
+    /// Le texte part en **identifiants de glyphe**, comme l'exige une police
+    /// composite `Identity-H`. Un `\n` passe à la ligne ; l'interligne vaut
+    /// **1,2 fois le corps**, la valeur d'usage. Les retours chariot isolés et
+    /// les autres caractères de contrôle sont refusés : dans un flux de contenu
+    /// PDF ils couperaient la commande en deux.
+    Text {
+        /// Rang de la police dans le document.
+        font: usize,
+        /// Corps, en points typographiques.
+        size_pt: f64,
+        /// Abscisse du début de ligne.
+        x: f64,
+        /// Ordonnée de la **ligne de base** de la première ligne.
+        y: f64,
+        /// Couleur du texte.
+        paint: Paint,
+        /// Le texte à composer.
+        text: String,
+    },
 }
 
 // ───────────────────────────── page et document ─────────────────────────────
@@ -361,13 +389,29 @@ impl Page {
 
     /// Construit le **flux de contenu** de la page.
     ///
+    /// Renvoie le flux et la liste des polices qu'il emploie, chacune une seule
+    /// fois, dans l'ordre croissant. L'appelant en a besoin pour écrire les
+    /// objets de police **avant** les pages qui les référencent.
+    ///
+    /// `usage` est complété au passage : ce sont les glyphes réellement écrits
+    /// qui déterminent les largeurs `/W` et la table `/ToUnicode` du document.
+    ///
     /// # Erreurs
     ///
     /// [`DocError`] si une couleur ne correspond pas à la quadri de la page, si
-    /// une encre directe n'existe pas ou si une teinte sort de `0,0–1,0`.
-    pub fn content(&self, images: &[ImageXObject], marks: bool) -> Result<String, DocError> {
+    /// une encre directe n'existe pas, si une teinte sort de `0,0–1,0`, si une
+    /// image ou une police est inconnue, ou si le texte contient un caractère de
+    /// contrôle.
+    pub fn content(
+        &self,
+        images: &[ImageXObject],
+        fonts: &[FontFace],
+        marks: bool,
+        usage: &mut FontUsage,
+    ) -> Result<(String, Vec<usize>), DocError> {
         let boxes = self.boxes();
         let mut flux = String::new();
+        let mut polices_page: Vec<usize> = Vec::new();
 
         // Une seule translation pour tout le flux : les opérations restent
         // exprimées dans le repère du format fini.
@@ -426,11 +470,75 @@ impl Page {
                     flux.push_str("Q\n");
                     let _ = xobject;
                 }
+                Op::Text {
+                    font,
+                    size_pt,
+                    x,
+                    y,
+                    paint,
+                    text,
+                } => {
+                    let face = fonts.get(*font).ok_or(DocError::UnknownFont {
+                        index: *font,
+                        available: fonts.len(),
+                    })?;
+                    // Un caractère de contrôle couperait la ligne du flux : on
+                    // refuse plutôt que de produire un PDF silencieusement faux.
+                    if let Some(mauvais) = text.chars().find(|c| *c != '\n' && c.is_control()) {
+                        return Err(DocError::TextControl {
+                            caractere: format!("U+{:04X}", mauvais as u32),
+                        });
+                    }
+
+                    let mut lignes: Vec<Vec<u16>> = Vec::new();
+                    let mut gids_page: BTreeSet<u16> = BTreeSet::new();
+                    let mut unicode_page: BTreeMap<u16, char> = BTreeMap::new();
+                    for ligne in text.split('\n') {
+                        let mut glyphes = Vec::with_capacity(ligne.chars().count());
+                        for caractere in ligne.chars() {
+                            let (gid, substitue) = face.glyph_id_ou_notdef(caractere);
+                            if substitue {
+                                usage.substitues += 1;
+                            }
+                            glyphes.push(gid);
+                            gids_page.insert(gid);
+                            // Le glyphe 0 est le « manquant » : il ne dessine
+                            // rien, on ne prétend donc pas qu'il porte le
+                            // caractère — sinon l'extraction mentirait.
+                            if gid != 0 {
+                                unicode_page.entry(gid).or_insert(caractere);
+                            }
+                        }
+                        lignes.push(glyphes);
+                    }
+
+                    // Rien à afficher : on ne change pas la couleur pour rien.
+                    if !lignes.iter().any(|l| !l.is_empty()) {
+                        continue;
+                    }
+
+                    flux.push_str(&paint_ops(*paint, &self.stack)?);
+                    // L'interligne d'usage : 1,2 fois le corps.
+                    let interligne = size_pt * 1.2;
+                    flux.push_str(&crate::font::ops_texte(
+                        &crate::font::nom_ressource(*font),
+                        *size_pt,
+                        mm_to_pt(*x),
+                        mm_to_pt(*y),
+                        &lignes,
+                        interligne,
+                    ));
+                    usage.fusionner(*font, &gids_page, &unicode_page);
+                    if !polices_page.contains(font) {
+                        polices_page.push(*font);
+                    }
+                }
             }
         }
 
+        polices_page.sort_unstable();
         flux.push_str("Q\n");
-        Ok(flux)
+        Ok((flux, polices_page))
     }
 }
 
@@ -591,6 +699,18 @@ pub enum DocError {
         /// Nombre d'images enregistrées.
         available: usize,
     },
+    /// Une police est référencée qui n'a pas été enregistrée.
+    UnknownFont {
+        /// Rang demandé.
+        index: usize,
+        /// Nombre de polices enregistrées.
+        available: usize,
+    },
+    /// Le texte contient un caractère de contrôle interdit.
+    TextControl {
+        /// Le caractère fautif, en notation `U+XXXX`.
+        caractere: String,
+    },
     /// Deux encres portent le même nom.
     DuplicateSpot(String),
     /// Un emplacement d'objet est resté vide (défaut interne).
@@ -622,6 +742,13 @@ impl std::fmt::Display for DocError {
             Self::UnknownImage { index, available } => {
                 write!(f, "image n° {index} demandée, {available} enregistrée(s)")
             }
+            Self::UnknownFont { index, available } => {
+                write!(f, "police n° {index} demandée, {available} enregistrée(s)")
+            }
+            Self::TextControl { caractere } => write!(
+                f,
+                "le texte contient le caractère de contrôle {caractere}, qui couperait le flux PDF"
+            ),
             Self::DuplicateSpot(nom) => write!(f, "encre directe en double : « {nom} »"),
             Self::Unfilled(e) => write!(f, "{e}"),
             Self::BadProfile { components, bytes } => write!(
@@ -662,6 +789,8 @@ pub struct Document {
     pub output_intent: Option<OutputIntent>,
     /// Images disponibles pour les pages.
     pub images: Vec<ImageXObject>,
+    /// Polices embarquées, disponibles pour les pages.
+    pub fonts: Vec<FontFace>,
     /// Tracer les traits de coupe autour du format fini.
     pub marks: bool,
 }
@@ -691,13 +820,38 @@ impl Document {
         self.images.len() - 1
     }
 
+    /// Enregistre une police et renvoie son rang.
+    ///
+    /// La police est embarquée **en entier**, sous forme de flux `/FontFile2`.
+    /// Le sous-ensemble (ne garder que les glyphes utilisés) n'est pas fait : le
+    /// fichier est plus lourd, mais aucun glyphe ne peut manquer à l'impression.
+    pub fn add_font(&mut self, face: FontFace) -> usize {
+        self.fonts.push(face);
+        self.fonts.len() - 1
+    }
+
     /// Écrit le fichier PDF complet.
     ///
     /// # Erreurs
     ///
-    /// [`DocError`] : document sans page, couleur incohérente, encre ou image
-    /// inconnue, teinte hors bornes, profil ICC incohérent.
+    /// [`DocError`] : document sans page, couleur incohérente, encre, image ou
+    /// police inconnue, teinte hors bornes, texte contenant un caractère de
+    /// contrôle, profil ICC incohérent.
     pub fn write(&self) -> Result<Vec<u8>, DocError> {
+        self.write_with_report().map(|(pdf, _)| pdf)
+    }
+
+    /// Comme [`Document::write`], mais renvoie aussi ce que le texte a demandé.
+    ///
+    /// Le rapport dit notamment combien de caractères la police n'a pas su
+    /// dessiner. Sans lui, un document **incomplet** serait indiscernable d'un
+    /// document juste : c'est exactement le genre de silence qui coûte cher à
+    /// l'impression.
+    ///
+    /// # Erreurs
+    ///
+    /// Les mêmes que [`Document::write`].
+    pub fn write_with_report(&self) -> Result<(Vec<u8>, FontUsage), DocError> {
         if self.pages.is_empty() {
             return Err(DocError::NoPages);
         }
@@ -729,15 +883,45 @@ impl Document {
         // Les images aussi : les ressources de page les référencent.
         let image_refs: Vec<usize> = self.images.iter().map(|_| writer.reserve()).collect();
 
+        // Les polices de même. Chaque police occupe cinq objets, réservés ici
+        // pour que les ressources d'une page puissent les référencer.
+        let mut font_refs: Vec<Option<FontRefs>> = vec![None; self.fonts.len()];
+        // Ce que les pages ont réellement écrit, police par police.
+        let mut usage = FontUsage::default();
+
         // Chaque page : un objet page, un flux de contenu.
         let mut page_numbers = Vec::with_capacity(self.pages.len());
         for (index, page) in self.pages.iter().enumerate() {
             let number = writer.reserve();
             page_numbers.push(number);
 
-            let content = page.content(&self.images, self.marks)?;
+            let (content, polices_page) =
+                page.content(&self.images, &self.fonts, self.marks, &mut usage)?;
             let content_ref = writer.push_stream("", content.as_bytes());
-            let resources = resources_for(page, &self.images, index, &image_refs);
+
+            // Les polices de cette page reçoivent leurs objets ici : les
+            // ressources peuvent alors les référencer, et rien n'est écrit pour
+            // une police qu'aucune page n'emploie.
+            for rang in &polices_page {
+                if font_refs[*rang].is_none() {
+                    font_refs[*rang] = Some(FontRefs {
+                        type0: writer.reserve(),
+                        cid: writer.reserve(),
+                        descripteur: writer.reserve(),
+                        fontfile: writer.reserve(),
+                        tounicode: writer.reserve(),
+                    });
+                }
+            }
+
+            let resources = resources_for(
+                page,
+                &self.images,
+                index,
+                &image_refs,
+                &polices_page,
+                &font_refs,
+            );
             writer.put(
                 number,
                 format!(
@@ -775,6 +959,43 @@ impl Document {
             );
         }
 
+        // Remplissage différé des polices : cinq objets par police employée.
+        for (index, face) in self.fonts.iter().enumerate() {
+            let Some(refs) = font_refs[index] else {
+                continue;
+            };
+            let nom = face.nom_pdf();
+
+            // Le programme de la police, tel quel.
+            writer.put(
+                refs.fontfile,
+                Writer::stream_body(&font::entrees_fontfile(face), &face.data),
+            );
+            writer.put(
+                refs.descripteur,
+                font::descripteur_pdf(face, &nom, refs.fontfile),
+            );
+            writer.put(
+                refs.cid,
+                font::cidfont_pdf(
+                    face,
+                    &nom,
+                    refs.descripteur,
+                    &font::largeurs_pdf(face, &usage.gids[index]),
+                ),
+            );
+            // La table qui rend le texte extractible — c'est elle qui permet à
+            // un contrôle automatique de relire ce qui a été composé.
+            writer.put(
+                refs.tounicode,
+                Writer::stream_body(
+                    "",
+                    font::to_unicode_cmap(&usage.to_unicode[index]).as_bytes(),
+                ),
+            );
+            writer.put(refs.type0, font::type0_pdf(&nom, refs.cid, refs.tounicode));
+        }
+
         // Remplissage différé de la destination de sortie.
         if let (Some(intent), Some((intent_ref, icc_ref))) = (&self.output_intent, intent_refs) {
             writer.put(
@@ -792,22 +1013,46 @@ impl Document {
             );
         }
 
-        writer
+        let pdf = writer
             .finish(catalog, &format!("/Info {info_ref} 0 R"))
-            .map_err(Into::into)
+            .map_err(DocError::from)?;
+        Ok((pdf, usage))
     }
 }
 
-/// Ressources d'une page : couleurs, plus les images **réellement utilisées**.
+// ───────────────────────────── ressources ─────────────────────────────
+
+/// Les cinq objets qu'occupe une police embarquée.
 ///
-/// N'écrire que les images utilisées évite de faire porter à chaque page la
-/// totalité des images du document — sur un catalogue de 200 pages, la
-/// différence se voit au poids du fichier.
+/// Réserver les cinq d'un coup est ce qui permet d'écrire `/Font << /F0 12 0 R >>`
+/// sur une page alors que les objets de la police ne sont remplis qu'à la fin —
+/// une fois qu'on sait quels glyphes ont réellement servi.
+#[derive(Clone, Copy, Debug)]
+struct FontRefs {
+    /// Le dictionnaire `/Type0` cité par les ressources de page.
+    type0: usize,
+    /// La police descendante `/CIDFontType2`.
+    cid: usize,
+    /// Le `/FontDescriptor`.
+    descripteur: usize,
+    /// Le flux `/FontFile2` : le programme de la police.
+    fontfile: usize,
+    /// Le flux `/ToUnicode`.
+    tounicode: usize,
+}
+
+/// Ressources d'une page : couleurs, images et polices **réellement utilisées**.
+///
+/// N'écrire que ce qui est utilisé évite de faire porter à chaque page la
+/// totalité des images et des polices du document — sur un catalogue de 200
+/// pages, la différence se voit au poids du fichier.
 fn resources_for(
     page: &Page,
     images: &[ImageXObject],
     page_index: usize,
     image_refs: &[usize],
+    polices_page: &[usize],
+    font_refs: &[Option<FontRefs>],
 ) -> String {
     let mut xobjects: Vec<String> = Vec::new();
     let mut vues: Vec<usize> = Vec::new();
@@ -822,9 +1067,23 @@ fn resources_for(
         xobjects.push(format!("/{} {} 0 R", image_name(index), image_refs[index]));
     }
 
+    let mut polices: Vec<String> = Vec::new();
+    for rang in polices_page {
+        if let Some(Some(refs)) = font_refs.get(*rang) {
+            polices.push(format!(
+                "/{} {} 0 R",
+                font::nom_ressource(*rang),
+                refs.type0
+            ));
+        }
+    }
+
     let mut parties = vec![format!("/ColorSpace {}", page.stack.resources_pdf())];
     if !xobjects.is_empty() {
         parties.push(format!("/XObject << {} >>", xobjects.join(" ")));
+    }
+    if !polices.is_empty() {
+        parties.push(format!("/Font << {} >>", polices.join(" ")));
     }
     let _ = page_index;
     format!("<< {} >>", parties.join(" "))
@@ -1203,5 +1462,179 @@ mod tests {
         let pdf = doc.write().expect("document valide");
         let texte = String::from_utf8_lossy(&pdf);
         assert!(texte.contains("/DeviceRGB"));
+    }
+
+    // ───────────────────────────── texte et polices ─────────────────────────────
+
+    fn police() -> FontFace {
+        FontFace::parse(superprint_font::synth::construire(
+            &superprint_font::synth::PoliceSynth::default(),
+        ))
+        .expect("police synthétique lisible")
+    }
+
+    fn texte(font: usize, chaine: &str) -> Op {
+        Op::Text {
+            font,
+            size_pt: 12.0,
+            x: 20.0,
+            y: 200.0,
+            paint: Paint::Quadri(ColorValue::Cmyk(Cmyk {
+                c: 0.0,
+                m: 0.0,
+                y: 0.0,
+                k: 1.0,
+            })),
+            text: chaine.to_string(),
+        }
+    }
+
+    #[test]
+    fn texte_ecrit_les_objets_de_police() {
+        let mut doc = Document::new();
+        doc.marks = false;
+        let rang = doc.add_font(police());
+        doc.add_page(page(vec![texte(rang, "Ab")]));
+        let pdf = doc.write().expect("document valide");
+        let flux = String::from_utf8_lossy(&pdf);
+
+        // Les cinq objets attendus.
+        assert!(flux.contains("/Subtype /Type0"), "dictionnaire /Type0");
+        assert!(flux.contains("/Encoding /Identity-H"));
+        assert!(flux.contains("/Subtype /CIDFontType2"));
+        assert!(flux.contains("/Type /FontDescriptor"));
+        assert!(flux.contains("/FontFile2 "));
+        assert!(flux.contains("/Length1 "));
+
+        // Les ressources de la page citent la police sous son nom de ressource.
+        assert!(flux.contains("/Font << /F0 "), "ressource de page : {flux}");
+
+        // Le flux de contenu écrit bien des identifiants de glyphe : A = 2, b = 5.
+        assert!(flux.contains("<00020005> Tj"), "Tj en identifiants");
+        assert!(flux.contains("/F0 12 Tf"));
+        // Les millimètres de l'appelant sont convertis en points.
+        assert!(
+            flux.contains(&format!(
+                "1 0 0 1 {} {} Tm",
+                object::number(mm_to_pt(20.0)),
+                object::number(mm_to_pt(200.0))
+            )),
+            "position en points attendue"
+        );
+    }
+
+    #[test]
+    fn table_to_unicode_rend_le_texte_extractible() {
+        let mut doc = Document::new();
+        doc.marks = false;
+        let rang = doc.add_font(police());
+        doc.add_page(page(vec![texte(rang, "Aé")]));
+        let pdf = doc.write().expect("document valide");
+        let flux = String::from_utf8_lossy(&pdf);
+
+        assert!(flux.contains("/ToUnicode "));
+        assert!(flux.contains("begincmap"));
+        // A et é doivent apparaître comme caractères Unicode, pas comme glyphes.
+        assert!(flux.contains("<0041>"), "A = U+0041 attendu");
+        assert!(flux.contains("<00E9>"), "é = U+00E9 attendu");
+    }
+
+    #[test]
+    fn largeurs_du_document_suivent_les_glyphes_utilises() {
+        // Une seule police, deux pages, des caractères différents : le tableau
+        // /W doit couvrir l'union des deux pages.
+        let mut doc = Document::new();
+        doc.marks = false;
+        let rang = doc.add_font(police());
+        doc.add_page(page(vec![texte(rang, "A")]));
+        doc.add_page(page(vec![texte(rang, "B")]));
+        let pdf = doc.write().expect("document valide");
+        let flux = String::from_utf8_lossy(&pdf);
+
+        // A = 600, B = 620 unités ; les deux doivent figurer.
+        assert!(flux.contains("/W ["), "tableau des largeurs");
+        assert!(flux.contains("2 [600]"), "largeur de A");
+        assert!(flux.contains("3 [620]"), "largeur de B");
+        // Une seule police : un seul /FontFile2 pour tout le document.
+        assert_eq!(flux.matches("/FontFile2 ").count(), 1);
+    }
+
+    #[test]
+    fn police_inconnue_refusee() {
+        let mut doc = Document::new();
+        doc.add_page(page(vec![texte(7, "A")]));
+        assert_eq!(
+            doc.write().unwrap_err(),
+            DocError::UnknownFont {
+                index: 7,
+                available: 0
+            }
+        );
+    }
+
+    #[test]
+    fn texte_avec_caractere_de_controle_refuse() {
+        let mut doc = Document::new();
+        let rang = doc.add_font(police());
+        doc.add_page(page(vec![texte(rang, "AB\u{7}C")]));
+        assert_eq!(
+            doc.write().unwrap_err(),
+            DocError::TextControl {
+                caractere: "U+0007".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn caracteres_absents_comptes_et_signales() {
+        // « Ω » n'est pas dans la police synthétique : le glyphe 0 est écrit,
+        // mais le compteur doit le dire — un document incomplet ne doit pas
+        // passer pour complet.
+        let mut doc = Document::new();
+        doc.marks = false;
+        let rang = doc.add_font(police());
+        doc.add_page(page(vec![texte(rang, "AΩB")]));
+        let pdf = doc.write().expect("document valide");
+        let flux = String::from_utf8_lossy(&pdf);
+
+        assert!(
+            flux.contains("<000200000003> Tj"),
+            "glyphe 0 pour le manquant"
+        );
+        // Le glyphe 0 ne doit pas prétendre porter Ω : l'extraction mentirait.
+        assert!(!flux.contains("<03A9>"), "Ω ne doit pas être déclaré");
+    }
+
+    #[test]
+    fn police_sans_texte_n_est_pas_ecrite() {
+        // Déclarée mais inutilisée : aucun objet, sinon le fichier porterait une
+        // police entière pour rien.
+        let mut doc = Document::new();
+        doc.marks = false;
+        doc.add_font(police());
+        doc.add_page(page(vec![]));
+        let pdf = doc.write().expect("document valide");
+        let flux = String::from_utf8_lossy(&pdf);
+        assert_eq!(flux.matches("/FontFile2 ").count(), 0);
+        assert!(!flux.contains("/Font <<"));
+    }
+
+    #[test]
+    fn texte_multiligne_descend_d_une_interligne_et_demie() {
+        let mut doc = Document::new();
+        doc.marks = false;
+        let rang = doc.add_font(police());
+        doc.add_page(page(vec![texte(rang, "A\nB")]));
+        let pdf = doc.write().expect("document valide");
+        let flux = String::from_utf8_lossy(&pdf);
+        // Corps 12 pt → interligne 14,4 pt ; y initial 200 mm.
+        let attendu = object::number(mm_to_pt(200.0) - 12.0 * 1.2);
+        assert!(
+            flux.contains(&format!(
+                "1 0 0 1 {} {attendu} Tm",
+                object::number(mm_to_pt(20.0))
+            )),
+            "deuxième ligne descendue de 1,2 fois le corps"
+        );
     }
 }

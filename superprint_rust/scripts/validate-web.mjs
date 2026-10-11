@@ -585,6 +585,141 @@ titre('document : plusieurs pages, vectoriel, tons directs, image, métadonnées
   })());
 }
 
+// ── 8b. Texte et polices ────────────────────────────────────────────────────
+titre('texte : police embarquée, composition, garde-fous');
+{
+  // Une police réelle du dépôt (`superprint/app/CSS/fonts/`), lue **sans être
+  // modifiée** : c'est une police TrueType ordinaire, comme celle qu'un
+  // utilisateur passera.
+  const cheminPolice = join(root, '..', 'superprint', 'app', 'CSS', 'fonts', 'IBMPlexSans-400-normal.ttf');
+  check('police TrueType du dépôt trouvée', existsSync(cheminPolice), cheminPolice);
+
+  if (existsSync(cheminPolice)) {
+    const octetsPolice = new Uint8Array(await readFile(cheminPolice));
+    // Le texte attendu est relu ensuite par pdf.js (étape `validate-text.mjs`
+    // pour la frontière C, et par `pdf-lib` ici sur le document produit).
+    const lignes = ['À l’imprimeur', 'café — déjà vu, çà et là', 'PANTONE 300 C'];
+
+    const doc = api.createDocument();
+    doc.info('title', 'SuperPrint — page de texte');
+    doc.addPage({ trimWidthMm: 170, trimHeightMm: 240, bleedMm: 3, markMm: 10, quadri: 'cmyk' });
+    const encre = doc.addInk({ space: 'cmyk', name: 'PANTONE 300 C', c: 0.9, m: 0.5, y: 0, k: 0 });
+    const rang = doc.addFont(octetsPolice);
+    check('addFont() rend le rang de la police', rang === 0, `rang ${rang}`);
+
+    doc.text({
+      font: rang,
+      size: 12,
+      x: 20,
+      y: 200,
+      paint: { spot: { index: encre, tint: 1 } },
+      text: lignes.join('\n'),
+    });
+
+    const pdf = doc.write();
+    const texte = Buffer.from(pdf).toString('latin1');
+    check('document avec texte écrit', pdf.length > 20000, `${nf(pdf.length)} octets`);
+    check(
+      'police embarquée en entier (/FontFile2 + /Length1)',
+      texte.includes('/FontFile2 ') && /\/Length1 \d+/.test(texte),
+    );
+    check('police composite Identity-H', texte.includes('/Encoding /Identity-H') && texte.includes('/Subtype /Type0'));
+    check('police descendante CIDFontType2', texte.includes('/Subtype /CIDFontType2'));
+    check(
+      'descripteur complet (drapeaux, cadre, montée, descente)',
+      /\/Flags \d+/.test(texte) &&
+        /\/FontBBox \[/.test(texte) &&
+        /\/Ascent -?\d+/.test(texte) &&
+        /\/Descent -?\d+/.test(texte),
+    );
+    check(
+      'largeurs /W déclarées pour les glyphes employés',
+      /\/W \[[^\]]+\]/.test(texte),
+      (texte.match(/\/W \[[^\]]{0,40}/) ?? ['(aucune)'])[0],
+    );
+    check('table /ToUnicode écrite', texte.includes('/ToUnicode ') && texte.includes('begincmap'));
+    check('ressources de page citent la police', texte.includes('/Font << /F0 '));
+    check('le texte ne part pas en caractères lisibles', !texte.includes('(café'));
+    check(
+      'aucun caractère substitué : le document s’imprime en entier',
+      doc.substitutions() === 0,
+      `compteur : ${doc.substitutions()}`,
+    );
+
+    await writeFile(join(root, 'web-page-text.pdf'), pdf);
+
+    // ── Garde-fous ──────────────────────────────────────────────────────────
+    check(
+      'une ligne de texte est composée, une tabulation est refusée',
+      (() => {
+        try {
+          doc.text({ font: rang, size: 10, x: 10, y: 10, text: 'a\tb', paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+          return false;
+        } catch (e) {
+          return e.name === 'CoreError' && /tabulation/.test(e.message);
+        }
+      })(),
+      'message explicite plutôt qu’un « entrée illisible »',
+    );
+    check(
+      'un caractère de contrôle est refusé',
+      (() => {
+        try {
+          doc.text({ font: rang, size: 10, x: 10, y: 10, text: 'a\u0007b', paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+          return false;
+        } catch (e) {
+          return e.name === 'CoreError' && /U\+0007/.test(e.message);
+        }
+      })(),
+    );
+    check(
+      'un corps nul ou absent est refusé',
+      (() => {
+        try {
+          doc.text({ font: rang, size: 0, x: 10, y: 10, text: 'a', paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+          return false;
+        } catch (e) {
+          return e.name === 'CoreError' && /corps positif/.test(e.message);
+        }
+      })(),
+    );
+    check(
+      'un rang de police absent est refusé',
+      (() => {
+        try {
+          doc.text({ font: 9, size: 10, x: 10, y: 10, text: 'a', paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+          doc.write();
+          return false;
+        } catch (e) {
+          return e.name === 'CoreError';
+        }
+      })(),
+    );
+    check(
+      'une police CFF (OTTO) est refusée avec un message qui dit pourquoi',
+      (() => {
+        try {
+          doc.addFont(new Uint8Array([0x4f, 0x54, 0x54, 0x4f, 0, 0, 0, 0]));
+          return false;
+        } catch (e) {
+          return e.name === 'CoreError' && /CFF/.test(e.message);
+        }
+      })(),
+    );
+    check(
+      'un fichier vide est refusé',
+      (() => {
+        try {
+          doc.addFont(new Uint8Array(0));
+          return false;
+        } catch (e) {
+          return e.name === 'CoreError' && /octets d’un fichier de police/.test(e.message);
+        }
+      })(),
+    );
+  }
+}
+
 // ── 9. Destination de sortie ────────────────────────────────────────────────
 titre('destination de sortie (OutputIntent + profil ICC fourni)');
 {

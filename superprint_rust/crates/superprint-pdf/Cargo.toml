@@ -10,4 +10,5 @@ repository.workspace = true
 
 [dependencies]
 superprint-core = { path = "../superprint-core" }
+superprint-font = { path = "../superprint-font" }
 superprint-image = { path = "../superprint-image" }

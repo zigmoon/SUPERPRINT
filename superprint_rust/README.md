@@ -19,7 +19,7 @@ parties les plus lourdes et les plus fragiles sont aujourd'hui en JavaScript :
 | Profil ICC | `lcms.wasm` (C compilé) | liaison sûre, ou réimplémentation |
 | Images : niveaux de gris, CMJN, réduction | canvas + JS | traitement pixel par pixel ✅ n° 4 |
 | Césure multilingue | `Hypher` (JS) | algorithme rapide et partagé |
-| Analyse de police / métriques | `opentype.js` (JS) | parseur `TTF`/`CFF` performant |
+| Analyse de police / métriques | `opentype.js` (JS) | parseur `TTF` performant ✅ n° 6 |
 | Géométrie d'impression (fond perdu, traits, imposition) | JS | noyau déterministe et testé ✅ n° 1 |
 
 Contexte : un **rapport de test interne** (non publié, conservé hors du dépôt)
@@ -29,37 +29,55 @@ documente les défauts **mesurés** sur la chaîne d'export PDF (fichiers de
 
 ## État actuel
 
-**Quatre crates, testés et validés — dont un module WebAssembly réellement
+**Cinq crates, testés et validés — dont un module WebAssembly réellement
 chargeable par un navigateur.**
 
 - **`superprint-core`** — primitives pures : `units` (mm/pt/px/cm/in),
   `color` (RVB/CMJN/luma), `geometry` (fond perdu, traits de coupe).
+- **`superprint-font`** — **module n° 6** : **analyse de police**. Lit un
+  fichier TrueType (`sfnt`) depuis ses tables, **sans jamais dépasser les
+  bornes** : répertoire de tables, `.head` (unités, cadre, italique), `.hhea` et
+  `.hmtx` (avances), `.maxp` (nombre de glyphes), `.name` (famille, style, nom
+  PostScript) et surtout **`.cmap`** — formats 0, 4, 6 et 12, avec la règle exacte
+  d'`idRangeOffset`. C'est la pièce sans laquelle un PDF ne peut pas écrire de
+  texte : en `Identity-H`, un flux PDF ne porte pas des caractères mais des
+  **identifiants de glyphe**, et seule la `cmap` sait que `é` vaut 231 dans une
+  police donnée. Les formats à contours **CFF** (`OTTO`), les collections
+  (`.ttc`) et les polices compressées (`woff`) sont **refusés explicitement**,
+  avec un message qui dit quoi faire.
 - **`superprint-pdf`** — **module n° 3** : **tons directs & exporteur PDF**.
   Chaînes `/Separation` nommées, fonction de teinte, pile de couleurs
   (quadri CMJN/RVB + encres), boîtes de page (`MediaBox`/`TrimBox`/`BleedBox`)
   et **exporteur de document** (`document.rs`) : plusieurs pages de formats
   différents, formes vectorielles (rectangle, cercle, polygone, segment) en
   remplissage ou contour, tons directs **avec teintes**, images grises ou RVB
-  placées et mises à l'échelle, métadonnées en PDFDocEncoding, traits de coupe
-  et `OutputIntent` avec profil ICC fourni.
+  placées et mises à l'échelle, **texte dans une police embarquée**, métadonnées
+  en PDFDocEncoding, traits de coupe et `OutputIntent` avec profil ICC fourni.
+  Le texte part en polices **composites** (`/Type0` + `/Identity-H` +
+  `/CIDFontType2` + `/FontFile2`), avec les largeurs `/W` des seuls glyphes
+  réellement employés et une table **`/ToUnicode`** — c'est elle qui rend le
+  texte **sélectionnable, copiable et cherchable**, et elle est vérifiée à
+  l'extraction par un lecteur indépendant.
 - **`superprint-image`** — **module n° 4** : **traitement d'image**. Tampons
   typés RVB/gris, **réduction** bilinéaire ou plus proche voisin, ciblage DPI,
   filtre PDF **RunLength**. C'est la réponse au « PDF de 131 Mo » : les pixels
   arrivent **réduits** et repartent **compressés**.
 - **`superprint-wasm`** — **la frontière C**, et le seul crate en `cdylib` :
-  c'est lui qui produit le `.wasm` du navigateur. 19 fonctions exposées
-  (unités, couleurs sur octets, luminance, RunLength, réduction, écriture PDF),
+  c'est lui qui produit le `.wasm` du navigateur. **32 fonctions** exposées
+  (unités, couleurs sur octets, luminance, RunLength, réduction, page de
+  démonstration, document complet **et texte**),
   **aucun import** — donc `WebAssembly.instantiate(bytes, {})` suffit, sans
   WASI ni fonction hôte. Pas de `wasm-bindgen` : la frontière est écrite à la
   main pour tenir la règle « zéro dépendance ».
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **99 tests unitaires** (`superprint-core` 12,
-> `superprint-image` 16, `superprint-pdf` 58, `superprint-wasm` 13) — tous verts.
+> wasm32-unknown-unknown`, et **161 tests unitaires** (`superprint-core` 12,
+> `superprint-font` 31, `superprint-image` 16, `superprint-pdf` 82,
+> `superprint-wasm` 20) — tous verts.
 >
-> Le module livrable est construit dans **`dist/superprint_core.wasm`** (≈ 164 Ko),
-> chargé **sans le moindre import**, et validé sur quatre points :
+> Le module livrable est construit dans **`dist/superprint_core.wasm`** (≈ 262 Ko),
+> chargé **sans le moindre import**, et validé sur cinq points :
 >
 > - **parité croisée** — sur 250 000 pixels, RVB→CMJN, CMJN→RVB et la luminance
 >   sont **identiques au bit près** à l'implémentation écrite à la main en WAT
@@ -73,7 +91,12 @@ chargeable par un navigateur.**
 >   de pixels bruts** (×63) ;
 > - **document complet** — un PDF de 2 pages (vectoriel, 2 tons directs teintés,
 >   image placée, métadonnées) écrit depuis le **navigateur**, puis relu par
->   pdf-lib : 2 pages, 2 `/Separation`, titre accentué intact.
+>   pdf-lib : 2 pages, 2 `/Separation`, titre accentué intact ;
+> - **texte** — une vraie police TrueType du dépôt est embarquée, du texte est
+>   composé, et **`pdf.js` (Mozilla) relit les caractères en clair**, accents,
+>   apostrophe typographique et tiret cadratin compris. C'est cette relecture qui
+>   prouve que `/ToUnicode` est juste : sans elle, le PDF s'afficherait sans
+>   qu'aucun lecteur ne puisse extraire un mot.
 >
 > Un `pwsh -File scripts/check.ps1` enchaîne tout, validation comprise.
 
@@ -134,7 +157,7 @@ superprint_rust/
 │                             comme superprint_asm/dist/, via build-wasm.ps1)
 ├─ web/                       ← LE BRANCHEMENT
 │  ├─ superprint-core.js      la colle : chargement, fonctions amicales, repli
-│  ├─ demo.html / demo.js     banc d'essai navigateur (19 mesures)
+│  ├─ demo.html / demo.js     banc d'essai navigateur (27 mesures)
 │  └─ BRANCHEMENT.md          comment l'utiliser, comment l'activer dans l'app
 ├─ docs/PLAN.md               feuille de route, inventaire, décisions
 ├─ scripts/
@@ -146,10 +169,12 @@ superprint_rust/
 │  ├─ run-wasi.mjs            exécute un binaire wasm32-wasip1 via Node
 │  ├─ serve-web.mjs           serveur local pour le banc d'essai navigateur
 │  ├─ validate-pdf.mjs        relit un PDF avec pdf-lib (pages, tons directs, image)
+│  ├─ validate-text.mjs       relit le TEXTE avec pdf.js (police, /ToUnicode)
 │  ├─ validate-wasm.mjs       charge le .wasm sans import et mesure la parité
 │  └─ validate-web.mjs        valide la colle, son repli, le document et ses garde-fous
 └─ crates/
    ├─ superprint-core/        primitives pures (units, color, geometry, color8)
+   ├─ superprint-font/        analyse de police TrueType (module n° 6)
    ├─ superprint-image/       traitement d'image (module n° 4)
    ├─ superprint-pdf/         tons directs & écriture PDF (module n° 3)
    └─ superprint-wasm/        frontière C → dist/superprint_core.wasm (cdylib)
@@ -161,8 +186,8 @@ superprint_rust/
 cd superprint_rust
 
 # Tout, d'un seul coup : formatage, types, lint, WebAssembly, tests, et
-# production + validation de QUATRE PDF réels par pdf-lib (deux par les exemples,
-# deux par le module wasm livrable).
+# production + validation de SIX PDF réels par pdf-lib, plus la relecture du
+# texte composé par pdf.js.
 pwsh -File scripts/check.ps1
 ```
 
@@ -191,8 +216,15 @@ node scripts/validate-web.mjs
 node scripts/validate-pdf.mjs web-page.pdf --mm=196x266 --spots=2
 node scripts/validate-pdf.mjs web-page-image.pdf --mm=196x266 --spots=2 --image=1004x1418
 node scripts/validate-pdf.mjs web-page-document.pdf --mm=196x266 --spots=2 --pages=2
+node scripts/validate-pdf.mjs web-page-text.pdf --mm=196x266 --spots=1 --pages=1
 
-# Banc d'essai NAVIGATEUR (19 mesures ; le fetch du .wasm est refusé en file://)
+# Preuve du TEXTE : une vraie police TrueType est embarquée, du texte est
+# composé, et pdf.js (Mozilla) doit RELIRE les caractères en clair — accents,
+# apostrophe typographique et tiret cadratin compris. C'est la table /ToUnicode
+# qui le permet : sans elle, le PDF s'affiche sans être extractible.
+node scripts/validate-text.mjs
+
+# Banc d'essai NAVIGATEUR (27 mesures ; le fetch du .wasm est refusé en file://)
 node scripts/serve-web.mjs
 # puis ouvrir http://127.0.0.1:8777/superprint_rust/web/demo.html
 ```
@@ -215,6 +247,30 @@ const cmyk = new Uint8Array(memory.buffer, dst, n * 4);
 sp_free(src, n * 3);
 sp_free(dst, n * 4);
 ```
+
+Pour du **texte**, trois appels suffisent : embarquer une police TrueType, la
+citer dans une opération `text`, écrire.
+
+```js
+const core = await SuperPrintCore.load({ bytes: wasm });
+const doc = core.createDocument();
+doc.addPage({ trimWidthMm: 170, trimHeightMm: 240 });
+doc.addFont(await core.loadFont('fonts/IBMPlexSans-400-normal.ttf'));
+const f = 0; // rang rendu par addFont
+doc.text({ font: f, size: 12, x: 20, y: 200, text: 'café — déjà vu',
+           paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+const pdf = doc.write();
+doc.substitutions(); // 0 = toutes les lettres s'imprimeront
+```
+
+Deux points à connaître :
+
+- **la police est embarquée en entier.** Le sous-ensemble (ne garder que les
+  glyphes utilisés) n'est **pas** fait : le fichier est plus lourd, mais aucun
+  glyphe ne peut manquer. C'est un chantier à part, noté dans `docs/PLAN.md` ;
+- **`substitutions()` compte les lettres que la police n'a pas su dessiner.**
+  Un PDF peut s'écrire et être incomplet : ce compteur le dit au lieu de laisser
+  un blanc inexpliqué sur la plaque.
 
 ## Relation au reste du dépôt
 

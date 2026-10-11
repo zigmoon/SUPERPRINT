@@ -18,11 +18,13 @@
 //! - [`colorspace`] — la pile de couleurs d'une page : quadri + encres directes ;
 //! - [`boxes`] — boîtes de page PDF (fond perdu, traits de coupe), en points ;
 //! - [`image`] — image XObject : pixels réduits et compressés, embarqués ;
+//! - [`font`] — polices composites (`Type0` / `Identity-H` / `FontFile2`) et
+//!   flux `/ToUnicode`, pour que le texte soit **réellement du texte** ;
 //! - [`doc`] — page de démonstration : les tons directs, seuls ;
-//! - [`document`] — **l'exporteur** : plusieurs pages, dessin vectoriel, tons
-//!   directs teintés, images placées, métadonnées, `OutputIntent`.
+//! - [`document`] — **l'exporteur** : plusieurs pages, texte, dessin vectoriel,
+//!   tons directs teintés, images placées, métadonnées, `OutputIntent`.
 //!
-//! Feuille de route : `superprint_rust/docs/PLAN.md` (modules n° 3 et 4).
+//! Feuille de route : `superprint_rust/docs/PLAN.md` (modules n° 3, 4 et 6).
 
 #![forbid(unsafe_code)]
 
@@ -30,6 +32,7 @@ pub mod boxes;
 pub mod colorspace;
 pub mod doc;
 pub mod document;
+pub mod font;
 pub mod image;
 pub mod object;
 pub mod spot;

@@ -14,6 +14,7 @@
 /web-page-image.pdf
 /web-page-document.pdf
 /web-page-intent.pdf
+/web-page-text.pdf
 
 # `dist/` n'est PAS listé ici parce que la règle `**/dist/` du .gitignore RACINE
 # s'en charge déjà — même traitement que `superprint_asm/dist/`, qui n'est pas

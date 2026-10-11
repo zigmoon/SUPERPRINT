@@ -1,8 +1,9 @@
 # Démonstration de bout en bout du BRANCHEMENT (la colle `web/superprint-core.js`).
 #
 # Enchaîne : construction du module, validation de la colle (chargement, parité
-# avec le repli JavaScript, garde-fous, endurance), production de deux PDF par la
-# colle, puis relecture de ces PDF par pdf-lib.
+# avec le repli JavaScript, garde-fous, endurance), production de PDF par la
+# colle, puis relecture de ces PDF par pdf-lib et — pour la page de texte — par
+# pdf.js, qui doit retrouver les caractères en clair.
 #
 # La preuve NAVIGATEUR n'est pas automatisée ici — elle demande un navigateur, et
 # le dépôt n'embarque aucune dépendance de pilotage. Elle se fait à la main, en
@@ -56,6 +57,19 @@ Step 'validation pdf-lib - DOCUMENT (2 pages, vectoriel, tons directs, image)' {
 
 Step 'validation pdf-lib - DOCUMENT avec destination de sortie' {
   node scripts/validate-pdf.mjs web-page-intent.pdf --mm=100x100 --spots=0 --pages=1
+}
+
+Step 'validation pdf-lib - DOCUMENT avec police embarquee' {
+  node scripts/validate-pdf.mjs web-page-text.pdf --mm=196x266 --spots=1 --pages=1
+}
+
+# Le texte demande une preuve qu'aucun PDF bien formé ne donne : un LECTEUR
+# INDÉPENDANT doit relire les caractères composés, accents compris. C'est
+# `pdf.js` qui répond — celui déjà embarqué pour l'application, utilisé en
+# lecture seule. Sans table `/ToUnicode`, ce contrôle échoue même si le PDF
+# s'ouvre parfaitement.
+Step 'texte : police embarquee + /ToUnicode relus par pdf.js' {
+  node scripts/validate-text.mjs
 }
 
 Pop-Location

@@ -15,9 +15,9 @@ JavaScript** en le signalant, sans jamais casser le produit.
 
 | Fichier | Rôle |
 |---|---|
-| `dist/superprint_core.wasm` | le module compilé (≈ 110 Ko, **aucun import**) |
+| `dist/superprint_core.wasm` | le module compilé (≈ 262 Ko, **aucun import**) |
 | `web/superprint-core.js` | la colle : chargement, fonctions amicales, repli |
-| `web/demo.html` + `web/demo.js` | le banc d'essai : 17 mesures affichées dans le navigateur |
+| `web/demo.html` + `web/demo.js` | le banc d'essai : 27 mesures affichées dans le navigateur |
 
 Rien d'autre n'est nécessaire. Pas de `wasm-bindgen`, pas de `wasm-pack`, pas
 d'étape de compilation côté JavaScript.
@@ -44,7 +44,7 @@ d'étape de compilation côté JavaScript.
 `rgbToCmyk` · `cmykToRgb` · `luma` · `runLengthEncode` · `runLengthDecode` ·
 `targetSizeForDpi` · `downscaleBilinearRgb` · `downscaleNearestRgb` ·
 `mmToPt` · `ptToMm` · `mmToPx` · `pxToMm` · `writeSpotPage` ·
-`writeSpotPageGray` · **`createDocument`**
+`writeSpotPageGray` · `loadFont` · **`createDocument`**
 
 ### Écrire un document complet
 
@@ -78,6 +78,16 @@ doc
 const image = doc.addImageGray(grisReduit, 1004, 1418, 'auto');
 doc.placeImage({ image, x: 25, y: 20, width: 60, height: 85 });
 
+// Texte : la police d'abord (TrueType obligatoire), puis les lignes.
+const police = doc.addFont(await noyau.loadFont('fonts/IBMPlexSans-400-normal.ttf'));
+doc.text({
+  font: police,
+  size: 12,                       // corps, en points
+  x: 20, y: 200,                  // mm du format fini, y = ligne de base
+  paint: { spot: { index: rouge, tint: 1 } },
+  text: 'À l’imprimeur\ncafé — déjà vu',   // `\n` = ligne suivante (interligne 1,2 × corps)
+});
+
 // Page 2 : un autre format, une autre quadri.
 doc.addPage({ trimWidthMm: 100, trimHeightMm: 100, bleedMm: 0, markMm: 0, quadri: 'rgb' });
 doc.fillRect({ x: 10, y: 10, width: 80, height: 80, paint: { rgb: { r: 230, g: 60, b: 40 } } });
@@ -87,19 +97,42 @@ doc.fillRect({ x: 10, y: 10, width: 80, height: 80, paint: { rgb: { r: 230, g: 6
 
 doc.marks(false);   // pour couper les traits de coupe (tracés par défaut)
 const pdf = doc.write();   // Uint8Array prêt à télécharger
+
+// Un PDF peut s'écrire et rester incomplet : la police peut ne pas dessiner
+// une lettre. Ce compteur le dit — 0 veut dire « tout s'imprimera ».
+if (doc.substitutions() > 0) {
+  console.warn(doc.substitutions() + ' caractère(s) sans dessin dans la police choisie');
+}
 ```
+
+### Le texte en trois points
+
+1. **`addFont(octets)` accepte un fichier TrueType** (`.ttf`). Les contours
+   **CFF** (`.otf`, `.otc`), les collections (`.ttc`) et les formats compressés
+   (`.woff`, `.woff2`) sont **refusés** — avec un message qui dit pourquoi, plutôt
+   qu'un PDF dont le texte ne s'imprimerait pas. `loadFont(url)` télécharge le
+   fichier si besoin.
+2. **La police est embarquée en entier.** Le sous-ensemble n'est pas fait : le
+   fichier est plus lourd (comptez la taille de la police), mais **aucun glyphe
+   ne peut manquer à l'impression**.
+3. **Le texte est extractible.** Le noyau écrit une table `/ToUnicode`, donc le
+   texte reste sélectionnable, copiable et cherchable. C'est vérifié à
+   l'extraction par `pdf.js` dans `scripts/validate-text.mjs` : sans cette table,
+   le PDF s'afficherait sans qu'aucun lecteur ne puisse relire un mot.
 
 ### Ce que l'exporteur sait faire, et ce qu'il ne sait pas
 
 | Sait faire | Ne sait pas (encore) |
 |---|---|
-| Plusieurs pages, formats différents | **Texte et polices** — le manque principal |
-| `MediaBox` / `TrimBox` / `BleedBox` | `/FlateDecode`, `/DCTDecode` (RunLength seul) |
-| Traits de coupe | Chaînes UTF-16BE (CJK) |
-| Tons directs `/Separation` **avec teintes** | Écriture XMP, donc pas de PDF/X revendiqué |
-| Quadri CMJN ou RVB, page par page | Décodage JPEG/PNG à l'entrée |
-| Rectangles, cercles, polygones, segments | |
-| Images grises ou RVB placées et mises à l'échelle | |
+| Plusieurs pages, formats différents | **Sous-ensemble de police** (police entière embarquée) |
+| `MediaBox` / `TrimBox` / `BleedBox` | Crénage, écritures complexes, bidirectionnel |
+| Traits de coupe | `/FlateDecode`, `/DCTDecode` (RunLength seul) |
+| Tons directs `/Separation` **avec teintes** | Chaînes UTF-16BE en métadonnée (hors PDFDocEncoding → `?`) |
+| Quadri CMJN ou RVB, page par page | Écriture XMP, donc pas de PDF/X revendiqué |
+| Rectangles, cercles, polygones, segments | Décodage JPEG/PNG à l'entrée |
+| Images grises ou RVB placées et mises à l'échelle | Césure / habillage du texte |
+| **Texte dans une police TrueType embarquée** | |
+| **Texte extractible** (accents, typographie française) | |
 | Métadonnées en PDFDocEncoding (accents et typographie) | |
 | `OutputIntent` avec un profil ICC fourni | |
 
@@ -150,11 +183,13 @@ synthétiques pour la réduction. Deux implémentations écrites indépendamment
 mêmes sorties au bit près — c'est mesuré, pas supposé.
 
 **Ce qu'il ne couvre pas : l'écriture PDF.** On ne réécrit pas un assembleur PDF
-en JavaScript par-dessus le marché. `writeSpotPage` et `writeSpotPageGray`
-**lèvent une erreur explicite** (`CoreError`, code `UNAVAILABLE`) au lieu de
-rendre un résultat approximatif. Dans ce cas, c'est l'exporteur JavaScript
-existant de SuperPrint qui prend le relais — c'est exactement ce que la règle
-« aucune bascule à l'aveugle » demande.
+en JavaScript par-dessus le marché. `writeSpotPage`, `writeSpotPageGray` et
+`createDocument` — donc tout le texte et les polices — **lèvent une erreur
+explicite** (`CoreError`, code `UNAVAILABLE`) au lieu de rendre un résultat
+approximatif. Dans ce cas, c'est l'exporteur JavaScript existant de SuperPrint qui
+prend le relais — c'est exactement ce que la règle « aucune bascule à l'aveugle »
+demande. `loadFont` fait exception : c'est un simple téléchargement, sans noyau,
+et il fonctionne donc aussi en repli.
 
 ```js
 if (noyau.backend === 'js') {
@@ -186,6 +221,10 @@ C'est un choix explicite — le dossier est en production.
 # module + colle + repli + PDF relus par pdf-lib
 pwsh -File scripts/check.ps1
 
+# le TEXTE : police embarquée, composition, puis relecture des caractères par
+# pdf.js — c'est la table /ToUnicode qui est mise à l'épreuve
+node scripts/validate-text.mjs
+
 # banc d'essai navigateur (le fetch du .wasm est refusé en file://)
 node scripts/serve-web.mjs
 # puis ouvrir http://127.0.0.1:8777/superprint_rust/web/demo.html
@@ -199,8 +238,8 @@ des faits plutôt que l'apparence de la page.
 
 | Mesure | Résultat |
 |---|---|
-| moteur | WebAssembly, 163,7 Ko |
-| essais | 19 / 19 |
+| moteur | WebAssembly, 261,8 Ko |
+| essais | 27 / 27 |
 | RVB → CMJN, 65 536 pixels | identique au repli, octet pour octet |
 | luminance, 65 536 pixels | identique au repli, octet pour octet |
 | aplat 65 536 octets (RunLength) | 1 024 octets, ×64 |
@@ -208,5 +247,6 @@ des faits plutôt que l'apparence de la page.
 | page PDF, 2 tons directs | 1 058 octets, 2 `/Separation`, relue par pdf-lib |
 | page PDF avec image 1004 × 1418 | 23 811 octets au lieu de 1 423 672 pixels bruts |
 | **document 2 pages** (vectoriel, 2 tons directs, image) | 6 495 octets, relu par pdf-lib : 2 pages, 2 `/Separation`, 196 × 266 mm |
+| **page de texte** (police IBM Plex Sans embarquée, 3 lignes) | 95 821 octets ; **pdf.js relit « À l’imprimeur café — déjà vu, çà et là PANTONE 300 C »** |
 | titre des métadonnées du PDF produit **par le navigateur** | « SuperPrint — banc d'essai — café » — accents, tiret cadratin et apostrophe courbe conservés |
 | repli forcé (module absent) | couleurs identiques, PDF refusé avec un message clair |
