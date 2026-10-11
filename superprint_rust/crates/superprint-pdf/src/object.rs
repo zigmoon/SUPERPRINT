@@ -79,7 +79,102 @@ pub fn dict<K: AsRef<str>>(entries: &[(K, String)]) -> String {
     out.push_str(" >>");
     out
 }
+/// Table de correspondance des caractères **typographiques** vers
+/// PDFDocEncoding.
+///
+/// PDFDocEncoding n'est pas Latin-1 sur la plage 0x80–0x9F : il y loge les
+/// caractères de composition (tirets, guillemets courbes, puces, symbole
+/// euro…). Les ignorer ferait perdre le tiret cadratin et l'apostrophe courbe
+/// d'un titre français — exactement ce qui arrive quand on écrit un « ? » à la
+/// place. Une table explicite est la seule façon d'être juste.
+const PDFDOC_SPECIAUX: &[(char, u8)] = &[
+    ('\u{20AC}', 0xA0), // € euro
+    ('\u{201A}', 0x91), // ‚ quotesinglbase
+    ('\u{0192}', 0x86), // ƒ florin
+    ('\u{201E}', 0x8C), // „ quotedblbase
+    ('\u{2026}', 0x83), // … ellipsis
+    ('\u{2020}', 0x81), // † dagger
+    ('\u{2021}', 0x82), // ‡ daggerdbl
+    ('\u{02C6}', 0x1A), // ˆ circumflex
+    ('\u{2030}', 0x8B), // ‰ perthousand
+    ('\u{0160}', 0x97), // Š Scaron
+    ('\u{2039}', 0x88), // ‹ guilsinglleft
+    ('\u{0152}', 0x96), // Œ OE
+    ('\u{017D}', 0x99), // Ž Zcaron
+    ('\u{2018}', 0x8F), // ‘ quoteleft
+    ('\u{2019}', 0x90), // ’ quoteright
+    ('\u{201C}', 0x8D), // “ quotedblleft
+    ('\u{201D}', 0x8E), // ” quotedblright
+    ('\u{2022}', 0x80), // • bullet
+    ('\u{2013}', 0x85), // – endash
+    ('\u{2014}', 0x84), // — emdash
+    ('\u{02DC}', 0x1F), // ˜ tilde
+    ('\u{2122}', 0x92), // ™ trademark
+    ('\u{0161}', 0x9D), // š scaron
+    ('\u{203A}', 0x89), // › guilsinglright
+    ('\u{0153}', 0x9C), // œ oe
+    ('\u{017E}', 0x9E), // ž zcaron
+    ('\u{0178}', 0x98), // Ÿ Ydieresis
+];
 
+/// Écrit une **chaîne littérale** PDF : `(…)`.
+///
+/// ## Encodage
+///
+/// Une chaîne PDF sans déclaration d'encodage est lue en **PDFDocEncoding**. On
+/// écrit donc chaque caractère comme **un octet**, jamais comme sa séquence
+/// UTF-8 : `é` devient `\351`, ce qui s'affiche correctement, alors qu'un `é`
+/// UTF-8 (deux octets) s'afficherait « Ã© ».
+///
+/// PDFDocEncoding n'est pas Latin-1 au-dessus de 0x7F : la plage 0x80–0x9F porte
+/// les caractères typographiques. [`PDFDOC_SPECIAUX`] les rétablit, pour qu'un
+/// titre comme « L’art — et la manière » garde son apostrophe courbe et son
+/// tiret cadratin.
+///
+/// Un caractère vraiment hors de cette table (CJK, emoji) est remplacé par un
+/// `?`. L'alternative correcte est une chaîne **UTF-16BE** précédée de la marque
+/// d'ordre des octets (`\376\377`), que ce module n'écrit pas encore — c'est
+/// noté dans `docs/PLAN.md`.
+///
+/// Les trois caractères qui traversent ou ferment une chaîne sont échappés.
+#[must_use]
+pub fn literal_string(text: &str) -> String {
+    let mut out = String::with_capacity(text.len() + 2);
+    out.push('(');
+    for caractere in text.chars() {
+        let Some(octet) = octet_pdfdoc(caractere) else {
+            out.push('?');
+            continue;
+        };
+        match octet {
+            b'\\' => out.push_str("\\\\"),
+            b'(' => out.push_str("\\("),
+            b')' => out.push_str("\\)"),
+            b'\n' => out.push_str("\\n"),
+            b'\r' => out.push_str("\\r"),
+            b'\t' => out.push_str("\\t"),
+            0x20..=0x7e => out.push(octet as char),
+            _ => out.push_str(&format!("\\{octet:03o}")),
+        }
+    }
+    out.push(')');
+    out
+}
+
+/// Rend l'octet PDFDocEncoding d'un caractère, ou `None` s'il n'existe pas.
+#[must_use]
+fn octet_pdfdoc(caractere: char) -> Option<u8> {
+    let code = caractere as u32;
+    if code <= 0xFF {
+        // Latin-1 et PDFDocEncoding coïncident sur 0xA0–0xFF ; en dessous, les
+        // caractères de contrôle ne sont pas des caractères d'affichage.
+        return Some(code as u8);
+    }
+    PDFDOC_SPECIAUX
+        .iter()
+        .find(|(c, _)| *c == caractere)
+        .map(|(_, octet)| *octet)
+}
 #[cfg(test)]
 mod tests {
     use super::*;

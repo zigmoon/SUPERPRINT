@@ -11,6 +11,7 @@
 // Options :
 //   --mm=196x266     dimensions attendues de la MediaBox, en millimètres
 //   --spots=2        nombre d'encres directes (/Separation) attendu
+//   --pages=2        nombre de pages attendu (défaut : 1)
 //   --image=WxH      une image XObject de cette définition est attendue
 //   --lib=<chemin>   chemin de pdf-lib.min.js
 //
@@ -40,6 +41,7 @@ const option = (name) => {
 
 const expectedMm = (option('mm') ?? '196x266').split('x').map(Number);
 const expectedSpots = Number(option('spots') ?? 2);
+const expectedPages = Number(option('pages') ?? 1);
 const expectedImage = option('image')?.split('x').map(Number);
 const libPath = resolve(option('lib') ?? '../superprint/app/JS/pdf-lib.min.js');
 
@@ -72,6 +74,18 @@ try {
   document = await PDFLib.PDFDocument.load(bytes, { updateMetadata: false });
   const pages = document.getPages();
   check('pdf-lib ouvre le document', true, `${pages.length} page(s)`);
+  check(
+    `${expectedPages} page(s) attendue(s)`,
+    pages.length === expectedPages,
+    `${pages.length} trouvée(s)`,
+  );
+
+  // Le titre, s'il est présent, doit être lisible — c'est ce qui prouve que
+  // l'encodage des chaînes est le bon.
+  const titre = document.getTitle();
+  if (titre) {
+    check('titre des métadonnées lisible', !titre.includes('Ã'), `« ${titre} »`);
+  }
 
   if (pages[0]) {
     const { width, height } = pages[0].getSize();

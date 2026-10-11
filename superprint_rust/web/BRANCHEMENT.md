@@ -44,7 +44,64 @@ d'étape de compilation côté JavaScript.
 `rgbToCmyk` · `cmykToRgb` · `luma` · `runLengthEncode` · `runLengthDecode` ·
 `targetSizeForDpi` · `downscaleBilinearRgb` · `downscaleNearestRgb` ·
 `mmToPt` · `ptToMm` · `mmToPx` · `pxToMm` · `writeSpotPage` ·
-`writeSpotPageGray`
+`writeSpotPageGray` · **`createDocument`**
+
+### Écrire un document complet
+
+`createDocument()` rend un objet à construire par étapes. Le modèle de
+coordonnées est celui d'un logiciel de PAO : les **millimètres du format fini**,
+`(0, 0)` en bas à gauche, ordonnée croissante. Le fond perdu et les traits de
+coupe sont hors de ce repère.
+
+```js
+const doc = noyau.createDocument();
+
+// Métadonnées (facultatif).
+doc.info('title', 'Affiche — concert').info('author', 'Zigmoon');
+
+// Page 1 : CMJN, 170 × 240 mm, 3 mm de fond perdu, 10 mm réservés aux traits.
+doc.addPage({ trimWidthMm: 170, trimHeightMm: 240, bleedMm: 3, markMm: 10, quadri: 'cmyk' });
+
+// Encres directes : leur rang sert ensuite à les peindre.
+const rouge = doc.addInk({ space: 'cmyk', name: 'PANTONE WARM RED C', c: 0, m: 0.9, y: 0.8, k: 0 });
+const bleu  = doc.addInk({ space: 'rgb',  name: 'PANTONE 300 C',      r: 0, g: 94, b: 184 });
+
+// Formes : remplissage et contour, épaisseur en millimètres.
+doc
+  .fillRect({ x: 15, y: 150, width: 80, height: 60, paint: { spot: { index: rouge, tint: 0.5 } } })
+  .strokeRect({ x: 15, y: 150, width: 80, height: 60, widthMm: 0.5, paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } })
+  .fillCircle({ cx: 120, cy: 180, radius: 25, paint: { spot: { index: bleu, tint: 1 } } })
+  .fillPolygon({ points: [[20, 40], [80, 100], [140, 40]], paint: { cmyk: { c: 1, m: 0, y: 0.3, k: 0 } } })
+  .line({ x1: 0, y1: 130, x2: 170, y2: 130, widthMm: 0.35, paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+
+// Image : les pixels entrent, un descripteur sort. La réduire d'abord.
+const image = doc.addImageGray(grisReduit, 1004, 1418, 'auto');
+doc.placeImage({ image, x: 25, y: 20, width: 60, height: 85 });
+
+// Page 2 : un autre format, une autre quadri.
+doc.addPage({ trimWidthMm: 100, trimHeightMm: 100, bleedMm: 0, markMm: 0, quadri: 'rgb' });
+doc.fillRect({ x: 10, y: 10, width: 80, height: 80, paint: { rgb: { r: 230, g: 60, b: 40 } } });
+
+// Destination de sortie : facultatif, mais les octets ICC sont exigés.
+// doc.outputIntent({ components: 4, identifier: 'FOGRA39', info: 'Coated FOGRA39', icc: octetsIcc });
+
+doc.marks(false);   // pour couper les traits de coupe (tracés par défaut)
+const pdf = doc.write();   // Uint8Array prêt à télécharger
+```
+
+### Ce que l'exporteur sait faire, et ce qu'il ne sait pas
+
+| Sait faire | Ne sait pas (encore) |
+|---|---|
+| Plusieurs pages, formats différents | **Texte et polices** — le manque principal |
+| `MediaBox` / `TrimBox` / `BleedBox` | `/FlateDecode`, `/DCTDecode` (RunLength seul) |
+| Traits de coupe | Chaînes UTF-16BE (CJK) |
+| Tons directs `/Separation` **avec teintes** | Écriture XMP, donc pas de PDF/X revendiqué |
+| Quadri CMJN ou RVB, page par page | Décodage JPEG/PNG à l'entrée |
+| Rectangles, cercles, polygones, segments | |
+| Images grises ou RVB placées et mises à l'échelle | |
+| Métadonnées en PDFDocEncoding (accents et typographie) | |
+| `OutputIntent` avec un profil ICC fourni | |
 
 ### Écrire un PDF
 
@@ -142,12 +199,14 @@ des faits plutôt que l'apparence de la page.
 
 | Mesure | Résultat |
 |---|---|
-| moteur | WebAssembly, 109,9 Ko |
-| essais | 17 / 17 |
+| moteur | WebAssembly, 163,7 Ko |
+| essais | 19 / 19 |
 | RVB → CMJN, 65 536 pixels | identique au repli, octet pour octet |
 | luminance, 65 536 pixels | identique au repli, octet pour octet |
 | aplat 65 536 octets (RunLength) | 1 024 octets, ×64 |
 | 1 200 × 1 200 → 300 × 300 | identique au repli |
 | page PDF, 2 tons directs | 1 058 octets, 2 `/Separation`, relue par pdf-lib |
 | page PDF avec image 1004 × 1418 | 23 811 octets au lieu de 1 423 672 pixels bruts |
+| **document 2 pages** (vectoriel, 2 tons directs, image) | 6 495 octets, relu par pdf-lib : 2 pages, 2 `/Separation`, 196 × 266 mm |
+| titre des métadonnées du PDF produit **par le navigateur** | « SuperPrint — banc d'essai — café » — accents, tiret cadratin et apostrophe courbe conservés |
 | repli forcé (module absent) | couleurs identiques, PDF refusé avec un message clair |

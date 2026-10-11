@@ -13,11 +13,14 @@
 //! ## Contenu
 //!
 //! - [`object`] — primitives de syntaxe PDF (noms, nombres, tableaux, dictionnaires) ;
+//! - [`writer`] — assemblage bas niveau : objets numérotés, flux, `xref`, `trailer` ;
 //! - [`spot`] — une encre directe et sa transformation de teinte (`/Separation`) ;
 //! - [`colorspace`] — la pile de couleurs d'une page : quadri + encres directes ;
 //! - [`boxes`] — boîtes de page PDF (fond perdu, traits de coupe), en points ;
 //! - [`image`] — image XObject : pixels réduits et compressés, embarqués ;
-//! - [`doc`] — assemblage d'un PDF portant les tons directs (et une image).
+//! - [`doc`] — page de démonstration : les tons directs, seuls ;
+//! - [`document`] — **l'exporteur** : plusieurs pages, dessin vectoriel, tons
+//!   directs teintés, images placées, métadonnées, `OutputIntent`.
 //!
 //! Feuille de route : `superprint_rust/docs/PLAN.md` (modules n° 3 et 4).
 
@@ -26,12 +29,15 @@
 pub mod boxes;
 pub mod colorspace;
 pub mod doc;
+pub mod document;
 pub mod image;
 pub mod object;
 pub mod spot;
+pub mod writer;
 
 pub use boxes::{BoxPoints, PageBoxes};
 pub use colorspace::{ColorStack, QuadriSpace, StackError};
 pub use doc::{write_spot_page, write_spot_page_with_image};
+pub use document::{ColorValue, DocError, DocInfo, Document, Op, OutputIntent, Page, Paint, Path};
 pub use image::{ImageColorSpace, ImageFilter, ImageXObject};
 pub use spot::{AlternateSpace, SpotError, SpotInk};

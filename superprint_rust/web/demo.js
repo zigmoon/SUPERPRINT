@@ -325,6 +325,48 @@
       essai('page avec image 1004×1418 (filtre auto)', false, erreur.message);
     }
 
+    // ── Export de document ──────────────────────────────────────────────
+    titre('Export de document (plusieurs pages, vectoriel, tons directs)');
+    try {
+      var doc = api.createDocument();
+      doc.info('title', 'SuperPrint — banc d’essai — café');
+      doc.info('author', 'Zigmoon');
+
+      doc.addPage({ trimWidthMm: 170, trimHeightMm: 240, bleedMm: 3, markMm: 10, quadri: 'cmyk' });
+      doc.addInk({ space: 'cmyk', name: 'PANTONE WARM RED C', c: 0, m: 0.9, y: 0.8, k: 0 });
+      doc.addInk({ space: 'rgb', name: 'PANTONE 300 C', r: 0, g: 94, b: 184 });
+      doc
+        .fillRect({ x: 15, y: 150, width: 80, height: 60, paint: { spot: { index: 0, tint: 0.5 } } })
+        .strokeRect({ x: 15, y: 150, width: 80, height: 60, widthMm: 0.5, paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } })
+        .fillCircle({ cx: 120, cy: 180, radius: 25, paint: { spot: { index: 1, tint: 1 } } })
+        .fillPolygon({ points: [[20, 40], [80, 100], [140, 40]], paint: { spot: { index: 0, tint: 0.25 } } })
+        .line({ x1: 0, y1: 130, x2: 170, y2: 130, widthMm: 0.35, paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+
+      var grisDoc = new Uint8Array(4000);
+      for (var gd = 0; gd < 4000; gd++) grisDoc[gd] = (gd * 13) & 0xff;
+      var imgDoc = doc.addImageGray(grisDoc, 40, 100, 'auto');
+      doc.placeImage({ image: imgDoc, x: 120, y: 40, width: 35, height: 80 });
+
+      doc.addPage({ trimWidthMm: 100, trimHeightMm: 100, bleedMm: 0, markMm: 0, quadri: 'rgb' });
+      doc.fillRect({ x: 10, y: 10, width: 80, height: 80, paint: { rgb: { r: 230, g: 60, b: 40 } } });
+
+      var pdfDoc = doc.write();
+      var texteDoc = typeof TextDecoder !== 'undefined'
+        ? new TextDecoder('latin1').decode(pdfDoc)
+        : String.fromCharCode.apply(null, pdfDoc.subarray(0, 4096));
+      essai(
+        'document 2 pages, 2 tons directs, image, métadonnées',
+        pdfDoc.length > 1500 && texteDoc.indexOf('%PDF-') === 0 && (texteDoc.match(/\/Separation/g) || []).length === 2,
+        pdfDoc.length.toLocaleString('fr-FR') + ' octets, ' +
+          (texteDoc.match(/\/Type \/Page /g) || []).length + ' pages, ' +
+          (texteDoc.match(/\/Separation/g) || []).length + ' /Separation',
+      );
+      proposerTelechargement('document.pdf', pdfDoc);
+      preuve.document = { octets: pdfDoc.length, titleLisible: /\/Title \(/.test(texteDoc) };
+    } catch (erreur) {
+      essai('document 2 pages, 2 tons directs, image, métadonnées', false, erreur.message);
+    }
+
     // ── Garde-fous ──────────────────────────────────────────────────────
     titre('Garde-fous');
     essai(
@@ -347,6 +389,16 @@
         api.runLengthDecode(Uint8Array.from([200]));
       }),
       'un flux corrompu ne produit pas une image décalée',
+    );
+    essai(
+      'une couleur de la mauvaise quadri est refusée',
+      leve(function () {
+        var mauvais = api.createDocument();
+        mauvais.addPage({ trimWidthMm: 50, trimHeightMm: 50, bleedMm: 0, markMm: 0, quadri: 'cmyk' });
+        mauvais.fillRect({ x: 0, y: 0, width: 10, height: 10, paint: { rgb: { r: 255, g: 0, b: 0 } } });
+        mauvais.write();
+      }),
+      'une forme RVB sur une page CMJN ne passe pas inaperçue',
     );
 
     var total = preuve.essais.length;

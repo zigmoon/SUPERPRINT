@@ -28,85 +28,13 @@ use superprint_core::PageSize;
 use crate::boxes::PageBoxes;
 use crate::colorspace::{ColorStack, QuadriSpace};
 use crate::image::ImageXObject;
-
-/// Numéro du premier objet libre dans la table `xref`.
-const FIRST_OBJECT: usize = 1;
+use crate::writer::Writer;
 
 /// Hauteur des bandes de contrôle des tons directs, en millimètres.
 ///
 /// Assez fines pour laisser voir l'image, assez larges pour qu'une bande soit
 /// identifiable sur une sortie papier.
 const BAND_MM: f64 = 6.0;
-
-/// Assemble un document à partir de ses **corps d'objets**, numérotés dans
-/// l'ordre d'ajout (1, 2, 3…).
-///
-/// Écrire les objets dans l'ordre des numéros simplifie tout : la table `xref`
-/// se remplit linéairement, sans trou ni tri.
-#[derive(Default)]
-struct PdfWriter {
-    bodies: Vec<Vec<u8>>,
-}
-
-impl PdfWriter {
-    /// Ajoute un objet simple et renvoie son numéro.
-    fn add_object(&mut self, body: String) -> usize {
-        self.bodies.push(body.into_bytes());
-        self.bodies.len()
-    }
-
-    /// Ajoute un **flux** dont la longueur annoncée est la longueur réelle.
-    fn add_stream(&mut self, entries: &str, data: &[u8]) -> usize {
-        let head = if entries.is_empty() {
-            format!("<< /Length {} >>\n", data.len())
-        } else {
-            format!("<< {entries} /Length {} >>\n", data.len())
-        };
-        let mut body = head.into_bytes();
-        body.extend_from_slice(b"stream\n");
-        body.extend_from_slice(data);
-        body.extend_from_slice(b"\nendstream\n");
-        self.bodies.push(body);
-        self.bodies.len()
-    }
-
-    /// Écrit le fichier complet : en-tête, objets, table `xref`, `trailer`.
-    fn finish(self, root: usize) -> Vec<u8> {
-        let mut out: Vec<u8> = Vec::new();
-        // En-tête + commentaire binaire (signale un fichier non-texte aux outils).
-        out.extend_from_slice(b"%PDF-1.7\n%\xE2\xE3\xCF\xD3\n");
-
-        // offsets[numero] = décalage en octets ; l'index 0 reste l'entrée libre.
-        let mut offsets: Vec<usize> = vec![0];
-        for (index, body) in self.bodies.iter().enumerate() {
-            let number = index + 1;
-            offsets.push(out.len());
-            out.extend_from_slice(format!("{number} 0 obj\n").as_bytes());
-            out.extend_from_slice(body);
-            out.extend_from_slice(b"endobj\n");
-        }
-
-        // Table xref : une entrée de 20 octets par objet, la première libre.
-        let xref_offset = out.len();
-        let count = offsets.len();
-        out.extend_from_slice(format!("xref\n0 {count}\n").as_bytes());
-        out.extend_from_slice(b"0000000000 65535 f\r\n");
-        for (number, offset) in offsets.iter().enumerate().skip(FIRST_OBJECT) {
-            let entry = format!("{offset:010} 00000 n\r\n");
-            debug_assert_eq!(entry.len(), 20, "entrée xref {number} de taille invalide");
-            out.extend_from_slice(entry.as_bytes());
-        }
-
-        out.extend_from_slice(
-            format!(
-                "trailer\n<< /Size {count} /Root {root} 0 R >>\nstartxref\n{xref_offset}\n%%EOF\n"
-            )
-            .as_bytes(),
-        );
-
-        out
-    }
-}
 
 /// Construit les bandes de contrôle : une bande pleine largeur par canal
 /// (la quadri, puis chaque encre directe), chacune peinte à pleine teinte, en
@@ -160,18 +88,28 @@ pub fn write_spot_page(trim: PageSize, bleed_mm: f64, mark_mm: f64, stack: &Colo
     let boxes = PageBoxes::from_page(trim, bleed_mm, mark_mm);
     let content = content_stream(stack, boxes.media.width(), boxes.media.height());
 
-    let mut writer = PdfWriter::default();
-    let catalog = writer.add_object("<< /Type /Catalog /Pages 2 0 R >>\n".to_string());
-    let _pages = writer.add_object("<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n".to_string());
-    // La page est écrite après : on réserve son numéro par un corps vide.
-    let page_slot = writer.bodies.len();
-    writer.add_object(String::new());
-    let content_ref = writer.add_stream("", content.as_bytes());
+    let mut writer = Writer::new();
+    let catalog = writer.reserve();
+    let pages = writer.push_object("<< /Type /Pages /Kids [] /Count 1 >>\n");
+    // La page référence son parent, qui n'était pas encore écrit : c'est
+    // exactement ce que la réservation d'emplacement permet.
+    let page_slot = writer.reserve();
+    let content_ref = writer.push_stream("", content.as_bytes());
 
     let resources = format!("/ColorSpace {}", stack.resources_pdf());
-    writer.bodies[page_slot] = page_body(&boxes, &resources, content_ref).into_bytes();
+    writer.put(page_slot, page_body(&boxes, &resources, content_ref));
+    writer.put(
+        pages,
+        format!("<< /Type /Pages /Kids [{page_slot} 0 R] /Count 1 >>\n"),
+    );
+    writer.put(
+        catalog,
+        format!("<< /Type /Catalog /Pages {pages} 0 R >>\n"),
+    );
 
-    writer.finish(catalog)
+    writer
+        .finish(catalog, "")
+        .expect("tous les objets de cette page sont remplis")
 }
 
 /// Écrit un PDF d'une page portant **une image** et les bandes de contrôle des
@@ -199,21 +137,30 @@ pub fn write_spot_page_with_image(
     content.push_str(&format!("{width} 0 0 {height} 0 0 cm\n/Im0 Do\nQ\n"));
     content.push_str(&bands_ops(stack, width, mm_to_pt(BAND_MM)));
 
-    let mut writer = PdfWriter::default();
-    let catalog = writer.add_object("<< /Type /Catalog /Pages 2 0 R >>\n".to_string());
-    let _pages = writer.add_object("<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n".to_string());
-    let page_slot = writer.bodies.len();
-    writer.add_object(String::new());
-    let content_ref = writer.add_stream("", content.as_bytes());
-    let image_ref = writer.add_stream(&image.dict_entries(), image.data());
+    let mut writer = Writer::new();
+    let catalog = writer.reserve();
+    let pages = writer.push_object("<< /Type /Pages /Kids [] /Count 1 >>\n");
+    let page_slot = writer.reserve();
+    let content_ref = writer.push_stream("", content.as_bytes());
+    let image_ref = writer.push_stream(&image.dict_entries(), image.data());
 
     let resources = format!(
         "/ColorSpace {} /XObject << /Im0 {image_ref} 0 R >>",
         stack.resources_pdf()
     );
-    writer.bodies[page_slot] = page_body(&boxes, &resources, content_ref).into_bytes();
+    writer.put(page_slot, page_body(&boxes, &resources, content_ref));
+    writer.put(
+        pages,
+        format!("<< /Type /Pages /Kids [{page_slot} 0 R] /Count 1 >>\n"),
+    );
+    writer.put(
+        catalog,
+        format!("<< /Type /Catalog /Pages {pages} 0 R >>\n"),
+    );
 
-    writer.finish(catalog)
+    writer
+        .finish(catalog, "")
+        .expect("tous les objets de cette page sont remplis")
 }
 
 #[cfg(test)]
@@ -221,6 +168,13 @@ mod tests {
     use super::*;
     use crate::spot::{AlternateSpace, SpotInk};
     use superprint_core::{Cmyk, Rgb};
+
+    /// Numéro du premier objet de la table `xref` (l'entrée 0 est libre).
+    ///
+    /// Les tests de cette section **relisent** le fichier produit, table
+    /// comprise, pour vérifier les décalages : ils ont donc besoin de savoir où
+    /// commence la numérotation des objets.
+    const FIRST_OBJECT: usize = 1;
 
     fn stack_with_two_pantones() -> ColorStack {
         let red = SpotInk::new(

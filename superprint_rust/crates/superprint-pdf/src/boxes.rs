@@ -122,23 +122,26 @@ impl PageBoxes {
         }
     }
 
-    /// Dictionnaire PDF des boîtes : `/MediaBox`, `/TrimBox` et (si fond perdu)
-    /// `/BleedBox`.
     /// Entrées PDF des boîtes, **à fusionner** dans le dictionnaire de page :
-    /// `/MediaBox […] /TrimBox […]` et, si fond perdu, `/BleedBox […]`.
+    /// `/MediaBox […] /TrimBox […] /BleedBox […]`.
     ///
     /// On renvoie les entrées seules (sans `<< >>`) : le dictionnaire de page
     /// les accueille déjà entre ses propres chevrons.
+    ///
+    /// La `BleedBox` est **toujours** écrite. Omise, elle prendrait par défaut
+    /// la valeur de la `CropBox`, elle-même par défaut la `MediaBox` — qui
+    /// inclut les traits de coupe. Un flux de mise en page verrait alors du fond
+    /// perdu là où il n'y a que de la marge technique. Avec un fond perdu nul,
+    /// la `BleedBox` vaut donc explicitement la `TrimBox`.
     #[must_use]
     pub fn boxes_entries(&self) -> String {
-        let mut parts = vec![
+        let bleed = self.bleed.unwrap_or(self.trim);
+        [
             format!("/MediaBox {}", self.media.to_pdf_array()),
             format!("/TrimBox {}", self.trim.to_pdf_array()),
-        ];
-        if let Some(bleed) = self.bleed {
-            parts.push(format!("/BleedBox {}", bleed.to_pdf_array()));
-        }
-        parts.join(" ")
+            format!("/BleedBox {}", bleed.to_pdf_array()),
+        ]
+        .join(" ")
     }
 }
 

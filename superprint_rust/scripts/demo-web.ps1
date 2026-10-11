@@ -50,6 +50,14 @@ Step 'validation pdf-lib - PDF de la colle, image embarquee' {
   node scripts/validate-pdf.mjs web-page-image.pdf --mm=196x266 --spots=2 --image=1004x1418
 }
 
+Step 'validation pdf-lib - DOCUMENT (2 pages, vectoriel, tons directs, image)' {
+  node scripts/validate-pdf.mjs web-page-document.pdf --mm=196x266 --spots=2 --pages=2
+}
+
+Step 'validation pdf-lib - DOCUMENT avec destination de sortie' {
+  node scripts/validate-pdf.mjs web-page-intent.pdf --mm=100x100 --spots=0 --pages=1
+}
+
 Pop-Location
 
 if ($ok) {

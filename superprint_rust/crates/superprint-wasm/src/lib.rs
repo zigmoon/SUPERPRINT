@@ -55,12 +55,14 @@
 
 use core::{ptr, slice};
 use std::alloc::{alloc, dealloc, Layout};
+use std::sync::Mutex;
 
 use superprint_core::color8;
 use superprint_core::{units, Cmyk, PageSize, Rgb};
 use superprint_image::{compress, resample, GrayImage, RgbImage};
 use superprint_pdf::colorspace::{ColorStack, QuadriSpace};
 use superprint_pdf::doc::{write_spot_page, write_spot_page_with_image};
+use superprint_pdf::document::{ColorValue, Document, Op, OutputIntent, Page, Paint, Path};
 use superprint_pdf::image::{ImageFilter, ImageXObject};
 use superprint_pdf::spot::{AlternateSpace, SpotInk};
 
@@ -495,6 +497,583 @@ pub unsafe extern "C" fn sp_write_spot_page_gray(
     unsafe { copy_out(&page, dst, dst_cap) }
 }
 
+// ─────────────────── document : export PDF complet ───────────────────
+//
+// Les fonctions ci-dessus écrivent **une page de démonstration**. Celles-ci
+// construisent un **document** : plusieurs pages, formes vectorielles, tons
+// directs teintés, images placées, métadonnées et destination de sortie.
+//
+// ## État global, et pourquoi
+//
+// Un document est un objet qui se construit **par étapes** (les pages
+// référencent des images déclarées plus tard, la page suivante ajoute ses
+// encres…). Le passer par la frontière C à chaque appel demanderait de
+// sérialiser puis reconstruire tout l'état à chaque fois.
+//
+// Le module garde donc **un seul document en cours**, comme un curseur :
+// `sp_doc_reset` l'ouvre, les fonctions le remplissent, `sp_doc_write` le ferme.
+// C'est cohérent avec l'usage réel — on exporte un document à la fois — et la
+// frontière reste sans allocation d'objet côté appelant.
+//
+// `sp_doc_reset` doit être appelé **avant** de construire un nouveau document :
+// les constructeurs ajoutent, ils ne remplacent pas.
+
+/// Document en cours de construction. `None` tant que `sp_doc_reset` n'a pas
+/// été appelé.
+static DOC: Mutex<Option<Document>> = Mutex::new(None);
+
+/// Prend le document en cours, ou `None` si aucun n'est ouvert.
+fn with_doc<T>(action: impl FnOnce(&mut Document) -> T) -> Option<T> {
+    // Un verrou empoisonné (panique survenue pendant un appel précédent) ne doit
+    // pas condamner le module : on reprend la main sur l'état.
+    let mut garde = DOC.lock().unwrap_or_else(|e| e.into_inner());
+    garde.as_mut().map(action)
+}
+
+/// Ouvre un document vide et **abandonne** celui qui était en cours.
+///
+/// Renvoie `0`.
+#[no_mangle]
+pub extern "C" fn sp_doc_reset() -> i32 {
+    let mut garde = DOC.lock().unwrap_or_else(|e| e.into_inner());
+    *garde = Some(Document::new());
+    0
+}
+
+/// Nombre de pages déjà déclarées, ou un code d'erreur si aucun document n'est
+/// ouvert.
+#[no_mangle]
+pub extern "C" fn sp_doc_page_count() -> i32 {
+    match with_doc(|doc| doc.pages.len() as i32) {
+        Some(n) => n,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Active ou coupe les traits de coupe. `actif` : 0 ou 1.
+#[no_mangle]
+pub extern "C" fn sp_doc_marks(actif: u32) -> i32 {
+    match with_doc(|doc| {
+        doc.marks = actif != 0;
+        0
+    }) {
+        Some(code) => code,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Renseigne une métadonnée du document.
+///
+/// `cle` est un nom reconnu : `title`, `author`, `subject`, `keywords`,
+/// `creator`, `producer`. Une clé inconnue est refusée plutôt qu'ignorée.
+///
+/// # Safety
+///
+/// `cle`/`valeur` doivent désigner leurs longueurs respectives en octets
+/// lisibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_doc_info(
+    cle: *const u8,
+    cle_len: usize,
+    valeur: *const u8,
+    valeur_len: usize,
+) -> i32 {
+    let Some(nom) = (unsafe { as_slice(cle, cle_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let Some(texte) = (unsafe { as_slice(valeur, valeur_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let (Ok(nom), Ok(texte)) = (core::str::from_utf8(nom), core::str::from_utf8(texte)) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    // Une valeur vide efface le champ : c'est plus utile que de refuser.
+    let texte = (!texte.trim().is_empty()).then(|| texte.to_string());
+    match with_doc(|doc| {
+        let champ = match nom.trim() {
+            "title" => &mut doc.info.title,
+            "author" => &mut doc.info.author,
+            "subject" => &mut doc.info.subject,
+            "keywords" => &mut doc.info.keywords,
+            "creator" => &mut doc.info.creator,
+            "producer" => &mut doc.info.producer,
+            _ => return SP_ERR_BAD_INPUT,
+        };
+        // `None` efface explicitement le champ.
+        *champ = texte;
+        0
+    }) {
+        Some(code) => code,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Ajoute une page et la rend **courante** : les encres et les opérations qui
+/// suivent s'y rapportent.
+///
+/// `quadri` : `0` = CMJN, `1` = RVB. `bleed_mm` et `mark_mm` sont les marges
+/// d'impression autour du format fini.
+///
+/// Renvoie le nombre de pages après ajout, ou un code d'erreur.
+#[no_mangle]
+pub extern "C" fn sp_doc_add_page(
+    trim_w_mm: f64,
+    trim_h_mm: f64,
+    bleed_mm: f64,
+    mark_mm: f64,
+    quadri: u32,
+) -> i32 {
+    let espace = match quadri {
+        0 => QuadriSpace::Cmyk,
+        1 => QuadriSpace::Rgb,
+        _ => return SP_ERR_BAD_INPUT,
+    };
+    if !(trim_w_mm.is_finite() && trim_h_mm.is_finite()) || trim_w_mm <= 0.0 || trim_h_mm <= 0.0 {
+        return SP_ERR_BAD_INPUT;
+    }
+    match with_doc(|doc| {
+        let page = Page::new(
+            PageSize::new(trim_w_mm, trim_h_mm),
+            bleed_mm.max(0.0),
+            mark_mm.max(0.0),
+            ColorStack::new(espace),
+        );
+        doc.add_page(page) as i32
+    }) {
+        Some(n) => n + 1,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Déclare une encre directe sur la page **courante**.
+///
+/// La syntaxe est celle déjà employée par `sp_write_spot_page` :
+///
+/// ```text
+/// cmyk<TAB>PANTONE WARM RED C<TAB>0<TAB>900<TAB>800<TAB>0
+/// rgb<TAB>PANTONE 300 C<TAB>0<TAB>94<TAB>184
+/// gray<TAB>RICHTIG SCHWARZ<TAB>0
+/// ```
+///
+/// Renvoie le rang de l'encre dans la page, ou un code d'erreur. Un nom en
+/// double est refusé : deux plaques identiques sont une erreur de composition.
+///
+/// # Safety
+///
+/// `spec` doit désigner `spec_len` octets lisibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_doc_add_ink(spec: *const u8, spec_len: usize) -> i32 {
+    let Some(octets) = (unsafe { as_slice(spec, spec_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let Some(quire) = parse_ink_line(octets) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    match with_doc(|doc| match doc.pages.last_mut() {
+        Some(page) => match page.stack.add_spot(quire) {
+            Ok(()) => page.stack.spots().len() as i32 - 1,
+            Err(_) => SP_ERR_BAD_INPUT,
+        },
+        None => SP_ERR_BAD_INPUT,
+    }) {
+        Some(code) => code,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Ajoute une ou plusieurs opérations de dessin à la page courante.
+///
+/// `spec` contient **une ligne par opération**, champs séparés par une
+/// tabulation. Les coordonnées sont en millimètres, dans le repère du **format
+/// fini** : `(0, 0)` en bas à gauche, ordonnée croissante.
+///
+/// ```text
+/// rect<TAB>X<TAB>Y<TAB>W<TAB>H<TAB>fill<TAB>0<TAB><PEINTURE>
+/// rect<TAB>X<TAB>Y<TAB>W<TAB>H<TAB>stroke<TAB>EPAISSEUR<TAB><PEINTURE>
+/// circle<TAB>CX<TAB>CY<TAB>R<TAB><fill|stroke><TAB>EPAISSEUR<TAB><PEINTURE>
+/// polygon<TAB><fill|stroke><TAB>EPAISSEUR<TAB><PEINTURE><TAB>X1<TAB>Y1<TAB>X2<TAB>Y2…
+/// line<TAB>X1<TAB>Y1<TAB>X2<TAB>Y2<TAB>stroke<TAB>EPAISSEUR<TAB><PEINTURE>
+/// image<TAB>RANG<TAB>X<TAB>Y<TAB>W<TAB>H
+/// ```
+///
+/// Le champ `EPAISSEUR` vaut `0` pour un remplissage : il est présent partout
+/// pour que la lecture reste **de position fixe**, sans branchement.
+///
+/// La `<PEINTURE>` a toujours la même forme, selon son espace :
+///
+/// ```text
+/// q4<TAB>C<TAB>M<TAB>Y<TAB>K      quadri CMJN, composantes pour mille (0–1000)
+/// q3<TAB>R<TAB>G<TAB>B            quadri RVB, composantes 0–255
+/// sp<TAB>RANG<TAB>TEINTE          encre directe, teinte pour mille (0–1000)
+/// ```
+///
+/// Toute ligne illisible fait échouer **l'appel entier** : un document à moitié
+/// dessiné serait pire qu'un document refusé.
+///
+/// Renvoie le nombre d'opérations ajoutées.
+///
+/// # Safety
+///
+/// `spec` doit désigner `spec_len` octets lisibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_doc_op(spec: *const u8, spec_len: usize) -> i32 {
+    let Some(octets) = (unsafe { as_slice(spec, spec_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let Ok(texte) = core::str::from_utf8(octets) else {
+        return SP_ERR_BAD_INPUT;
+    };
+
+    // Tout est analysé AVANT d'être appliqué : si la dernière ligne est
+    // illisible, la page ne reçoit rien du tout.
+    let mut operations = Vec::new();
+    for ligne in texte.lines() {
+        let ligne = ligne.trim();
+        if ligne.is_empty() {
+            continue;
+        }
+        match parse_op(ligne) {
+            Some(op) => operations.push(op),
+            None => return SP_ERR_BAD_INPUT,
+        }
+    }
+    if operations.is_empty() {
+        return 0;
+    }
+
+    let ajoutees = operations.len() as i32;
+    match with_doc(|doc| match doc.pages.last_mut() {
+        Some(page) => {
+            page.ops.extend(operations);
+            0
+        }
+        None => SP_ERR_BAD_INPUT,
+    }) {
+        Some(0) => ajoutees,
+        Some(code) => code,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Enregistre une image en **niveaux de gris** (1 octet par pixel).
+///
+/// `filter` : `0` = aucun, `1` = RunLength forcé, `2` = RunLength seulement
+/// s'il fait gagner des octets (recommandé).
+///
+/// Renvoie le rang de l'image, à utiliser dans une opération `image`. Elle doit
+/// avoir été **réduite** au préalable : ce module l'encode, il ne devine pas la
+/// résolution utile.
+///
+/// # Safety
+///
+/// `pixels` doit désigner `width·height` octets lisibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_doc_add_image_gray(
+    pixels: *const u8,
+    width: u32,
+    height: u32,
+    filter: u32,
+) -> i32 {
+    let Some(octets) = (unsafe { as_slice(pixels, pixel_bytes(width, height, 1)) }) else {
+        return SP_ERR_NULL;
+    };
+    let Some(filtre) = parse_filter(filter) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let Ok(image) = GrayImage::from_data(width, height, octets.to_vec()) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    match with_doc(|doc| doc.add_image(ImageXObject::from_gray(&image, filtre)) as i32) {
+        Some(rang) => rang,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Enregistre une image **RVB** (3 octets par pixel). Voir
+/// [`sp_doc_add_image_gray`] pour le filtre et le rang.
+///
+/// # Safety
+///
+/// `pixels` doit désigner `width·height·3` octets lisibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_doc_add_image_rgb(
+    pixels: *const u8,
+    width: u32,
+    height: u32,
+    filter: u32,
+) -> i32 {
+    let Some(octets) = (unsafe { as_slice(pixels, pixel_bytes(width, height, 3)) }) else {
+        return SP_ERR_NULL;
+    };
+    let Some(filtre) = parse_filter(filter) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let Ok(image) = RgbImage::from_data(width, height, octets.to_vec()) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    match with_doc(|doc| doc.add_image(ImageXObject::from_rgb(&image, filtre)) as i32) {
+        Some(rang) => rang,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Déclare la **destination de sortie** : le profil ICC qui décrit l'espace
+/// d'impression visé.
+///
+/// Les octets du profil sont écrits tels quels comme `/DestOutputProfile`. Aucun
+/// profil n'est inventé : sans profil réel, il n'y a pas d'`OutputIntent`, et un
+/// imprimeur ne peut pas savoir à quoi se rapporte le fichier.
+///
+/// `components` doit valoir 3 (RVB) ou 4 (CMJN).
+///
+/// # Safety
+///
+/// `identifiant`, `info` et `icc` doivent désigner leurs longueurs respectives.
+#[no_mangle]
+pub unsafe extern "C" fn sp_doc_output_intent(
+    components: u32,
+    identifiant: *const u8,
+    identifiant_len: usize,
+    info: *const u8,
+    info_len: usize,
+    icc: *const u8,
+    icc_len: usize,
+) -> i32 {
+    let Some(nom) = (unsafe { as_slice(identifiant, identifiant_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let Some(description) = (unsafe { as_slice(info, info_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let Some(profil) = (unsafe { as_slice(icc, icc_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let (Ok(nom), Ok(description)) = (core::str::from_utf8(nom), core::str::from_utf8(description))
+    else {
+        return SP_ERR_BAD_INPUT;
+    };
+    // Le nombre de composantes est vérifié ici par le constructeur du document,
+    // qui refuse un profil manifestement tronqué.
+    let Some(components) = u8::try_from(components).ok() else {
+        return SP_ERR_BAD_INPUT;
+    };
+    match with_doc(|doc| {
+        doc.output_intent = Some(OutputIntent {
+            icc: profil.to_vec(),
+            components,
+            identifier: nom.to_string(),
+            info: description.to_string(),
+        });
+        0
+    }) {
+        Some(code) => code,
+        None => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Écrit le document en cours en PDF, dans le tampon de l'appelant.
+///
+/// Même protocole en deux passes que les autres fonctions d'écriture : appeler
+/// une première fois avec un tampon vide rend [`SP_ERR_TOO_SMALL`] et renseigne
+/// `out_len` avec la taille nécessaire.
+///
+/// Renvoie le nombre d'octets écrits. Le document **n'est pas** refermé : on
+/// peut le réécrire, par exemple après avoir corrigé une métadonnée. Appeler
+/// `sp_doc_reset` pour en commencer un autre.
+///
+/// # Safety
+///
+/// `dst` doit désigner `dst_cap` octets inscriptibles ; `out_len` un `u32`.
+#[no_mangle]
+pub unsafe extern "C" fn sp_doc_write(dst: *mut u8, dst_cap: usize, out_len: *mut u32) -> i32 {
+    if out_len.is_null() {
+        return SP_ERR_NULL;
+    }
+    let resultat = with_doc(|doc| doc.write());
+    let Some(resultat) = resultat else {
+        return SP_ERR_BAD_INPUT;
+    };
+    match resultat {
+        Ok(pdf) => {
+            unsafe { *out_len = pdf.len() as u32 };
+            unsafe { copy_out(&pdf, dst, dst_cap) }
+        }
+        // Les refus du document (couleur incohérente, encre inconnue…) sont
+        // remontés comme entrée illisible : l'appelant les distingue par le
+        // message que son propre outillage affiche.
+        Err(_) => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Traduit un code de filtre reçu de la frontière.
+fn parse_filter(code: u32) -> Option<ImageFilter> {
+    match code {
+        0 => Some(ImageFilter::None),
+        1 => Some(ImageFilter::RunLengthDecode),
+        2 => Some(ImageFilter::Auto),
+        _ => None,
+    }
+}
+
+/// Lit **une** ligne d'encre (même syntaxe que `sp_write_spot_page`).
+fn parse_ink_line(octets: &[u8]) -> Option<SpotInk> {
+    let texte = core::str::from_utf8(octets).ok()?;
+    let f: Vec<&str> = texte
+        .lines()
+        .next()?
+        .trim()
+        .split('\t')
+        .map(str::trim)
+        .collect();
+    match f.first().copied()? {
+        "cmyk" if f.len() == 6 => {
+            let (c, m, y, k) = (
+                per_mille(f[2])?,
+                per_mille(f[3])?,
+                per_mille(f[4])?,
+                per_mille(f[5])?,
+            );
+            SpotInk::new(f[1], AlternateSpace::Cmyk(Cmyk { c, m, y, k })).ok()
+        }
+        "rgb" if f.len() == 5 => {
+            let (r, g, b) = (byte255(f[2])?, byte255(f[3])?, byte255(f[4])?);
+            SpotInk::new(f[1], AlternateSpace::Rgb(Rgb::new(r, g, b))).ok()
+        }
+        "gray" if f.len() == 3 => SpotInk::new(f[1], AlternateSpace::Gray(byte255(f[2])?)).ok(),
+        _ => None,
+    }
+}
+
+/// Lit la peinture d'une opération à partir du champ `debut`.
+///
+/// Renvoie la peinture **et** le nombre de champs qu'elle a consommés : pour un
+/// rectangle la peinture termine la ligne, pour un polygone elle est suivie des
+/// sommets. La lecture doit donc savoir où elle s'arrête, sans quoi les deux cas
+/// seraient indiscernables.
+fn parse_paint(champs: &[&str], debut: usize) -> Option<(Paint, usize)> {
+    let genre = champs.get(debut).copied()?;
+    let consommes = match genre {
+        "q4" => 5,
+        "q3" => 4,
+        "sp" => 3,
+        _ => return None,
+    };
+    if champs.len() < debut + consommes {
+        return None;
+    }
+    let paint = match genre {
+        "q4" => Paint::Quadri(ColorValue::Cmyk(Cmyk {
+            c: per_mille(champs[debut + 1])?,
+            m: per_mille(champs[debut + 2])?,
+            y: per_mille(champs[debut + 3])?,
+            k: per_mille(champs[debut + 4])?,
+        })),
+        "q3" => Paint::Quadri(ColorValue::Rgb(Rgb::new(
+            byte255(champs[debut + 1])?,
+            byte255(champs[debut + 2])?,
+            byte255(champs[debut + 3])?,
+        ))),
+        _ => Paint::Spot {
+            index: champs[debut + 1].parse().ok()?,
+            tint: per_mille(champs[debut + 2])?,
+        },
+    };
+    Some((paint, consommes))
+}
+
+/// Lit une opération de dessin.
+fn parse_op(ligne: &str) -> Option<Op> {
+    let c: Vec<&str> = ligne.split('\t').map(str::trim).collect();
+    match c.first().copied()? {
+        "rect" if c.len() >= 8 => {
+            let path = Path::Rect {
+                x: nombre_mm(c[1])?,
+                y: nombre_mm(c[2])?,
+                width: nombre_mm(c[3])?,
+                height: nombre_mm(c[4])?,
+            };
+            peinture_ou_trait(path, &c, 5)
+        }
+        "circle" if c.len() >= 7 => {
+            let path = Path::Circle {
+                cx: nombre_mm(c[1])?,
+                cy: nombre_mm(c[2])?,
+                radius: nombre_mm(c[3])?,
+            };
+            peinture_ou_trait(path, &c, 4)
+        }
+        "line" if c.len() >= 8 => {
+            let path = Path::Line {
+                x1: nombre_mm(c[1])?,
+                y1: nombre_mm(c[2])?,
+                x2: nombre_mm(c[3])?,
+                y2: nombre_mm(c[4])?,
+            };
+            peinture_ou_trait(path, &c, 5)
+        }
+        "polygon" if c.len() >= 8 => {
+            let action = c[1];
+            let epaisseur = nombre_mm(c[2])?;
+            let (paint, consommes) = parse_paint(&c, 3)?;
+            // Les sommets occupent tout le reste, par paires.
+            let reste = &c[3 + consommes..];
+            if reste.len() < 6 || reste.len() % 2 != 0 {
+                return None;
+            }
+            let mut sommets = Vec::with_capacity(reste.len() / 2);
+            for paire in reste.chunks(2) {
+                sommets.push((nombre_mm(paire[0])?, nombre_mm(paire[1])?));
+            }
+            assembler(Path::Polygon(sommets), action, epaisseur, paint)
+        }
+        "image" if c.len() == 6 => Some(Op::Image {
+            image: c[1].parse().ok()?,
+            x: nombre_mm(c[2])?,
+            y: nombre_mm(c[3])?,
+            width: nombre_mm(c[4])?,
+            height: nombre_mm(c[5])?,
+        }),
+        _ => None,
+    }
+}
+
+/// Lit `fill`/`stroke`, l'épaisseur et la peinture, puis construit l'opération.
+///
+/// Ici la peinture doit **terminer** la ligne : un champ en trop signale une
+/// erreur d'appel, et un appel erroné doit être refusé plutôt qu'interprété de
+/// travers.
+fn peinture_ou_trait(path: Path, champs: &[&str], action_a: usize) -> Option<Op> {
+    let action = champs.get(action_a).copied()?;
+    let epaisseur = nombre_mm(champs.get(action_a + 1).copied()?)?;
+    let (paint, consommes) = parse_paint(champs, action_a + 2)?;
+    if action_a + 2 + consommes != champs.len() {
+        return None;
+    }
+    assembler(path, action, epaisseur, paint)
+}
+
+/// Construit l'opération finale, en refusant une action inconnue.
+fn assembler(path: Path, action: &str, epaisseur_mm: f64, paint: Paint) -> Option<Op> {
+    match action {
+        "fill" => Some(Op::Fill { path, paint }),
+        "stroke" => Some(Op::Stroke {
+            path,
+            paint,
+            width_mm: epaisseur_mm,
+        }),
+        _ => None,
+    }
+}
+
+/// Lit un nombre fini destiné à une longueur en millimètres.
+///
+/// Refuse l'infini et les non-nombres : un `NaN` glissé dans un flux PDF
+/// produirait un document que le RIP rejetterait sans explication.
+fn nombre_mm(texte: &str) -> Option<f64> {
+    let valeur: f64 = texte.parse().ok()?;
+    valeur.is_finite().then_some(valeur)
+}
+
 // ─────────────────────────── utilitaires internes ───────────────────────────
 
 /// Longueur en octets d'une image, en **saturant** pour ne pas boucler autour.
@@ -747,5 +1326,296 @@ mod tests {
             "espace inconnu"
         );
         assert!(parse_inks(b"", 7).is_none(), "quadri inconnue");
+    }
+
+    // ───────────────────── document : export complet ─────────────────────
+
+    /// Écrit le document en cours par le protocole en deux passes.
+    ///
+    /// Renvoie les octets, ou un code d'erreur si la première passe n'annonce
+    /// pas `SP_ERR_TOO_SMALL`.
+    fn ecrire_document() -> Result<Vec<u8>, i32> {
+        let mut besoin = 0u32;
+        let premier = unsafe { sp_doc_write(ptr::null_mut(), 0, &mut besoin) };
+        if premier != SP_ERR_TOO_SMALL {
+            return Err(premier);
+        }
+        let mut tampon = vec![0u8; besoin as usize];
+        let mut ecrit = 0u32;
+        let code = unsafe { sp_doc_write(tampon.as_mut_ptr(), tampon.len(), &mut ecrit) };
+        if code < 0 {
+            return Err(code);
+        }
+        tampon.truncate(ecrit as usize);
+        Ok(tampon)
+    }
+
+    /// Ajoute une ligne encodée en UTF-8 sur la page courante.
+    fn op(ligne: &str) -> i32 {
+        unsafe { sp_doc_op(ligne.as_ptr(), ligne.len()) }
+    }
+
+    /// Ajoute une encre encodée en UTF-8 sur la page courante.
+    fn encre(ligne: &str) -> i32 {
+        unsafe { sp_doc_add_ink(ligne.as_ptr(), ligne.len()) }
+    }
+
+    #[test]
+    fn document_complet_de_bout_en_bout() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_page_count(), 0);
+
+        // Première page : CMJN, deux encres directes, formes vectorielles.
+        assert_eq!(sp_doc_add_page(170.0, 240.0, 3.0, 10.0, 0), 1);
+        assert_eq!(encre("cmyk\tPANTONE WARM RED C\t0\t900\t800\t0"), 0);
+        assert_eq!(encre("rgb\tPANTONE 300 C\t0\t94\t184"), 1);
+
+        let operations = [
+            "rect\t10\t20\t50\t30\tfill\t0\tsp\t0\t500",
+            "rect\t10\t60\t50\t30\tstroke\t0.5\tq4\t0\t0\t0\t1000",
+            "circle\t120\t60\t18\tfill\t0\tq4\t0\t900\t0\t0",
+            "polygon\tfill\t0\tsp\t1\t1000\t20\t100\t60\t120\t50\t90\t20\t120",
+            "line\t0\t200\t170\t200\tstroke\t0.25\tq4\t0\t0\t0\t1000",
+        ]
+        .join("\n");
+        assert_eq!(op(&operations), 5, "cinq opérations attendues");
+
+        // Deuxième page, RVB, sans encre directe.
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 1), 2);
+        assert_eq!(op("rect\t0\t0\t100\t100\tfill\t0\tq3\t255\t0\t0"), 1);
+
+        let titre = "Rapport (essai) — café";
+        assert_eq!(
+            unsafe { sp_doc_info(b"title".as_ptr(), 5, titre.as_ptr(), titre.len(),) },
+            0
+        );
+
+        let pdf = ecrire_document().expect("document valide");
+        let texte = String::from_utf8_lossy(&pdf);
+
+        assert!(pdf.starts_with(b"%PDF-"));
+        assert!(texte.trim_end().ends_with("%%EOF"));
+        assert!(texte.contains("/Count 2"), "deux pages déclarées");
+        assert_eq!(
+            texte.matches("/Separation").count(),
+            2,
+            "deux encres directes"
+        );
+        assert!(texte.contains("/CS0 cs") && texte.contains("/CS1 cs"));
+        assert!(texte.contains("0.5 scn"), "teinte à 50 % sur l'encre 0");
+        assert!(texte.contains("1 scn"), "teinte pleine sur l'encre 1");
+        assert!(texte.contains("/DeviceRGB"), "seconde page en RVB");
+        assert!(texte.contains("/TrimBox") && texte.contains("/BleedBox"));
+        // Le titre accentué ressort en PDFDocEncoding, pas en UTF-8.
+        assert!(
+            texte.contains("/Title (Rapport \\(essai\\) \\342\\200\\224 caf\\351)")
+                || texte.contains("caf\\351"),
+            "titre attendu en PDFDocEncoding ; trouvé : {}",
+            texte
+                .lines()
+                .find(|l| l.contains("/Title"))
+                .unwrap_or("(aucun)")
+        );
+
+        // Un document écrit deux fois doit être identique : aucun état caché.
+        let deuxieme = ecrire_document().expect("document valide");
+        assert_eq!(pdf, deuxieme, "l'écriture doit être déterministe");
+    }
+
+    #[test]
+    fn document_avec_image_placee() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+
+        // Aplat 8 × 4 : RunLength doit le réduire fortement.
+        let pixels = [200u8; 32];
+        let rang = unsafe { sp_doc_add_image_gray(pixels.as_ptr(), 8, 4, 2) };
+        assert_eq!(rang, 0, "première image au rang 0");
+
+        assert_eq!(op("image\t0\t10\t20\t40\t20"), 1);
+        assert_eq!(sp_doc_page_count(), 1);
+
+        let pdf = ecrire_document().expect("document valide");
+        let texte = String::from_utf8_lossy(&pdf);
+        assert!(texte.contains("/Im0 Do"));
+        assert!(texte.contains("/Subtype /Image"));
+        assert!(texte.contains("/Width 8") && texte.contains("/Height 4"));
+        assert!(texte.contains("/DeviceGray"));
+
+        // Une image inexistante n'est détectable qu'à l'écriture : c'est le seul
+        // moment où l'on sait combien d'images existent réellement.
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+        assert_eq!(op("image\t5\t0\t0\t10\t10"), 1, "l'opération est acceptée");
+        assert_eq!(
+            ecrire_document().unwrap_err(),
+            SP_ERR_BAD_INPUT,
+            "mais l'écriture doit refuser une image inconnue"
+        );
+    }
+
+    #[test]
+    fn document_sans_page_refuse() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(
+            ecrire_document().unwrap_err(),
+            SP_ERR_BAD_INPUT,
+            "un document vide ne s'écrit pas"
+        );
+        assert_eq!(
+            op("rect\t0\t0\t1\t1\tfill\t0\tq4\t0\t0\t0\t0"),
+            SP_ERR_BAD_INPUT,
+            "aucune page courante"
+        );
+        assert_eq!(encre("gray\tX\t0"), SP_ERR_BAD_INPUT);
+    }
+
+    #[test]
+    fn document_refuse_les_entrees_illisibles() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+
+        // Une opération illisible fait échouer l'appel ENTIER : rien n'est ajouté.
+        assert_eq!(
+            op("rect\t0\t0\t1\t1\tfill\t0\tq4\t0\t0\t0\t0\nrect\tPAF"),
+            SP_ERR_BAD_INPUT
+        );
+        assert_eq!(
+            op("cercle\t0\t0\t1\tfill\t0\tq4\t0\t0\t0\t0"),
+            SP_ERR_BAD_INPUT,
+            "verbe inconnu"
+        );
+        assert_eq!(
+            op("rect\t0\t0\tNaN\t1\tfill\t0\tq4\t0\t0\t0\t0"),
+            SP_ERR_BAD_INPUT,
+            "un NaN ne doit pas entrer dans un flux PDF"
+        );
+        assert_eq!(
+            op("rect\t0\t0\t1\t1\tdessine\t0\tq4\t0\t0\t0\t0"),
+            SP_ERR_BAD_INPUT,
+            "action inconnue"
+        );
+        assert_eq!(
+            op("polygon\tfill\t0\tq4\t0\t0\t0\t0"),
+            SP_ERR_BAD_INPUT,
+            "trop peu de sommets"
+        );
+        assert_eq!(
+            encre("lab\tX\t1\t2\t3"),
+            SP_ERR_BAD_INPUT,
+            "espace de remplacement inconnu"
+        );
+        assert_eq!(sp_doc_add_page(0.0, 100.0, 0.0, 0.0, 0), SP_ERR_BAD_INPUT);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 9), SP_ERR_BAD_INPUT);
+        assert_eq!(
+            unsafe { sp_doc_info(b"inexistant".as_ptr(), 10, b"x".as_ptr(), 1) },
+            SP_ERR_BAD_INPUT,
+            "clé de métadonnée inconnue"
+        );
+    }
+
+    #[test]
+    fn document_couleur_incoherente_refusee_a_l_ecriture() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+        // Page CMJN, forme peinte en RVB.
+        assert_eq!(op("rect\t0\t0\t10\t10\tfill\t0\tq3\t255\t0\t0"), 1);
+        assert_eq!(ecrire_document().unwrap_err(), SP_ERR_BAD_INPUT);
+    }
+
+    #[test]
+    fn document_output_intent_et_marks() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(170.0, 240.0, 3.0, 10.0, 0), 1);
+
+        // Profil factice mais de taille plausible (CMJN → au moins 512 octets).
+        let profil = vec![3u8; 700];
+        let code = unsafe {
+            sp_doc_output_intent(
+                4,
+                b"FOGRA39".as_ptr(),
+                7,
+                b"Coated FOGRA39".as_ptr(),
+                14,
+                profil.as_ptr(),
+                profil.len(),
+            )
+        };
+        assert_eq!(code, 0);
+
+        let avec = ecrire_document().expect("document valide");
+        let texte = String::from_utf8_lossy(&avec);
+        assert!(texte.contains("/GTS_PDFX"));
+        assert!(texte.contains("/OutputConditionIdentifier (FOGRA39)"));
+        assert!(texte.contains("/N 4"));
+        assert!(texte.contains("/OutputIntents ["));
+
+        // Couper les traits de coupe allège le flux.
+        assert_eq!(sp_doc_marks(0), 0);
+        let sans = ecrire_document().expect("document valide");
+        assert!(
+            sans.len() < avec.len(),
+            "sans traits, le fichier est plus petit"
+        );
+
+        // Un profil trop court est refusé à l'écriture.
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+        let court = [0u8; 8];
+        assert_eq!(
+            unsafe {
+                sp_doc_output_intent(
+                    4,
+                    b"X".as_ptr(),
+                    1,
+                    b"Y".as_ptr(),
+                    1,
+                    court.as_ptr(),
+                    court.len(),
+                )
+            },
+            0
+        );
+        assert_eq!(ecrire_document().unwrap_err(), SP_ERR_BAD_INPUT);
+    }
+
+    #[test]
+    fn document_reset_abandonne_le_precedent() {
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+        // Page CMJN, forme peinte en RVB : le document ne peut pas s'écrire.
+        assert_eq!(op("rect\t0\t0\t1\t1\tfill\t0\tq3\t0\t0\t0"), 1);
+        assert_eq!(
+            ecrire_document().unwrap_err(),
+            SP_ERR_BAD_INPUT,
+            "une forme RVB sur une page CMJN doit être refusée"
+        );
+
+        // Après reset, le document précédent ne doit laisser aucune trace.
+        assert_eq!(sp_doc_reset(), 0);
+        assert_eq!(sp_doc_page_count(), 0);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), 1);
+        let pdf = ecrire_document().expect("document valide");
+        assert_eq!(
+            String::from_utf8_lossy(&pdf)
+                .matches("/Type /Page ")
+                .count(),
+            1
+        );
+    }
+
+    #[test]
+    fn document_sans_reset_prealable_est_refuse() {
+        // On repart d'un état propre, puis on ferme le document.
+        assert_eq!(sp_doc_reset(), 0);
+        let mut garde = DOC.lock().unwrap_or_else(|e| e.into_inner());
+        *garde = None;
+        drop(garde);
+
+        assert_eq!(sp_doc_page_count(), SP_ERR_BAD_INPUT);
+        assert_eq!(sp_doc_add_page(100.0, 100.0, 0.0, 0.0, 0), SP_ERR_BAD_INPUT);
+        assert_eq!(ecrire_document().unwrap_err(), SP_ERR_BAD_INPUT);
+        // On laisse le module dans un état utilisable pour les autres tests.
+        assert_eq!(sp_doc_reset(), 0);
     }
 }

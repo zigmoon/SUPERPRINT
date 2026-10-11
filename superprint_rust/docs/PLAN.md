@@ -55,11 +55,30 @@ du défaut « PDF de 131 Mo ».
 **`superprint-wasm`** est le **seul** déclaré en `cdylib`. Il produit
 `dist/superprint_core.wasm`, **sans aucun import** : un navigateur le charge
 avec `WebAssembly.instantiate(bytes, {})`, sans WASI ni fonction hôte. Il
-expose 19 fonctions derrière une frontière C écrite à la main — unités,
-couleurs sur octets, luminance, filtre RunLength, réduction d’image, écriture
-PDF — **sans `wasm-bindgen`**, pour tenir la règle « zéro dépendance ». C’est
-also le seul endroit du workspace où il y a de l’`unsafe` : les trois crates du
-noyau restent `#![forbid(unsafe_code)]`.
+expose 33 fonctions derrière une frontière C écrite à la main — unités,
+couleurs sur octets, luminance, filtre RunLength, réduction d'image, page de
+démonstration, et **construction de document** — **sans `wasm-bindgen`**, pour
+tenir la règle « zéro dépendance ». C'est aussi le seul endroit du workspace où
+il y a de l'`unsafe` : les trois crates du noyau restent
+`#![forbid(unsafe_code)]`.
+
+**Phase 2c — l'exporteur de document.** ✅ `superprint-pdf::document` remplace la
+page unique par un **document** : plusieurs pages de formats différents, formes
+vectorielles (rectangle, cercle, polygone, segment) en remplissage ou contour,
+tons directs **avec teintes**, images grises ou RVB placées et mises à l'échelle,
+métadonnées, traits de coupe et `OutputIntent` avec profil ICC fourni.
+
+La frontière expose un **constructeur de document** (`sp_doc_reset`,
+`sp_doc_add_page`, `sp_doc_add_ink`, `sp_doc_op`, `sp_doc_add_image_*`,
+`sp_doc_info`, `sp_doc_output_intent`, `sp_doc_write`) : un seul document en
+cours, comme un curseur. Les opérations de dessin arrivent en **lignes
+tabulées**, ce qui évite d'inventer une structure binaire et garde le protocole
+lisible dans un journal d'erreur.
+
+> **Ce qui manque pour un exporteur complet** : le **texte**. Sans analyse de
+> police (module n° 6), on ne place que des aplats et des images. Manquent aussi
+> `/FlateDecode` et `/DCTDecode` (RunLength seul), les chaînes UTF-16BE, et
+> l'écriture XMP sans laquelle aucune conformité PDF/X n'est revendiquée.
 
 **Phase 3 — bascule progressive.** ⏳ À venir. Un module à la fois, derrière un
 drapeau, avec **repli JS** si le module Rust n'est pas chargé.
@@ -130,24 +149,41 @@ SuperPrint lui-même : c’est la phase 3.
 |---|---|---|
 | 1 | Géométrie d'impression | ✅ `superprint-core::geometry` (+ `superprint-pdf::boxes`) |
 | 2 | Couleurs (RVB/CMJN, gris) | ✅ `superprint-core::color` (+ `color8`, sur octets) |
-| 3 | Séparation des tons directs / PDF | ✅ `superprint-pdf` (fondation + image XObject) |
+| 3 | Séparation des tons directs / PDF | ✅ `superprint-pdf::document` — **exporteur de document** |
 | 4 | Traitement d'image | ✅ `superprint-image` (réduction, DPI, RunLength) |
 | 5 | Césure + habillage du texte | ⏳ |
 | 6 | Analyse de police / typo vectorielle | ⏳ |
-| 7 | Profil ICC | ⏳ |
-| — | **Frontière WebAssembly (le livrable)** | ✅ `superprint-wasm` — `cdylib`, 19 fonctions, **0 import**, 110 Ko |
+| 7 | Profil ICC | ⏳ (`OutputIntent` posable avec un profil fourni, pas de gestion) |
+| — | **Frontière WebAssembly (le livrable)** | ✅ `superprint-wasm` — `cdylib`, 33 fonctions, **0 import**, 164 Ko |
 | — | **Colle de branchement + repli** | ✅ `web/superprint-core.js` — parité du repli mesurée, PDF refusé sans le noyau |
 
-> Les modules n° 3 et 4 sont des **fondations validées**, pas encore des
-exporteurs complets. Ce qui manque : ICC, `OutputIntent` PDF/X, polices,
-**décodage** d’image (JPEG/PNG) donc `/DCTDecode`, `/FlateDecode`, le
-placement et l’échelle d’une image, le multi-pages — et la mesure de parité
-avec la sortie JS de SuperPrint.
+### Ce que l'exporteur couvre, et ce qu'il ne couvre pas
+
+| Besoin d'impression | État |
+|---|---|
+| Plusieurs pages, formats différents | ✅ |
+| `MediaBox` / `TrimBox` / `BleedBox` | ✅ (les trois, **toujours** écrites) |
+| Traits de coupe | ✅ |
+| Tons directs `/Separation` **avec teintes** | ✅ |
+| Quadri CMJN ou RVB, page par page | ✅ |
+| Rectangles, cercles, polygones, segments | ✅ remplissage et contour, épaisseurs |
+| Images placées et mises à l'échelle (gris, RVB) | ✅ |
+| Métadonnées `/Info` en PDFDocEncoding | ✅ accents **et** typographie française |
+| `OutputIntent` + profil ICC fourni | ✅ |
+| **Texte et polices** | ❌ module n° 6 — **c'est le manque principal** |
+| `/FlateDecode`, `/DCTDecode` | ❌ RunLength seul |
+| Chaînes UTF-16BE (CJK) | ❌ hors PDFDocEncoding → `?` |
+| Validation PDF/X complète (XMP) | ❌ non écrite, donc **non revendiquée** |
+
+> Le module n° 3 n'est plus une fondation : l'exporteur produit de vrais documents
+> multi-pages relus par `pdf-lib`, avec tons directs teintés, vectoriel, images et
+> métadonnées. Le manque qui compte désormais est le **texte** : sans analyse de
+> police (module n° 6), on ne place que des aplats et des images.
 >
-> Le noyau Rust représente à ce jour **environ 2,7 %** du JavaScript de
-> SuperPrint (≈ 3 000 lignes contre ≈ 104 000, dont `main.js` à lui seul
-> ≈ 95 000). C’est un début de noyau, pas une refactorisation achevée, et
-> aucune ligne n’est encore appelée par l’application.
+> Le noyau Rust représente à ce jour **environ 3 %** du JavaScript de SuperPrint
+> (≈ 4 000 lignes contre ≈ 104 000, dont `main.js` à lui seul ≈ 95 000). C'est un
+> début solide, pas une refactorisation achevée — et **aucune ligne n'est encore
+> appelée par l'application**.
 
 ## Décisions prises
 
@@ -157,15 +193,22 @@ avec la sortie JS de SuperPrint.
    **un par un**, chacun validé (tests + parité) avant d'être branché.
 3. **Isolation** : `superprint_rust/` ne modifie ni `superprint/` ni
    `superprint_ASTRO/`. La bascule dans l'app viendra plus tard, derrière un
-   drapeau, avec repli JS.4. **Pas de `wasm-bindgen`** : la frontière est une C ABI écrite à la main
+   drapeau, avec repli JS.
+4. **Pas de `wasm-bindgen`** : la frontière est une C ABI écrite à la main
    (`crates/superprint-wasm`), pour ne pas introduire de dépendance ni de chaîne
-   d’outils JavaScript à versionner. Le prix est la gestion mémoire manuelle.
+   d'outils JavaScript à versionner. Le prix est la gestion mémoire manuelle.
 5. **Le `.wasm` livrable n'est pas versionné.** Il vit dans `dist/`, que la
    règle `**/dist/` du dépôt ignore — même traitement que
    `superprint_asm/dist/`. Il se régénère par
    `pwsh -File scripts/build-wasm.ps1`, et `scripts/validate-wasm.mjs` refuse un
    module dont la version ne correspond plus au `Cargo.toml` : une dérive se
    voit immédiatement au lieu de dormir dans un binaire commité.
+6. **Un seul document en cours à la frontière.** Un document se construit par
+   étapes (les pages référencent des images déclarées plus tard), et le
+   sérialiser à chaque appel coûterait plus cher que de garder un curseur. D'où
+   `sp_doc_reset` / … / `sp_doc_write`, plutôt qu'une fonction unique à quinze
+   paramètres.
+
 ## Décisions encore ouvertes
 
 1. **ICC** : réutiliser `lcms.wasm` (C) via des liaisons, ou réimplémenter ?

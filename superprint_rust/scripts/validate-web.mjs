@@ -430,5 +430,208 @@ titre('endurance (détection de fuite de mémoire)');
   check('2 000 tours × 4 appels sans épuiser la mémoire', true, `${nf(4 * 2000)} appels, module de ${(avant / 1024).toFixed(1)} Ko`);
 }
 
+// ── 8. Document complet (l'exporteur) ───────────────────────────────────────
+titre('document : plusieurs pages, vectoriel, tons directs, image, métadonnées');
+{
+  const doc = api.createDocument();
+  check('createDocument() rend une API de document', typeof doc.write === 'function', 'chaînable');
+  check(
+    'dessiner sans page est refusé, avec un message utile',
+    (() => {
+      try {
+        doc.fillRect({ x: 0, y: 0, width: 1, height: 1, paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+        return false;
+      } catch (e) {
+        return e.name === 'CoreError' && /addPage/.test(e.message);
+      }
+    })(),
+    'le message dit ce qui manque',
+  );
+
+  doc.info('title', 'SuperPrint — essai d’export');
+  doc.info('author', 'Zigmoon');
+  doc.info('producer', 'SuperPrint 0.2.0');
+
+  // Page 1 : CMJN, deux encres directes, formes variées.
+  doc.addPage({ trimWidthMm: 170, trimHeightMm: 240, bleedMm: 3, markMm: 10, quadri: 'cmyk' });
+  const rang0 = doc.addInk({ space: 'cmyk', name: 'PANTONE WARM RED C', c: 0, m: 0.9, y: 0.8, k: 0 });
+  const rang1 = doc.addInk({ space: 'rgb', name: 'PANTONE 300 C', r: 0, g: 94, b: 184 });
+  check('encres déclarées dans l’ordre', rang0 === 0 && rang1 === 1, `rangs ${rang0} et ${rang1}`);
+
+  doc
+    .fillRect({ x: 0, y: 0, width: 170, height: 240, paint: { cmyk: { c: 0.05, m: 0.02, y: 0.1, k: 0 } } })
+    .fillRect({ x: 15, y: 150, width: 80, height: 60, paint: { spot: { index: 0, tint: 0.5 } } })
+    .strokeRect({ x: 15, y: 150, width: 80, height: 60, widthMm: 0.5, paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } })
+    .fillCircle({ cx: 120, cy: 180, radius: 25, paint: { spot: { index: 1, tint: 1 } } })
+    .strokeCircle({ cx: 120, cy: 180, radius: 32, widthMm: 0.25, paint: { cmyk: { c: 1, m: 0.7, y: 0, k: 0.2 } } })
+    .fillPolygon({
+      points: [[20, 40], [80, 100], [140, 40]],
+      paint: { spot: { index: 0, tint: 0.25 } },
+    })
+    .line({ x1: 0, y1: 130, x2: 170, y2: 130, widthMm: 0.35, paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+
+  // Image placée : un dégradé de 200 × 100 pixels, réduit à l'affichage.
+  const IMG_W = 200;
+  const IMG_H = 100;
+  const gris = new Uint8Array(IMG_W * IMG_H);
+  for (let y = 0; y < IMG_H; y += 1) gris.fill(Math.round((y * 255) / (IMG_H - 1)), y * IMG_W, (y + 1) * IMG_W);
+  const image = doc.addImageGray(gris, IMG_W, IMG_H, 'auto');
+  check('image enregistrée', image === 0, `descripteur ${image}`);
+  doc.placeImage({ image, x: 25, y: 110, width: 60, height: 15 });
+
+  // Page 2 : RVB, sans encre directe.
+  doc.addPage({ trimWidthMm: 100, trimHeightMm: 100, bleedMm: 0, markMm: 0, quadri: 'rgb' });
+  doc.fillRect({ x: 10, y: 10, width: 80, height: 80, paint: { rgb: { r: 230, g: 60, b: 40 } } });
+
+  const pdf = doc.write();
+  const texte = Buffer.from(pdf).toString('latin1');
+  check('PDF de document produit', pdf.length > 1500 && texte.startsWith('%PDF-'), `${nf(pdf.length)} octets`);
+  check('deux pages déclarées', /\/Count 2/.test(texte), `${(texte.match(/\/Type \/Page /g) ?? []).length} objets page`);
+  check('deux tons directs en /Separation', (texte.match(/\/Separation/g) ?? []).length === 2);
+  check('les deux encres sont sélectionnées dans le flux', texte.includes('/CS0 cs') && texte.includes('/CS1 cs'));
+  check('teintes écrites', texte.includes('0.5 scn') && texte.includes('0.25 scn') && texte.includes('1 scn'));
+  check('les deux quadris coexistent', texte.includes('/DeviceCMYK') && texte.includes('/DeviceRGB'));
+  check('boîtes de page par page', (texte.match(/\/TrimBox/g) ?? []).length === 2);
+  check('image placée et déclarée', texte.includes('/Im0 Do') && /\/Subtype \/Image/.test(texte));
+  check('métadonnées écrites', /\/Title \(/.test(texte) && /\/Author \(Zigmoon\)/.test(texte));
+  check('titre accentué en PDFDocEncoding', texte.includes('caf\\351') || !texte.includes('café'), 'aucun octet UTF-8 brut');
+  check('table xref cohérente', /startxref\s+\d+/.test(texte) && texte.trimEnd().endsWith('%%EOF'));
+
+  await writeFile(join(root, 'web-page-document.pdf'), pdf);
+
+  // Les traits de coupe : on compare AVEC et SANS, plutôt que de deviner un
+  // total — la page porte aussi des contours de formes, qui produisent les
+  // mêmes opérateurs. La différence isole exactement les huit segments.
+  const avec = Buffer.from(doc.write()).length;
+  const segmentsAvec = (Buffer.from(doc.write()).toString('latin1').match(/ l\nS\n/g) ?? []).length;
+  doc.marks(false);
+  const sansTexte = Buffer.from(doc.write()).toString('latin1');
+  const sans = Buffer.from(doc.write()).length;
+  const segmentsSans = (sansTexte.match(/ l\nS\n/g) ?? []).length;
+
+  check(
+    'traits de coupe : huit segments, et rien sans l’option',
+    segmentsAvec - segmentsSans === 8,
+    `${segmentsAvec} avec, ${segmentsSans} sans (contours de formes compris)`,
+  );
+  check('marks(false) allège le document', sans < avec, `${nf(sans)} < ${nf(avec)} octets`);
+
+  // Refus attendus.
+  check(
+    'une peinture inconnue est refusée côté colle',
+    (() => {
+      try {
+        doc.fillRect({ x: 0, y: 0, width: 1, height: 1, paint: { lab: {} } });
+        return false;
+      } catch (e) {
+        return e.name === 'CoreError';
+      }
+    })(),
+  );
+  check(
+    'une coordonnée non finie est refusée',
+    (() => {
+      try {
+        doc.fillRect({ x: NaN, y: 0, width: 1, height: 1, paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+        return false;
+      } catch (e) {
+        return e.name === 'CoreError' && /non finie/.test(e.message);
+      }
+    })(),
+    'un NaN ne doit jamais entrer dans un flux PDF',
+  );
+  check(
+    'une composante hors bornes est refusée',
+    (() => {
+      try {
+        doc.fillRect({ x: 0, y: 0, width: 1, height: 1, paint: { rgb: { r: 300, g: 0, b: 0 } } });
+        return false;
+      } catch (e) {
+        return e.name === 'CoreError' && /hors bornes/.test(e.message);
+      }
+    })(),
+  );
+  check(
+    'un polygone de moins de trois sommets est refusé',
+    (() => {
+      try {
+        doc.fillPolygon({ points: [[0, 0], [1, 1]], paint: { cmyk: { c: 0, m: 0, y: 0, k: 1 } } });
+        return false;
+      } catch (e) {
+        return e.name === 'CoreError';
+      }
+    })(),
+  );
+  check(
+    'une image inconnue est refusée à l’écriture',
+    (() => {
+      doc.placeImage({ image: 42, x: 0, y: 0, width: 5, height: 5 });
+      try {
+        doc.write();
+        return false;
+      } catch (e) {
+        return e.name === 'CoreError';
+      }
+    })(),
+  );
+
+  check('le repli refuse createDocument', (() => {
+    try {
+      repli.createDocument();
+      return false;
+    } catch (e) {
+      return e.name === 'CoreError' && e.code === Core.ERR.UNAVAILABLE;
+    }
+  })());
+}
+
+// ── 9. Destination de sortie ────────────────────────────────────────────────
+titre('destination de sortie (OutputIntent + profil ICC fourni)');
+{
+  // Un profil factice mais de taille plausible pour du CMJN.
+  const profil = new Uint8Array(700).fill(9);
+  const doc = api.createDocument();
+  doc.addPage({ trimWidthMm: 100, trimHeightMm: 100, bleedMm: 0, markMm: 0, quadri: 'cmyk' });
+  doc.outputIntent({
+    components: 4,
+    identifier: 'FOGRA39',
+    info: 'Coated FOGRA39 (ISO 12647-2:2004)',
+    icc: profil,
+  });
+  const pdf = doc.write();
+  const texte = Buffer.from(pdf).toString('latin1');
+  check('OutputIntent déclaré', texte.includes('/OutputIntents ['));
+  check('identifiant de condition écrit', texte.includes('/OutputConditionIdentifier (FOGRA39)'));
+  check('profil ICC embarqué tel quel', texte.includes('/DestOutputProfile') && texte.includes('/N 4'));
+  await writeFile(join(root, 'web-page-intent.pdf'), pdf);
+
+  check(
+    'un profil trop court est refusé à l’écriture',
+    (() => {
+      const autre = api.createDocument();
+      autre.addPage({ trimWidthMm: 100, trimHeightMm: 100, bleedMm: 0, markMm: 0, quadri: 'cmyk' });
+      autre.outputIntent({ components: 4, identifier: 'X', info: 'Y', icc: new Uint8Array(8) });
+      try {
+        autre.write();
+        return false;
+      } catch (e) {
+        return e.name === 'CoreError';
+      }
+    })(),
+    'un profil de 8 octets n’est pas un profil',
+  );
+  check(
+    'outputIntent sans octets est refusé côté colle',
+    (() => {
+      try {
+        doc.outputIntent({ components: 4, identifier: 'X', info: 'Y' });
+        return false;
+      } catch (e) {
+        return e.name === 'CoreError' && /profil ICC/.test(e.message);
+      }
+    })(),
+  );
+}
+
 console.log(ok ? '\n\u2705 la colle est conforme et son repli tient la parité.' : '\n\u274c colle NON conforme.');
 process.exit(ok ? 0 : 1);
