@@ -14,6 +14,14 @@ name = "superprint-core"
 version = "0.2.0"
 
 [[package]]
+name = "superprint-doc"
+version = "0.2.0"
+dependencies = [
+ "superprint-flow",
+ "superprint-zip",
+]
+
+[[package]]
 name = "superprint-flow"
 version = "0.2.0"
 dependencies = [

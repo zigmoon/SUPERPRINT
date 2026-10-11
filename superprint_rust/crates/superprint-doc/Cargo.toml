@@ -1,0 +1,13 @@
+[package]
+name = "superprint-doc"
+description = "Import de documents du noyau Rust de SuperPrint : .docx (OOXML), .odt (OpenDocument) et .idml (InDesign), analyses depuis le conteneur ZIP et rendus sous forme de paragraphes, de styles, d'images et de format de page."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+superprint-flow = { path = "../superprint-flow" }
+superprint-zip = { path = "../superprint-zip" }

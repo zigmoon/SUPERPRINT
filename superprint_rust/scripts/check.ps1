@@ -203,6 +203,18 @@ Step 'conteneur ZIP : fichiers reels contre un lecteur independant, et refus' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-zip.mjs }
 }
 
+# Validation de l'IMPORT DE DOCUMENTS : .docx (OOXML), .odt (OpenDocument) et
+# .idml (InDesign), analyses depuis le conteneur ZIP. Le controle confronte le
+# noyau a un EXTRACTEUR ECRIT A PART (son propre analyseur XML et ses propres
+# extracteurs), sur les documents reels du depot, paragraphe par paragraphe. Puis
+# il verifie l'invariante — le texte importe est exactement le texte du XML —
+# et les refus : RTF renomme, PDF renomme, XML abime, entite inconnue, classeur
+# ODF renomme en .odt.
+Step 'import : docx, odt et idml contre un extracteur independant, et invariante' {
+  & $cargo build -p superprint-doc --example doc_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-doc.mjs }
+}
+
 Pop-Location
 
 if ($ok) {
