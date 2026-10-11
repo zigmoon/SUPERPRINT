@@ -25,6 +25,7 @@
 //! l'appelant mesure au lieu de supposer.
 
 use crate::object;
+use superprint_compress::compresser_zlib;
 use superprint_image::{run_length_encode, GrayImage, RgbImage};
 
 /// Espace couleur d'une image XObject.
@@ -60,9 +61,14 @@ pub enum ImageFilter {
     None,
     /// Filtre PDF `/RunLengthDecode`, appliqué d'office.
     RunLengthDecode,
-    /// `/RunLengthDecode` **seulement s'il fait gagner des octets**, sinon aucun
-    /// filtre. C'est le réglage recommandé : il garantit qu'un PDF n'est
-    /// **jamais** plus gros que les pixels qu'il contient.
+    /// Filtre PDF `/FlateDecode` (zlib/DEFLATE), appliqué d'office.
+    ///
+    /// C'est le filtre des PDF d'impression réels : il gagne sur tout ce qui
+    /// n'est pas un aplat, c'est-à-dire sur presque tout.
+    FlateDecode,
+    /// Le **plus petit** des trois, calculé pour de bon : RunLength, Flate,
+    /// ou aucun filtre. C'est le réglage recommandé : il garantit qu'un PDF
+    /// n'est **jamais** plus gros que les pixels qu'il contient.
     Auto,
 }
 
@@ -73,6 +79,7 @@ impl ImageFilter {
         match self {
             Self::None | Self::Auto => None,
             Self::RunLengthDecode => Some("RunLengthDecode"),
+            Self::FlateDecode => Some("FlateDecode"),
         }
     }
 }
@@ -85,6 +92,7 @@ impl std::fmt::Display for ImageFilter {
             // filtre — on l'annonce donc comme « aucun ».
             Self::None | Self::Auto => "aucun",
             Self::RunLengthDecode => "RunLengthDecode",
+            Self::FlateDecode => "FlateDecode",
         })
     }
 }
@@ -140,12 +148,20 @@ impl ImageXObject {
         let (data, filter) = match filter {
             ImageFilter::None => (raw.to_vec(), ImageFilter::None),
             ImageFilter::RunLengthDecode => (run_length_encode(raw), ImageFilter::RunLengthDecode),
+            ImageFilter::FlateDecode => (compresser_zlib(raw), ImageFilter::FlateDecode),
             ImageFilter::Auto => {
-                let encoded = run_length_encode(raw);
-                if encoded.len() < raw_len {
-                    (encoded, ImageFilter::RunLengthDecode)
-                } else {
+                // On encode pour de bon les deux candidats et on garde le plus
+                // petit. Les deux sont sans perte, donc le choix n'a aucune
+                // conséquence sur l'image — seulement sur le poids du fichier.
+                let par_longueurs = run_length_encode(raw);
+                let par_flate = compresser_zlib(raw);
+                let meilleur = par_longueurs.len().min(par_flate.len()).min(raw_len);
+                if meilleur == raw_len {
                     (raw.to_vec(), ImageFilter::None)
+                } else if par_flate.len() <= par_longueurs.len() {
+                    (par_flate, ImageFilter::FlateDecode)
+                } else {
+                    (par_longueurs, ImageFilter::RunLengthDecode)
                 }
             }
         };
@@ -248,11 +264,20 @@ mod tests {
         let image = aplat(64, 64);
         let xobject = ImageXObject::from_rgb(&image, ImageFilter::Auto);
 
-        assert_eq!(xobject.filter(), ImageFilter::RunLengthDecode);
+        // Sur un aplat, **Flate bat RunLength** : une seule correspondance y
+        // décrit 258 octets, là où RunLength consomme 2 octets par tranche de
+        // 128. Le choix automatique prend donc Flate — c'est une amélioration,
+        // pas un changement gratuit.
+        assert_eq!(xobject.filter(), ImageFilter::FlateDecode);
         assert_eq!(xobject.raw_len(), 64 * 64 * 3);
-        // Un aplat de 12288 octets identiques tombe à 96 runs de 128 octets,
-        // soit 192 octets : 2 octets par tranche de 128 au lieu de 128.
-        assert_eq!(xobject.encoded_len(), (64 * 64 * 3) / 128 * 2);
+        // RunLength donnerait 2 octets par tranche de 128 ; Flate fait mieux.
+        let par_longueurs = (64 * 64 * 3) / 128 * 2;
+        assert!(
+            xobject.encoded_len() < par_longueurs,
+            "Flate devrait battre RunLength ({}) : {}",
+            par_longueurs,
+            xobject.encoded_len()
+        );
         assert!(
             xobject.encoded_len() * 50 < xobject.raw_len(),
             "aplat peu compressé : {} octets",
@@ -287,9 +312,36 @@ mod tests {
         assert_eq!(none.filter(), ImageFilter::None);
         assert_eq!(none.encoded_len(), none.raw_len());
 
+        // Un filtre imposé est un filtre qu'on ne discute pas, même si un autre
+        // ferait mieux : RunLength donne ici 2 octets par tranche de 128.
         let forced = ImageXObject::from_rgb(&image, ImageFilter::RunLengthDecode);
         assert_eq!(forced.filter(), ImageFilter::RunLengthDecode);
         assert!(forced.encoded_len() < forced.raw_len());
+
+        let flate = ImageXObject::from_rgb(&image, ImageFilter::FlateDecode);
+        assert_eq!(flate.filter(), ImageFilter::FlateDecode);
+        assert!(flate.encoded_len() < flate.raw_len());
+        // ⚠️ Sur une **très petite** image, RunLength gagne : le flux zlib
+        // traîne 2 octets d'en-tête et 4 octets de somme de contrôle, quand un
+        // aplat de 48 octets tient en un seul run de 2 octets. C'est
+        // précisément pourquoi `Auto` compare les deux au lieu de trancher.
+        assert!(
+            forced.encoded_len() < flate.encoded_len(),
+            "sur 4 × 4, RunLength ({}) doit battre Flate ({})",
+            forced.encoded_len(),
+            flate.encoded_len()
+        );
+
+        // Sur une image de taille réelle, c'est l'inverse — et largement.
+        let grand = aplat(64, 64);
+        let flate_grand = ImageXObject::from_rgb(&grand, ImageFilter::FlateDecode);
+        let longueurs_grand = ImageXObject::from_rgb(&grand, ImageFilter::RunLengthDecode);
+        assert!(
+            flate_grand.encoded_len() < longueurs_grand.encoded_len(),
+            "sur 64 × 64, Flate ({}) doit battre RunLength ({})",
+            flate_grand.encoded_len(),
+            longueurs_grand.encoded_len()
+        );
     }
 
     #[test]

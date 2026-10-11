@@ -61,6 +61,15 @@ Step 'cesure : parite mesuree contre hypher.js et les regles FR' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-cesure.mjs }
 }
 
+# Validation de la COMPRESSION : le codec est confronté au `zlib` de Node, qui
+# est une autre implémentation. Les deux sens sont éprouvés — ce que le Rust
+# compresse doit être relu par Node, et réciproquement — et les flux abîmés
+# doivent être refusés, jamais approximés.
+Step 'compression : DEFLATE verifie dans les deux sens contre zlib' {
+  & $cargo build -p superprint-compress --example compression_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-compression.mjs }
+}
+
 Pop-Location
 
 if ($ok) {

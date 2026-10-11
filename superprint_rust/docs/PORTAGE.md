@@ -11,6 +11,9 @@ qui existe, et dit pour chaque domaine l'un de ces quatre états :
 | 🟠 **portable plus tard** | faisable, mais demande une chaîne (ZIP+XML, décodage JPEG…) |
 | ❌ **à garder en JS** | dépend du DOM, de WebGL, du réseau ou du navigateur — le porter n'aurait pas de sens, et la raison est écrite |
 
+Les domaines marqués ✅ **plus bas** (B1, B2) sont ceux réalisés dans ce
+chantier ; les autres portent leur état réel.
+
 Les lignes sont mesurées, pas estimées : `superprint_rust/crates` = **8 567
 lignes** de Rust (29 fichiers, tests compris) contre **104 574 lignes** de
 JavaScript applicatif (hors bibliothèques tierces) → **≈ 8 %**. Le portage est
@@ -65,21 +68,25 @@ c'est exactement ce qu'on veut sortir du JavaScript.
 françaises de `main.js` (lecture seule) et compare les deux moteurs mot pour
 mot. Voir la section « Mesure » plus bas.
 
-### B2. Compression 🟡
+### B2. Compression 🟡 → ✅ (fait)
 
-| Étape de SuperPrint | Source actuelle | État |
+| Étape de SuperPrint | Source actuelle | Rust |
 |---|---|---|
-| Compression **Flate** (zlib/DEFLATE) pour le PDF | absente : RunLength seul | 🟡 à porter |
-| Décompression Flate (flux PDF produits ailleurs) | `pako`/navigateur selon l'endroit | 🟡 à porter |
-| Écriture `/FlateDecode` dans l'exporteur | jamais faite | 🟡 à porter |
+| Compression **Flate** (zlib/DEFLATE) pour le PDF | absente : RunLength seul | ✅ `compress::deflate`, `compress::zlib` |
+| Décompression Flate (flux PDF produits ailleurs) | `pako`/navigateur selon l'endroit | ✅ `compress::inflate` — blocs stockés, **figés et dynamiques** |
+| Écriture `/FlateDecode` dans l'exporteur | jamais faite | ✅ `pdf::image` (choix automatique) |
 
-**Pourquoi c'est prioritaire** : le défaut le plus lourd du rapport interne est
-la taille des fichiers. RunLength ne gagne rien sur une photographie ou un
-contenu vectoriel dense ; Flate, si.
+**Preuve croisée** : `scripts/validate-compression.mjs` confronte le codec au
+`zlib` **de Node**, sur 15 jeux (aplats, dégradés, vectoriel, texte, bruit,
+le module `.wasm` livrable). Les deux sens sont éprouvés : ce que le Rust
+compresse est relu par Node, et réciproquement. Les cinq formes de corruption
+(en-tête, corps, somme, vide, aléatoire) sont **refusées nommément**.
 
-**Preuve prévue** : les flux produits seront relus par le `zlib` **de Node**
-(implémentation indépendante), et le noyau relira les flux de Node. Aller-retour
-croisé dans les deux sens — c'est la seule façon sérieuse de valider un codec.
+**Limites, mesurées** : le compresseur emploie le **Huffman figé**, pas le
+dynamique — 4 % de mieux en moyenne pour `zlib` sur le corpus, jusqu'à 4× sur
+un aplat. Le **décompresseur**, lui, lit le Huffman dynamique : tout flux venu
+d'ailleurs se relit. Un contenu **ne gonfle jamais** : le compresseur compare
+avec un bloc stocké, et `ImageFilter::Auto` compare les trois encodages.
 
 ### B3. Imposition / montage en planches 🟡
 
@@ -188,7 +195,7 @@ Du plus utile au moins utile, en tenant compte du risque :
 | Rang | Module | Pourquoi maintenant |
 |---|---|---|
 | ~~1~~ | ~~Césure (module 5)~~ | ✅ **fait** — débloque toute la composition |
-| 2 | **Compression Flate** | répond au « PDF de 131 Mo » |
+| ~~2~~ | ~~Compression Flate~~ | ✅ **fait** — 108× sur du vectoriel, 2,4× sur le `.wasm` |
 | 3 | **Imposition (planches)** | défaut **mesuré** cité par le rapport interne |
 | 4 | **Preflight** | c'est ce qui fait accepter un fichier par un imprimeur |
 | 5 | **Nuanciers** | les tons directs existent déjà côté Rust : il manque les données |
@@ -215,7 +222,7 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | PDF | `pdf-lib` (lecteur tiers) | ouvrable, boîtes et tons directs conformes |
 | Texte | `pdf.js` (lecteur tiers) | **caractères relus en clair** |
 | **Césure** | `hypher.js` + règles FR de `main.js` | **2 597 mots, six champs identiques** |
-| Compression | `zlib` de Node | *aller-retour croisé (à faire)* |
+| **Compression** | `zlib` de Node | **aller-retour croisé**, 15 jeux, 2 sens |
 
 Les scripts correspondants sont dans `scripts/` et sont tous enchaînés par
 `scripts/check.ps1`.

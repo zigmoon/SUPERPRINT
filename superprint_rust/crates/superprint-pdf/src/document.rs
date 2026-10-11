@@ -897,6 +897,11 @@ impl Document {
 
             let (content, polices_page) =
                 page.content(&self.images, &self.fonts, self.marks, &mut usage)?;
+            // Le flux de contenu est écrit **en clair**. `Writer` sait aussi le
+            // compresser (`push_stream_compresse`) et le fait pour les images ;
+            // le laisser en clair ici garde le contenu inspectable d'un coup
+            // d'œil, ce qui vaut cher quand on cherche pourquoi une page sort
+            // de travers. Voir `docs/PORTAGE.md`.
             let content_ref = writer.push_stream("", content.as_bytes());
 
             // Les polices de cette page reçoivent leurs objets ici : les

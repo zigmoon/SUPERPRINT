@@ -790,7 +790,14 @@
           { code: ERR.BAD_INPUT, fn: 'document' },
         );
       }
-      const codeFiltre = filter === 'none' ? 0 : filter === 'runlength' ? 1 : 2;
+      // 0 = aucun, 1 = RunLength, 2 = Flate, 3 = choix automatique.
+      // « auto » reste le réglage recommandé : le noyau encode pour de bon les
+      // deux candidats et garde le plus petit, si bien qu'un PDF ne peut jamais
+      // être plus gros que ses pixels.
+      const codesFiltre = { none: 0, runlength: 1, flate: 2, auto: 3 };
+      const codeFiltre = Object.prototype.hasOwnProperty.call(codesFiltre, filter)
+        ? codesFiltre[filter]
+        : 3;
       return portee(function (ctx) {
         const p = ctx.poser(pixels.subarray(0, attendu));
         const code = fonction(p, width, height, codeFiltre);
@@ -1067,7 +1074,10 @@
             fn: 'writeSpotPageGray',
           });
         }
-        var filtre = o.filter === 'none' ? 0 : o.filter === 'runlength' ? 1 : 2;
+        // Mêmes codes que `addImage*` : 0 = aucun, 1 = RunLength, 2 = Flate,
+        // 3 = choix automatique. Une seule table, pour qu'un décalage entre les
+        // deux points d'entrée ne puisse pas se glisser en silence.
+        var filtre = o.filter === 'none' ? 0 : o.filter === 'runlength' ? 1 : o.filter === 'flate' ? 2 : 3;
         return deuxPasses('writeSpotPageGray', function (ctx, dst, cap, lenPtr) {
           var pEncres = ctx.poser(encres);
           var pImage = ctx.poser(image);

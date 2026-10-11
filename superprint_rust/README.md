@@ -34,6 +34,15 @@ chargeable par un navigateur.**
 
 - **`superprint-core`** — primitives pures : `units` (mm/pt/px/cm/in),
   `color` (RVB/CMJN/luma), `geometry` (fond perdu, traits de coupe).
+- **`superprint-compress`** — **compression DEFLATE et zlib**, écrite depuis les
+  RFC 1951 et 1950, sans dépendance. C'est la réponse au défaut le plus lourd du
+  rapport de test interne : **la taille des fichiers**. `RunLength` ne gagnait
+  rien sur une photographie ni sur du vectoriel dense ; Flate, si — mesuré :
+  **108×** sur un flux de contenu, **2,4×** sur le module `.wasm` livrable.
+  Le décompresseur est **complet** (blocs stockés, Huffman figé **et dynamique**),
+  donc tout flux PDF venu d'ailleurs se relit. Le compresseur emploie le Huffman
+  **figé** : c'est une limite assumée, chiffrée (≈ 4 % de plus que `zlib` sur le
+  corpus, jusqu'à 4× sur un aplat), écrite dans `docs/PORTAGE.md`.
 - **`superprint-font`** — **module n° 6** : **analyse de police**. Lit un
   fichier TrueType (`sfnt`) depuis ses tables, **sans jamais dépasser les
   bornes** : répertoire de tables, `.head` (unités, cadre, italique), `.hhea` et
@@ -45,6 +54,13 @@ chargeable par un navigateur.**
   police donnée. Les formats à contours **CFF** (`OTTO`), les collections
   (`.ttc`) et les polices compressées (`woff`) sont **refusés explicitement**,
   avec un message qui dit quoi faire.
+- **`superprint-text`** — **module n° 5** : **césure et composition**. Le moteur
+  de **Liang** (les motifs de césure de TeX, ceux de `hypher.js`) et les
+  **règles typographiques françaises** portées depuis `main.js`, chacune
+  documentée par le cas réel qui l'avait motivée. Plus la découpe en lignes, avec
+  la mesure **injectée** (elle dépend de la police, pas du noyau). Aucun
+  dictionnaire n'est embarqué : les motifs sont des données de langue, fournies
+  dans l'un des deux formats que le crate sait lire — dont celui du dépôt.
 - **`superprint-pdf`** — **module n° 3** : **tons directs & exporteur PDF**.
   Chaînes `/Separation` nommées, fonction de teinte, pile de couleurs
   (quadri CMJN/RVB + encres), boîtes de page (`MediaBox`/`TrimBox`/`BleedBox`)
@@ -53,6 +69,9 @@ chargeable par un navigateur.**
   remplissage ou contour, tons directs **avec teintes**, images grises ou RVB
   placées et mises à l'échelle, **texte dans une police embarquée**, métadonnées
   en PDFDocEncoding, traits de coupe et `OutputIntent` avec profil ICC fourni.
+  Les images choisissent d'elles-mêmes le plus petit des trois encodages —
+  aucun filtre, `RunLength`, `Flate` — de sorte qu'un PDF **ne peut pas** être
+  plus gros que les pixels qu'il contient.
   Le texte part en polices **composites** (`/Type0` + `/Identity-H` +
   `/CIDFontType2` + `/FontFile2`), avec les largeurs `/W` des seuls glyphes
   réellement employés et une table **`/ToUnicode`** — c'est elle qui rend le
@@ -60,8 +79,7 @@ chargeable par un navigateur.**
   l'extraction par un lecteur indépendant.
 - **`superprint-image`** — **module n° 4** : **traitement d'image**. Tampons
   typés RVB/gris, **réduction** bilinéaire ou plus proche voisin, ciblage DPI,
-  filtre PDF **RunLength**. C'est la réponse au « PDF de 131 Mo » : les pixels
-  arrivent **réduits** et repartent **compressés**.
+  filtre PDF **RunLength**.
 - **`superprint-wasm`** — **la frontière C**, et le seul crate en `cdylib` :
   c'est lui qui produit le `.wasm` du navigateur. **32 fonctions** exposées
   (unités, couleurs sur octets, luminance, RunLength, réduction, page de
@@ -72,12 +90,12 @@ chargeable par un navigateur.**
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **161 tests unitaires** (`superprint-core` 12,
-> `superprint-font` 31, `superprint-image` 16, `superprint-pdf` 82,
-> `superprint-wasm` 20) — tous verts.
+> wasm32-unknown-unknown`, et **268 tests unitaires** (`superprint-compress` 35,
+> `superprint-core` 12, `superprint-font` 31, `superprint-image` 16,
+> `superprint-pdf` 85, `superprint-text` 69, `superprint-wasm` 20) — tous verts.
 >
-> Le module livrable est construit dans **`dist/superprint_core.wasm`** (≈ 262 Ko),
-> chargé **sans le moindre import**, et validé sur cinq points :
+> Le module livrable est construit dans **`dist/superprint_core.wasm`** (≈ 273 Ko),
+> chargé **sans le moindre import**, et validé sur six points :
 >
 > - **parité croisée** — sur 250 000 pixels, RVB→CMJN, CMJN→RVB et la luminance
 >   sont **identiques au bit près** à l'implémentation écrite à la main en WAT
@@ -96,7 +114,13 @@ chargeable par un navigateur.**
 >   composé, et **`pdf.js` (Mozilla) relit les caractères en clair**, accents,
 >   apostrophe typographique et tiret cadratin compris. C'est cette relecture qui
 >   prouve que `/ToUnicode` est juste : sans elle, le PDF s'afficherait sans
->   qu'aucun lecteur ne puisse extraire un mot.
+>   qu'aucun lecteur ne puisse extraire un mot ;
+> - **césure** — les deux moteurs, le Rust et celui du produit (`hypher.js` +
+>   les règles françaises de `main.js`, lus **sans être modifiés**), sont
+>   comparés **mot pour mot** sur 2 597 mots de prose française et 84 cas
+>   pièges : les six valeurs comparées sont identiques ;
+> - **compression** — le codec DEFLATE est confronté au **`zlib` de Node**, dans
+>   les deux sens, sur 15 jeux ; les flux abîmés sont refusés nommément.
 >
 > Un `pwsh -File scripts/check.ps1` enchaîne tout, validation comprise.
 
@@ -105,7 +129,11 @@ prêt** : `web/superprint-core.js` charge le noyau et expose des fonctions simpl
 avec un **repli JavaScript** dont la parité est mesurée octet pour octet. Voir
 `web/BRANCHEMENT.md`. `superprint/` n'a **pas** été modifié.
 
-Le noyau représente à ce jour **environ 2,7 %** du JavaScript de SuperPrint.
+Le noyau représente à ce jour **environ 9 %** du JavaScript applicatif de
+SuperPrint — et ce chiffre, comme tout le reste, est mesuré, pas estimé :
+`docs/PORTAGE.md` donne l'inventaire **étape par étape, fonction par fonction**,
+avec ce qui est porté, ce qui reste à porter, et ce qui **ne doit pas** l'être
+(interface, WebGL, WebRTC, service worker, moteurs C compilés).
 
 ## Prérequis
 
@@ -170,13 +198,17 @@ superprint_rust/
 │  ├─ serve-web.mjs           serveur local pour le banc d'essai navigateur
 │  ├─ validate-pdf.mjs        relit un PDF avec pdf-lib (pages, tons directs, image)
 │  ├─ validate-text.mjs       relit le TEXTE avec pdf.js (police, /ToUnicode)
+│  ├─ validate-cesure.mjs     compare la CESURE au moteur JavaScript du produit
+│  ├─ validate-compression.mjs confronte le codec DEFLATE au zlib de Node
 │  ├─ validate-wasm.mjs       charge le .wasm sans import et mesure la parité
 │  └─ validate-web.mjs        valide la colle, son repli, le document et ses garde-fous
 └─ crates/
    ├─ superprint-core/        primitives pures (units, color, geometry, color8)
+   ├─ superprint-compress/    DEFLATE et zlib, écrits depuis les RFC
    ├─ superprint-font/        analyse de police TrueType (module n° 6)
    ├─ superprint-image/       traitement d'image (module n° 4)
    ├─ superprint-pdf/         tons directs & écriture PDF (module n° 3)
+   ├─ superprint-text/        césure et composition (module n° 5)
    └─ superprint-wasm/        frontière C → dist/superprint_core.wasm (cdylib)
 ```
 
@@ -223,6 +255,15 @@ node scripts/validate-pdf.mjs web-page-text.pdf --mm=196x266 --spots=1 --pages=1
 # apostrophe typographique et tiret cadratin compris. C'est la table /ToUnicode
 # qui le permet : sans elle, le PDF s'affiche sans être extractible.
 node scripts/validate-text.mjs
+
+# Preuve de la CÉSURE : les deux moteurs — celui du produit (hypher.js et les
+# règles françaises de main.js, lus sans être modifiés) et celui du noyau —
+# sont comparés mot pour mot sur du vrai texte français.
+node scripts/validate-cesure.mjs
+
+# Preuve de la COMPRESSION : le codec DEFLATE est confronté au zlib de Node,
+# dans les deux sens, et doit refuser tout flux abîmé.
+node scripts/validate-compression.mjs
 
 # Banc d'essai NAVIGATEUR (27 mesures ; le fetch du .wasm est refusé en file://)
 node scripts/serve-web.mjs

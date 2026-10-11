@@ -1,0 +1,13 @@
+[package]
+name = "superprint-compress"
+description = "Compression DEFLATE du noyau Rust de SuperPrint : compresseur (LZ77 + Huffman figé) et décompresseur complets, enveloppe zlib — pour écrire de vrais flux /FlateDecode dans un PDF d'impression."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+# Crate pur Rust : aucune dépendance, compilable en natif et en WASM.
+[dependencies]
+superprint-core = { path = "../superprint-core" }

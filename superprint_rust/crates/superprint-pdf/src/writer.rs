@@ -15,6 +15,8 @@
 //! qui le référencent, puis on remplit l'emplacement. Aucun tri, aucune
 //! deuxième passe sur la table.
 
+use superprint_compress::compresser_zlib;
+
 /// Numéro du premier objet — l'entrée 0 de la table `xref` est la liste libre.
 const FIRST_OBJECT: usize = 1;
 
@@ -112,6 +114,27 @@ impl Writer {
         self.slots.len()
     }
 
+    /// Ajoute un flux **compressé** (`/FlateDecode`) et renvoie son numéro.
+    ///
+    /// La compression n'est retenue que si elle **rétrécit** réellement les
+    /// données : un flux de contenu de vingt octets grossirait, l'en-tête zlib
+    /// et la somme de contrôle coûtant six octets à eux seuls. Un PDF n'est
+    /// donc jamais plus gros à cause de ce choix.
+    pub fn push_stream_compresse(&mut self, entries: &str, data: &[u8]) -> usize {
+        let comprime = compresser_zlib(data);
+        if comprime.len() < data.len() {
+            let entrees = if entries.is_empty() {
+                "/Filter /FlateDecode".to_string()
+            } else {
+                format!("{entries} /Filter /FlateDecode")
+            };
+            self.slots.push(Some(stream_body(&entrees, &comprime)));
+        } else {
+            self.slots.push(Some(stream_body(entries, data)));
+        }
+        self.slots.len()
+    }
+
     /// Corps d'un flux, exposé pour les appels qui réservent avant d'écrire.
     #[must_use]
     pub fn stream_body(entries: &str, data: &[u8]) -> Vec<u8> {
@@ -196,6 +219,89 @@ fn stream_body(entries: &str, data: &[u8]) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Extrait le corps du flux du n-ième objet, ou `None` s'il n'y en a pas.
+    fn corps_de_flux(pdf: &[u8], rang: usize) -> Option<Vec<u8>> {
+        const OUVERTURE: &[u8] = b"stream\n";
+        const FERMETURE: &[u8] = b"\nendstream";
+        let mut restant = pdf;
+        let mut vus = 0usize;
+        loop {
+            let debut = restant
+                .windows(OUVERTURE.len())
+                .position(|f| f == OUVERTURE)?
+                + OUVERTURE.len();
+            let apres = &restant[debut..];
+            let fin = apres
+                .windows(FERMETURE.len())
+                .position(|f| f == FERMETURE)?;
+            if vus == rang {
+                return Some(apres[..fin].to_vec());
+            }
+            vus += 1;
+            restant = &apres[fin..];
+        }
+    }
+
+    #[test]
+    fn un_flux_compressible_recoit_flate() {
+        // Un flux de contenu répétitif : c'est le cas réel d'une page de texte.
+        let contenu = "1 0 0 1 0 0 cm\n0.5 0 0 0 k\n0 0 226 170 re f\n".repeat(50);
+        let mut writer = Writer::new();
+        let racine = writer.reserve();
+        writer.push_stream_compresse("", contenu.as_bytes());
+        writer.put(racine, "<< >>\n");
+        let pdf = writer.finish(racine, "").expect("document valide");
+        let texte = String::from_utf8_lossy(&pdf);
+
+        assert!(
+            texte.contains("/Filter /FlateDecode"),
+            "le filtre doit être déclaré : {}",
+            &texte[..texte.len().min(300)]
+        );
+        assert!(
+            pdf.len() < contenu.len(),
+            "le PDF ({}) doit être plus petit que le contenu brut ({})",
+            pdf.len(),
+            contenu.len()
+        );
+        // Et le flux doit se relire : c'est ce qui compte, pas le filtre.
+        let corps = corps_de_flux(&pdf, 0).expect("un flux au moins");
+        let relu = superprint_compress::decompresser_zlib(&corps).expect("flux zlib valide");
+        assert_eq!(relu, contenu.as_bytes());
+        // `/Length` annonce bien la longueur **du flux écrit**, pas du contenu.
+        assert!(texte.contains(&format!("/Length {}", corps.len())));
+    }
+
+    #[test]
+    fn un_flux_incompressible_reste_en_clair() {
+        // Un contenu de vingt octets : l'en-tête zlib (2) et la somme de
+        // contrôle (4) le feraient grossir. Le flux doit rester tel quel.
+        let contenu = b"1 0 0 1 0 0 cm\n";
+        let mut writer = Writer::new();
+        let racine = writer.reserve();
+        writer.push_stream_compresse("", contenu);
+        writer.put(racine, "<< >>\n");
+        let pdf = writer.finish(racine, "").expect("document valide");
+        let texte = String::from_utf8_lossy(&pdf);
+        assert!(!texte.contains("/FlateDecode"), "aucun filtre pour si peu");
+        assert_eq!(corps_de_flux(&pdf, 0).unwrap(), contenu.to_vec());
+    }
+
+    #[test]
+    fn les_entrees_du_flux_compressif_sont_conservees() {
+        // Les entrées déjà présentes (ici `/Length1` d'un programme de police)
+        // doivent précéder le filtre, pas être écrasées.
+        let contenu = vec![b'a'; 5000];
+        let mut writer = Writer::new();
+        let racine = writer.reserve();
+        writer.push_stream_compresse("/Length1 55", &contenu);
+        writer.put(racine, "<< >>\n");
+        let pdf = writer.finish(racine, "").expect("document valide");
+        let texte = String::from_utf8_lossy(&pdf);
+        assert!(texte.contains("/Length1 55"), "entrée conservée");
+        assert!(texte.contains("/Length1 55 /Filter /FlateDecode"));
+    }
 
     #[test]
     fn reference_en_avant() {

@@ -164,6 +164,8 @@ noyaux, et mesurée **en chargement navigateur des deux côtés** :
 | RunLength | décodeur écrit depuis l’ISO 32000-2 | 4 jeux | flux relu à l’identique |
 | écriture PDF | `pdf-lib` | 2 documents | ouvrables, conformes |
 | **texte composé** | **`pdf.js` (extraction)** | 1 page, 3 lignes | caractères **relus en clair**, accents compris |
+| **césure** | `hypher.js` + règles FR de `main.js` | 2 597 mots, six champs identiques |
+| **compression** | `zlib` de Node | aller-retour croisé, 15 jeux, deux sens |
 
 Le reste du noyau n’a **pas** encore de mesure de parité contre le JavaScript de
 SuperPrint lui-même : c’est la phase 3.
@@ -176,10 +178,11 @@ SuperPrint lui-même : c’est la phase 3.
 | 2 | Couleurs (RVB/CMJN, gris) | ✅ `superprint-core::color` (+ `color8`, sur octets) |
 | 3 | Séparation des tons directs / PDF | ✅ `superprint-pdf::document` — **exporteur de document** |
 | 4 | Traitement d'image | ✅ `superprint-image` (réduction, DPI, RunLength) |
-| 5 | Césure + habillage du texte | ⏳ |
+| 5 | Césure + habillage du texte | ✅ `superprint-text` — Liang + règles FR **mesurées** contre `hypher.js` |
 | 6 | Analyse de police / typo vectorielle | ✅ `superprint-font` — `cmap`, `head`, `hhea`, `hmtx`, `maxp`, `name` ; CFF refusé |
 | 7 | Profil ICC | ⏳ (`OutputIntent` posable avec un profil fourni, pas de gestion) |
-| — | **Frontière WebAssembly (le livrable)** | ✅ `superprint-wasm` — `cdylib`, 32 fonctions, **0 import**, 262 Ko |
+| — | **Compression DEFLATE / zlib** | ✅ `superprint-compress` — écrit depuis les RFC, vérifié dans les deux sens |
+| — | **Frontière WebAssembly (le livrable)** | ✅ `superprint-wasm` — `cdylib`, 32 fonctions, **0 import**, 273 Ko |
 | — | **Colle de branchement + repli** | ✅ `web/superprint-core.js` — parité du repli mesurée, PDF refusé sans le noyau |
 
 ### Ce que l'exporteur couvre, et ce qu'il ne couvre pas
@@ -199,7 +202,8 @@ SuperPrint lui-même : c’est la phase 3.
 | **Texte extractible** (`/ToUnicode`) | ✅ vérifié à la relecture par `pdf.js` |
 | **Sous-ensemble de police** | ❌ police entière embarquée (plus lourd, jamais incomplet) |
 | Crénage, écritures complexes, bidirectionnel | ❌ |
-| `/FlateDecode`, `/DCTDecode` | ❌ RunLength seul |
+| `/DCTDecode` (JPEG) | ❌ Flate et RunLength seulement |
+| **`/FlateDecode`** | ✅ pour les **images** ; les flux de **contenu** restent en clair, pour rester inspectables |
 | Chaînes UTF-16BE (CJK) | ⚠️ dans un **CMap** `/ToUnicode` de police, oui ; en **métadonnée**, non (hors PDFDocEncoding → `?`) |
 | Validation PDF/X complète (XMP) | ❌ non écrite, donc **non revendiquée** |
 

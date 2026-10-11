@@ -480,7 +480,8 @@ pub unsafe extern "C" fn sp_write_spot_page_gray(
     let filter = match filter {
         0 => ImageFilter::None,
         1 => ImageFilter::RunLengthDecode,
-        2 => ImageFilter::Auto,
+        2 => ImageFilter::FlateDecode,
+        3 => ImageFilter::Auto,
         _ => return SP_ERR_BAD_INPUT,
     };
     let Ok(image) = GrayImage::from_data(img_w, img_h, pixels.to_vec()) else {
@@ -838,7 +839,8 @@ pub unsafe extern "C" fn sp_doc_op(spec: *const u8, spec_len: usize) -> i32 {
 
 /// Enregistre une image en **niveaux de gris** (1 octet par pixel).
 ///
-/// `filter` : `0` = aucun, `1` = RunLength forcé, `2` = RunLength seulement
+/// `filter` : `0` = aucun, `1` = RunLength forcé, `2` = Flate forcé,
+/// `3` = choix automatique (le plus petit des trois).
 /// s'il fait gagner des octets (recommandé).
 ///
 /// Renvoie le rang de l'image, à utiliser dans une opération `image`. Elle doit
@@ -998,7 +1000,8 @@ fn parse_filter(code: u32) -> Option<ImageFilter> {
     match code {
         0 => Some(ImageFilter::None),
         1 => Some(ImageFilter::RunLengthDecode),
-        2 => Some(ImageFilter::Auto),
+        2 => Some(ImageFilter::FlateDecode),
+        3 => Some(ImageFilter::Auto),
         _ => None,
     }
 }

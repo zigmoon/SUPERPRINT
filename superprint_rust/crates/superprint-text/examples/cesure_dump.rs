@@ -131,7 +131,13 @@ fn ligne(mot: &str, cesure: &Cesure) -> String {
     // Un caractère par frontière : la comparaison position par position est
     // bien plus parlante qu'un simple « ça diffère ».
     let frontieres: String = (0..=caracteres.len())
-        .map(|i| if francais::frontiere_valide(&caracteres, i) { '1' } else { '0' })
+        .map(|i| {
+            if francais::frontiere_valide(&caracteres, i) {
+                '1'
+            } else {
+                '0'
+            }
+        })
         .collect();
 
     let syllabes = joindre(francais::syllabes(mot));
