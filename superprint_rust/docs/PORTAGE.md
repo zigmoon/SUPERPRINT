@@ -771,10 +771,64 @@ des caractères, pas des unités UTF-16 : le découpage se fait sur
 
 ### La conversion de couleurs : le premier calcul de masse passé en Rust
 
-`main.js` **appelle déjà** la conversion à travers `window._spCmykConvert`
-(`main.js:35707`, avec un garde `typeof`). C'est un point d'accroche prévu par le
-produit : le branchement n'a eu qu'à poser une fonction du même nom, et **aucune
-ligne de `main.js` n'a été touchée**.
+`main.js` **appelle** la conversion à travers `window._spCmykConvert`
+(`main.js:35707`) plutôt que par son nom local. Le branchement n'a donc eu qu'à
+poser une fonction du même nom, et **aucune ligne de `main.js` n'a été touchée**.
+
+> ⚠️ **Correction d'une affirmation antérieure.** En écrivant ce branchement, ce
+> document a d'abord présenté ces appels indirects comme « ~100 points d'accroche
+> prévus par le produit pour une migration progressive ». **C'est faux, et la
+> mesure le montre.** `_spCmykConvert`, `spTextMetrics`, `spControleCliche…` sont
+> **définies par `main.js` lui-même** : ce ne sont pas des accroches laissées
+> libres, mais des fonctions re-lues à travers `window` comme garde défensif
+> (`typeof window.X === 'function'`, 129 occurrences). La conséquence pratique
+> est la même — on peut les remplacer — mais la raison n'est pas la même, et
+> présenter du code existant comme une invitation était une erreur de lecture.
+
+**Ce qui est atteint à travers `window` — donc remplaçable** (mesuré par
+`scripts/analyse-accroches.mjs`, qui lit **`main.js` et `index.html`**) :
+181 fonctions appelées, plus celles lues en `window.X || X` depuis les boutons de
+`index.html`. Y figurent `_spCmykConvert` (fait), `spTabMmVers`,
+`spTextMetrics`, `closeImpositionModal`, et **les deux entrées d'export** :
+`confirmExport` (1 130 lignes) et `exportImposedPDF` (270 lignes).
+
+**Ce qui ne l'est pas** : `calculateImposition`, `renderImposedSheet`,
+`buildImposedSheetCanvas`, `_exportImposedPdfLib`. Ils sont appelés directement
+par leur nom dans `main.js`, et nulle part ailleurs.
+
+> **Ce que cela veut dire pour l'imposition, précisément.** Le **calcul** (l'ordre
+> des pages) et le **rendu** (la feuille, les repères) sont inatteignables : il
+> faudrait ajouter une ligne dans `main.js`, ce que la règle du dépôt interdit.
+> Mais la **porte d'entrée** de l'export imposé, elle, est remplaçable : le bouton
+> fait `window.exportImposedPDF || exportImposedPDF`. Passer l'imposition au noyau
+> n'est donc pas « brancher une fonction » — c'est **reprendre tout
+> l'export** : ordre, plan des feuilles, rendu et écriture du PDF. C'est le
+> chantier décrit plus bas, et c'est un chantier, pas une retouche.
+
+**Et pourquoi la plupart ne valent pas la peine d'être portées** (mesuré par
+`scripts/taille-fonctions.mjs`) :
+
+| Fonction | Taille | Pourquoi on ne la porte pas |
+|---|---|---|
+| `spTabMmVers` | **1 ligne** | une multiplication par une constante |
+| `spColCapacite` | 4 lignes | idem |
+| `spCompterObjetsPage` | 9 lignes | idem |
+| `spPageMmVersUnite` | 10 lignes | un `switch` de quatre cas |
+| `spPageUnitVersMm` | 12 lignes | idem |
+| `spTextMetrics`, `spNaturalContentHeight`, `spCoordsMondeSerialisation`, `spCountVisibleLines`, `spColGeomFor`, `spColsActives`, `spLineBoxHeight` | 10–41 lignes | **entrées d'interface** : elles prennent un objet Fabric, que Rust ne peut pas posséder |
+| `spControleClicheExportAvantEnvoi` | 31 lignes | lit les canevas Fabric de l'application |
+| **`_spCmykConvert`** | **62 lignes** | **calcul pur sur des nombres — le seul candidat réel, et il est fait** |
+
+Une traversée de frontière WebAssembly coûte plus cher qu'une multiplication :
+porter `spTabMmVers` rendrait l'application **plus lente** tout en augmentant le
+nombre de lignes de Rust. Ce serait du portage pour le portage.
+
+**Le vrai gisement restant n'est pas là.** Ce sont les ~2 200 lignes de
+`confirmExport` (1 130), `renderImposedSheet` (294), `buildImposedSheetCanvas`
+(282), `exportImposedPDF` (270) et `_exportImposedPdfLib` (244), qui font
+ aujourd'hui le travail de `pdf-lib` (513 Ko) et de `jsPDF` (356 Ko). Le noyau
+ *écrit* déjà du PDF ; c'est là qu'il reste du Rust à gagner, et c'est un
+chantier, pas une retouche.
 
 Et cette fonction est partout : la couleur d'un objet, l'aperçu CMJN de l'écran,
 l'export. La remplacer, c'est toute la chaîne colorimétrique qui passe en Rust.

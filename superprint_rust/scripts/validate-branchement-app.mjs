@@ -359,6 +359,33 @@ check(
   typeof bac._spCmykConvert === 'function' && bac._spCmykConvert !== cmykDuProduit,
 );
 
+// ⚠️ LE CONTRÔLE QUI PROTÈGE LE BRANCHEMENT LUI-MÊME.
+//
+// Le remplacement ne fonctionne que parce que `main.js` atteint la conversion
+// **par `window`** au moment de l'appel, et non par son nom local. Si quelqu'un
+// remplaçait un jour `window._spCmykConvert(r, g, b)` par `_spCmykConvert(r, g, b)`
+// dans `main.js`, le branchement mourrait **en silence** : les tests ci-dessus
+// continueraient de passer, puisque ce harnais appelle `bac._spCmykConvert`
+// directement. Le noyau serait chargé, la fonction posée — et jamais appelée.
+//
+// C'est exactement le genre de panne qu'on ne voit pas. D'où ce contrôle : il
+// vérifie que le branchement est **atteignable**, et pas seulement posé.
+check(
+  'main.js atteint la conversion par window (sinon le branchement serait mort sans le dire)',
+  /window\._spCmykConvert\s*\(/.test(sourceMain),
+  'cherché : « window._spCmykConvert( » dans le fichier réel',
+);
+
+// La même question, pour la forme : combien d'autres fonctions `main.js`
+// atteint-il par `window` ? C'est ce qui dit si un composant est branchable.
+{
+  const atteintes = [...sourceMain.matchAll(/window\.(\w+)\s*\(/g)].map((m) => m[1]);
+  const uniques = new Set(atteintes);
+  console.log(
+    `  ${uniques.size} fonctions atteintes par window dans main.js — c'est la mesure du branchable`,
+  );
+}
+
 // La parité, sur un balayage : mêmes arguments, même objet rendu. C'est le
 // contrôle qui compte — une couleur fausse part directement dans le PDF livré.
 {
