@@ -21,6 +21,17 @@ pub enum ImageError {
     },
     /// Coordonnées de pixel hors de l'image.
     OutOfBounds,
+    /// Deux images de tailles différentes là où elles doivent coïncider.
+    ///
+    /// C'est le cas de la composition : fusionner un calque et un fond de
+    /// tailles différentes n'a pas de sens, et le faire « au plus petit »
+    /// produirait une image rognée en silence.
+    DimensionsIncompatibles {
+        /// `(largeur, hauteur)` attendues.
+        attendu: (u32, u32),
+        /// `(largeur, hauteur)` reçues.
+        recu: (u32, u32),
+    },
 }
 
 impl std::fmt::Display for ImageError {
@@ -34,6 +45,11 @@ impl std::fmt::Display for ImageError {
                 )
             }
             Self::OutOfBounds => write!(f, "coordonnées de pixel hors de l'image"),
+            Self::DimensionsIncompatibles { attendu, recu } => write!(
+                f,
+                "images de tailles différentes : {}×{} attendu, {}×{} reçu",
+                attendu.0, attendu.1, recu.0, recu.1
+            ),
         }
     }
 }

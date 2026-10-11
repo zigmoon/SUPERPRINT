@@ -16,16 +16,29 @@
 //!
 //! - [`buffer`] — tampons typés ([`RgbImage`], [`GrayImage`]) et conversions ;
 //! - [`resample`] — réduction bilinéaire / plus proche voisin, ciblage DPI ;
-//! - [`compress`] — filtre PDF *RunLength* (encodage et décodage).
+//! - [`compress`] — filtre PDF *RunLength* (encodage et décodage) ;
+//! - [`niveaux`] — niveaux, courbes, correction automatique ;
+//! - [`filtres`] — flou gaussien, netteté (masque flou), médiane 3×3 ;
+//! - [`encrage`] — couverture d'encre, limitation du taux d'encre, GCR ;
+//! - [`alpha`] — canal alpha, composition, aplatissement.
 //!
-//! Feuille de route : `superprint_rust/docs/PLAN.md` (module n° 4).
+//! Feuille de route : `superprint_rust/docs/PORTAGE.md`.
 
 #![forbid(unsafe_code)]
 
+pub mod alpha;
 pub mod buffer;
 pub mod compress;
+pub mod encrage;
+pub mod filtres;
+pub mod niveaux;
 pub mod resample;
 
+pub use alpha::{composer, AlphaImage, ModeFusion, Rgba};
 pub use buffer::{GrayImage, ImageError, RgbImage};
 pub use compress::{run_length_decode, run_length_encode};
-pub use resample::{downscale_bilinear, downscale_nearest, target_size_for_dpi};
+pub use encrage::{Cmjn, CmjnImage};
+pub use niveaux::{appliquer, appliquer_gris, Courbe, Niveaux, Reglages};
+pub use resample::{
+    downscale_area, downscale_area_gray, downscale_bilinear, downscale_nearest, target_size_for_dpi,
+};

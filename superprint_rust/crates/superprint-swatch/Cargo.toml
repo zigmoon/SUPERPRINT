@@ -1,0 +1,12 @@
+[package]
+name = "superprint-swatch"
+description = "Nuanciers et tons directs du noyau Rust de SuperPrint : catalogue engendré depuis le produit, recherche par nom et par proximité perceptuelle, lecture des fichiers Adobe Swatch Exchange (.ase)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+superprint-core = { path = "../superprint-core" }

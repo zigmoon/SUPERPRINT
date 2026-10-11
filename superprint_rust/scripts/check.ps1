@@ -126,6 +126,25 @@ Step 'reduction d''image : exactitude, anti-crenelage, energie' { node scripts/v
 # colle elle-meme.
 Step 'prepresse : detection, silence, tri et refus des regles illisibles' { node scripts/validate-preflight.mjs }
 
+# Validation des NUANCIERS : le catalogue engage dans le crate est compare aux
+# nuanciers du PRODUIT (le tableau BOOKS de swatchbooks.js et les <optgroup> de
+# index.html, lus sur place), et le lecteur .ase du noyau a la fonction lireAse
+# du produit, sur des fichiers engendres. L'ecart voulu sur un gris en dernier
+# bloc est mesure explicitement, pas passe sous silence.
+Step 'nuanciers : catalogue du produit, lecteur .ase, recherche' {
+  & $cargo build -p superprint-swatch --example swatch_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-swatch.mjs }
+}
+
+# Validation du TRAITEMENT D'IMAGE (niveaux, courbes, flou, nettete, mediane,
+# encrage, alpha) : chaque filtre est compare a un repli JavaScript ecrit
+# independamment — a l'octet pres quand la formule est une definition, a l'unite
+# pres pour le flou (separable d'un cote, 2D de l'autre).
+Step 'image : niveaux, flou, mediane, encrage, alpha contre un repli JS' {
+  & $cargo build -p superprint-image --example image_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-image.mjs }
+}
+
 Pop-Location
 
 if ($ok) {

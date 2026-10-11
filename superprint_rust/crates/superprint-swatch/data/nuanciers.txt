@@ -1,0 +1,762 @@
+# Nuanciers de SuperPrint — fichier ENGENDRÉ, ne pas modifier à la main.
+# Source : superprint/app/JS/swatchbooks.js (BOOKS) + superprint/app/index.html
+#          (#spotColorSelect). Relancer scripts/extract-swatchbooks.mjs.
+# Format : !livre<TAB>id<TAB>nom / !echantillon<TAB>n / !groupe<TAB>label
+#          !couleur<TAB>nom<TAB>#RRGGBB
+!livre	toyo	Toyo Color Finder
+!groupe	Jaunes & oranges
+!couleur	Toyo 001 — Jaune pâle	#F7E7A0
+!couleur	Toyo 002 — Jaune	#F5DC4E
+!couleur	Toyo 003 — Jaune vif	#F2C200
+!couleur	Toyo 004 — Jaune orangé	#F5A70A
+!couleur	Toyo 005 — Orange pâle	#F9B96B
+!couleur	Toyo 006 — Orange	#F5810B
+!couleur	Toyo 007 — Orange soutenu	#EE6411
+!couleur	Toyo 008 — Orange rouge	#E8491D
+!couleur	Toyo 009 — Vermillon	#DE3B18
+!groupe	Rouges & roses
+!couleur	Toyo 010 — Écarlate	#D62B24
+!couleur	Toyo 011 — Rouge	#C8102E
+!couleur	Toyo 012 — Rouge profond	#A6142B
+!couleur	Toyo 013 — Carmin	#B32046
+!couleur	Toyo 014 — Crimson	#9C1F3E
+!couleur	Toyo 015 — Bordeaux	#6E1A2C
+!couleur	Toyo 016 — Rose pâle	#F6C6D0
+!couleur	Toyo 017 — Rose	#EE8FA8
+!couleur	Toyo 018 — Rose vif	#E45C93
+!couleur	Toyo 019 — Magenta	#D6006E
+!groupe	Violets
+!couleur	Toyo 020 — Pourpre	#8A2A86
+!couleur	Toyo 021 — Violet	#6A2C8F
+!couleur	Toyo 022 — Violet bleuté	#4F2C8B
+!groupe	Bleus & cyans
+!couleur	Toyo 023 — Bleu pâle	#A9CDE8
+!couleur	Toyo 024 — Bleu ciel	#6FAED9
+!couleur	Toyo 025 — Bleu clair	#3E8FC4
+!couleur	Toyo 026 — Bleu	#1666AC
+!couleur	Toyo 027 — Bleu profond	#0E4C86
+!couleur	Toyo 028 — Marine	#0B2B4F
+!couleur	Toyo 029 — Cyan	#00A0C6
+!couleur	Toyo 030 — Turquoise	#00A9A0
+!groupe	Verts
+!couleur	Toyo 031 — Vert d’eau	#00796B
+!couleur	Toyo 032 — Vert pâle	#C6E5A8
+!couleur	Toyo 033 — Vert clair	#8CC63F
+!couleur	Toyo 034 — Vert	#3BA13B
+!couleur	Toyo 035 — Vert soutenu	#1D7A38
+!couleur	Toyo 036 — Vert foncé	#0E5A2E
+!couleur	Toyo 037 — Olive	#7E8C3A
+!couleur	Toyo 038 — Kaki	#B0A264
+!groupe	Bruns & neutres
+!couleur	Toyo 039 — Brun clair	#C29A6B
+!couleur	Toyo 040 — Brun	#8B5A2B
+!couleur	Toyo 041 — Brun foncé	#5E3A1E
+!couleur	Toyo 042 — Gris 20 %	#CCCCCC
+!couleur	Toyo 043 — Gris 50 %	#808080
+!couleur	Toyo 044 — Gris 80 %	#333333
+!couleur	Toyo 045 — Noir	#1A1A1A
+!couleur	Toyo 046 — Blanc cassé	#F5F3EA
+!livre	focoltone	Focoltone
+!groupe	Jaunes & oranges
+!couleur	Focoltone 1001 — Jaune clair	#FCE883
+!couleur	Focoltone 1002 — Jaune	#F7D117
+!couleur	Focoltone 1003 — Jaune d’or	#EFB000
+!couleur	Focoltone 1004 — Curcuma	#E09B0E
+!couleur	Focoltone 1005 — Ambre	#D98C00
+!couleur	Focoltone 1006 — Orange clair	#FBB040
+!couleur	Focoltone 1007 — Orange	#F5811F
+!couleur	Focoltone 1008 — Orange brûlé	#D2621B
+!couleur	Focoltone 1009 — Terracotta	#B85C29
+!groupe	Rouges & roses
+!couleur	Focoltone 1010 — Corail	#F26D5B
+!couleur	Focoltone 1011 — Rouge clair	#E22B29
+!couleur	Focoltone 1012 — Rouge	#CE1126
+!couleur	Focoltone 1013 — Rouge profond	#A5181F
+!couleur	Focoltone 1014 — Bordeaux	#74172B
+!couleur	Focoltone 1015 — Rouge rosé	#D5325A
+!couleur	Focoltone 1016 — Rose	#EC6E9C
+!couleur	Focoltone 1017 — Rose clair	#F7A8C4
+!couleur	Focoltone 1018 — Magenta	#D6006E
+!couleur	Focoltone 1019 — Fuchsia	#B5197F
+!groupe	Violets
+!couleur	Focoltone 1020 — Violet clair	#9C6BB5
+!couleur	Focoltone 1021 — Violet	#6D3E9E
+!couleur	Focoltone 1022 — Violet profond	#4B2C7F
+!couleur	Focoltone 1023 — Aubergine	#3B2351
+!groupe	Bleus & cyans
+!couleur	Focoltone 1024 — Bleu très clair	#BBDDF2
+!couleur	Focoltone 1025 — Bleu clair	#7FBEE4
+!couleur	Focoltone 1026 — Bleu ciel	#3E92CC
+!couleur	Focoltone 1027 — Bleu	#1B62A5
+!couleur	Focoltone 1028 — Bleu roi	#123C7A
+!couleur	Focoltone 1029 — Bleu nuit	#0E2447
+!couleur	Focoltone 1030 — Cyan	#0097C9
+!couleur	Focoltone 1031 — Turquoise	#00AAA5
+!couleur	Focoltone 1032 — Cyan foncé	#00696F
+!groupe	Verts
+!couleur	Focoltone 1033 — Vert menthe	#BFE3CE
+!couleur	Focoltone 1034 — Vert clair	#7CC576
+!couleur	Focoltone 1035 — Vert	#3AA63C
+!couleur	Focoltone 1036 — Vert soutenu	#1E7F3C
+!couleur	Focoltone 1037 — Vert bouteille	#0F5B33
+!couleur	Focoltone 1038 — Vert anis	#A8C33A
+!couleur	Focoltone 1039 — Olive	#7B8A32
+!groupe	Bruns & neutres
+!couleur	Focoltone 1040 — Sable	#D9C39A
+!couleur	Focoltone 1041 — Brun clair	#B98A55
+!couleur	Focoltone 1042 — Brun	#7E5327
+!couleur	Focoltone 1043 — Marron	#4E3320
+!couleur	Focoltone 1044 — Gris clair	#D2D2D2
+!couleur	Focoltone 1045 — Gris	#8C8C8C
+!couleur	Focoltone 1046 — Gris foncé	#4A4A4A
+!couleur	Focoltone 1047 — Noir	#161616
+!couleur	Focoltone 1048 — Blanc	#FFFFFF
+!livre	hks	HKS
+!groupe	Jaunes & oranges
+!couleur	HKS 1 K — Jaune citron	#F6E500
+!couleur	HKS 3 K — Jaune	#FFD500
+!couleur	HKS 4 K — Jaune d’or	#FFC300
+!couleur	HKS 5 K — Jaune orangé	#FFB100
+!couleur	HKS 6 K — Orange clair	#FFA000
+!couleur	HKS 7 K — Orange	#FF8A00
+!couleur	HKS 8 K — Orange soutenu	#F57C00
+!couleur	HKS 10 K — Orange rouge	#F2620F
+!couleur	HKS 11 K — Mandarine	#EE5A1B
+!couleur	HKS 12 K — Vermillon	#E8412C
+!groupe	Rouges & roses
+!couleur	HKS 13 K — Écarlate	#E01A22
+!couleur	HKS 14 K — Rouge	#D0021B
+!couleur	HKS 15 K — Rouge sombre	#B2101F
+!couleur	HKS 17 K — Rouge carmin	#A00E27
+!couleur	HKS 18 K — Carmin profond	#8C1231
+!couleur	HKS 20 K — Bordeaux	#6E1529
+!couleur	HKS 21 K — Rouge violet	#8B1A4E
+!couleur	HKS 22 K — Framboise	#B01C55
+!couleur	HKS 24 K — Rose	#E2548E
+!couleur	HKS 25 K — Rose clair	#F08CB4
+!couleur	HKS 26 K — Magenta	#D4007A
+!couleur	HKS 27 K — Fuchsia	#C2007B
+!couleur	HKS 28 K — Pourpre	#8E1A80
+!groupe	Violets
+!couleur	HKS 29 K — Violet	#7A2A8C
+!couleur	HKS 30 K — Violet profond	#5A2A7F
+!couleur	HKS 31 K — Violet bleuté	#432C7A
+!groupe	Bleus & cyans
+!couleur	HKS 33 K — Bleu clair	#8FC2E8
+!couleur	HKS 34 K — Bleu ciel	#4B9AD4
+!couleur	HKS 35 K — Bleu	#1F76BE
+!couleur	HKS 36 K — Bleu soutenu	#0B5FA5
+!couleur	HKS 37 K — Bleu profond	#0A4C8B
+!couleur	HKS 38 K — Bleu roi	#123C7A
+!couleur	HKS 39 K — Marine	#12264F
+!couleur	HKS 40 K — Cyan	#00A0CE
+!couleur	HKS 41 K — Cyan profond	#0079A8
+!couleur	HKS 42 K — Turquoise	#00A89A
+!couleur	HKS 43 K — Turquoise foncé	#00776F
+!groupe	Verts
+!couleur	HKS 44 K — Vert clair	#96C93D
+!couleur	HKS 45 K — Vert	#4CA82F
+!couleur	HKS 46 K — Vert soutenu	#2E8B3D
+!couleur	HKS 47 K — Vert foncé	#1B6B39
+!couleur	HKS 48 K — Vert bouteille	#0E5533
+!couleur	HKS 49 K — Vert jaune	#A8B92B
+!couleur	HKS 50 K — Olive	#7A8A2E
+!groupe	Bruns & neutres
+!couleur	HKS 53 K — Sable	#D5C29A
+!couleur	HKS 55 K — Brun clair	#B58A55
+!couleur	HKS 57 K — Brun	#7C5527
+!couleur	HKS 60 K — Marron	#4A3222
+!couleur	HKS 63 K — Gris clair	#D6D6D6
+!couleur	HKS 65 K — Gris	#949494
+!couleur	HKS 68 K — Gris foncé	#555555
+!couleur	HKS 70 K — Anthracite	#333333
+!couleur	HKS 75 K — Noir profond	#111111
+!couleur	HKS 80 K — Blanc	#FFFFFF
+!livre	ral	RAL
+!groupe	Jaunes
+!couleur	RAL 1000 — Vert-beige	#CCC58F
+!couleur	RAL 1001 — Beige	#D1BC8A
+!couleur	RAL 1002 — Jaune sable	#D2B773
+!couleur	RAL 1003 — Jaune signalisation	#F7BA0B
+!couleur	RAL 1004 — Jaune doré	#E2B007
+!couleur	RAL 1005 — Jaune miel	#C89F04
+!couleur	RAL 1006 — Jaune maïs	#E1A100
+!couleur	RAL 1007 — Jaune narcisse	#E79C00
+!couleur	RAL 1011 — Brun beige	#AF8A54
+!couleur	RAL 1012 — Jaune citron	#D9C022
+!couleur	RAL 1013 — Blanc perle	#E9E5CE
+!couleur	RAL 1014 — Ivoire	#DFCEA1
+!couleur	RAL 1015 — Ivoire clair	#EADEBD
+!couleur	RAL 1016 — Jaune soufre	#EAF044
+!couleur	RAL 1017 — Jaune safran	#F4B752
+!couleur	RAL 1018 — Jaune zinc	#F3E03B
+!couleur	RAL 1019 — Gris beige	#A4957D
+!couleur	RAL 1020 — Jaune olive	#9A9464
+!couleur	RAL 1021 — Jaune colza	#EEC900
+!couleur	RAL 1023 — Jaune signalisation	#F0CA00
+!couleur	RAL 1024 — Jaune ocre	#B89C50
+!couleur	RAL 1027 — Jaune curry	#A18515
+!couleur	RAL 1028 — Jaune melon	#F5A300
+!couleur	RAL 1032 — Jaune genêt	#E3A800
+!couleur	RAL 1033 — Jaune dahlia	#F39B13
+!couleur	RAL 1034 — Jaune pastel	#EFA100
+!groupe	Oranges
+!couleur	RAL 2000 — Jaune orangé	#ED760E
+!couleur	RAL 2001 — Rouge orangé	#C93C20
+!couleur	RAL 2002 — Rouge vermillon	#CB2821
+!couleur	RAL 2003 — Orange pastel	#FF7514
+!couleur	RAL 2004 — Orange pur	#F44611
+!couleur	RAL 2008 — Rouge orangé clair	#F75E25
+!couleur	RAL 2009 — Orange signalisation	#F54021
+!couleur	RAL 2010 — Orange signal	#D84B20
+!couleur	RAL 2011 — Orange câble	#EC7C26
+!couleur	RAL 2012 — Orange saumon	#E55137
+!groupe	Rouges & roses
+!couleur	RAL 3000 — Rouge feu	#AF2B1E
+!couleur	RAL 3001 — Rouge signal	#A52019
+!couleur	RAL 3002 — Rouge carmin	#A2231D
+!couleur	RAL 3003 — Rouge rubis	#9B111E
+!couleur	RAL 3004 — Rouge pourpre	#75151E
+!couleur	RAL 3005 — Rouge vin	#5E2129
+!couleur	RAL 3007 — Rouge noir	#412227
+!couleur	RAL 3009 — Rouge oxyde	#642424
+!couleur	RAL 3011 — Rouge brun	#781F19
+!couleur	RAL 3012 — Rouge beige	#C1876B
+!couleur	RAL 3013 — Rouge tomate	#A12312
+!couleur	RAL 3014 — Vieux rose	#D36E70
+!couleur	RAL 3015 — Rose clair	#EA899A
+!couleur	RAL 3016 — Rouge corail	#B4312E
+!couleur	RAL 3017 — Rose	#C6394A
+!couleur	RAL 3018 — Rouge fraise	#C82A54
+!couleur	RAL 3020 — Rouge signalisation	#CC0605
+!couleur	RAL 3022 — Rouge saumon	#D95D39
+!couleur	RAL 3027 — Rouge framboise	#AB273C
+!couleur	RAL 3031 — Rouge oriental	#A63437
+!groupe	Violets
+!couleur	RAL 4001 — Lilas rouge	#816183
+!couleur	RAL 4002 — Rouge violet	#8D3C4B
+!couleur	RAL 4003 — Violet bruyère	#C4618C
+!couleur	RAL 4004 — Violet bordeaux	#651E38
+!couleur	RAL 4005 — Lilas bleu	#76689A
+!couleur	RAL 4006 — Pourpre signalisation	#903373
+!couleur	RAL 4007 — Violet pourpre	#47243C
+!couleur	RAL 4008 — Violet signal	#844C82
+!couleur	RAL 4009 — Violet pastel	#9D8692
+!couleur	RAL 4010 — Telemagenta	#BC4077
+!groupe	Bleus
+!couleur	RAL 5000 — Bleu violet	#2E3A87
+!couleur	RAL 5001 — Bleu vert	#0E294B
+!couleur	RAL 5002 — Bleu outremer	#20214F
+!couleur	RAL 5003 — Bleu saphir	#1D1F2A
+!couleur	RAL 5004 — Bleu noir	#191E28
+!couleur	RAL 5005 — Bleu signal	#154889
+!couleur	RAL 5007 — Bleu brillant	#41678D
+!couleur	RAL 5008 — Bleu gris	#313C48
+!couleur	RAL 5009 — Bleu azur	#2E5978
+!couleur	RAL 5010 — Bleu gentiane	#13447C
+!couleur	RAL 5011 — Bleu acier	#232C3F
+!couleur	RAL 5012 — Bleu clair	#3481B8
+!couleur	RAL 5013 — Bleu cobalt	#1C2B4A
+!couleur	RAL 5014 — Bleu pigeon	#606E8C
+!couleur	RAL 5015 — Bleu ciel	#2271B3
+!couleur	RAL 5017 — Bleu signalisation	#063971
+!couleur	RAL 5018 — Bleu turquoise	#3F888F
+!couleur	RAL 5019 — Bleu capri	#1B5583
+!couleur	RAL 5020 — Bleu océan	#1D334A
+!couleur	RAL 5021 — Bleu eau	#256D7B
+!couleur	RAL 5022 — Bleu nuit	#252850
+!couleur	RAL 5023 — Bleu distant	#49678D
+!couleur	RAL 5024 — Bleu pastel	#5D9B9B
+!groupe	Verts
+!couleur	RAL 6000 — Vert patine	#316650
+!couleur	RAL 6001 — Vert émeraude	#287233
+!couleur	RAL 6002 — Vert feuille	#2D572C
+!couleur	RAL 6003 — Vert olive	#424632
+!couleur	RAL 6004 — Vert bleu	#1F3A3D
+!couleur	RAL 6005 — Vert mousse	#2F4538
+!couleur	RAL 6006 — Gris olive	#3E3B32
+!couleur	RAL 6007 — Vert bouteille	#343B29
+!couleur	RAL 6008 — Vert brun	#39352A
+!couleur	RAL 6009 — Vert sapin	#31372B
+!couleur	RAL 6010 — Vert gazon	#35682D
+!couleur	RAL 6011 — Vert réséda	#587246
+!couleur	RAL 6012 — Vert noir	#343E40
+!couleur	RAL 6013 — Vert roseau	#6C7156
+!couleur	RAL 6014 — Jaune olive	#47402E
+!couleur	RAL 6015 — Olive noir	#3B3C36
+!couleur	RAL 6016 — Vert turquoise	#1E5945
+!couleur	RAL 6017 — Vert mai	#4C9141
+!couleur	RAL 6018 — Vert jaune	#57A639
+!couleur	RAL 6019 — Vert pastel	#BDECB6
+!couleur	RAL 6020 — Vert chromé	#2E3A23
+!couleur	RAL 6021 — Vert pâle	#89AC76
+!couleur	RAL 6022 — Olive brun	#25221B
+!couleur	RAL 6024 — Vert signalisation	#308446
+!couleur	RAL 6025 — Vert fougère	#3D642D
+!couleur	RAL 6026 — Vert opale	#015D52
+!couleur	RAL 6027 — Vert clair	#84C3BE
+!couleur	RAL 6028 — Vert pin	#2C5545
+!couleur	RAL 6029 — Vert menthe	#20603D
+!couleur	RAL 6032 — Vert signal	#317F43
+!couleur	RAL 6033 — Turquoise menthe	#497E76
+!couleur	RAL 6034 — Turquoise pastel	#7FB5B5
+!groupe	Gris
+!couleur	RAL 7000 — Gris petit-gris	#78858B
+!couleur	RAL 7001 — Gris argent	#8A9597
+!couleur	RAL 7002 — Gris olive	#818069
+!couleur	RAL 7003 — Gris mousse	#6C7059
+!couleur	RAL 7004 — Gris signal	#969992
+!couleur	RAL 7005 — Gris souris	#646B63
+!couleur	RAL 7006 — Gris beige	#6D6552
+!couleur	RAL 7008 — Gris kaki	#6A5F31
+!couleur	RAL 7009 — Gris vert	#4D5645
+!couleur	RAL 7010 — Gris bâche	#4C514A
+!couleur	RAL 7011 — Gris fer	#434B4D
+!couleur	RAL 7012 — Gris basalte	#4E5754
+!couleur	RAL 7013 — Gris brun	#464531
+!couleur	RAL 7015 — Gris ardoise	#434750
+!couleur	RAL 7016 — Gris anthracite	#293133
+!couleur	RAL 7021 — Gris noir	#23282B
+!couleur	RAL 7022 — Gris terre d’ombre	#332F2C
+!couleur	RAL 7023 — Gris béton	#686C5E
+!couleur	RAL 7024 — Gris graphite	#474A51
+!couleur	RAL 7026 — Gris granit	#2F353B
+!couleur	RAL 7030 — Gris pierre	#8B8C7A
+!couleur	RAL 7031 — Gris bleu	#474B4E
+!couleur	RAL 7032 — Gris caillou	#B8B799
+!couleur	RAL 7033 — Gris ciment	#7D8471
+!couleur	RAL 7034 — Gris jaune	#8F8B66
+!couleur	RAL 7035 — Gris clair	#D7D7D7
+!couleur	RAL 7036 — Gris platine	#7F7679
+!couleur	RAL 7037 — Gris poussière	#7D7F7D
+!couleur	RAL 7038 — Gris agate	#B5B8B1
+!couleur	RAL 7039 — Gris quartz	#6C6960
+!couleur	RAL 7040 — Gris fenêtre	#9DA1AA
+!couleur	RAL 7042 — Gris signalisation A	#8D948D
+!couleur	RAL 7043 — Gris signalisation B	#4E5452
+!couleur	RAL 7044 — Gris soie	#CAC4B0
+!couleur	RAL 7045 — Telegris 1	#909090
+!couleur	RAL 7046 — Telegris 2	#82898F
+!couleur	RAL 7047 — Telegris 4	#D0D0D0
+!groupe	Bruns
+!couleur	RAL 8000 — Brun vert	#826C34
+!couleur	RAL 8001 — Brun ocre	#955F20
+!couleur	RAL 8002 — Brun signal	#6C3B2A
+!couleur	RAL 8003 — Brun argile	#734222
+!couleur	RAL 8004 — Brun cuivre	#8E402A
+!couleur	RAL 8007 — Brun faon	#59351F
+!couleur	RAL 8008 — Brun olive	#6F4F28
+!couleur	RAL 8011 — Brun noisette	#5B3A29
+!couleur	RAL 8012 — Brun rouge	#592321
+!couleur	RAL 8014 — Brun sépia	#382C1E
+!couleur	RAL 8015 — Brun marron	#633A34
+!couleur	RAL 8016 — Brun acajou	#4C2F27
+!couleur	RAL 8017 — Brun chocolat	#45322E
+!couleur	RAL 8019 — Brun gris	#403A3A
+!couleur	RAL 8022 — Brun noir	#212121
+!couleur	RAL 8023 — Brun orange	#A65E2E
+!couleur	RAL 8024 — Brun beige	#79553D
+!couleur	RAL 8025 — Brun pâle	#755C48
+!couleur	RAL 8028 — Brun terre	#4E3B31
+!groupe	Blancs & noirs
+!couleur	RAL 9001 — Blanc crème	#FDF4E3
+!couleur	RAL 9002 — Blanc gris	#E7EBDA
+!couleur	RAL 9003 — Blanc signalisation	#F4F4F4
+!couleur	RAL 9004 — Noir signalisation	#282828
+!couleur	RAL 9005 — Noir foncé	#0A0A0A
+!couleur	RAL 9006 — Aluminium blanc	#A5A5A5
+!couleur	RAL 9007 — Aluminium gris	#8F8F8F
+!couleur	RAL 9010 — Blanc pur	#FFFFFF
+!couleur	RAL 9011 — Noir graphite	#1C1C1C
+!couleur	RAL 9016 — Blanc signalisation	#F6F6F6
+!couleur	RAL 9017 — Noir signalisation	#1E1E1E
+!couleur	RAL 9018 — Blanc papyrus	#CFD3CD
+!couleur	RAL 9022 — Gris perle clair	#9C9C9C
+!couleur	RAL 9023 — Gris perle foncé	#828282
+!livre	ncs	NCS
+!groupe	Neutres (N)
+!couleur	NCS S 0300-N	#F7F7F5
+!couleur	NCS S 0500-N	#F1F1EE
+!couleur	NCS S 1000-N	#DDDDDA
+!couleur	NCS S 1500-N	#C9C9C4
+!couleur	NCS S 2000-N	#B6B6B0
+!couleur	NCS S 2500-N	#A4A49D
+!couleur	NCS S 3000-N	#929289
+!couleur	NCS S 3500-N	#7F7F76
+!couleur	NCS S 4000-N	#6E6E66
+!couleur	NCS S 4500-N	#5F5F58
+!couleur	NCS S 5000-N	#51514B
+!couleur	NCS S 5500-N	#44443F
+!couleur	NCS S 6000-N	#383833
+!couleur	NCS S 6500-N	#2C2C28
+!couleur	NCS S 7000-N	#232320
+!couleur	NCS S 8000-N	#151513
+!couleur	NCS S 9000-N	#0A0A0A
+!groupe	Jaunes (Y)
+!couleur	NCS S 0502-Y	#F3F0DC
+!couleur	NCS S 1002-Y	#E7E1C0
+!couleur	NCS S 1502-Y	#D6CEA9
+!couleur	NCS S 2002-Y	#C4BA92
+!couleur	NCS S 2502-Y	#B1A67C
+!couleur	NCS S 3502-Y	#8F8460
+!couleur	NCS S 4502-Y	#6B6248
+!couleur	NCS S 5502-Y	#514A36
+!groupe	Oranges & ocres (Y-R)
+!couleur	NCS S 0570-Y10R	#FFC845
+!couleur	NCS S 1050-Y10R	#E9A100
+!couleur	NCS S 2060-Y20R	#E68B2B
+!couleur	NCS S 3005-Y20R	#A08C6A
+!couleur	NCS S 4010-Y30R	#8E7A55
+!couleur	NCS S 4050-Y20R	#9E8250
+!couleur	NCS S 5005-Y20R	#75663F
+!couleur	NCS S 6005-Y20R	#574B2E
+!groupe	Rouges (Y90R / R)
+!couleur	NCS S 1080-Y90R	#C0272D
+!couleur	NCS S 1580-Y90R	#B31A24
+!couleur	NCS S 2080-Y90R	#A51822
+!couleur	NCS S 2570-R	#B02A3C
+!couleur	NCS S 4050-R	#8A3A3A
+!couleur	NCS S 4550-R80B	#7C5A7E
+!couleur	NCS S 5040-R30B	#6E3B62
+!groupe	Bleus (R90B / B)
+!couleur	NCS S 1050-R90B	#6FA8DC
+!couleur	NCS S 3050-R90B	#3A6EA5
+!couleur	NCS S 2060-B	#2E86C1
+!couleur	NCS S 4050-B	#1F4E79
+!couleur	NCS S 5040-B	#16324F
+!groupe	Cyans (B50G)
+!couleur	NCS S 1050-B50G	#8FD3D3
+!couleur	NCS S 2060-B50G	#29A3A3
+!couleur	NCS S 3050-B50G	#1F7A7A
+!couleur	NCS S 4050-B50G	#145C5C
+!groupe	Verts (G)
+!couleur	NCS S 1050-G	#A8D08D
+!couleur	NCS S 2060-G	#4CAF50
+!couleur	NCS S 3060-G	#2E7D32
+!couleur	NCS S 4050-G	#1B5E20
+!couleur	NCS S 3060-G10Y	#3C7A2F
+!couleur	NCS S 4060-G30Y	#2F6B34
+!livre	dic	DIC
+!groupe	Jaunes & oranges
+!couleur	DIC 1 — Jaune pâle	#FFF2A8
+!couleur	DIC 2 — Jaune	#FFE800
+!couleur	DIC 3 — Jaune d’or	#FFD100
+!couleur	DIC 4 — Jaune orangé	#FFC000
+!couleur	DIC 5 — Orange clair	#FFAE1F
+!couleur	DIC 6 — Orange	#FB9411
+!couleur	DIC 7 — Orange soutenu	#F07C10
+!couleur	DIC 8 — Orange rouge	#E9611B
+!couleur	DIC 9 — Mandarine	#DE4B1C
+!groupe	Rouges & roses
+!couleur	DIC 10 — Vermillon	#D93A22
+!couleur	DIC 11 — Rouge	#CC1122
+!couleur	DIC 12 — Rouge sombre	#A9121F
+!couleur	DIC 13 — Carmin	#B01030
+!couleur	DIC 14 — Bordeaux	#76152C
+!couleur	DIC 15 — Rouge rosé	#DB3A63
+!couleur	DIC 16 — Rose	#EE7BA5
+!couleur	DIC 17 — Rose clair	#F6B0C8
+!couleur	DIC 18 — Magenta	#D20074
+!couleur	DIC 19 — Fuchsia	#B8157E
+!couleur	DIC 20 — Pourpre	#8E1A78
+!groupe	Violets
+!couleur	DIC 21 — Violet clair	#9B6BB8
+!couleur	DIC 22 — Violet	#6C3E9E
+!couleur	DIC 23 — Violet profond	#48297C
+!couleur	DIC 24 — Aubergine	#38224E
+!groupe	Bleus & cyans
+!couleur	DIC 25 — Bleu très clair	#C3E1F2
+!couleur	DIC 26 — Bleu clair	#7FBEE4
+!couleur	DIC 27 — Bleu ciel	#3A92CC
+!couleur	DIC 28 — Bleu	#1B62A5
+!couleur	DIC 29 — Bleu roi	#10407F
+!couleur	DIC 30 — Marine	#0E2447
+!couleur	DIC 31 — Cyan	#0099CC
+!couleur	DIC 32 — Turquoise	#00AAA0
+!couleur	DIC 33 — Bleu-vert foncé	#00666E
+!groupe	Verts
+!couleur	DIC 34 — Vert menthe	#C2E6D0
+!couleur	DIC 35 — Vert clair	#7FC97F
+!couleur	DIC 36 — Vert	#3AA63C
+!couleur	DIC 37 — Vert soutenu	#1E7F3C
+!couleur	DIC 38 — Vert foncé	#0F5B33
+!couleur	DIC 39 — Vert anis	#A8C33A
+!couleur	DIC 40 — Olive	#7B8A32
+!groupe	Bruns & neutres
+!couleur	DIC 41 — Sable	#D9C39A
+!couleur	DIC 42 — Brun clair	#B98A55
+!couleur	DIC 43 — Brun	#7E5327
+!couleur	DIC 44 — Marron foncé	#4E3320
+!couleur	DIC 45 — Gris clair	#D2D2D2
+!couleur	DIC 46 — Gris	#8C8C8C
+!couleur	DIC 47 — Gris foncé	#4A4A4A
+!couleur	DIC 48 — Noir	#171717
+!couleur	DIC 49 — Blanc	#FFFFFF
+!livre	pantone	Pantone
+!echantillon	50
+!groupe	Pantone Basics (Coated)
+!couleur	Pantone Yellow C	#FCEE21
+!couleur	Pantone Yellow 012 C	#FFB81C
+!couleur	Pantone Orange 021 C	#FF6900
+!couleur	Pantone Warm Red C	#F9423A
+!couleur	Pantone Red 032 C	#E31836
+!couleur	Pantone Bright Red C	#EF4135
+!couleur	Pantone Rubine Red C	#D50032
+!couleur	Pantone Rhodamine Red C	#CE0058
+!couleur	Pantone Magenta C / Process Magenta	#EC008C
+!couleur	Pantone Pink C	#AF1685
+!couleur	Pantone Purple C	#8B2E8F
+!couleur	Pantone Violet C	#5F249F
+!couleur	Pantone Blue 072 C	#0066B3
+!couleur	Pantone Reflex Blue C	#003DA5
+!couleur	Pantone Process Blue C	#0073CF
+!couleur	Pantone Cyan C / Process Cyan	#00AEEF
+!couleur	Pantone Green C	#00A651
+!couleur	Pantone Black C / Process Black	#000000
+!couleur	Pantone White	#FFFFFF
+!groupe	Pantone Color of the Year
+!couleur	Pantone 13-3920 — Serenity (2016)	#9BB7D4
+!couleur	Pantone 13-1520 — Rose Quartz (2016)	#F7CAC9
+!couleur	Pantone 15-0343 — Greenery (2017)	#88B04B
+!couleur	Pantone 18-3838 — Ultra Violet (2018)	#5F4B8B
+!couleur	Pantone 16-1546 — Living Coral (2019)	#FF6F61
+!couleur	Pantone 19-4052 — Classic Blue (2020)	#0F4C81
+!couleur	Pantone 13-0647 — Illuminating (2021)	#F5DF4D
+!couleur	Pantone 17-5104 — Ultimate Gray (2021)	#939597
+!couleur	Pantone 17-3938 — Very Peri (2022)	#6667AB
+!couleur	Pantone 18-1750 — Viva Magenta (2023)	#BE3455
+!couleur	Pantone 13-1023 — Peach Fuzz (2024)	#FFBE98
+!couleur	Pantone 17-1230 — Mocha Mousse (2025)	#A0785A
+!couleur	Pantone 18-0220 — Forest Echo (2026)	#3E5641
+!groupe	Pantone Reds &amp; Pinks
+!couleur	Pantone 196 C — Light Pink	#F7C8C8
+!couleur	Pantone 1905 C — Bubblegum	#F8A3BC
+!couleur	Pantone 213 C — Hot Pink	#E03C8A
+!couleur	Pantone 214 C — Fuchsia	#C6007E
+!couleur	Pantone 207 C — Crimson	#A6093D
+!couleur	Pantone 209 C — Wine	#9B2743
+!couleur	Pantone 186 C — True Red	#E32636
+!couleur	Pantone 200 C — Cardinal	#C8102E
+!couleur	Pantone 201 C — Brick	#A6192E
+!couleur	Pantone 202 C — Burgundy	#8A1538
+!couleur	Pantone 504 C — Deep Bordeaux	#5C0F1D
+!groupe	Pantone Oranges &amp; Yellows
+!couleur	Pantone 123 C — Sunny	#FFC72C
+!couleur	Pantone 109 C — Bright Yellow	#FFD100
+!couleur	Pantone 130 C — Mustard	#F2A900
+!couleur	Pantone 151 C — Tangerine	#FF8200
+!couleur	Pantone 165 C — Vibrant Orange	#FF6C2F
+!couleur	Pantone 1665 C — Burnt Orange	#E35205
+!couleur	Pantone 167 C — Rust	#C75B12
+!couleur	Pantone 471 C — Terracotta	#9D4815
+!couleur	Pantone 4625 C — Deep Brown	#7C2D12
+!couleur	Pantone 7408 C — Honey	#FFC845
+!couleur	Pantone 137 C — Amber	#FFAA00
+!groupe	Pantone Greens
+!couleur	Pantone 365 C — Mint Pastel	#D7E8BA
+!couleur	Pantone 367 C — Lime Soft	#A4D65E
+!couleur	Pantone 368 C — Lime Bright	#78BE20
+!couleur	Pantone 361 C — Grass	#43B02A
+!couleur	Pantone 356 C — Forest	#00843D
+!couleur	Pantone 3415 C — Pine	#00674A
+!couleur	Pantone 357 C — Hunter Green	#1B5E3A
+!couleur	Pantone 339 C — Emerald	#00B388
+!couleur	Pantone 340 C — Jade	#009B77
+!couleur	Pantone 5763 C — Olive	#7A8450
+!couleur	Pantone 5535 C — Forest Echo	#3E5641
+!couleur	Pantone 5635 C — Sage	#9CAF88
+!groupe	Pantone Blues &amp; Cyans
+!couleur	Pantone 290 C — Sky Pastel	#A4DBE8
+!couleur	Pantone 312 C — Turquoise	#56C5D0
+!couleur	Pantone 306 C — Cyan Bright	#00A9CE
+!couleur	Pantone 299 C — Process Cyan Bright	#009CDE
+!couleur	Pantone 3265 C — Teal	#00B5AD
+!couleur	Pantone 3005 C — Royal Blue	#007DB3
+!couleur	Pantone 296 C — Midnight	#003B5C
+!couleur	Pantone 281 C — Navy	#012169
+!couleur	Pantone 7687 C — Classic Blue	#0F4C81
+!couleur	Pantone 286 C — Deep Blue	#1F3A93
+!couleur	Pantone 5415 C — Slate Blue	#5B7B9A
+!couleur	Pantone 282 C — Dark Navy	#001E62
+!groupe	Pantone Purples
+!couleur	Pantone 522 C — Lavender Pastel	#D6BFD6
+!couleur	Pantone 248 C — Vivid Magenta	#BB29BB
+!couleur	Pantone 254 C — Royal Purple	#7E1E83
+!couleur	Pantone 2685 C — Imperial Violet	#512888
+!couleur	Pantone 268 C — Cardinal Purple	#5F249F
+!couleur	Pantone 2745 C — Indigo	#3E2680
+!couleur	Pantone 18-3838 — Ultra Violet	#5F4B8B
+!couleur	Pantone 17-3938 — Very Peri	#6667AB
+!groupe	Pantone Skin Tones (FHI)
+!couleur	Pantone 11-0907 — Vanilla Skin	#F1D2C0
+!couleur	Pantone 14-1118 — Almond	#E8B89B
+!couleur	Pantone 16-1326 — Caramel	#D4A07A
+!couleur	Pantone 17-1330 — Hazelnut	#B68463
+!couleur	Pantone 18-1031 — Cognac	#8B5A3C
+!couleur	Pantone 19-1116 — Espresso	#6B4226
+!couleur	Pantone 19-1109 — Dark Chocolate	#4A2C1A
+!groupe	Pantone Neons (Fluo)
+!couleur	Pantone 805 C — Fluo Orange	#FF5C39
+!couleur	Pantone 806 C — Fluo Tangerine	#FE5000
+!couleur	Pantone 807 C — Fluo Pink	#FF1E89
+!couleur	Pantone 808 C — Fluo Magenta	#F100A8
+!couleur	Pantone 809 C — Fluo Yellow	#E2EA00
+!couleur	Pantone 803 C — Fluo Acid Yellow	#FFE500
+!couleur	Pantone 802 C — Fluo Green	#A8E10C
+!couleur	Pantone 801 C — Fluo Cyan	#00B7E2
+!groupe	Pantone Warm &amp; Cool Grays
+!couleur	Pantone Warm Gray 1 C	#E5E1DC
+!couleur	Pantone Warm Gray 3 C	#CCC4BD
+!couleur	Pantone Warm Gray 5 C	#B7A99A
+!couleur	Pantone Warm Gray 7 C	#968878
+!couleur	Pantone Warm Gray 9 C	#766A5F
+!couleur	Pantone Warm Gray 11 C	#544741
+!couleur	Pantone Cool Gray 1 C	#E3E2E0
+!couleur	Pantone Cool Gray 3 C	#C7C6C5
+!couleur	Pantone Cool Gray 5 C	#A7A8AA
+!couleur	Pantone Cool Gray 7 C	#888B8D
+!couleur	Pantone Cool Gray 9 C	#75787B
+!couleur	Pantone Cool Gray 11 C	#53565A
+!couleur	Pantone 17-5104 — Ultimate Gray	#939597
+!groupe	Pantone Black &amp; White
+!couleur	Noir 100% (Process Black)	#000000
+!couleur	Pantone Black 6 C — Soft Black	#1B1B1B
+!couleur	Pantone Black 5 C — Warm Black	#211F1F
+!couleur	Pantone Black 7 C — Cocoa Black	#2D2926
+!couleur	Blanc Pur	#FFFFFF
+!couleur	Pantone 11-0601 — Bright White	#F5F5F0
+!groupe	Pantone Metallics
+!couleur	Pantone Metallic 871 C — Gold	#B4975A
+!couleur	Pantone Metallic 872 C — Antique Gold	#A07F2B
+!couleur	Pantone Metallic 873 C — Pale Gold	#9C8B5C
+!couleur	Pantone Metallic 874 C — Bronze	#876129
+!couleur	Pantone Metallic 877 C — Silver	#85878B
+!couleur	Pantone Metallic 8001 C — Light Silver	#9DA1A8
+!couleur	Pantone Metallic 875 C — Champagne	#C5B783
+!couleur	Pantone Metallic 876 C — Antique Brass	#8E7A4C
+!couleur	Pantone Metallic 8003 C — Copper	#B97C3C
+!groupe	Pantone Pastels &amp; Soft Tones
+!couleur	Pantone 705 C — Pink Whisper	#FAE6E6
+!couleur	Pantone 706 C — Petal Pink	#F4D7DA
+!couleur	Pantone 162 C — Peach Cream	#FFD9C9
+!couleur	Pantone 156 C — Apricot Pastel	#FFE2BF
+!couleur	Pantone 1205 C — Lemon Cream	#FFF1B0
+!couleur	Pantone 580 C — Mint Cream	#E8F2C9
+!couleur	Pantone 358 C — Spring Pastel	#C4E1B8
+!couleur	Pantone 565 C — Aqua Mist	#BCE3D5
+!couleur	Pantone 304 C — Powder Blue	#C5E0E5
+!couleur	Pantone 545 C — Sky Wash	#D6E0F0
+!couleur	Pantone 263 C — Lilac Wash	#E6D7E8
+!couleur	Pantone 685 C — Cotton Candy	#F2C2D5
+!couleur	Pantone 7415 C — Nude Pink	#FBE4D5
+!couleur	Pantone 9180 C — Salmon Light	#F9D9C7
+!groupe	Pantone Earth Tones
+!couleur	Pantone 7508 C — Sand	#D2B48C
+!couleur	Pantone 728 C — Camel	#C19A6B
+!couleur	Pantone 729 C — Tan Warm	#B08D57
+!couleur	Pantone 4645 C — Hazel	#9C7C5A
+!couleur	Pantone 7567 C — Khaki	#8B6F47
+!couleur	Pantone 7569 C — Walnut	#7B5E3F
+!couleur	Pantone 4625 C — Mahogany	#6B4423
+!couleur	Pantone 7595 C — Coffee Bean	#5C3A21
+!couleur	Pantone Black 4 C — Deep Espresso	#3E2723
+!couleur	Pantone 17-1230 — Mocha Mousse	#A0785A
+!couleur	Pantone 16-1422 — Caramel Cafe	#8C6D5B
+!couleur	Pantone 18-1027 — Cocoa	#6E4F3A
+!couleur	Pantone 16-1212 — Tannin	#A6896A
+!couleur	Pantone 16-1210 — Smoke	#857764
+!couleur	Pantone 18-1108 — Driftwood	#7A6A5C
+!groupe	Pantone Jewel Tones
+!couleur	Pantone 348 C — Emerald Deep	#046307
+!couleur	Pantone 7693 C — Sapphire	#0F4C75
+!couleur	Pantone 2613 C — Amethyst	#5A1A5C
+!couleur	Pantone 1955 C — Garnet	#9B0B33
+!couleur	Pantone 7555 C — Topaz	#C19A12
+!couleur	Pantone 5395 C — Lapis	#0E3A5F
+!couleur	Pantone 3302 C — Malachite	#075E54
+!couleur	Pantone 7427 C — Ruby Deep	#7B1E3A
+!couleur	Pantone 2755 C — Royal Indigo	#3D0E61
+!couleur	Pantone 7727 C — Forest Jewel	#0B6E4F
+!groupe	Pantone Vintage &amp; Retro
+!couleur	Pantone 7508 C — Vintage Tan	#D4A574
+!couleur	Pantone 124 C — Ochre	#A87E3B
+!couleur	Pantone 4505 C — Burlap	#8C7A5C
+!couleur	Pantone 5215 C — Dusty Plum	#6B5B73
+!couleur	Pantone 5145 C — Mauve	#9B7B8E
+!couleur	Pantone 168 C — Terracotta Vintage	#B5856B
+!couleur	Pantone Warm Gray 11 C — Espresso Gray	#5E5145
+!couleur	Pantone 411 C — Vintage Brown	#7E624D
+!couleur	Pantone 4535 C — Linen	#A8927D
+!couleur	Pantone 4525 C — Stone	#C8B89D
+!couleur	Pantone 482 C — Eggshell	#E2D5C3
+!couleur	Pantone 5497 C — Sage Smoke	#8E9290
+!couleur	Pantone 5757 C — Olive Smoke	#6F6B5C
+!groupe	Pantone Spring/Summer (FHI)
+!couleur	Pantone 14-1522 — Coral Blush	#FFB7B2
+!couleur	Pantone 14-1331 — Apricot	#FFD1AC
+!couleur	Pantone 12-0712 — Vanilla Custard	#F2E8C9
+!couleur	Pantone 13-6008 — Spring Green	#A8D8B9
+!couleur	Pantone 15-5210 — Eucalyptus	#7FB7A6
+!couleur	Pantone 14-4318 — Cyan Blue	#9BD1E5
+!couleur	Pantone 15-3915 — Cerulean	#A4B8DD
+!couleur	Pantone 15-3520 — Sheer Lilac	#D7BDE2
+!couleur	Pantone 13-2802 — Cherry Blossom	#F8C8DC
+!couleur	Pantone 14-1714 — Quartz Pink	#E8B4B8
+!couleur	Pantone 11-0922 — Buttercream	#FFEEC2
+!couleur	Pantone 14-0114 — Reseda	#C9D8B6
+!groupe	Pantone Autumn/Winter (FHI)
+!couleur	Pantone 19-1840 — Wine Berry	#7C2E3A
+!couleur	Pantone 19-1110 — Bitter Chocolate	#5B3A29
+!couleur	Pantone 19-1763 — Crimson Tide	#8B0000
+!couleur	Pantone 19-4014 — Anthracite	#2C3E50
+!couleur	Pantone 19-5408 — Forest Night	#3B5249
+!couleur	Pantone 19-1015 — Coffee Bean	#4A3B30
+!couleur	Pantone 19-3905 — Iron Gate	#5E574F
+!couleur	Pantone 18-1142 — Glazed Ginger	#7A5A3F
+!couleur	Pantone 18-1547 — Russet	#A85751
+!couleur	Pantone 19-1217 — Carafe	#6B4423
+!couleur	Pantone 19-5414 — Pine Grove	#3D4F47
+!couleur	Pantone 19-3640 — Plum Perfect	#4E3D52
+!groupe	Pantone Brand Iconic
+!couleur	Pantone 1788 C — Coca-Cola Red	#FF0000
+!couleur	Pantone 286 C — IBM Blue	#0033A0
+!couleur	Pantone 354 C — Spotify Green	#1DB954
+!couleur	Pantone 1495 C — Amazon Orange	#FF9900
+!couleur	Pantone 185 C — Netflix Red	#E50914
+!couleur	Pantone 285 C — Facebook Blue	#1877F2
+!couleur	Pantone 2728 C — LinkedIn Blue	#0A66C2
+!couleur	Pantone 360 C — WhatsApp Green	#25D366
+!couleur	Pantone 116 C — Snapchat Yellow	#FFCC00
+!couleur	Pantone 1655 C — Reddit Orange	#FF4500
+!couleur	Pantone 268 C — Twitch Purple	#7B68EE
+!couleur	Pantone 2728 C — Discord Blurple	#5865F2
+!couleur	Pantone Black 6 C — X / Apple	#000000
+!couleur	Pantone 2728 C — Google Blue	#4285F4
+!groupe	Pantone Special &amp; Fashion
+!couleur	Pantone 18-1862 — Ruby Wine	#E0115F
+!couleur	Pantone 19-1656 — Burgundy Royale	#722F37
+!couleur	Pantone 19-3526 — Indigo Fashion	#4B0082
+!couleur	Pantone 17-3925 — Violet Tulip	#8A2BE2
+!couleur	Pantone 18-6022 — Sea Green	#2E8B57
+!couleur	Pantone 18-4936 — Teal Deep	#008080
+!couleur	Pantone 16-1546 — Living Coral	#FF7F50
+!couleur	Pantone 16-1720 — Coral Reef	#F08080
+!couleur	Pantone 16-0954 — Mineral Yellow	#DAA520
+!couleur	Pantone 18-0939 — Bronze Mist	#B8860B
+!couleur	Pantone 18-1648 — Aurora Red	#CD5C5C
+!couleur	Pantone 16-1632 — Salmon Rose	#FA8072
+!couleur	Pantone 213 C — Hot Pink Fashion	#FF1493
+!couleur	Pantone 17-3730 — Bellflower	#9370DB
+!groupe	Pantone Process Tints
+!couleur	Pantone Magenta 10% Tint	#FFE5F1
+!couleur	Pantone Magenta 30% Tint	#FFB3D9
+!couleur	Pantone Magenta 60% Tint	#FF66B3
+!couleur	Pantone Yellow 10% Tint	#FFFAE5
+!couleur	Pantone Yellow 30% Tint	#FFF0B3
+!couleur	Pantone Yellow 60% Tint	#FFE066
+!couleur	Pantone Cyan 10% Tint	#E5F5FF
+!couleur	Pantone Cyan 30% Tint	#B3E0FF
+!couleur	Pantone Cyan 60% Tint	#66BFFF
+!couleur	Black 10% Tint (gris clair)	#E5E5E5
+!couleur	Black 30% Tint (gris moyen)	#B3B3B3
+!couleur	Black 60% Tint (gris foncé)	#666666

@@ -55,6 +55,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-swatch"
+version = "0.2.0"
+dependencies = [
+ "superprint-core",
+]
+
+[[package]]
 name = "superprint-text"
 version = "0.2.0"
 dependencies = [

@@ -15,7 +15,9 @@
 pub mod color;
 pub mod color8;
 pub mod geometry;
+pub mod lab;
 pub mod units;
 
 pub use color::{Cmyk, Rgb};
 pub use geometry::PageSize;
+pub use lab::{delta_e2000, delta_e76, Lab, Xyz, BLANC_D50, BLANC_D65};
