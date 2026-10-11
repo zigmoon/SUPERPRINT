@@ -75,7 +75,6 @@ Step 'compression : DEFLATE verifie dans les deux sens contre zlib' {
 # identiques mot pour mot. C'est la mesure qui autorise a poser le branchement
 # dans `superprint/app/`.
 Step 'branchement : la colle contre les dictionnaires du produit' { node scripts/validate-branchement.mjs }
-
 # Aucune derive possible entre la colle du depot et celle qui est livree : ce
 # sont les memes octets, sinon l'etape suivante mesurerait autre chose que ce
 # qui est dans l'application.
@@ -106,6 +105,20 @@ Step 'colle livree identique a celle du depot' {
 # `superprint/app/JS/` sont evalues dans un contexte qui imite le navigateur,
 # puis le moteur installe est compare a `Hypher` — parite, reversibilite, repli.
 Step 'branchement livre : parite, reversibilite, repli' { node scripts/validate-branchement-app.mjs }
+
+# Validation de l'IMPOSITION : l'ordre des pages est compare a la fonction
+# `calculateImposition` **extraite de main.js**, les tailles de feuille aux trois
+# copies de la formule dans le produit, et chaque trait de coupe aux arguments
+# des `pdf.line()` — extraits, pas reecrits.
+Step 'imposition : ordre, feuille et traits de coupe contre main.js' {
+  & $cargo build -p superprint-impose --example impose_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-imposition.mjs }
+}
+
+# Validation de la REDUCTION D'IMAGE : exactitude au bit pres contre une moyenne
+# entiere calculee independamment, survie d'un motif fin que l'echantillonnage
+# fait disparaitre, conservation de l'energie, et invariants.
+Step 'reduction d''image : exactitude, anti-crenelage, energie' { node scripts/validate-reduction.mjs }
 
 Pop-Location
 

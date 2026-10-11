@@ -334,6 +334,16 @@
       cesureReset: indisponible('cesure.cesureReset', raison),
       coupes: indisponible('cesure.coupes', raison),
       fragments: indisponible('cesure.fragments', raison),
+      // Idem pour la réduction d'image et l'imposition : ce sont des calculs
+      // dont la valeur tient à la **méthode** (moyenne de surface) et à
+      // l'unicité de la formule. Les simuler en JavaScript recréerait
+      // exactement ce que ces modules servent à supprimer.
+      downscaleAreaRgb: indisponible('downscaleAreaRgb', raison),
+      downscaleAreaGray: indisponible('downscaleAreaGray', raison),
+      sizeForPlacement: indisponible('sizeForPlacement', raison),
+      reduceForPlacement: indisponible('reduceForPlacement', raison),
+      orderPages: indisponible('orderPages', raison),
+      plan: indisponible('imposition', raison),
     };
   }
 
@@ -863,6 +873,7 @@
     }
 
     var encoder = new TextEncoder();
+    var decodeur = new TextDecoder('utf-8');
     /**
      * Le tampon mémoire sous-jacent, pour ne recréer les vues que lorsqu'il
      * change. La règle reste la même qu'avant — **ne jamais réutiliser une vue
@@ -1046,6 +1057,109 @@
     /** Un mot contient-il une paire de substitution (écriture hors plan multilingue) ? */
     var PAIRES_DE_SUBSTITUTION = /[\uD800-\uDFFF]/;
 
+    /**
+     * L'**ordre d'impression** d'un livret, une place par élément.
+     *
+     * Le noyau rend un `u32` par place, `0` pour une place vide ; ici on rend
+     * `null`, qui se compare malencontreusement à `0` mais se teste franchement
+     * — `place === null` — là où `place === 0` se confondrait avec une numérotation
+     * commençant à zéro. Les numéros de page commençant à 1, la conversion est
+     * sans ambiguïté.
+     */
+    function ordreDesPages(nbPages) {
+      return portee(function (ctx) {
+        var pLen = ctx.allouer(4);
+        var premier = exports.sp_impose_ordre(nbPages, 0, 0, pLen);
+        if (premier !== ERR.TOO_SMALL) {
+          // Zéro page est un cas légitime : aucune place, aucune erreur.
+          verifier(premier, 'imposition.ordre');
+          return [];
+        }
+        var besoin = ctx.lu32(pLen);
+        var tampon = ctx.allouer(besoin);
+        var code = exports.sp_impose_ordre(nbPages, tampon, besoin, pLen);
+        verifier(code, 'imposition.ordre');
+        var vue = ctx.lire(tampon, besoin);
+        var places = [];
+        for (var i = 0; i < code; i += 1) {
+          var numero = vue[i * 4] | (vue[i * 4 + 1] << 8) | (vue[i * 4 + 2] << 16) | (vue[i * 4 + 3] << 24);
+          places.push(numero >>> 0 === 0 ? null : numero >>> 0);
+        }
+        return places;
+      });
+    }
+
+    /**
+     * Le **plan d'une planche**, lu depuis le texte que rend le noyau.
+     *
+     * `options` porte les mêmes champs que le produit : `largeurPageMm`,
+     * `hauteurPageMm`, `fondPerduMm`, `inclureFondPerdu`, `decoupePageAPage`,
+     * `reperesDeCoupe`, `margeReperesMm`, `longueurRepereMm`, `decalageRepereMm`,
+     * `epaisseurRepereMm`, `gauche`, `droite`.
+     */
+    function planDePlanche(options) {
+      var o = options || {};
+      var gauche = o.gauche == null || o.gauche === '' ? 0 : Number(o.gauche) || 0;
+      var droite = o.droite == null || o.droite === '' ? 0 : Number(o.droite) || 0;
+      var lignes = [
+        '!page\t' + nombre(o.largeurPageMm, 210) + '\t' + nombre(o.hauteurPageMm, 297),
+        '!fond\t' + nombre(o.fondPerduMm, 3) + '\t' + (o.inclureFondPerdu === false ? 0 : 1),
+        '!decoupe\t' + (o.decoupePageAPage ? 1 : 0),
+        '!reperes\t' +
+          (o.reperesDeCoupe === false ? 0 : 1) +
+          '\t' +
+          nombre(o.margeReperesMm, 10) +
+          '\t' +
+          nombre(o.longueurRepereMm, 5) +
+          '\t' +
+          nombre(o.decalageRepereMm, 2.5) +
+          '\t' +
+          nombre(o.epaisseurRepereMm, 0.25),
+        '!places\t' + gauche + '\t' + droite,
+      ];
+      var octets = encoder.encode(lignes.join('\n'));
+      var texte = deuxPasses('imposition.plan', function (ctx, dst, cap, lenPtr) {
+        var p = ctx.poser(octets);
+        return exports.sp_impose_plan(p, octets.length, dst, cap, lenPtr);
+      });
+      return lirePlan(decodeur.decode(texte));
+    }
+
+    /**
+     * La taille utile d'une image **posée**, et la réduction par moyenne.
+     *
+     * Définies ici, au niveau du moteur, et non dans l'objet rendu :
+     * `reduceForPlacement` a besoin des deux, et passer par l'objet rendu
+     * obligerait à le référencer avant qu'il existe.
+     */
+    function tailleUtile(width, height, largeurMm, dpi) {
+      return portee(function (ctx) {
+        var pW = ctx.allouer(4);
+        var pH = ctx.allouer(4);
+        verifier(
+          exports.sp_size_for_placement(width, height, largeurMm, dpi, pW, pH),
+          'sizeForPlacement',
+        );
+        return { width: ctx.lu32(pW), height: ctx.lu32(pH) };
+      });
+    }
+
+    function reduireAreaRgb(rgb, srcW, srcH, dstW, dstH) {
+      // Le noyau borne lui-même la taille cible à l'image source : on peut donc
+      // allouer sur la demande, sans risquer d'écrire hors du tampon.
+      var cibleW = Math.min(dstW, srcW);
+      var cibleH = Math.min(dstH, srcH);
+      return portee(function (ctx) {
+        var src = ctx.poser(rgb);
+        var dst = ctx.allouer(cibleW * cibleH * 3);
+        verifier(
+          exports.sp_downscale_area_rgb(src, srcW, srcH, dst, cibleW, cibleH),
+          'downscaleAreaRgb',
+        );
+        return ctx.lire(dst, cibleW * cibleH * 3);
+      });
+    }
+
     return {
       backend: 'wasm',
       version: (function () {
@@ -1212,9 +1326,87 @@
         });
       },
 
+      /**
+       * Réduit une image RVB par **moyenne de surface**.
+       *
+       * C'est la méthode à employer dès que la réduction dépasse le facteur 2.
+       * L'interpolation bilinéaire n'échantillonne que quatre pixels voisins,
+       * quelle que soit la réduction : sur un motif fin — hachures, trame,
+       * grain — elle rend une couleur qui n'existe pas dans l'image, et peut la
+       * faire disparaître entièrement. La moyenne de surface intègre tout ce
+       * que le pixel de sortie recouvre.
+       *
+       * Mesure : `scripts/validate-reduction.mjs`, sur une image où une colonne
+       * sur huit est blanche, rend 32 par moyenne (la bonne réponse) et 0 par
+       * interpolation bilinéaire.
+       */
+      downscaleAreaRgb: reduireAreaRgb,
+
+      /** Réduit une image en niveaux de gris par moyenne de surface. */
+      downscaleAreaGray: function (gris, srcW, srcH, dstW, dstH) {
+        var cibleW = Math.min(dstW, srcW);
+        var cibleH = Math.min(dstH, srcH);
+        return portee(function (ctx) {
+          var src = ctx.poser(gris);
+          var dst = ctx.allouer(cibleW * cibleH);
+          verifier(
+            exports.sp_downscale_area_gray(src, srcW, srcH, dst, cibleW, cibleH),
+            'downscaleAreaGray',
+          );
+          return ctx.lire(dst, cibleW * cibleH);
+        });
+      },
+
+      /**
+       * La taille utile d'une image **posée** sur `largeurMm` et destinée à
+       * `dpi` : le calcul qui décide avant de réduire.
+       *
+       * Ne grossit jamais — une image déjà trop juste reste telle quelle.
+       */
+      sizeForPlacement: tailleUtile,
+
+      /**
+       * Réduit une image RVB pour qu'elle tienne exactement la résolution
+       * demandée à la taille où elle est posée.
+       *
+       * C'est le **seul** appel dont un exporteur a besoin : il donne les pixels
+       * de l'image et sa taille posée, et reçoit de quoi écrire le PDF. Le
+       * calcul de la taille utile et la réduction se font d'un seul tenant, côté
+       * noyau, sur des millions de pixels — c'est exactement le cas d'usage où
+       * le WebAssembly est à son avantage (voir `docs/PORTAGE.md`, section F).
+       *
+       * Renvoie `{ pixels, width, height, reduite }`, où `reduite` dit si un
+       * travail a réellement eu lieu.
+       */
+      reduceForPlacement: function (rgb, srcW, srcH, largeurMm, dpi) {
+        var taille = tailleUtile(srcW, srcH, largeurMm, dpi);
+        if (taille.width === srcW && taille.height === srcH) {
+          return { pixels: rgb, width: srcW, height: srcH, reduite: false };
+        }
+        return {
+          pixels: reduireAreaRgb(rgb, srcW, srcH, taille.width, taille.height),
+          width: taille.width,
+          height: taille.height,
+          reduite: true,
+        };
+      },
+
       mmToPt: function (mm) {
         return exports.sp_mm_to_pt(mm);
       },
+
+      /**
+       * L'**ordre d'impression** d'un livret : une place par élément.
+       *
+       * `null` marque une place vide. Le noyau encode `0`, mais on ne rend pas
+       * `0` : dans une liste où les pages commencent à 1, `null` dit clairement
+       * « pas de page », alors qu'un zéro se lirait comme un numéro.
+       */
+      orderPages: ordreDesPages,
+
+      /** Le **plan d'une planche** : feuille, places, traits de coupe. */
+      plan: planDePlanche,
+
       ptToMm: function (pt) {
         return exports.sp_pt_to_mm(pt);
       },
@@ -1383,6 +1575,76 @@
       }
     }
     return lignes.join('\n');
+  }
+
+  /**
+   * Lit le plan en texte que rend le noyau.
+   *
+   * Le format est celui décrit dans `superprint-wasm/src/lib.rs` :
+   *
+   * ```text
+   * !feuille<TAB>446.0000<TAB>323.0000
+   * !place<TAB>0<TAB>1<TAB>10.0000<TAB>… (rang, page, x, y, largeur, hauteur,
+   *                                      fond perdu, trim x, trim y, trim l, trim h)
+   * !repere<TAB>x1<TAB>y1<TAB>x2<TAB>y2<TAB>epaisseur
+   * ```
+   *
+   * Une ligne inconnue est ignorée plutôt que de faire échouer la lecture : le
+   * noyau peut enrichir le format sans casser les appelants.
+   */
+  function lirePlan(texte) {
+    var plan = {
+      feuille: { largeurMm: 0, hauteurMm: 0 },
+      places: [],
+      reperes: [],
+    };
+    var lignes = texte.split('\n');
+    for (var i = 0; i < lignes.length; i++) {
+      var ligne = lignes[i];
+      if (!ligne) continue;
+      var champs = ligne.split('\t');
+      var nombres = function (depuis) {
+        var valeurs = [];
+        for (var k = depuis; k < champs.length; k += 1) valeurs.push(Number(champs[k]));
+        return valeurs;
+      };
+      if (champs[0] === '!feuille') {
+        plan.feuille.largeurMm = Number(champs[1]);
+        plan.feuille.hauteurMm = Number(champs[2]);
+      } else if (champs[0] === '!place') {
+        // La place porte soit « Vide », soit un numéro de page : « Vide » n'est
+        // pas un nombre, donc la lecture du rang commence après.
+        var v = nombres(3);
+        plan.places.push({
+          rang: Number(champs[1]),
+          page: champs[2] === 'Vide' ? null : Number(champs[2]),
+          xMm: v[0],
+          yMm: v[1],
+          largeurMm: v[2],
+          hauteurMm: v[3],
+          fondPerduMm: v[4],
+          trimXMm: v[5],
+          trimYMm: v[6],
+          trimLargeurMm: v[7],
+          trimHauteurMm: v[8],
+        });
+      } else if (champs[0] === '!repere') {
+        var r = nombres(1);
+        plan.reperes.push({ x1: r[0], y1: r[1], x2: r[2], y2: r[3], epaisseurMm: r[4] });
+      }
+    }
+    // La couverture des deux formats finis : ce que l'imprimeur découpe.
+    if (plan.places.length === 2) {
+      var gauche = plan.places[0];
+      var droite = plan.places[1];
+      plan.formatFini = {
+        xMm: gauche.trimXMm,
+        yMm: gauche.trimYMm,
+        largeurMm: droite.trimXMm + droite.trimLargeurMm - gauche.trimXMm,
+        hauteurMm: gauche.trimHauteurMm,
+      };
+    }
+    return plan;
   }
 
   /**

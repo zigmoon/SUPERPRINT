@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.612-rust-cesure';
+const CACHE_NAME = 'superprint-shell-v1.7.613-rust-imposition-reduction';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

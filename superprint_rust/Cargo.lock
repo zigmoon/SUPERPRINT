@@ -28,6 +28,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-impose"
+version = "0.2.0"
+dependencies = [
+ "superprint-core",
+]
+
+[[package]]
 name = "superprint-pdf"
 version = "0.2.0"
 dependencies = [
@@ -52,6 +59,7 @@ dependencies = [
  "superprint-core",
  "superprint-font",
  "superprint-image",
+ "superprint-impose",
  "superprint-pdf",
  "superprint-text",
 ]

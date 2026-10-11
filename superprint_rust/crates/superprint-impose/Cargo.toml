@@ -1,0 +1,20 @@
+# Imposition : ordre des pages et géométrie des planches.
+#
+# Ce crate ne dessine rien. Il **décide** : quelle page va où, quelle est la
+# taille de la feuille, où tombent les formats finis, où sont les traits de
+# coupe. C'est du calcul pur, et c'est exactement ce qui doit sortir du
+# JavaScript — parce que ces formules y sont aujourd'hui écrites **trois fois**,
+# avec des dérives entre les copies (voir `docs/PORTAGE.md`, section B3).
+
+[package]
+name = "superprint-impose"
+description = "Imposition : ordre des pages, geometrie de planche et traits de coupe"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+superprint-core = { path = "../superprint-core" }

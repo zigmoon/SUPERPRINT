@@ -93,14 +93,49 @@ un aplat. Le **décompresseur**, lui, lit le Huffman dynamique : tout flux venu
 d'ailleurs se relit. Un contenu **ne gonfle jamais** : le compresseur compare
 avec un bloc stocké, et `ImageFilter::Auto` compare les trois encodages.
 
-### B3. Imposition / montage en planches 🟡
+### B3. Imposition / montage en planches 🟡 → ✅ (fait, et mesuré)
 
 Cité comme défaut mesuré dans le rapport interne : **« mode Planches ignoré »**.
-C'est aujourd'hui `main.js` lignes 31627-31790.
+C'était aujourd'hui `main.js` lignes 31627-31790, et trois autres endroits.
 
-À porter : imposition N-up (2, 4, 8, 16 poses), rotation, marges de coupe,
-traits de coupe inter-poses, repérage, signature/cahier, dos carré collé.
-**Géométrie pure** — aucune raison de rester en JavaScript.
+| Étape de SuperPrint | Source actuelle | Rust |
+|---|---|---|
+| Ordre des pages du livret (convergence vers le centre) | `main.js` 31629 `calculateImposition` | ✅ `impose::ordre` |
+| Taille de la feuille (2 pages + fonds perdus + gouttière + marges) | `main.js` 50934, 55001, 54713 | ✅ `impose::plan::Reglages` |
+| Place de chaque page, en mm | `main.js` 50934, 55000, 54713 | ✅ `impose::plan::Place` |
+| Traits de coupe (12, et 4 intérieurs en découpe page à page) | `main.js` 55212 et 51456 | ✅ `impose::reperes` |
+| Lecture de la spécification | dispersée | ✅ `impose::Specification::lire` — **un seul lecteur** |
+
+**Ce que le portage supprime, et c'est son vrai apport** : les quatre formules
+sont écrites **trois fois** dans `main.js`, avec deux dérives constatées entre
+les copies.
+
+1. L'**épaisseur des traits de coupe** vaut `0,08 mm` dans le chemin raster
+   (`renderImposedSheet`) et `0,25 mm` dans le chemin tons directs
+   (`_spSpotDrawCropMarks`). Les deux exports ne donnent donc pas les mêmes
+   repères.
+2. La **largeur de demi-page** du chemin raster de secours vaut
+   `page + fond perdu` — le fond perdu compté d'un seul côté — là où le chemin
+   vectoriel charge la page avec ses `2 × fond perdu`. Les deux chemins ne
+   placent donc pas les pages de la même façon.
+
+Aucun de ces deux écarts n'est un défaut du portage : ce sont deux défauts du
+produit, que la formule unique rend impossibles.
+
+**Preuve mesurée** : `scripts/validate-imposition.mjs` extrait de `main.js`, sans
+le modifier, la fonction `calculateImposition` **telle quelle**, les trois copies
+des expressions de taille de feuille, et les arguments de chaque `pdf.line()` du
+bloc des traits de coupe. Les trois confrontations passent :
+
+- l'ordre est identique pour **25 tailles**, de 0 à 1 000 pages ;
+- la taille de feuille concorde sur les **3 copies × 4 configurations** ;
+- les **16 traits de coupe** (12 + 4 intérieurs) coïncident, position par
+  position, au centième de micromètre.
+
+**Non porté, et pourquoi** : l'imposition N-up (4, 8, 16 poses), la rotation,
+la signature/cahier et le dos carré collé. Le produit ne les a pas non plus :
+le mode actuel est un livret 2 poses. Les porter serait ajouter une fonction,
+pas en déplacer une.
 
 ### B4. Contrôle prépresse (preflight) 🟡
 
@@ -118,14 +153,46 @@ Color Finder, Focoltone, HKS, RAL, NCS : nom → composantes CMJN/RVB. C'est une
 **table + une recherche** : portable tel quel, et `SpotInk` existe déjà côté
 Rust pour recevoir le résultat.
 
-### B6. Traitement d'image avancé 🟡
+### B6. Traitement d'image avancé 🟡 → 🟢 (réduction faite)
 
-| Étape | Source | Remarque |
+| Étape | Source | Rust |
 |---|---|---|
-| Recadrage / masque d'image | `main.js` 26531-26830 | rectangles et découpe — porté en partie par `ImageXObject` |
-| Filtres (Instagram-style, niveaux, seuil, négatif) | `main.js` 73798-74344 | **convolutions** : calcul pur, à porter |
-| Simulation d'encrage / soft proofing CMJN | `main.js` 23360-23475 | ~= `core::color` étendu |
+| Réduction à la résolution utile | `drawImage` du navigateur | ✅ `image::resample::downscale_area` |
+| Taille utile pour un placement | `main.js` (implicite) | ✅ `image::resample::target_size_for_dpi` |
+| Réduction rapide (plus proche voisin) | — | ✅ `image::resample::downscale_nearest` |
+| Recadrage / masque d'image | `main.js` 26531-26830 | 🟡 porté en partie par `ImageXObject` |
+| Filtres (niveaux, seuil, négatif) | `main.js` 73798-74344 | 🟡 **convolutions** : calcul pur, à porter |
+| Simulation d'encrage / soft proofing CMJN | `main.js` 23360-23475 | 🟡 ≈ `core::color` étendu |
 | Décodage JPEG / PNG | délégué au navigateur | 🟠 gros morceau, mais faisable |
+| Canal alpha | — | ❌ **non géré** : le noyau travaille en RVB et en gris |
+
+**La réduction, et ce qui la rend nécessaire.** Le produit laissait le navigateur
+rééchantillonner par `drawImage` — c'est-à-dire, en pratique, une interpolation
+bilinéaire. Sur un motif fin, celle-ci ne donne pas seulement une image plus
+molle : elle rend une **couleur qui n'existe pas dans l'image**, et parfois fait
+disparaître le motif entièrement.
+
+Mesuré sur une image où une colonne sur huit est blanche, réduite huit fois —
+la bonne réponse est le gris moyen, 32 :
+
+| Méthode | Résultat |
+|---|---|
+| moyenne de surface (portée) | **32** |
+| interpolation bilinéaire (≈ `drawImage`) | **0** |
+| plus proche voisin | **0** |
+
+**Preuve mesurée** : `scripts/validate-reduction.mjs` vérifie l'exactitude **au
+bit près** contre une moyenne arithmétique entière calculée indépendamment, la
+survie du motif fin, la conservation de l'énergie (0,005 à 0,4 % d'écart), et
+les invariants (jamais d'agrandissement, identité à taille égale, déterminisme).
+
+**Ce que la mesure a appris** : la vitesse **n'est pas** l'argument. Sur
+3 000 × 2 000 pixels, le noyau Rust met le même temps qu'une boucle JavaScript
+équivalente (0,99×) — la copie des 18 Mo de pixels dans la mémoire du module
+annule le gain du calcul. Ce module vaut par sa **méthode**, pas par sa vitesse.
+À comparer à la césure (section F) : elle est branchée et 1,6 à 2,5 fois plus
+**lente**. La bonne question n'est donc jamais « est-ce que Rust va plus vite ? »
+mais « est-ce que le calcul est juste, et assez gros pour un seul appel ? ».
 
 ### B7. Géométrie vectorielle 🟡
 
@@ -201,7 +268,8 @@ Du plus utile au moins utile, en tenant compte du risque :
 |---|---|---|
 | ~~1~~ | ~~Césure (module 5)~~ | ✅ **fait**, et ✅ **branché** dans l'application (5 langues) |
 | ~~2~~ | ~~Compression Flate~~ | ✅ **fait** — 108× sur du vectoriel, 2,4× sur le `.wasm` |
-| 3 | **Imposition (planches)** | défaut **mesuré** cité par le rapport interne |
+| ~~3~~ | ~~Imposition (planches)~~ | ✅ **fait et mesuré** — ordre, feuille et traits de coupe contre `main.js` |
+| ~~8~~ | ~~Réduction d'image~~ | ✅ **fait et mesuré** — remonte ici : c'est le défaut de **justesse** le plus net |
 | 4 | **Preflight** | c'est ce qui fait accepter un fichier par un imprimeur |
 | 5 | **Nuanciers** | les tons directs existent déjà côté Rust : il manque les données |
 | 6 | PDF/X : XMP | dernier verrou de conformité |
@@ -211,12 +279,21 @@ Du plus utile au moins utile, en tenant compte du risque :
 | 10 | Import ZIP + XML (docx, idml, odt) | gros, mais `inflate` est fait |
 | 11 | Pathfinder, PostScript/EPS | les deux plus difficiles |
 
-**Ce qui est déjà porté n'est pas pour autant branché.** Le branchement se fait
-composant par composant, avec sa propre preuve et son propre repli. Restent à
-brancher, parmi ce qui existe : les conversions de couleurs, les unités, le
-RunLength et la réduction d'image (`sp_downscale_bilinear_rgb` — le gain de
-performance le plus net). Chacun suit le même patron que la césure, décrit en
-section F.
+**Ce qui est porté n'est pas pour autant branché, et ce qui est branché n'est
+pas pour autant utile.** Les deux leçons des deux derniers composants, à relire
+avant de choisir le suivant :
+
+- La **césure** est branchée et **plus lente** (1,6 à 2,5×) : elle vivait en
+  Rust pour l'unification, pas pour la vitesse.
+- La **réduction d'image** est plus juste (elle retrouve un motif que
+  l'échantillonnage fait disparaître) mais **pas plus rapide** : à volume égal,
+  la copie des pixels dans la mémoire du module annule le gain du calcul.
+
+Rester à brancher, parmi ce qui existe : les conversions de couleurs, les
+unités, le RunLength. L'imposition et la réduction d'image sont **offertes**
+par `SuperPrintBranchement` mais pas branchées : les fonctions correspondantes de
+`main.js` sont privées à son IIFE, et la règle est de **ne pas modifier**
+`main.js`. Voir la section F pour la ligne exacte à changer.
 
 ---
 
@@ -235,8 +312,11 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | Texte | `pdf.js` (lecteur tiers) | **caractères relus en clair** |
 | **Césure** | `hypher.js` + règles FR de `main.js` | **2 644 mots, sept champs identiques** |
 | **Compression** | `zlib` de Node | **aller-retour croisé**, 15 jeux, 2 sens |
+| **Imposition** | `calculateImposition`, les 3 copies de la taille de feuille et les `pdf.line()` **extraits de `main.js`** | **25 tailles d'ordre, 3 copies × 4 configurations, 16 traits de coupe** |
+| **Réduction d'image** | moyenne arithmétique entière calculée indépendamment | **au bit près**, motif fin préservé, énergie conservée |
 | **Branchement césure (colle)** | `hypher.js` + dictionnaires du produit | **5 langues, 2 433 mots identiques** |
 | **Branchement césure (livré)** | fichiers réels de `superprint/app/JS/` | **2 129 mots × 5 langues, réversibilité et repli** |
+| **Branchement imposition + réduction** | fichiers réels, dans un bac à sable navigateur | **plan conforme, composants indépendants de la césure** |
 
 Les scripts correspondants sont dans `scripts/` et sont tous enchaînés par
 `scripts/check.ps1`.
@@ -306,16 +386,54 @@ navigateur, la césure reste sur `Hypher` — qui est exactement le comportement
 d'aujourd'hui. Réécrire un second moteur de césure aurait produit une variante
 approximative, donc un défaut visible ; le refus est préférable.
 
+### L'imposition et la réduction d'image : offertes, pas branchées
+
+Les deux composants sont **mesurés et disponibles** dans
+`SuperPrintBranchement` :
+
+```js
+SuperPrintBranchement.orderPages(20);   // [20, 1, 2, 19, 18, 3, …]
+SuperPrintBranchement.imposition({ largeurPageMm: 210, hauteurPageMm: 297, gauche: 20, droite: 1 });
+SuperPrintBranchement.reduireImage(rgb, 6000, 4000, 210, 300);
+```
+
+Mais ils ne **remplacent** rien. La raison est nette : `calculateImposition`,
+`renderImposedSheet` et `buildImposedSheetCanvas` sont **privées à l'IIFE de
+`main.js`** — aucune n'est posée sur `window`. Rien ne peut donc les remplacer
+sans toucher au fichier, et la règle du branchement est de ne pas y toucher.
+
+C'est un choix, pas un oubli. Le jour où l'utilisateur décidera de brancher
+l'imposition pour de bon, le changement tient en trois lignes dans `main.js` :
+
+```js
+// main.js, ~31629 — remplacer le corps de calculateImposition par :
+const order = (window.SuperPrintBranchement
+  && window.SuperPrintBranchement.orderPages(numPages))
+  || calculateImposition(numPages);   // repli : le code d'origine
+```
+
+La valeur de la réduction d'image, elle, se branche **dans notre propre
+exporteur** : `sp_reduce_for_placement` réduit avant d'embarquer l'image, et ce
+chemin-là est entièrement à nous — aucune ligne de `main.js` en jeu.
+
 ### La mesure, et l'anti-dérive
 
-Deux contrôles, tous deux dans `check.ps1` :
+Trois contrôles, tous dans `check.ps1` :
 
 - `scripts/validate-branchement.mjs` — la colle et le noyau contre les
   dictionnaires du produit, cinq langues.
 - `scripts/validate-branchement-app.mjs` — les **fichiers livrés** évalués dans
   un contexte qui imite le navigateur (ordre de `index.html`, `fetch` simulé),
-  puis comparés à `Hypher` : parité, **réversibilité**, et **repli** quand le
-  noyau manque.
+  puis comparés à `Hypher` : parité, **réversibilité**, **repli** quand le noyau
+  manque, et **indépendance des composants** — l'imposition et la réduction
+  doivent marcher même si les dictionnaires de césure sont absents.
+- `scripts/validate-imposition.mjs` — l'ordre, la taille de feuille et les
+  traits de coupe contre le **code de `main.js` extrait tel quel**.
+
+Un composant qui en rend un autre dépendant est un défaut : c'est ce que le
+troisième contrôle ci-dessus interdit. Lier le chargement du noyau à la présence
+d'un fichier de motifs ferait échouer deux composants parce qu'un troisième n'a
+pas trouvé ses données.
 
 Une étape du même fichier compare les **empreintes SHA-256** de
 `web/superprint-core.js` et `dist/superprint_core.wasm` avec leurs copies dans

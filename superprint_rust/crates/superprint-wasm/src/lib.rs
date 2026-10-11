@@ -61,6 +61,7 @@ use superprint_core::color8;
 use superprint_core::{units, Cmyk, PageSize, Rgb};
 use superprint_font::FontFace;
 use superprint_image::{compress, resample, GrayImage, RgbImage};
+use superprint_impose::{Emplacement, Plan, Reglages};
 use superprint_pdf::colorspace::{ColorStack, QuadriSpace};
 use superprint_pdf::doc::{write_spot_page, write_spot_page_with_image};
 use superprint_pdf::document::{ColorValue, Document, Op, OutputIntent, Page, Paint, Path};
@@ -378,6 +379,274 @@ pub unsafe extern "C" fn sp_downscale_nearest_rgb(
     let reduced = resample::downscale_nearest(&image, dst_w, dst_h);
     output.copy_from_slice(reduced.data());
     0
+}
+
+// ─────────────────────── réduction d'image ───────────────────────
+
+/// Réduit une image RVB par **moyenne de surface**.
+///
+/// C'est la méthode à employer dès que la réduction dépasse le facteur 2 :
+/// échantillonner quatre pixels produit un moiré sur un motif fin, moyenner le
+/// motif entier rend la bonne couleur. Voir
+/// [`resample::downscale_area`](superprint_image::resample::downscale_area).
+///
+/// ⚠️ `dst` doit être alloué par l'appelant pour `dst_w · dst_h · 3` octets :
+/// cette fonction écrit sans vérifier la taille, comme les autres fonctions de
+/// réduction de cette frontière.
+///
+/// # Safety
+///
+/// `src` doit désigner `src_w · src_h · 3` octets lisibles ; `dst`
+/// `dst_w · dst_h · 3` octets inscriptibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_downscale_area_rgb(
+    src: *const u8,
+    src_w: u32,
+    src_h: u32,
+    dst: *mut u8,
+    dst_w: u32,
+    dst_h: u32,
+) -> i32 {
+    let Some(entree) = (unsafe { as_slice(src, pixel_bytes(src_w, src_h, 3)) }) else {
+        return SP_ERR_NULL;
+    };
+    let Ok(image) = RgbImage::from_data(src_w, src_h, entree.to_vec()) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let Some(output) = (unsafe { as_slice_mut(dst, pixel_bytes(dst_w, dst_h, 3)) }) else {
+        return SP_ERR_NULL;
+    };
+    let reduced = resample::downscale_area(&image, dst_w, dst_h);
+    output.copy_from_slice(reduced.data());
+    0
+}
+
+/// Réduit une image en niveaux de gris par **moyenne de surface**.
+///
+/// # Safety
+///
+/// `src` doit désigner `src_w · src_h` octets lisibles ; `dst`
+/// `dst_w · dst_h` octets inscriptibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_downscale_area_gray(
+    src: *const u8,
+    src_w: u32,
+    src_h: u32,
+    dst: *mut u8,
+    dst_w: u32,
+    dst_h: u32,
+) -> i32 {
+    let Some(entree) = (unsafe { as_slice(src, pixel_bytes(src_w, src_h, 1)) }) else {
+        return SP_ERR_NULL;
+    };
+    let Ok(image) = GrayImage::from_data(src_w, src_h, entree.to_vec()) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let Some(output) = (unsafe { as_slice_mut(dst, pixel_bytes(dst_w, dst_h, 1)) }) else {
+        return SP_ERR_NULL;
+    };
+    let reduced = resample::downscale_area_gray(&image, dst_w, dst_h);
+    output.copy_from_slice(reduced.data());
+    0
+}
+
+/// Taille cible, en pixels, d'une image **posée** sur `largeur_mm` et destinée à
+/// `dpi_cible`.
+///
+/// Renvoie la taille utile par `out_w`/`out_h`, sans jamais grossir : une image
+/// déjà trop juste reste telle quelle. C'est le calcul qui décide **avant** de
+/// réduire, et il est séparé de la réduction pour qu'un appelant puisse
+/// l'interroger sans payer le travail des pixels.
+///
+/// # Safety
+///
+/// `out_w` et `out_h` doivent être des `u32` inscriptibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_size_for_placement(
+    width_px: u32,
+    height_px: u32,
+    largeur_mm: f64,
+    dpi_cible: f64,
+    out_w: *mut u32,
+    out_h: *mut u32,
+) -> i32 {
+    if out_w.is_null() || out_h.is_null() {
+        return SP_ERR_NULL;
+    }
+    if width_px == 0 || height_px == 0 || largeur_mm <= 0.0 || dpi_cible <= 0.0 {
+        return SP_ERR_BAD_INPUT;
+    }
+    // La résolution réelle de l'image **telle qu'elle est posée** : c'est elle
+    // qui compte pour l'imprimeur, pas la résolution du fichier d'origine.
+    let dpi_reel = f64::from(width_px) / (largeur_mm / 25.4);
+    let (w, h) = resample::target_size_for_dpi(width_px, height_px, dpi_reel, dpi_cible);
+    unsafe {
+        *out_w = w;
+        *out_h = h;
+    };
+    0
+}
+
+// ─────────────────────────── imposition ───────────────────────────
+
+/// Écrit l'**ordre d'impression** d'un livret : un `u32` par place.
+///
+/// `0` marque une place vide. Les numéros de page commencent à 1, donc `0` ne
+/// peut jamais être une page — c'est ce qui rend l'encodage non ambigu, et
+/// évite d'avoir à transporter du texte pour une suite de nombres.
+///
+/// Renvoie le nombre de places écrites, ou [`SP_ERR_TOO_SMALL`] en renseignant
+/// `out_len` avec le nombre de places nécessaires (protocole en deux passes).
+///
+/// # Safety
+///
+/// `dst` doit désigner `dst_cap` octets inscriptibles ; `out_len` un `u32`.
+#[no_mangle]
+pub unsafe extern "C" fn sp_impose_ordre(
+    nb_pages: u32,
+    dst: *mut u8,
+    dst_cap: usize,
+    out_len: *mut u32,
+) -> i32 {
+    if out_len.is_null() {
+        return SP_ERR_NULL;
+    }
+    let places = superprint_impose::ordre(nb_pages);
+    let besoin = places.len() * 4;
+    unsafe { *out_len = besoin as u32 };
+    if besoin > dst_cap {
+        return SP_ERR_TOO_SMALL;
+    }
+    if places.is_empty() {
+        return 0;
+    }
+    let Some(zone) = (unsafe { as_slice_mut(dst, besoin) }) else {
+        return SP_ERR_NULL;
+    };
+    for (index, place) in places.iter().enumerate() {
+        let valeur = place.numero().unwrap_or(0).to_le_bytes();
+        zone[index * 4..index * 4 + 4].copy_from_slice(&valeur);
+    }
+    places.len() as i32
+}
+
+/// Écrit le **plan d'une planche**, sous forme de texte lisible.
+///
+/// Le plan est calculé **une fois par planche**, pour deux pages : c'est le cas
+/// d'usage où la frontière WebAssembly ne coûte rien, contrairement à la césure
+/// qui est appelée pour chaque mot (voir `docs/PORTAGE.md`, section F). Le texte
+/// est donc le bon format ici — inspectable, comparable, et sans ambiguïté.
+///
+/// ## Entrée
+///
+/// Des lignes séparées par `\n`, champs par tabulation. La ligne `!page` est
+/// **obligatoire** : sans format de page, rien n'a de sens.
+///
+/// ```text
+/// !page<TAB>210<TAB>297            largeur, hauteur du format fini (mm)
+/// !fond<TAB>3<TAB>1                fond perdu (mm), imprimé (0 ou 1)
+/// !decoupe<TAB>0                   découpe page à page (0 ou 1)
+/// !reperes<TAB>1<TAB>10<TAB>5<TAB>2.5<TAB>0.25   actifs, marge, longueur, décalage, épaisseur
+/// !places<TAB>1<TAB>20             page de gauche, page de droite (0 = vide)
+/// ```
+///
+/// ## Sortie
+///
+/// ```text
+/// !feuille<TAB>446.0000<TAB>323.0000
+/// !place<TAB>0<TAB>1<TAB>10.0000<TAB>10.0000<TAB>216.0000<TAB>303.0000<TAB>3.0000<TAB>13.0000<TAB>13.0000<TAB>210.0000<TAB>297.0000
+/// !repere<TAB>0.5000<TAB>13.0000<TAB>5.5000<TAB>13.0000<TAB>0.2500
+/// ```
+///
+/// Renvoie le nombre d'octets écrits, ou [`SP_ERR_TOO_SMALL`] en renseignant
+/// `out_len` avec la taille nécessaire.
+///
+/// # Safety
+///
+/// `spec` doit désigner `spec_len` octets lisibles ; `dst` `dst_cap` octets
+/// inscriptibles ; `out_len` un `u32`.
+#[no_mangle]
+pub unsafe extern "C" fn sp_impose_plan(
+    spec: *const u8,
+    spec_len: usize,
+    dst: *mut u8,
+    dst_cap: usize,
+    out_len: *mut u32,
+) -> i32 {
+    if out_len.is_null() {
+        return SP_ERR_NULL;
+    }
+    let Some(octets) = (unsafe { as_slice(spec, spec_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let Ok(texte) = core::str::from_utf8(octets) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let Some((reglages, gauche, droite)) = parse_impose_spec(texte) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let plan = Plan::nouveau(gauche, droite, reglages);
+    let sortie = format_plan(&plan);
+    let besoin = sortie.len();
+    unsafe { *out_len = besoin as u32 };
+    if besoin > dst_cap {
+        return SP_ERR_TOO_SMALL;
+    }
+    unsafe { copy_out(sortie.as_bytes(), dst, dst_cap) }
+}
+
+/// Lit la spécification d'un plan d'imposition. Voir [`sp_impose_plan`].
+///
+/// Renvoie `None` si la ligne `!page` manque : sans format de page, aucun plan
+/// n'a de sens, et des dimensions devinées produiraient une planche fausse —
+/// donc du papier perdu.
+///
+/// ⚠️ Le lecteur lui-même est [`superprint_impose::Specification::lire`] : il
+/// n'existe **qu'une** implémentation dans tout le dépôt, partagée avec
+/// l'exemple de contrôle `impose_dump`. Recopier ce lecteur serait la garantie
+/// d'une dérive silencieuse entre ce qui est mesuré et ce qui est livré.
+fn parse_impose_spec(specification: &str) -> Option<(Reglages, Emplacement, Emplacement)> {
+    let spec = superprint_impose::Specification::lire(specification)?;
+    Some((spec.reglages, spec.gauche, spec.droite))
+}
+
+/// Met un plan en texte — le format que lit `web/superprint-core.js`.
+///
+/// Les nombres sont écrits avec **quatre décimales** : c'est le dixième de
+/// micromètre, très au-delà de ce qu'un massicot sait faire, et c'est assez pour
+/// comparer deux plans sans se battre avec la représentation des flottants.
+fn format_plan(plan: &Plan) -> String {
+    use core::fmt::Write as _;
+    let mut sortie = String::with_capacity(256);
+    let _ = writeln!(
+        sortie,
+        "!feuille\t{:.4}\t{:.4}",
+        plan.feuille_largeur_mm, plan.feuille_hauteur_mm
+    );
+    for (rang, place) in plan.places.iter().enumerate() {
+        let _ = writeln!(
+            sortie,
+            "!place\t{rang}\t{}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}",
+            place.emplacement,
+            place.x_mm,
+            place.y_mm,
+            place.largeur_mm,
+            place.hauteur_mm,
+            place.fond_perdu_mm,
+            place.trim_x_mm(),
+            place.trim_y_mm(),
+            place.largeur_mm - 2.0 * place.fond_perdu_mm,
+            place.hauteur_mm - 2.0 * place.fond_perdu_mm,
+        );
+    }
+    for repere in &plan.reperes {
+        let _ = writeln!(
+            sortie,
+            "!repere\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}",
+            repere.x1, repere.y1, repere.x2, repere.y2, repere.epaisseur_mm
+        );
+    }
+    sortie
 }
 
 // ─────────────────────────── écriture PDF ───────────────────────────
@@ -2341,5 +2610,242 @@ mod tests {
             SP_ERR_BAD_INPUT,
             "sans dictionnaire charge, il n'y a pas de rang 0"
         );
+    }
+
+    // ─────────────────────── réduction d'image ───────────────────────
+
+    /// La moyenne de surface traverse la frontière et rend la bonne couleur là
+    /// où un échantillonnage perdrait le motif.
+    #[test]
+    fn frontiere_reduction_par_moyenne() {
+        // 8 × 8 : une colonne blanche, sept noires, uniforme verticalement.
+        let (l, h) = (8u32, 8u32);
+        let mut source = Vec::with_capacity((l * h * 3) as usize);
+        for _ in 0..h {
+            for x in 0..l {
+                let v = if x == 0 { 255u8 } else { 0 };
+                source.extend_from_slice(&[v, v, v]);
+            }
+        }
+        let mut sortie = vec![0u8; 3];
+        let code =
+            unsafe { sp_downscale_area_rgb(source.as_ptr(), l, h, sortie.as_mut_ptr(), 1, 1) };
+        assert_eq!(code, 0);
+        // 8 pixels blancs sur 64 : 255 / 8 = 31,875 -> 32.
+        assert_eq!(sortie, vec![32, 32, 32], "la moyenne doit voir la colonne");
+
+        // Le plus proche voisin, lui, ne la voit pas — c'est la démonstration.
+        let mut par_proche = vec![0u8; 3];
+        let code = unsafe {
+            sp_downscale_nearest_rgb(source.as_ptr(), l, h, par_proche.as_mut_ptr(), 1, 1)
+        };
+        assert_eq!(code, 0);
+        assert_eq!(par_proche, vec![0, 0, 0], "l'echantillonnage rate le motif");
+    }
+
+    /// La réduction en niveaux de gris, et le fait qu'une image uniforme reste
+    /// exactement uniforme.
+    #[test]
+    fn frontiere_reduction_en_gris() {
+        let source = [200u8; 25];
+        let mut sortie = vec![0u8; 4];
+        let code =
+            unsafe { sp_downscale_area_gray(source.as_ptr(), 5, 5, sortie.as_mut_ptr(), 2, 2) };
+        assert_eq!(code, 0);
+        assert_eq!(sortie, vec![200, 200, 200, 200]);
+
+        // Un pointeur nul est refusé, comme partout ailleurs.
+        assert_eq!(
+            unsafe { sp_downscale_area_gray(ptr::null(), 5, 5, sortie.as_mut_ptr(), 2, 2) },
+            SP_ERR_NULL
+        );
+    }
+
+    /// Le calcul de la taille utile dépend de la **taille posée**, et ne grossit
+    /// jamais.
+    #[test]
+    fn frontiere_taille_pour_placement() {
+        let (mut w, mut h) = (0u32, 0u32);
+
+        // 6000 px posés sur 210 mm : 725,7 DPI. À 300 DPI il en faut 2480.
+        assert_eq!(
+            unsafe { sp_size_for_placement(6000, 4000, 210.0, 300.0, &mut w, &mut h) },
+            0
+        );
+        assert_eq!(w, 2480, "6000 x 300/725,71 = 2480,31");
+        assert_eq!(h, 1654, "4000 x 300/725,71 = 1653,54, arrondi a 1654");
+
+        // Une image trop juste reste telle quelle : on ne grossit jamais.
+        assert_eq!(
+            unsafe { sp_size_for_placement(100, 50, 210.0, 300.0, &mut w, &mut h) },
+            0
+        );
+        assert_eq!((w, h), (100, 50));
+
+        // Une entrée absurde est refusée plutôt que d'inventer une taille.
+        assert_eq!(
+            unsafe { sp_size_for_placement(0, 50, 210.0, 300.0, &mut w, &mut h) },
+            SP_ERR_BAD_INPUT
+        );
+        assert_eq!(
+            unsafe { sp_size_for_placement(100, 50, 0.0, 300.0, &mut w, &mut h) },
+            SP_ERR_BAD_INPUT
+        );
+        assert_eq!(
+            unsafe { sp_size_for_placement(100, 50, 210.0, 300.0, ptr::null_mut(), &mut h) },
+            SP_ERR_NULL
+        );
+    }
+
+    // ─────────────────────────── imposition ───────────────────────────
+
+    /// L'ordre traverse la frontière en `u32`, avec `0` pour une place vide, et
+    /// suit le protocole en deux passes.
+    #[test]
+    fn frontiere_imposition_ordre() {
+        let mut besoin = 0u32;
+        let code = unsafe { sp_impose_ordre(20, ptr::null_mut(), 0, &mut besoin) };
+        assert_eq!(code, SP_ERR_TOO_SMALL);
+        assert_eq!(besoin, 80, "20 places de 4 octets");
+
+        let mut tampon = vec![0u8; besoin as usize];
+        let mut ecrit = 0u32;
+        let code = unsafe { sp_impose_ordre(20, tampon.as_mut_ptr(), tampon.len(), &mut ecrit) };
+        assert_eq!(code, 20);
+        assert_eq!(ecrit, besoin);
+
+        let places: Vec<u32> = tampon
+            .chunks_exact(4)
+            .map(|o| u32::from_le_bytes([o[0], o[1], o[2], o[3]]))
+            .collect();
+        assert_eq!(
+            places,
+            vec![20, 1, 2, 19, 18, 3, 4, 17, 16, 5, 6, 15, 14, 7, 8, 13, 12, 9, 10, 11],
+            "la suite du produit"
+        );
+
+        // Zéro page : rien à écrire, et ce n'est pas une erreur.
+        assert_eq!(
+            unsafe { sp_impose_ordre(0, tampon.as_mut_ptr(), tampon.len(), &mut ecrit) },
+            0
+        );
+        assert_eq!(ecrit, 0);
+
+        // `out_len` reste obligatoire.
+        assert_eq!(
+            unsafe { sp_impose_ordre(4, tampon.as_mut_ptr(), tampon.len(), ptr::null_mut()) },
+            SP_ERR_NULL
+        );
+    }
+
+    /// Le plan complet, lu depuis le texte de sortie : la feuille, les deux
+    /// places, les traits de coupe.
+    #[test]
+    fn frontiere_imposition_plan() {
+        let spec =
+            "!page\t210\t297\n!fond\t3\t1\n!decoupe\t0\n!reperes\t1\t10\t5\t2.5\t0.25\n!places\t1\t20";
+        let mut besoin = 0u32;
+        let code =
+            unsafe { sp_impose_plan(spec.as_ptr(), spec.len(), ptr::null_mut(), 0, &mut besoin) };
+        assert_eq!(code, SP_ERR_TOO_SMALL);
+        assert!(besoin > 64, "un plan fait quelques centaines d'octets");
+
+        let mut tampon = vec![0u8; besoin as usize];
+        let mut ecrit = 0u32;
+        let code = unsafe {
+            sp_impose_plan(
+                spec.as_ptr(),
+                spec.len(),
+                tampon.as_mut_ptr(),
+                tampon.len(),
+                &mut ecrit,
+            )
+        };
+        assert_eq!(code as u32, besoin);
+        assert_eq!(ecrit, besoin);
+        let texte = String::from_utf8(tampon).expect("le plan est de l'UTF-8");
+
+        assert!(
+            texte.starts_with("!feuille\t446.0000\t323.0000"),
+            "feuille inattendue : {texte}"
+        );
+        assert!(texte.contains("!place\t0\t1\t10.0000"), "place de gauche");
+        assert!(
+            texte.contains("!place\t1\t20\t220.0000"),
+            "place de droite : 10 de marge + 210 de page"
+        );
+        assert_eq!(
+            texte.lines().filter(|l| l.starts_with("!repere")).count(),
+            12,
+            "douze traits de coupe"
+        );
+    }
+
+    /// Une spécification sans `!page` est **refusée** : sans format de page,
+    /// aucun plan n'a de sens, et des dimensions devinées produiraient une
+    /// planche fausse — donc du papier perdu.
+    #[test]
+    fn frontiere_imposition_spec_incomplete_refusee() {
+        let mut besoin = 0u32;
+        let mut tampon = vec![0u8; 256];
+        for spec in ["", "!fond\t3\t1", "!reperes\t1", "!places\t1\t2"] {
+            assert_eq!(
+                unsafe {
+                    sp_impose_plan(
+                        spec.as_ptr(),
+                        spec.len(),
+                        tampon.as_mut_ptr(),
+                        tampon.len(),
+                        &mut besoin,
+                    )
+                },
+                SP_ERR_BAD_INPUT,
+                "« {spec} » doit etre refuse"
+            );
+        }
+        // Un texte qui n'est pas de l'UTF-8 valide est refusé aussi.
+        let octets = [0xFFu8, 0xFE];
+        assert_eq!(
+            unsafe {
+                sp_impose_plan(
+                    octets.as_ptr(),
+                    octets.len(),
+                    tampon.as_mut_ptr(),
+                    tampon.len(),
+                    &mut besoin,
+                )
+            },
+            SP_ERR_BAD_INPUT
+        );
+    }
+
+    /// Les options par défaut du plan sont celles du produit : sans ligne
+    /// `!fond` ni `!reperes`, on obtient exactement ce que `main.js` fait avec
+    /// ses propres valeurs par défaut.
+    #[test]
+    fn frontiere_imposition_valeurs_par_defaut() {
+        let spec = "!page\t210\t297";
+        let mut besoin = 0u32;
+        unsafe {
+            sp_impose_plan(spec.as_ptr(), spec.len(), ptr::null_mut(), 0, &mut besoin);
+        }
+        let mut tampon = vec![0u8; besoin as usize];
+        let mut ecrit = 0u32;
+        unsafe {
+            sp_impose_plan(
+                spec.as_ptr(),
+                spec.len(),
+                tampon.as_mut_ptr(),
+                tampon.len(),
+                &mut ecrit,
+            );
+        }
+        let texte = String::from_utf8(tampon).unwrap();
+        // Fond perdu 3 mm imprimé et repères de 10 mm : les valeurs du produit.
+        assert!(texte.starts_with("!feuille\t446.0000\t323.0000"), "{texte}");
+        // Aucune place indiquée : les deux sont vides, mais géométriquement
+        // identiques — le plan reste calculable.
+        assert!(texte.contains("!place\t0\tVide\t10.0000"), "{texte}");
+        assert!(texte.contains("!place\t1\tVide\t220.0000"), "{texte}");
     }
 }

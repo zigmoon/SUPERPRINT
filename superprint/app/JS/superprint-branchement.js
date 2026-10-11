@@ -15,12 +15,48 @@
  * traitement typographique français (bornes, groupes insécables, digraphes,
  * tirets conditionnels) reste dans `main.js`, intact.
  *
+ * ## Les composants branchés
+ *
+ * | Composant | Ce qui est remplacé | Mesure |
+ * |---|---|---|
+ * | **Césure** | `window.hyphenators[lang]` — le point d'accroche du produit | identique à `Hypher`, 5 langues |
+ * | **Imposition** | offerte, pas encore branchée : `calculateImposition` n'est pas exposée par `main.js` | ordre, feuille et traits de coupe identiques |
+ * | **Réduction d'image** | offerte : la réduire correctement, à la place de `drawImage` | motif préservé là où l'échantillonnage le perd |
+ *
+ * ### Pourquoi l'imposition et la réduction ne sont pas branchées
+ *
+ * La règle du branchement est **ajouter, jamais modifier**. Or les fonctions
+ * d'imposition de `main.js` (`calculateImposition`, `renderImposedSheet`,
+ * `buildImposedSheetCanvas`) sont **privées à son IIFE** : rien ne les expose sur
+ * `window`, donc rien ne peut les remplacer sans toucher au fichier.
+ *
+ * Plutôt que de forcer, ces deux composants sont **offerts** ici, mesurés, et
+ * prêts. Voir `docs/PORTAGE.md`, section F, pour la ligne exacte à changer le
+ * jour où l'utilisateur décidera de les brancher pour de bon.
+ *
+ * ## Ce que la mesure a appris sur la réduction d'image
+ *
+ * La vitesse n'est **pas** le point : sur six millions de pixels, le noyau Rust
+ * et une boucle JavaScript équivalente mettent le même temps (0,99×) — la copie
+ * des 18 Mo dans la mémoire du module annule le gain du calcul.
+ *
+ * Ce que le noyau apporte, c'est la **méthode**. Sur une image où une colonne
+ * sur huit est blanche, réduite huit fois :
+ *
+ * | Méthode | Résultat | Vérité |
+ * |---|---|---|
+ * | moyenne de surface (noyau) | **32** | 32 |
+ * | interpolation bilinéaire (aussi `drawImage`) | **0** | 32 |
+ *
+ * Le motif blanc a **disparu** par échantillonnage. Ce n'est pas une nuance de
+ * netteté, c'est une couleur qui n'existe pas dans l'image.
+ *
  * ## Premier composant : la CÉSURE
  *
  * Le dictionnaire de césure est celui du produit (`JS/hyphenation-*.js`), lu
  * **tel quel**. Le noyau Rust construit le même arbre de motifs et rend les
  * mêmes fragments — la parité est mesurée par
- * `superprint_rust/scripts/validate-branchement.mjs` sur 2 400 mots réels.
+ * `superprint_rust/scripts/validate-branchement.mjs` sur 2 433 mots réels.
  *
  * ## ⚠️ Ce que la césure a appris : elle est PLUS LENTE
  *
@@ -66,7 +102,7 @@
   'use strict';
 
   /** Version de ce branchement (sert aussi de paramètre `?v=` dans `index.html`). */
-  var VERSION = '20261011-v612-rust-cesure';
+  var VERSION = '20261011-v613-rust-imposition-reduction';
 
   /** Langues branchables, et nom du dictionnaire dans `window.Hyphenation`. */
   var LANGUES = { fr: 'fr', en: 'en-us', de: 'de', es: 'es', it: 'it' };
@@ -217,18 +253,17 @@
           }
         }
         etat.actif = Object.keys(etat.rangs).length > 0;
-        if (etat.actif) {
-          journal(
-            'césure branchée sur le noyau Rust (' + Object.keys(etat.rangs).join(', ') + ')',
-          );
-        } else {
-          journal('césure : aucun dictionnaire chargé, Hypher reste en place');
-        }
+        // Une seule ligne, quel que soit le nombre de composants : un
+        // branchement qui réussit n'a rien à raconter pendant la frappe, et un
+        // branchement qui échoue n'a pas à remplir la console.
+        var composants = ['imposition', 'réduction d’image'];
+        if (etat.actif) composants.push('césure (' + Object.keys(etat.rangs).join(', ') + ')');
+        journal('noyau Rust branché — ' + composants.join(', '));
         return etat.actif;
       })
       .catch(function (erreur) {
         etat.raison = erreur;
-        journal('césure : noyau indisponible, Hypher reste en place (' + erreur.message + ')');
+        journal('noyau indisponible, l’application garde ses chemins habituels (' + erreur.message + ')');
         return false;
       });
   }
@@ -264,21 +299,144 @@
       var pose = etat.poses[lang];
       return pose ? pose.moteur : null;
     },
+
+    // ───────────────────────────────────────────────────────────────────────
+    //  Imposition et réduction d'image
+    // ───────────────────────────────────────────────────────────────────────
+
+    /**
+     * L'**ordre d'impression** d'un livret, pour `nbPages` pages.
+     *
+     * Rend une place par élément, `null` pour une place vide. Sans noyau, rend
+     * `null` — l'appelant sait alors qu'il doit utiliser `calculateImposition`
+     * de `main.js`.
+     *
+     * ```
+     * SuperPrintBranchement.orderPages(20)
+     * // [20, 1, 2, 19, 18, 3, …]
+     * ```
+     */
+    orderPages: function (nbPages) {
+      if (!etat.moteur) return null;
+      try {
+        return etat.moteur.orderPages(nbPages);
+      } catch (erreur) {
+        journal('imposition : ' + erreur.message);
+        return null;
+      }
+    },
+
+    /**
+     * Le **plan d'une planche** : taille de la feuille, place de chaque page,
+     * traits de coupe, le tout en millimètres depuis le coin haut-gauche du
+     * média.
+     *
+     * ```js
+     * SuperPrintBranchement.imposition({
+     *   largeurPageMm: 210, hauteurPageMm: 297,
+     *   fondPerduMm: 3, inclureFondPerdu: true,
+     *   decoupePageAPage: false, reperesDeCoupe: true,
+     *   gauche: 20, droite: 1,
+     * });
+     * // { feuille: { largeurMm: 446, hauteurMm: 323 },
+     * //   places: [ { page: 20, xMm: 10, trimXMm: 13, … }, … ],
+     * //   reperes: [ { x1: 0.5, y1: 13, x2: 5.5, y2: 13, … }, … ],
+     * //   formatFini: { xMm: 13, yMm: 13, largeurMm: 420, hauteurMm: 297 } }
+     * ```
+     *
+     * Sans noyau, rend `null`.
+     */
+    imposition: function (options) {
+      if (!etat.moteur) return null;
+      try {
+        return etat.moteur.plan(options);
+      } catch (erreur) {
+        journal('imposition : ' + erreur.message);
+        return null;
+      }
+    },
+
+    /**
+     * La taille utile d'une image **posée** : le calcul qui décide avant de
+     * réduire. Sans noyau, rend `null`.
+     */
+    tailleUtile: function (width, height, largeurMm, dpi) {
+      if (!etat.moteur) return null;
+      try {
+        return etat.moteur.sizeForPlacement(width, height, largeurMm, dpi);
+      } catch (erreur) {
+        journal('réduction : ' + erreur.message);
+        return null;
+      }
+    },
+
+    /**
+     * Réduit les pixels d'une image RVB pour qu'elle tienne exactement la
+     * résolution demandée à la taille où elle est posée.
+     *
+     * ```js
+     * const { pixels, width, height, reduite } =
+     *   SuperPrintBranchement.reduireImage(rgb, 6000, 4000, 210, 300);
+     * ```
+     *
+     * ## Pourquoi la **moyenne de surface**, et pas un redimensionnement
+     *
+     * Le navigateur, quand il rééchantillonne par `drawImage`, échantillonne
+     * quelques pixels voisins — comme l'interpolation bilinéaire du noyau. Sur un
+     * motif fin, cela ne donne pas seulement une image moins nette : cela donne
+     * une **couleur fausse**, et parfois la disparition complète du motif.
+     *
+     * Mesuré : sur une image où une colonne sur huit est blanche, réduite huit
+     * fois, la bonne réponse est 32 (le gris moyen). L'interpolation bilinéaire
+     * rend **0** — la colonne blanche a disparu. Voir
+     * `superprint_rust/scripts/validate-reduction.mjs`.
+     *
+     * ⚠️ La vitesse, elle, n'est pas le point : sur six millions de pixels, le
+     * noyau Rust et une boucle JavaScript équivalente mettent **le même temps**
+     * (0,99×) — la copie des pixels dans la mémoire du module annule le gain du
+     * calcul. Ce que ce module apporte, c'est la justesse.
+     *
+     * Sans noyau, rend `null` : l'appelant garde alors son propre chemin.
+     */
+    reduireImage: function (rgb, srcW, srcH, largeurMm, dpi) {
+      if (!etat.moteur) return null;
+      try {
+        return etat.moteur.reduceForPlacement(rgb, srcW, srcH, largeurMm, dpi);
+      } catch (erreur) {
+        journal('réduction : ' + erreur.message);
+        return null;
+      }
+    },
   };
 
   global.SuperPrintBranchement = api;
 
-  // Installation **synchrone** des moteurs, chargement **asynchrone** du noyau.
-  // L'ordre compte : `main.js` doit trouver `window.hyphenators` complet, même
-  // s'il s'exécute avant que le WebAssembly ne soit compilé.
-  if (installer()) {
-    var demarrer = function () {
-      chargerNoyau();
-    };
-    if (global.document && global.document.readyState === 'loading') {
-      global.document.addEventListener('DOMContentLoaded', demarrer, { once: true });
-    } else {
-      demarrer();
-    }
+  // ─────────────────────────────────────────────────────────────────────────
+  //  Démarrage
+  // ─────────────────────────────────────────────────────────────────────────
+  //
+  // L'ordre compte, et les deux étapes sont **indépendantes** :
+  //
+  //  1. les moteurs de césure sont posés **tout de suite**, en délégation, pour
+  //     que `main.js` trouve `window.hyphenators` complet même s'il s'exécute
+  //     avant que le WebAssembly ne soit compilé ;
+  //  2. le noyau est chargé **ensuite**, de façon asynchrone.
+  //
+  // ⚠️ Le chargement du noyau n'est **pas** conditionné à la présence des
+  // dictionnaires de césure. L'imposition et la réduction d'image n'en ont pas
+  // besoin : les lier à un fichier de motifs ferait échouer deux composants
+  // parce qu'un troisième n'a pas trouvé ses données.
+
+  // Étape 1 — les moteurs de césure, si le produit a livré ses dictionnaires.
+  installer();
+
+  // Étape 2 — le noyau, quelle que soit l'étape 1.
+  var demarrer = function () {
+    chargerNoyau();
+  };
+  if (global.document && global.document.readyState === 'loading') {
+    global.document.addEventListener('DOMContentLoaded', demarrer, { once: true });
+  } else {
+    demarrer();
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
