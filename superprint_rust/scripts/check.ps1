@@ -145,6 +145,16 @@ Step 'image : niveaux, flou, mediane, encrage, alpha contre un repli JS' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-image.mjs }
 }
 
+# Validation des PROFILS ICC : les trois profils livres sont relus octet par octet
+# en JavaScript puis compares au noyau (en-tete, table des balises, types, tailles,
+# nom, point blanc). Et surtout : l'ECART entre la taille de la specification ICC
+# et la taille declaree par les balises Adobe est chiffre et compare. Un profil
+# d'ecran doit etre lu, puis refuse comme OutputIntent.
+Step 'profils ICC : en-tete, balises, nom, ecarts a la specification, refus' {
+  & $cargo build -p superprint-icc --example icc_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-icc.mjs }
+}
+
 Pop-Location
 
 if ($ok) {

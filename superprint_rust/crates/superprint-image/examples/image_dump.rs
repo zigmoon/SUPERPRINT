@@ -81,7 +81,8 @@ fn main() -> ExitCode {
             let mut liste = Vec::new();
             for morceau in points.split(',') {
                 let mut champ = morceau.split(':');
-                let (Some(x), Some(y)) = (champ.next().and_then(nombre), champ.next().and_then(nombre))
+                let (Some(x), Some(y)) =
+                    (champ.next().and_then(nombre), champ.next().and_then(nombre))
                 else {
                     eprintln!("courbe : point illisible dans {morceau:?}");
                     return ExitCode::from(2);

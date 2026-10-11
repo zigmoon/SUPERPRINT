@@ -21,6 +21,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-icc"
+version = "0.2.0"
+dependencies = [
+ "superprint-core",
+]
+
+[[package]]
 name = "superprint-image"
 version = "0.2.0"
 dependencies = [
