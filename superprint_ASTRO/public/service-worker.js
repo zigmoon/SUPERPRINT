@@ -19,11 +19,10 @@ const APP_SHELL = [
   './CSS/main.css',
   './CSS/mobile-widgets.css',
   // Logotypes des fondations open source (bloc sous les trois entrées, index.html).
-  // ⚠️ Dessinés en couleur sur fond clair → lisibles tels quels, pas de plaque.
+  // ⚠️ Monochromes, couleur d'encre du site → lisibles tels quels sur le papier.
   './icons/github.svg',
   './icons/npm.svg',
   './icons/rust.svg',
-  './icons/astro.svg',
   './SP/super_print_logo_blanc.svg',
   './JS/main.js',
   './JS/pwa.js',

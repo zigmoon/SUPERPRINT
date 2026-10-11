@@ -1509,7 +1509,14 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 @media (prefers-reduced-motion: reduce) { table.is-open tr.is-folded { animation: none; } }
 
 /* ——— HERO : TROIS ENTRÉES — app, studio, SuperTyPo ——— */
+/* 🆕 v1.7.611 — LARGEUR DE BANDE PARTAGÉE AVEC LES FONDATIONS.
+   Le hero est une colonne flex centrée : chaque enfant se réduit à la largeur de
+   son contenu. Les trois entrées tombaient donc à 1082 px et les fondations à
+   847 px — deux grilles de largeurs DIFFÉRENTES, et des cases de 347 contre 282.
+   `align-self: stretch` (ici ET sur .fondations) force les deux bandes à la
+   largeur du conteneur : mêmes cases de chaque côté de la comparaison. */
 .entries {
+  align-self: stretch;
   display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
   gap: clamp(12px,1.6vw,20px); margin: clamp(26px,3.4vw,46px) 0 0;
 }
@@ -1557,23 +1564,32 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 }
 
 /* 🆕 v1.7.611 — SOUS LES TROIS ENTRÉES : LES FONDATIONS OPEN SOURCE.
-   GitHub, Rust et Astro ne sont pas des applications : ce sont les briques sur
+   GitHub, npm et Rust ne sont pas des applications : ce sont les briques sur
    lesquelles SuperPrint est construit. Elles sont donc présentées PLUS BAS et
    PLUS PETITES que les trois entrées — la hiérarchie doit rester lisible : on
    ouvre une app, on ne « visite » pas une fondation.
+   TROIS COLONNES, comme les entrées du dessus : la grille tombe pile dans la
+   même trame, les filets verticaux des deux blocs se répondent.
    AUCUN PANNEAU : les trois colonnes tombent DANS LE FOND DE PAGE (aucune carte
    blanche, aucune plaque sous le logotype). Elles sont simplement séparées par
    des FILETS — le motif déjà employé par le site pour ses grilles. Le logotype
    suit la couleur d'encre : il est posé sur le papier, pas posé dessus. */
-.fondations { margin: clamp(26px,3.2vw,42px) 0 0; }
+/* `align-self: stretch` : MÊME LARGEUR DE BANDE QUE LES TROIS ENTRÉES (voir
+   .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
+   cette grille serait plus étroite que celle du dessus. */
+.fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
 .fondations-titre {
   display: block; text-align: left; font-family: var(--f-mono);
   font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase;
   color: var(--muted); margin-bottom: clamp(10px,1.3vw,16px);
 }
+/* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
+   trois entrées, et chaque filet vertical tombe sous le bord gauche de la carte
+   correspondante. */
 .fondations-grid {
-  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
-  gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+  column-gap: clamp(12px,1.6vw,20px);
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
 .fondation {
   display: flex; align-items: flex-start; gap: 13px; min-width: 0;
@@ -1600,13 +1616,9 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-@media (max-width: 1100px) {
-  .fondations-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-  .fondation:nth-child(odd) { border-left: 0; padding-left: 0; }
-  .fondation:nth-child(even) { padding-right: 0; }
-  .fondation:nth-child(n+3) { border-top: 1px solid var(--line); }
-}
-@media (max-width: 640px) {
+/* Même seuil que les trois entrées du dessus (voir .entries) : sous 900 px on
+   empile, sinon le trio laisserait un trou dans la trame. */
+@media (max-width: 900px) {
   .fondations-grid { grid-template-columns: 1fr; }
   .fondation { border-left: 0; padding-left: 0; padding-right: 0; }
   .fondation:nth-child(n+2) { border-top: 1px solid var(--line); }
