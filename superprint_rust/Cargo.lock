@@ -30,6 +30,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-text"
+version = "0.2.0"
+dependencies = [
+ "superprint-core",
+]
+
+[[package]]
 name = "superprint-wasm"
 version = "0.2.0"
 dependencies = [

@@ -53,6 +53,14 @@ Step 'module wasm navigateur + parité + pdf-lib' { pwsh -File (Join-Path $PSScr
 # illisibles au lieu d'approximer, et ses PDF sont relus par pdf-lib.
 Step 'colle de branchement + repli + pdf-lib' { pwsh -File (Join-Path $PSScriptRoot 'demo-web.ps1') | Out-Null }
 
+# Validation de la CÉSURE : les deux moteurs — le Rust et celui du produit
+# (`hypher.js` + les règles françaises de `main.js`, lus sans être modifiés) —
+# sont comparés mot pour mot, position par position, sur du vrai texte français.
+Step 'cesure : parite mesuree contre hypher.js et les regles FR' {
+  & $cargo build -p superprint-text --example cesure_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-cesure.mjs }
+}
+
 Pop-Location
 
 if ($ok) {

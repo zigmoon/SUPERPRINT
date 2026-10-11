@@ -1,0 +1,16 @@
+[package]
+name = "superprint-text"
+description = "Césure et composition typographique du noyau Rust de SuperPrint : motifs de Liang (dictionnaire de césure), règles françaises du Code typographique, découpe de lignes — module n° 5."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+# Crate pur Rust : aucune dépendance, compilable en natif et en WASM.
+# Les motifs d'une langue (fr, en, de…) sont des DONNÉES fournies par
+# l'appelant : le crate n'embarque aucun dictionnaire, donc sa taille ne
+# change pas selon les langues utilisées.
+[dependencies]
+superprint-core = { path = "../superprint-core" }
