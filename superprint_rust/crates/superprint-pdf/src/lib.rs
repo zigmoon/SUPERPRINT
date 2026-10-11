@@ -37,6 +37,7 @@ pub mod image;
 pub mod object;
 pub mod spot;
 pub mod writer;
+pub mod xmp;
 
 pub use boxes::{BoxPoints, PageBoxes};
 pub use colorspace::{ColorStack, QuadriSpace, StackError};
@@ -44,3 +45,4 @@ pub use doc::{write_spot_page, write_spot_page_with_image};
 pub use document::{ColorValue, DocError, DocInfo, Document, Op, OutputIntent, Page, Paint, Path};
 pub use image::{ImageColorSpace, ImageFilter, ImageXObject};
 pub use spot::{AlternateSpace, SpotError, SpotInk};
+pub use xmp::{echapper_xml, paquet as paquet_xmp, Conformite};

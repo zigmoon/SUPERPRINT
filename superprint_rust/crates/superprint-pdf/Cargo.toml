@@ -13,3 +13,9 @@ superprint-compress = { path = "../superprint-compress" }
 superprint-core = { path = "../superprint-core" }
 superprint-font = { path = "../superprint-font" }
 superprint-image = { path = "../superprint-image" }
+
+[dev-dependencies]
+# L'exemple `pdfx_dump` lit le nombre de composantes dans le profil ICC plutôt
+# que de le deviner : c'est le noyau ICC qui le dit. La dépendance reste donc
+# limitée aux exemples et aux tests, et le crate PDF n'en dépend pas.
+superprint-icc = { path = "../superprint-icc" }

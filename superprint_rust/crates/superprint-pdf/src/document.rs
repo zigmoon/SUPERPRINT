@@ -32,10 +32,11 @@
 //! | Texte **extractible** (`/ToUnicode`, accents compris) | ✅ |
 //! | Métadonnées (`/Info`) | ✅ |
 //! | `OutputIntent` + profil ICC fourni | ✅ |
+//! | **XMP et revendication PDF/X** (`/Metadata`, `pdfaid`, `GTS_PDFXVersion`) | ✅ |
 //! | Sous-ensemble de police (subsetting) | ❌ (police entière embarquée) |
-//! | `/FlateDecode`, `/DCTDecode` | ❌ (RunLength seul) |
+//! | `/DCTDecode` (JPEG) | ❌ (RunLength et Flate) |
 //! | Crénage, écritures complexes, chasse optique | ❌ |
-//! | Validation PDF/X complète | ❌ (XMP non écrit) |
+//! | Transparence vivante, surimpression | ❌ (aplatie en amont) |
 //!
 //! Les limites sont écrites telles quelles plutôt que passées sous silence : un
 //! exporteur qui laisse croire qu'il fait du PDF/X certifié serait un piège pour
@@ -50,9 +51,10 @@ use superprint_font::FontFace;
 use crate::boxes::PageBoxes;
 use crate::colorspace::{ColorStack, QuadriSpace, StackError};
 use crate::font::{self, FontUsage};
-use crate::image::ImageXObject;
+use crate::image::{ImageColorSpace, ImageXObject};
 use crate::object;
 use crate::writer::{UnfilledObject, Writer};
+use crate::xmp::{self, Conformite};
 
 /// Rayon d'arc de Bézier approchant un quart de cercle : `4/3·(√2 − 1)`.
 ///
@@ -626,12 +628,44 @@ pub struct DocInfo {
     pub creator: Option<String>,
     /// Application ayant produit le fichier.
     pub producer: Option<String>,
+    /// Date de création, en **ISO 8601** (`2026-10-11T09:30:00Z`).
+    ///
+    /// Le XMP veut de l'ISO 8601, le dictionnaire `/Info` veut du `D:AAAAMMJJ…` :
+    /// une seule valeur est stockée, dans le format le plus lisible, et
+    /// [`DocInfo::date_pdf`] fait la conversion là où elle est nécessaire.
+    pub creation_date: Option<String>,
 }
 
 impl DocInfo {
     /// Dictionnaire PDF des métadonnées, `<< >>` compris.
     #[must_use]
     fn to_pdf(&self) -> String {
+        self.to_pdf_avec(&[])
+    }
+
+    /// La date de création au format PDF (`D:AAAAMMJJHHmmSS`), si elle est
+    /// lisible.
+    ///
+    /// Une date illisible est **omise** au lieu d'être recopiée telle quelle :
+    /// une chaîne de date invalide dans `/Info` fait échouer les contrôles de
+    /// fichier de certains imprimeurs.
+    #[must_use]
+    pub fn date_pdf(&self) -> Option<String> {
+        let brut = self.creation_date.as_deref()?.trim();
+        let chiffres: String = brut.chars().filter(char::is_ascii_digit).collect();
+        if chiffres.len() < 14 {
+            return None;
+        }
+        Some(format!("D:{}Z", &chiffres[..14]))
+    }
+
+    /// Comme [`DocInfo::to_pdf`], avec des entrées supplémentaires.
+    ///
+    /// Sert à PDF/X, qui ajoute `/GTS_PDFXVersion` et `/GTS_PDFXConformance` ;
+    /// les entrées arrivent d'ici plutôt que d'être connues de cette structure,
+    /// pour que chaque type reste responsable d'une seule chose.
+    #[must_use]
+    pub fn to_pdf_avec(&self, supplementaires: &[(&'static str, String)]) -> String {
         let mut entrees: Vec<(&str, String)> = Vec::new();
         let mut ajouter = |cle: &'static str, valeur: &Option<String>| {
             if let Some(texte) = valeur.as_ref().filter(|t| !t.trim().is_empty()) {
@@ -644,6 +678,13 @@ impl DocInfo {
         ajouter("Keywords", &self.keywords);
         ajouter("Creator", &self.creator);
         ajouter("Producer", &self.producer);
+        if let Some(date) = self.date_pdf() {
+            entrees.push(("CreationDate", object::literal_string(&date)));
+            entrees.push(("ModDate", object::literal_string(&date)));
+        }
+        for (cle, valeur) in supplementaires {
+            entrees.push((cle, valeur.clone()));
+        }
         object::dict(&entrees)
     }
 }
@@ -722,12 +763,36 @@ pub enum DocError {
         /// Octets reçus.
         bytes: usize,
     },
+    /// PDF/X revendiqué sans destination de sortie.
+    ///
+    /// PDF/X **exige** un `OutputIntent` : sans lui, le fichier revendique une
+    /// conformité qu'il ne peut pas tenir, et un contrôle automatique le
+    /// rejette. Mieux vaut refuser d'écrire que produire un faux PDF/X.
+    PdfxSansSortie {
+        /// La conformité revendiquée.
+        revendique: &'static str,
+    },
+    /// Une image en RVB dans un fichier PDF/X qui n'accepte pas le RVB.
+    PdfxRvbInterdit {
+        /// La conformité revendiquée.
+        revendique: &'static str,
+        /// Rang de l'image fautive.
+        image: usize,
+    },
 }
 
 impl std::fmt::Display for DocError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::NoPages => write!(f, "un document PDF doit porter au moins une page"),
+            Self::PdfxSansSortie { revendique } => write!(
+                f,
+                "{revendique} revendiqué sans OutputIntent : PDF/X l'exige"
+            ),
+            Self::PdfxRvbInterdit { revendique, image } => write!(
+                f,
+                "{revendique} n'accepte pas le RVB, et l'image n° {image} est en DeviceRGB"
+            ),
             Self::ColorSpaceMismatch { page, paint } => write!(
                 f,
                 "la page travaille en {page} mais une forme est peinte en {paint}"
@@ -787,6 +852,12 @@ pub struct Document {
     pub info: DocInfo,
     /// Destination de sortie, si un profil ICC est fourni.
     pub output_intent: Option<OutputIntent>,
+    /// Conformité PDF/X revendiquée, s'il y en a une.
+    ///
+    /// La renseigner écrit le paquet **XMP** et la clé `/GTS_PDFXVersion` :
+    /// sans elle, le fichier a l'air d'un PDF/X et n'en porte pas la
+    /// déclaration, ce qui le fait rejeter par tout contrôle automatique.
+    pub pdfx: Option<Conformite>,
     /// Images disponibles pour les pages.
     pub images: Vec<ImageXObject>,
     /// Polices embarquées, disponibles pour les pages.
@@ -855,6 +926,25 @@ impl Document {
         if self.pages.is_empty() {
             return Err(DocError::NoPages);
         }
+        /* Les refus propres à PDF/X, avant tout le reste : revendiquer une
+        conformité qu'on ne tient pas est pire que ne rien revendiquer. */
+        if let Some(conformite) = self.pdfx {
+            if self.output_intent.is_none() {
+                return Err(DocError::PdfxSansSortie {
+                    revendique: conformite.nom(),
+                });
+            }
+            if !conformite.accepte_le_rvb() {
+                for (image, objet) in self.images.iter().enumerate() {
+                    if matches!(objet.color_space(), ImageColorSpace::DeviceRgb) {
+                        return Err(DocError::PdfxRvbInterdit {
+                            revendique: conformite.nom(),
+                            image,
+                        });
+                    }
+                }
+            }
+        }
         if let Some(intent) = &self.output_intent {
             // Un profil ICC CMJN pèse au minimum quelques centaines d'octets ;
             // en dessous, c'est une erreur d'appel, pas un profil exotique.
@@ -870,7 +960,14 @@ impl Document {
         let mut writer = Writer::new();
         let catalog = writer.reserve();
         let pages_root = writer.reserve();
-        let info_ref = writer.push_object(self.info.to_pdf());
+        /* Le paquet XMP et la revendication PDF/X : le dictionnaire `/Info`
+        porte `/GTS_PDFXVersion`, et le catalogue référence le paquet. */
+        let info_pdf = match self.pdfx {
+            Some(conformite) => self.info.to_pdf_avec(&xmp::entrees_info(conformite)),
+            None => self.info.to_pdf(),
+        };
+        let info_ref = writer.push_object(info_pdf);
+        let metadata_ref = self.pdfx.map(|_| writer.reserve());
 
         // L'`OutputIntent` et son profil ICC sont réservés maintenant : le
         // catalogue doit pouvoir les référencer alors que leur contenu n'est pas
@@ -954,7 +1051,20 @@ impl Document {
         if let Some((intent_ref, _)) = intent_refs {
             catalog_entries.push(("OutputIntents".to_string(), format!("[{intent_ref} 0 R]")));
         }
+        if let Some(metadata_ref) = metadata_ref {
+            catalog_entries.push(("Metadata".to_string(), format!("{metadata_ref} 0 R")));
+        }
         writer.put(catalog, object::dict(&catalog_entries) + "\n");
+
+        /* Le paquet XMP, en flux `/Subtype /XML` : c'est la forme qu'attend
+        l'ISO 15930 pour les métadonnées d'un PDF/X. */
+        if let (Some(conformite), Some(metadata_ref)) = (self.pdfx, metadata_ref) {
+            let paquet = xmp::paquet(&self.info, conformite);
+            writer.put(
+                metadata_ref,
+                Writer::stream_body("/Type /Metadata /Subtype /XML", paquet.as_bytes()),
+            );
+        }
 
         // Remplissage différé des images.
         for (index, image) in self.images.iter().enumerate() {
@@ -1441,6 +1551,183 @@ mod tests {
                 components: 4,
                 bytes: 12
             }
+        );
+    }
+
+    /// Un document prêt pour un export PDF/X : une page, et une sortie.
+    fn document_pdfx(conformite: Conformite) -> Document {
+        let mut doc = Document::new();
+        doc.add_page(page(vec![Op::Fill {
+            path: Path::Rect {
+                x: 0.0,
+                y: 0.0,
+                width: 100.0,
+                height: 50.0,
+            },
+            paint: Paint::Quadri(ColorValue::Cmyk(Cmyk {
+                c: 0.0,
+                m: 1.0,
+                y: 1.0,
+                k: 0.0,
+            })),
+        }]));
+        doc.output_intent = Some(OutputIntent {
+            icc: vec![9u8; 700],
+            components: 4,
+            identifier: "FOGRA39".to_string(),
+            info: "Coated FOGRA39".to_string(),
+        });
+        doc.info = DocInfo {
+            title: Some("Brochure & fond perdu".to_string()),
+            author: Some("Atelier".to_string()),
+            creation_date: Some("2026-10-11T09:30:00Z".to_string()),
+            ..DocInfo::default()
+        };
+        doc.pdfx = Some(conformite);
+        doc
+    }
+
+    #[test]
+    fn pdfx_ecrit_le_paquet_xmp_et_sa_revendication() {
+        for conformite in [
+            Conformite::PdfX1a2001,
+            Conformite::PdfX3n2002,
+            Conformite::PdfX4,
+        ] {
+            let pdf = document_pdfx(conformite)
+                .write()
+                .expect("document PDF/X valide");
+            let texte = String::from_utf8_lossy(&pdf);
+            assert!(
+                texte.contains("/Metadata "),
+                "{conformite:?} : pas de /Metadata"
+            );
+            assert!(
+                texte.contains("/Type /Metadata /Subtype /XML"),
+                "{conformite:?} : le flux de métadonnées n'est pas déclaré XML"
+            );
+            assert!(
+                texte.contains("<?xpacket begin="),
+                "{conformite:?} : pas de paquet XMP"
+            );
+            assert!(
+                texte.contains(&format!(
+                    "<pdfaid:part>{}</pdfaid:part>",
+                    conformite.partie()
+                )),
+                "{conformite:?} : pdfaid:part absent"
+            );
+            /* La clé du dictionnaire /Info : l'échappement des parenthèses de
+            `literal_string` fait que l'on cherche la version nue. */
+            assert!(
+                texte.contains(conformite.nom()),
+                "{conformite:?} : la version n'apparaît nulle part"
+            );
+            assert!(texte.contains("/GTS_PDFXVersion"));
+        }
+    }
+
+    #[test]
+    fn pdfx_ne_double_pas_le_dict_info() {
+        let pdf = document_pdfx(Conformite::PdfX3n2002).write().unwrap();
+        let texte = String::from_utf8_lossy(&pdf);
+        assert_eq!(
+            texte.matches("/Type /Metadata").count(),
+            1,
+            "un seul paquet XMP"
+        );
+        assert_eq!(texte.matches("<x:xmpmeta").count(), 1);
+    }
+
+    #[test]
+    fn le_titre_du_paquet_est_echappe() {
+        let pdf = document_pdfx(Conformite::PdfX4).write().unwrap();
+        let texte = String::from_utf8_lossy(&pdf);
+        assert!(
+            texte.contains("Brochure &amp; fond perdu"),
+            "l'esperluette du titre doit être échappée dans le XMP"
+        );
+    }
+
+    #[test]
+    fn pdfx_sans_sortie_est_refuse() {
+        /* PDF/X exige un OutputIntent : le revendiquer sans lui serait un faux. */
+        let mut doc = document_pdfx(Conformite::PdfX3n2002);
+        doc.output_intent = None;
+        assert_eq!(
+            doc.write().unwrap_err(),
+            DocError::PdfxSansSortie {
+                revendique: "PDF/X-3:2002"
+            }
+        );
+    }
+
+    #[test]
+    fn pdfx_1a_refuse_une_image_rvb() {
+        let mut doc = document_pdfx(Conformite::PdfX1a2001);
+        let rgb = superprint_image::RgbImage::from_data(2, 2, vec![128; 12]).unwrap();
+        doc.add_image(ImageXObject::from_rgb(
+            &rgb,
+            crate::image::ImageFilter::RunLengthDecode,
+        ));
+        assert_eq!(
+            doc.write().unwrap_err(),
+            DocError::PdfxRvbInterdit {
+                revendique: "PDF/X-1a:2001",
+                image: 0
+            }
+        );
+    }
+
+    #[test]
+    fn pdfx_3_accepte_une_image_rvb() {
+        /* C'est toute la différence entre X-1a et X-3, et elle doit se voir. */
+        let mut doc = document_pdfx(Conformite::PdfX3n2002);
+        let rgb = superprint_image::RgbImage::from_data(2, 2, vec![128; 12]).unwrap();
+        doc.add_image(ImageXObject::from_rgb(
+            &rgb,
+            crate::image::ImageFilter::RunLengthDecode,
+        ));
+        assert!(doc.write().is_ok());
+    }
+
+    #[test]
+    fn sans_pdfx_aucun_paquet_xmp_n_est_ecrit() {
+        let mut doc = Document::new();
+        doc.add_page(page(vec![]));
+        let pdf = doc.write().unwrap();
+        let texte = String::from_utf8_lossy(&pdf);
+        assert!(!texte.contains("/Metadata"));
+        assert!(!texte.contains("x:xmpmeta"));
+        assert!(!texte.contains("GTS_PDFXVersion"));
+    }
+
+    #[test]
+    fn la_date_du_dict_info_est_convertie_du_format_iso() {
+        let info = DocInfo {
+            creation_date: Some("2026-10-11T09:30:00Z".to_string()),
+            ..DocInfo::default()
+        };
+        assert_eq!(info.date_pdf().as_deref(), Some("D:20261011093000Z"));
+        /* Une date illisible est omise : une chaîne de date invalide dans /Info
+        fait échouer les contrôles de certains imprimeurs. */
+        for mauvaise in ["", "hier", "2026-10", "pas une date"] {
+            let info = DocInfo {
+                creation_date: Some(mauvaise.to_string()),
+                ..DocInfo::default()
+            };
+            assert_eq!(info.date_pdf(), None, "{mauvaise:?}");
+        }
+    }
+
+    #[test]
+    fn la_date_apparait_dans_les_deux_formats() {
+        let pdf = document_pdfx(Conformite::PdfX4).write().unwrap();
+        let texte = String::from_utf8_lossy(&pdf);
+        assert!(texte.contains("D:20261011093000Z"), "date PDF manquante");
+        assert!(
+            texte.contains("2026-10-11T09:30:00Z"),
+            "date ISO du XMP manquante"
         );
     }
 

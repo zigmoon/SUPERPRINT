@@ -48,6 +48,7 @@ dependencies = [
  "superprint-compress",
  "superprint-core",
  "superprint-font",
+ "superprint-icc",
  "superprint-image",
 ]
 

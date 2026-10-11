@@ -155,6 +155,16 @@ Step 'profils ICC : en-tete, balises, nom, ecarts a la specification, refus' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-icc.mjs }
 }
 
+# Validation de PDF/X : le fichier produit est relu par pdf-lib, son paquet XMP
+# est controle (bonne formation, pdfaid:part et conformance, GTS_PDFXVersion) et
+# les octets du profil ICC embarques sont compares a ceux du fichier de profil.
+# Les refus comptent autant : PDF/X sans OutputIntent, profil d'ecran comme
+# OutputIntent, fichier qui n'est pas un profil.
+Step 'PDF/X : XMP, OutputIntent, profil embarque, et les refus' {
+  & $cargo build -p superprint-pdf --example pdfx_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-pdfx.mjs }
+}
+
 Pop-Location
 
 if ($ok) {
