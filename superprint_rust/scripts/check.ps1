@@ -48,6 +48,11 @@ Step 'démonstration image → PDF + pdf-lib'  { pwsh -File (Join-Path $PSScript
 # de « module utilisable par le site ».
 Step 'module wasm navigateur + parité + pdf-lib' { pwsh -File (Join-Path $PSScriptRoot 'demo-wasm.ps1') | Out-Null }
 
+# Validation du BRANCHEMENT : la colle `web/superprint-core.js` charge le noyau,
+# tient la parité octet pour octet avec son repli JavaScript, refuse les entrées
+# illisibles au lieu d'approximer, et ses PDF sont relus par pdf-lib.
+Step 'colle de branchement + repli + pdf-lib' { pwsh -File (Join-Path $PSScriptRoot 'demo-web.ps1') | Out-Null }
+
 Pop-Location
 
 if ($ok) {

@@ -10,6 +10,8 @@
 /spot-image-page.pdf
 /wasm-page.pdf
 /wasm-page-image.pdf
+/web-page.pdf
+/web-page-image.pdf
 
 # `dist/` n'est PAS listé ici parce que la règle `**/dist/` du .gitignore RACINE
 # s'en charge déjà — même traitement que `superprint_asm/dist/`, qui n'est pas

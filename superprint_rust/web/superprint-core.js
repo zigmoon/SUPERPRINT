@@ -1,0 +1,708 @@
+/*!
+ * superprint-core.js — colle entre le noyau Rust/WebAssembly et l'application.
+ *
+ * ⚠️ CE FICHIER EST UN SCRIPT CLASSIQUE (pas un module ES) : l'application charge
+ * ses scripts par `<script src="…">`, sans étape de compilation. Il n'y a donc
+ * aucune instruction `import`/`export` ici — la surface publique est posée sur
+ * `globalThis.SuperPrintCore`.
+ *
+ * ## Ce que fait cette colle
+ *
+ * Elle charge `superprint_core.wasm` (le module construit par
+ * `scripts/build-wasm.ps1`), et présente au reste du code des fonctions
+ * **amicales** — des `Uint8Array` en entrée et en sortie, des exceptions
+ * explicites — au lieu du contrat C brut (pointeurs, codes d'erreur négatifs,
+ * protocole d'écriture en deux passes).
+ *
+ * ## Pourquoi un REPLI JavaScript
+ *
+ * La règle du projet est claire : aucune bascule à l'aveugle. Si le module
+ * hôte refuse le WebAssembly (navigateur ancien, politique de sécurité,
+ * fichier absent d'un déploiement), l'application doit continuer de
+ * fonctionner — moins vite, mais juste. `load()` charge donc le module, et
+ * retombe sur des implémentations JavaScript **si et seulement si** il échoue,
+ * en annonçant lequel est actif dans `api.backend`.
+ *
+ * Le repli ne couvre pas tout : produire un PDF est le cœur du module Rust, on
+ * ne le réécrit pas en JavaScript — ces fonctions **lèvent une erreur claire**
+ * au lieu de rendre un résultat approximatif. C'est l'exporteur JS existant de
+ * SuperPrint qui prend le relais dans ce cas.
+ *
+ * ## Le piège à connaître
+ *
+ * `memory.buffer` est **détaché** dès qu'une fonction Rust agrandit la mémoire.
+ * Toute vue `TypedArray` construite avant l'appel devient alors inutilisable
+ * (longueur 0, accès qui lèvent). Cette colle reconstruit donc **systématiquement**
+ * une vue neuve à chaque lecture ou écriture, et ne conserve jamais une vue
+ * au-delà de l'appel courant.
+ *
+ * Licence : AGPL-3.0-or-later — voir ../LICENSE.
+ */
+
+(function (global) {
+  'use strict';
+
+  /** Version de la colle (suit celle du workspace Rust). */
+  var VERSION = '0.2.0';
+
+  /**
+   * Codes d'erreur de la frontière C. Ils doivent rester **synchronisés** avec
+   * `crates/superprint-wasm/src/lib.rs` : ce sont les valeurs que Rust renvoie.
+   */
+  var ERR = {
+    NULL: -1000001,
+    TOO_SMALL: -1000002,
+    BAD_INPUT: -1000003,
+    SHORT_INPUT: -1000004,
+    /** Spécifique à la colle : la fonction exige le module WebAssembly. */
+    UNAVAILABLE: 'UNAVAILABLE',
+  };
+
+  /** Erreur du noyau, avec le code de la frontière et la fonction concernée. */
+  function CoreError(message, options) {
+    var error = Error.call(this, message);
+    this.name = 'CoreError';
+    this.message = message;
+    this.code = options && options.code !== undefined ? options.code : undefined;
+    this.fn = (options && options.fn) || undefined;
+    this.cause = options && options.cause;
+    if (Error.captureStackTrace) Error.captureStackTrace(this, CoreError);
+    else this.stack = error.stack;
+  }
+  CoreError.prototype = Object.create(Error.prototype);
+  CoreError.prototype.constructor = CoreError;
+
+  /** Traduit un code négatif de la frontière en exception explicite. */
+  function lever(code, fn) {
+    var message;
+    switch (code) {
+      case ERR.NULL:
+        message = 'pointeur nul transmis au noyau';
+        break;
+      case ERR.TOO_SMALL:
+        message = 'tampon de sortie trop petit';
+        break;
+      case ERR.BAD_INPUT:
+        message = 'entrée refusée par le noyau (spécification illisible ou dimensions nulles)';
+        break;
+      case ERR.SHORT_INPUT:
+        message = 'tampon plus court que ce qu’annoncent les dimensions';
+        break;
+      default:
+        message = 'échec du noyau (code ' + code + ')';
+    }
+    throw new CoreError(message + ' — ' + fn, { code: code, fn: fn });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  MOTEUR JAVASCRIPT (repli)
+  //
+  //  Chaque fonction reproduit EXACTEMENT l'arithmétique du noyau Rust : mêmes
+  //  opérations, même ordre, mêmes arrondis. C'est ce qui permet de comparer les
+  //  deux moteurs octet pour octet dans `scripts/validate-web.mjs` — et une
+  //  comparaison octet pour octet est la seule façon honnête d'affirmer que le
+  //  repli « donne le même résultat ».
+  // ─────────────────────────────────────────────────────────────────────────
+
+  var PT_PER_MM = 72 / 25.4;
+  var MM_PER_IN = 25.4;
+
+  var MAX_LITERAL = 128;
+  var MAX_REPEAT = 128;
+
+  function jsRgbToCmyk(rgb) {
+    var n = (rgb.length / 3) | 0;
+    var out = new Uint8Array(n * 4);
+    for (var i = 0; i < n; i++) {
+      var r = rgb[i * 3];
+      var g = rgb[i * 3 + 1];
+      var b = rgb[i * 3 + 2];
+      var max = r > g ? (r > b ? r : b) : g > b ? g : b;
+      var d = i * 4;
+      if (max === 0) {
+        out[d] = 0;
+        out[d + 1] = 0;
+        out[d + 2] = 0;
+        out[d + 3] = 255;
+      } else {
+        var half = (max / 2) | 0;
+        out[d] = (((max - r) * 255 + half) / max) | 0;
+        out[d + 1] = (((max - g) * 255 + half) / max) | 0;
+        out[d + 2] = (((max - b) * 255 + half) / max) | 0;
+        out[d + 3] = 255 - max;
+      }
+    }
+    return out;
+  }
+
+  function jsCmykToRgb(cmyk) {
+    var n = (cmyk.length / 4) | 0;
+    var out = new Uint8Array(n * 3);
+    for (var i = 0; i < n; i++) {
+      var s = i * 4;
+      var kc = 255 - cmyk[s + 3];
+      var d = i * 3;
+      out[d] = (((255 - cmyk[s]) * kc + 127) / 255) | 0;
+      out[d + 1] = (((255 - cmyk[s + 1]) * kc + 127) / 255) | 0;
+      out[d + 2] = (((255 - cmyk[s + 2]) * kc + 127) / 255) | 0;
+    }
+    return out;
+  }
+
+  function jsLuma(rgb) {
+    var n = (rgb.length / 3) | 0;
+    var out = new Uint8Array(n);
+    for (var i = 0; i < n; i++) {
+      var y =
+        0.2126 * rgb[i * 3] + 0.7152 * rgb[i * 3 + 1] + 0.0722 * rgb[i * 3 + 2];
+      out[i] = Math.min(255, Math.max(0, Math.round(y)));
+    }
+    return out;
+  }
+
+  function jsRunLengthEncode(data) {
+    var out = [];
+    var i = 0;
+    var n = data.length;
+    while (i < n) {
+      var run = 1;
+      while (i + run < n && data[i + run] === data[i] && run < MAX_REPEAT) run++;
+      if (run >= 3) {
+        out.push(257 - run);
+        out.push(data[i]);
+        i += run;
+      } else {
+        var start = i;
+        while (i < n && i - start < MAX_LITERAL) {
+          if (i + 2 < n && data[i] === data[i + 1] && data[i] === data[i + 2]) break;
+          i++;
+        }
+        var count = i - start;
+        if (count === 0) {
+          out.push(0);
+          out.push(data[i]);
+          i++;
+        } else {
+          out.push(count - 1);
+          for (var k = start; k < i; k++) out.push(data[k]);
+        }
+      }
+    }
+    return Uint8Array.from(out);
+  }
+
+  function jsRunLengthDecode(data) {
+    var out = [];
+    var i = 0;
+    while (i < data.length) {
+      var length = data[i];
+      i++;
+      if (length === 128) break;
+      if (length <= 127) {
+        var count = length + 1;
+        if (i + count > data.length) {
+          throw new CoreError('flux RunLength tronqué (littéral)', {
+            code: ERR.BAD_INPUT,
+            fn: 'runLengthDecode',
+          });
+        }
+        for (var k = 0; k < count; k++) out.push(data[i + k]);
+        i += count;
+      } else {
+        if (i >= data.length) {
+          throw new CoreError('flux RunLength tronqué (répétition)', {
+            code: ERR.BAD_INPUT,
+            fn: 'runLengthDecode',
+          });
+        }
+        var reps = 257 - length;
+        var value = data[i];
+        i++;
+        for (var j = 0; j < reps; j++) out.push(value);
+      }
+    }
+    return Uint8Array.from(out);
+  }
+
+  function jsTargetSizeForDpi(width, height, currentDpi, targetDpi) {
+    if (currentDpi <= 0 || targetDpi <= 0 || currentDpi <= targetDpi) {
+      return { width: width, height: height };
+    }
+    var ratio = targetDpi / currentDpi;
+    return {
+      width: Math.max(1, Math.round(width * ratio)),
+      height: Math.max(1, Math.round(height * ratio)),
+    };
+  }
+
+  /** Coordonnée source du centre du pixel de destination `i` (même règle que Rust). */
+  function sourceCoordinate(i, dst, src) {
+    return (i + 0.5) * (src / dst) - 0.5;
+  }
+
+  function jsDownscaleBilinear(rgb, srcW, srcH, dstW, dstH) {
+    dstW = Math.min(Math.max(1, dstW), srcW);
+    dstH = Math.min(Math.max(1, dstH), srcH);
+    var out = new Uint8Array(dstW * dstH * 3);
+    for (var y = 0; y < dstH; y++) {
+      var sy = sourceCoordinate(y, dstH, srcH);
+      var y0 = Math.max(0, Math.floor(sy));
+      var y1 = Math.min(y0 + 1, srcH - 1);
+      var fy = Math.min(1, Math.max(0, sy - Math.floor(sy)));
+      for (var x = 0; x < dstW; x++) {
+        var sx = sourceCoordinate(x, dstW, srcW);
+        var x0 = Math.max(0, Math.floor(sx));
+        var x1 = Math.min(x0 + 1, srcW - 1);
+        var fx = Math.min(1, Math.max(0, sx - Math.floor(sx)));
+        for (var c = 0; c < 3; c++) {
+          var p00 = rgb[(y0 * srcW + x0) * 3 + c];
+          var p10 = rgb[(y0 * srcW + x1) * 3 + c];
+          var p01 = rgb[(y1 * srcW + x0) * 3 + c];
+          var p11 = rgb[(y1 * srcW + x1) * 3 + c];
+          var top = p00 * (1 - fx) + p10 * fx;
+          var bottom = p01 * (1 - fx) + p11 * fx;
+          var value = top * (1 - fy) + bottom * fy;
+          out[(y * dstW + x) * 3 + c] = Math.min(255, Math.max(0, Math.round(value)));
+        }
+      }
+    }
+    return out;
+  }
+
+  function jsDownscaleNearest(rgb, srcW, srcH, dstW, dstH) {
+    dstW = Math.min(Math.max(1, dstW), srcW);
+    dstH = Math.min(Math.max(1, dstH), srcH);
+    var out = new Uint8Array(dstW * dstH * 3);
+    for (var y = 0; y < dstH; y++) {
+      var sy = Math.min(srcH - 1, Math.max(0, Math.round(sourceCoordinate(y, dstH, srcH))));
+      for (var x = 0; x < dstW; x++) {
+        var sx = Math.min(srcW - 1, Math.max(0, Math.round(sourceCoordinate(x, dstW, srcW))));
+        var s = (sy * srcW + sx) * 3;
+        var d = (y * dstW + x) * 3;
+        out[d] = rgb[s];
+        out[d + 1] = rgb[s + 1];
+        out[d + 2] = rgb[s + 2];
+      }
+    }
+    return out;
+  }
+
+  /** Fonction que seul le module WebAssembly sait faire : on refuse, sans approximation. */
+  function indisponible(nom, raison) {
+    return function () {
+      throw new CoreError(
+        '« ' + nom + ' » exige le module WebAssembly, qui n’a pas pu être chargé' +
+          (raison ? ' (' + raison + ')' : '') +
+          '. Utiliser l’exporteur JavaScript de SuperPrint en attendant.',
+        { code: ERR.UNAVAILABLE, fn: nom },
+      );
+    };
+  }
+
+  function createFallbackEngine(raison) {
+    return {
+      backend: 'js',
+      fallbackReason: raison ? String(raison.message || raison) : undefined,
+      version: VERSION,
+      rgbToCmyk: jsRgbToCmyk,
+      cmykToRgb: jsCmykToRgb,
+      luma: jsLuma,
+      runLengthEncode: jsRunLengthEncode,
+      runLengthDecode: jsRunLengthDecode,
+      targetSizeForDpi: jsTargetSizeForDpi,
+      downscaleBilinearRgb: jsDownscaleBilinear,
+      downscaleNearestRgb: jsDownscaleNearest,
+      mmToPt: function (mm) {
+        return mm * PT_PER_MM;
+      },
+      ptToMm: function (pt) {
+        return pt / PT_PER_MM;
+      },
+      mmToPx: function (mm, dpi) {
+        return (mm / MM_PER_IN) * dpi;
+      },
+      pxToMm: function (px, dpi) {
+        return (px / dpi) * MM_PER_IN;
+      },
+      writeSpotPage: indisponible('writeSpotPage', raison),
+      writeSpotPageGray: indisponible('writeSpotPageGray', raison),
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  MOTEUR WEBASSEMBLY
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Construit un moteur à partir des exports d'une instance WebAssembly. */
+  function engineFromWasm(exports, bytes) {
+    var memory = exports.memory;
+    var alloc = exports.sp_alloc;
+    var free = exports.sp_free;
+
+    if (!(memory instanceof WebAssembly.Memory) || typeof alloc !== 'function' || typeof free !== 'function') {
+      throw new CoreError('le module ne ressemble pas au noyau SuperPrint (mémoire ou gestionnaire absent)', {
+        code: ERR.BAD_INPUT,
+      });
+    }
+
+    var encoder = new TextEncoder();
+    /**
+     * Vue neuve sur la mémoire. ⚠️ Jamais mise en cache : `memory.buffer` change
+     * d'identité dès que Rust agrandit la mémoire.
+     */
+    function u8(ptr, len) {
+      return new Uint8Array(memory.buffer, ptr, len);
+    }
+
+    function lu32(ptr) {
+      return new DataView(memory.buffer).getUint32(ptr, true);
+    }
+
+    /**
+     * Exécute `fn` dans une portée qui alloue des tampons et les **rend tous**
+     * à la sortie, y compris en cas d'exception. C'est ce qui évite les fuites
+     * de mémoire dans la mémoire linéaire du module.
+     */
+    function portee(fn) {
+      var blocs = [];
+      var ctx = {
+        allouer: function (len) {
+          var p = alloc(len);
+          if (!p) throw new CoreError('allocation refusée dans la mémoire du module', { code: ERR.NULL });
+          blocs.push([p, len]);
+          return p;
+        },
+        poser: function (octets) {
+          var p = ctx.allouer(octets.length);
+          u8(p, octets.length).set(octets);
+          return p;
+        },
+        lire: function (ptr, len) {
+          return Uint8Array.from(u8(ptr, len));
+        },
+        lu32: lu32,
+      };
+      try {
+        return fn(ctx);
+      } finally {
+        for (var i = blocs.length - 1; i >= 0; i--) free(blocs[i][0], blocs[i][1]);
+      }
+    }
+
+    /** Vérifie que le noyau a réussi, sinon lève. */
+    function verifier(code, nom, ecrit) {
+      if (code < 0) lever(code, nom);
+      if (ecrit !== undefined && code !== ecrit) {
+        lever(ERR.SHORT_INPUT, nom);
+      }
+      return code;
+    }
+
+    /**
+     * Protocole d'écriture en deux passes : on demande d'abord la taille, on
+     * alloue, puis on écrit réellement. C'est le contrat de la frontière.
+     */
+    function deuxPasses(nom, appel) {
+      return portee(function (ctx) {
+        var lenPtr = ctx.allouer(4);
+        var premier = appel(ctx, 0, 0, lenPtr);
+        if (premier !== ERR.TOO_SMALL) {
+          // Un tampon vide DOIT être refusé : sinon le protocole ne veut rien dire.
+          verifier(premier, nom);
+          throw new CoreError('le noyau a accepté un tampon de taille nulle — protocole inattendu', {
+            code: premier,
+            fn: nom,
+          });
+        }
+        var besoin = ctx.lu32(lenPtr);
+        var tampon = ctx.allouer(besoin);
+        var code = appel(ctx, tampon, besoin, lenPtr);
+        verifier(code, nom);
+        return ctx.lire(tampon, ctx.lu32(lenPtr));
+      });
+    }
+
+    return {
+      backend: 'wasm',
+      version: (function () {
+        return (
+          exports.sp_version_major() + '.' + exports.sp_version_minor() + '.' + exports.sp_version_patch()
+        );
+      })(),
+      byteLength: bytes ? bytes.byteLength : undefined,
+
+      rgbToCmyk: function (rgb) {
+        var n = (rgb.length / 3) | 0;
+        return portee(function (ctx) {
+          var src = ctx.poser(rgb);
+          var dst = ctx.allouer(n * 4);
+          verifier(exports.sp_rgb_to_cmyk(src, dst, n), 'rgbToCmyk');
+          return ctx.lire(dst, n * 4);
+        });
+      },
+
+      cmykToRgb: function (cmyk) {
+        var n = (cmyk.length / 4) | 0;
+        return portee(function (ctx) {
+          var src = ctx.poser(cmyk);
+          var dst = ctx.allouer(n * 3);
+          verifier(exports.sp_cmyk_to_rgb(src, dst, n), 'cmykToRgb');
+          return ctx.lire(dst, n * 3);
+        });
+      },
+
+      luma: function (rgb) {
+        var n = (rgb.length / 3) | 0;
+        return portee(function (ctx) {
+          var src = ctx.poser(rgb);
+          var dst = ctx.allouer(n);
+          verifier(exports.sp_luma_rgb(src, dst, n), 'luma');
+          return ctx.lire(dst, n);
+        });
+      },
+
+      runLengthEncode: function (octets) {
+        var src = octets;
+        return portee(function (ctx) {
+          // La borne d'écriture : 1 octet par tranche de 128, plus la pire sortie.
+          var capacite = src.length * 2 + 1024;
+          var pSrc = ctx.poser(src);
+          var pDst = ctx.allouer(capacite);
+          var pLen = ctx.allouer(4);
+          verifier(exports.sp_run_length_encode(pSrc, src.length, pDst, capacite, pLen), 'runLengthEncode');
+          return ctx.lire(pDst, ctx.lu32(pLen));
+        });
+      },
+
+      runLengthDecode: function (octets) {
+        var src = octets;
+        return portee(function (ctx) {
+          var capacite = src.length * 300 + 1024;
+          var pSrc = ctx.poser(src);
+          var pDst = ctx.allouer(capacite);
+          var pLen = ctx.allouer(4);
+          verifier(exports.sp_run_length_decode(pSrc, src.length, pDst, capacite, pLen), 'runLengthDecode');
+          return ctx.lire(pDst, ctx.lu32(pLen));
+        });
+      },
+
+      targetSizeForDpi: function (width, height, currentDpi, targetDpi) {
+        return portee(function (ctx) {
+          var pW = ctx.allouer(4);
+          var pH = ctx.allouer(4);
+          verifier(
+            exports.sp_target_size_for_dpi(width, height, currentDpi, targetDpi, pW, pH),
+            'targetSizeForDpi',
+          );
+          return { width: ctx.lu32(pW), height: ctx.lu32(pH) };
+        });
+      },
+
+      downscaleBilinearRgb: function (rgb, srcW, srcH, dstW, dstH) {
+        return portee(function (ctx) {
+          var src = ctx.poser(rgb);
+          var dst = ctx.allouer(dstW * dstH * 3);
+          verifier(
+            exports.sp_downscale_bilinear_rgb(src, srcW, srcH, dst, dstW, dstH),
+            'downscaleBilinearRgb',
+          );
+          return ctx.lire(dst, dstW * dstH * 3);
+        });
+      },
+
+      downscaleNearestRgb: function (rgb, srcW, srcH, dstW, dstH) {
+        return portee(function (ctx) {
+          var src = ctx.poser(rgb);
+          var dst = ctx.allouer(dstW * dstH * 3);
+          verifier(
+            exports.sp_downscale_nearest_rgb(src, srcW, srcH, dst, dstW, dstH),
+            'downscaleNearestRgb',
+          );
+          return ctx.lire(dst, dstW * dstH * 3);
+        });
+      },
+
+      mmToPt: function (mm) {
+        return exports.sp_mm_to_pt(mm);
+      },
+      ptToMm: function (pt) {
+        return exports.sp_pt_to_mm(pt);
+      },
+      mmToPx: function (mm, dpi) {
+        return exports.sp_mm_to_px(mm, dpi);
+      },
+      pxToMm: function (px, dpi) {
+        return exports.sp_px_to_mm(px, dpi);
+      },
+
+      writeSpotPage: function (options) {
+        var o = options || {};
+        var encres = encoder.encode(serialiserEncres(o.inks));
+        return deuxPasses('writeSpotPage', function (ctx, dst, cap, lenPtr) {
+          var pEncres = ctx.poser(encres);
+          return exports.sp_write_spot_page(
+            nombre(o.trimWidthMm, 170),
+            nombre(o.trimHeightMm, 240),
+            nombre(o.bleedMm, 3),
+            nombre(o.markMm, 10),
+            o.quadri === 'rgb' ? 1 : 0,
+            pEncres,
+            encres.length,
+            dst,
+            cap,
+            lenPtr,
+          );
+        });
+      },
+
+      writeSpotPageGray: function (options) {
+        var o = options || {};
+        var encres = encoder.encode(serialiserEncres(o.inks));
+        var image = o.image;
+        if (!image || !image.length) {
+          throw new CoreError('writeSpotPageGray exige une image en niveaux de gris', {
+            code: ERR.BAD_INPUT,
+            fn: 'writeSpotPageGray',
+          });
+        }
+        var filtre = o.filter === 'none' ? 0 : o.filter === 'runlength' ? 1 : 2;
+        return deuxPasses('writeSpotPageGray', function (ctx, dst, cap, lenPtr) {
+          var pEncres = ctx.poser(encres);
+          var pImage = ctx.poser(image);
+          return exports.sp_write_spot_page_gray(
+            nombre(o.trimWidthMm, 170),
+            nombre(o.trimHeightMm, 240),
+            nombre(o.bleedMm, 3),
+            nombre(o.markMm, 10),
+            o.quadri === 'rgb' ? 1 : 0,
+            filtre,
+            pEncres,
+            encres.length,
+            pImage,
+            o.imageWidth | 0,
+            o.imageHeight | 0,
+            dst,
+            cap,
+            lenPtr,
+          );
+        });
+      },
+    };
+
+  }
+
+  function nombre(valeur, defaut) {
+    return typeof valeur === 'number' && isFinite(valeur) ? valeur : defaut;
+  }
+
+  /**
+   * Sérialise les encres directes pour la frontière C.
+   *
+   * Format attendu par Rust : une ligne par encre, champs séparés par une
+   * tabulation, lignes séparées par `\n`. Les noms sont nettoyés : une
+   * tabulation ou un saut de ligne dans un nom de Pantone casserait la lecture.
+   */
+  function serialiserEncres(inks) {
+    if (!inks || !inks.length) return '';
+    var lignes = [];
+    for (var i = 0; i < inks.length; i++) {
+      var ink = inks[i];
+      var nom = String(ink.name == null ? '' : ink.name).replace(/[\t\r\n]+/g, ' ').trim();
+      if (!nom) {
+        throw new CoreError('une encre directe doit porter un nom', {
+          code: ERR.BAD_INPUT,
+          fn: 'writeSpotPage',
+        });
+      }
+      if (ink.space === 'cmyk') {
+        lignes.push(
+          ['cmyk', nom, pourMille(ink.c), pourMille(ink.m), pourMille(ink.y), pourMille(ink.k)].join('\t'),
+        );
+      } else if (ink.space === 'rgb') {
+        lignes.push(['rgb', nom, octet(ink.r), octet(ink.g), octet(ink.b)].join('\t'));
+      } else if (ink.space === 'gray') {
+        lignes.push(['gray', nom, octet(ink.gray === undefined ? ink.value : ink.gray)].join('\t'));
+      } else {
+        throw new CoreError('espace de remplacement inconnu : ' + ink.space, {
+          code: ERR.BAD_INPUT,
+          fn: 'writeSpotPage',
+        });
+      }
+    }
+    return lignes.join('\n');
+  }
+
+  function pourMille(valeur) {
+    var v = Math.round(Number(valeur) * 1000);
+    if (!isFinite(v) || v < 0 || v > 1000) {
+      throw new CoreError('composante CMJN hors bornes (attendu 0–1) : ' + valeur, {
+        code: ERR.BAD_INPUT,
+        fn: 'writeSpotPage',
+      });
+    }
+    return v;
+  }
+
+  function octet(valeur) {
+    var v = Math.round(Number(valeur));
+    if (!isFinite(v) || v < 0 || v > 255) {
+      throw new CoreError('composante hors bornes (attendu 0–255) : ' + valeur, {
+        code: ERR.BAD_INPUT,
+        fn: 'writeSpotPage',
+      });
+    }
+    return v;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  CHARGEMENT
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Charge le noyau.
+   *
+   * @param {object} [options]
+   * @param {string} [options.url]      URL du `.wasm` (fetched).
+   * @param {ArrayBuffer|Uint8Array} [options.bytes]  octets déjà en main (évite un aller-retour réseau).
+   * @param {boolean} [options.fallback=true]  retomber sur le JavaScript si le module échoue.
+   * @returns {Promise<object>} moteur prêt à l'emploi ; `backend` vaut `'wasm'` ou `'js'`.
+   */
+  async function load(options) {
+    var o = options || {};
+    var raison = null;
+    var bytes = o.bytes;
+
+    try {
+      if (!bytes) {
+        if (!o.url) throw new TypeError('load() exige `url` ou `bytes`');
+        var reponse = await global.fetch(o.url);
+        if (!reponse.ok) {
+          throw new Error('HTTP ' + reponse.status + ' pour ' + o.url);
+        }
+        bytes = await reponse.arrayBuffer();
+      }
+
+      // `instantiate` refuse un module qui réclame des imports : notre frontière
+      // n'en a aucun, donc `{}` doit suffire. Si un import apparaît, c'est un
+      // défaut du noyau, pas du déploiement.
+      var instantiated = await WebAssembly.instantiate(bytes, {});
+      var moteur = engineFromWasm(instantiated.instance.exports, bytes);
+      return moteur;
+    } catch (erreur) {
+      raison = erreur;
+      if (o.fallback === false) throw erreur;
+    }
+
+    return createFallbackEngine(raison);
+  }
+
+  global.SuperPrintCore = {
+    version: VERSION,
+    ERR: ERR,
+    CoreError: CoreError,
+    load: load,
+    createFallbackEngine: createFallbackEngine,
+    /** Nom du fichier attendu, pour éviter les fautes de frappe dans les appels. */
+    FILENAME: 'superprint_core.wasm',
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);

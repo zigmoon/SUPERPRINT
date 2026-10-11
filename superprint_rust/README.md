@@ -70,8 +70,11 @@ chargeable par un navigateur.**
 >
 > Un `pwsh -File scripts/check.ps1` enchaîne tout, validation comprise.
 
-Aucun module n'est encore branché dans l'application : la parité avec le JS de
-SuperPrint reste à mesurer avant toute bascule (voir `docs/PLAN.md`, phase 3).
+Aucun module n'est encore appelé par l'application. **Le branchement, lui, est
+prêt** : `web/superprint-core.js` charge le noyau et expose des fonctions simples,
+avec un **repli JavaScript** dont la parité est mesurée octet pour octet. Voir
+`web/BRANCHEMENT.md`. `superprint/` n'a **pas** été modifié.
+
 Le noyau représente à ce jour **environ 2,7 %** du JavaScript de SuperPrint.
 
 ## Prérequis
@@ -122,15 +125,22 @@ superprint_rust/
 ├─ dist/
 │  └─ superprint_core.wasm    LE MODULE LIVRABLE — à rebâtir (non versionné,
 │                             comme superprint_asm/dist/, via build-wasm.ps1)
+├─ web/                       ← LE BRANCHEMENT
+│  ├─ superprint-core.js      la colle : chargement, fonctions amicales, repli
+│  ├─ demo.html / demo.js     banc d'essai navigateur (17 mesures)
+│  └─ BRANCHEMENT.md          comment l'utiliser, comment l'activer dans l'app
 ├─ docs/PLAN.md               feuille de route, inventaire, décisions
 ├─ scripts/
 │  ├─ build-wasm.ps1          construit dist/superprint_core.wasm (release)
 │  ├─ check.ps1               chaîne complète : fmt, check, clippy, wasm, tests, PDF
 │  ├─ demo-image.ps1          produit deux PDF réels et les valide avec pdf-lib
 │  ├─ demo-wasm.ps1           module wasm : charge, parité, PDF, pdf-lib
+│  ├─ demo-web.ps1            colle : parité du repli, garde-fous, PDF, pdf-lib
 │  ├─ run-wasi.mjs            exécute un binaire wasm32-wasip1 via Node
+│  ├─ serve-web.mjs           serveur local pour le banc d'essai navigateur
 │  ├─ validate-pdf.mjs        relit un PDF avec pdf-lib (tons directs, image)
-│  └─ validate-wasm.mjs       charge le .wasm sans import et mesure la parité
+│  ├─ validate-wasm.mjs       charge le .wasm sans import et mesure la parité
+│  └─ validate-web.mjs        valide la colle, son repli et ses garde-fous
 └─ crates/
    ├─ superprint-core/        primitives pures (units, color, geometry, color8)
    ├─ superprint-image/       traitement d'image (module n° 4)
@@ -167,6 +177,16 @@ pwsh -File scripts/build-wasm.ps1
 node scripts/validate-wasm.mjs
 node scripts/validate-pdf.mjs wasm-page.pdf --mm=196x266 --spots=2
 node scripts/validate-pdf.mjs wasm-page-image.pdf --mm=196x266 --spots=2 --image=1004x1418
+
+# Preuve du BRANCHEMENT : la colle charge le noyau, tient la parité avec son
+# repli JavaScript, refuse les entrées illisibles, et ses PDF sont relus.
+node scripts/validate-web.mjs
+node scripts/validate-pdf.mjs web-page.pdf --mm=196x266 --spots=2
+node scripts/validate-pdf.mjs web-page-image.pdf --mm=196x266 --spots=2 --image=1004x1418
+
+# Banc d'essai NAVIGATEUR (17 mesures ; le fetch du .wasm est refusé en file://)
+node scripts/serve-web.mjs
+# puis ouvrir http://127.0.0.1:8777/superprint_rust/web/demo.html
 ```
 
 ## Utiliser le module depuis une page web

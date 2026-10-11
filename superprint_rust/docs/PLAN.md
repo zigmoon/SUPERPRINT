@@ -62,8 +62,25 @@ also le seul endroit du workspace où il y a de l’`unsafe` : les trois crates 
 noyau restent `#![forbid(unsafe_code)]`.
 
 **Phase 3 — bascule progressive.** ⏳ À venir. Un module à la fois, derrière un
-drapeau, avec **repli JS** si le module Rust n’est pas chargé. Le module existe
-et est validé ; il n’est **pas encore appelé** par `superprint/`.
+drapeau, avec **repli JS** si le module Rust n'est pas chargé.
+
+**Phase 3a — la colle est prête.** ✅ `web/superprint-core.js` charge le module et
+présente à l'application des fonctions simples (`Uint8Array` en entrée et en
+sortie, exceptions explicites) au lieu du contrat C brut. Si le module ne se
+charge pas, la colle **retombe sur des implémentations JavaScript** en le
+signalant (`api.backend` vaut `'js'`) — et l'écriture PDF, qu'on ne réécrit pas
+en JavaScript, **lève une erreur claire** au lieu d'approximer. Elle est validée
+par `scripts/validate-web.mjs` (parité octet pour octet du repli, garde-fous,
+endurance) et par `web/demo.html`, un banc d'essai de 17 mesures exécuté dans un
+vrai navigateur.
+
+> **`superprint/` n'a pas été modifié.** C'est un choix explicite : le dossier est
+> en production. Ce qui manque pour l'activer est décrit pas à pas dans
+> `web/BRANCHEMENT.md`.
+
+**Phase 3b — bascule dans l'app.** ⏳ À venir, et c'est une décision autant qu'un
+chantier : copier deux fichiers, ajouter une balise `<script>`, puis brancher
+**un seul module à la fois** derrière un drapeau.
 
 ## La frontière C (phase 2b)
 
@@ -119,6 +136,7 @@ SuperPrint lui-même : c’est la phase 3.
 | 6 | Analyse de police / typo vectorielle | ⏳ |
 | 7 | Profil ICC | ⏳ |
 | — | **Frontière WebAssembly (le livrable)** | ✅ `superprint-wasm` — `cdylib`, 19 fonctions, **0 import**, 110 Ko |
+| — | **Colle de branchement + repli** | ✅ `web/superprint-core.js` — parité du repli mesurée, PDF refusé sans le noyau |
 
 > Les modules n° 3 et 4 sont des **fondations validées**, pas encore des
 exporteurs complets. Ce qui manque : ICC, `OutputIntent` PDF/X, polices,
