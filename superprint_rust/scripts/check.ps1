@@ -239,6 +239,14 @@ Step 'couleurs : parite bit a bit avec main.js, et le defaut du GCR mesure' {
   node scripts/validate-cmyk.mjs
 }
 
+# Verification de la FRONTIERE EPS : le second module WebAssembly, celui qui
+# n'est PAS precache et n'est charge que si l'utilisateur ouvre un .eps. Ses deux
+# exports (detection, analyse) sont exerces sur les temoins reels, et le module
+# principal doit rester a 380 Ko — c'est la raison d'etre de la separation.
+Step 'module EPS : detection, analyse reelle, et zero surcout pour les autres' {
+  node scripts/verifier-eps-wasm.mjs
+}
+
 Pop-Location
 
 if ($ok) {

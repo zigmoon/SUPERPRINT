@@ -117,6 +117,7 @@ dependencies = [
  "superprint-impose",
  "superprint-pdf",
  "superprint-preflight",
+ "superprint-ps",
  "superprint-text",
 ]
 
