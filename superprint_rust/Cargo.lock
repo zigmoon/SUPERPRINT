@@ -48,8 +48,10 @@ dependencies = [
 name = "superprint-wasm"
 version = "0.2.0"
 dependencies = [
+ "superprint-compress",
  "superprint-core",
  "superprint-font",
  "superprint-image",
  "superprint-pdf",
+ "superprint-text",
 ]

@@ -66,6 +66,7 @@ use superprint_pdf::doc::{write_spot_page, write_spot_page_with_image};
 use superprint_pdf::document::{ColorValue, Document, Op, OutputIntent, Page, Paint, Path};
 use superprint_pdf::image::{ImageFilter, ImageXObject};
 use superprint_pdf::spot::{AlternateSpace, SpotInk};
+use superprint_text::{Cesure, Motifs};
 
 // ─────────────────────────── codes d'erreur ───────────────────────────
 //
@@ -750,6 +751,144 @@ pub extern "C" fn sp_doc_substitues() -> i32 {
         Ok(garde) => garde.as_ref().map_or(0, |r| r.substitues as i32),
         Err(_) => 0,
     }
+}
+
+// ───────────────────────────── césure ─────────────────────────────
+//
+// La césure est appelée pour **chaque mot** d'un texte : c'est la fonction la
+// plus sollicitée de la frontière. Deux conséquences sur sa forme :
+//
+//  1. les dictionnaires sont **chargés une fois** et gardés, plutôt que
+//     reconstruits à chaque mot ;
+//  2. la sortie est **binaire** (des indices de coupe en `u16`), pas du texte :
+//     convertir des nombres en caractères pour les reconvertir aussitôt serait
+//     du travail jeté, sur un chemin chaud.
+
+/// Les dictionnaires chargés, un par langue.
+static CESURES: Mutex<Vec<Cesure>> = Mutex::new(Vec::new());
+
+/// Nombre de dictionnaires chargés.
+#[no_mangle]
+pub extern "C" fn sp_cesure_nombre() -> i32 {
+    match CESURES.lock() {
+        Ok(garde) => garde.len() as i32,
+        Err(_) => SP_ERR_BAD_INPUT,
+    }
+}
+
+/// Vide la liste des dictionnaires.
+#[no_mangle]
+pub extern "C" fn sp_cesure_reset() -> i32 {
+    let mut garde = CESURES.lock().unwrap_or_else(|e| e.into_inner());
+    garde.clear();
+    0
+}
+
+/// Charge un dictionnaire de césure et renvoie son rang.
+///
+/// `spec` est le format texte lu par `Motifs::depuis_spec` : la ligne `!bornes`
+/// y est **obligatoire**. Des bornes devinées décideraient de coupes que
+/// personne n'a demandées — un dictionnaire sans bornes est donc refusé.
+///
+/// Un rang déjà attribué peut être écrasé en rechargeant : la colle s'en sert
+/// pour remplacer un dictionnaire par un autre sans changer les références.
+///
+/// # Safety
+///
+/// `spec` doit désigner `spec_len` octets lisibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_cesure_charge(spec: *const u8, spec_len: usize) -> i32 {
+    let Some(octets) = (unsafe { as_slice(spec, spec_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let Ok(texte) = core::str::from_utf8(octets) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let Some(motifs) = Motifs::depuis_spec(texte) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let mut garde = CESURES.lock().unwrap_or_else(|e| e.into_inner());
+    garde.push(Cesure::dictionnaire(motifs));
+    // Le rang dépasse `i32` si on a chargé deux milliards de dictionnaires :
+    // impossible, mais la conversion reste vérifiée plutôt que supposée.
+    i32::try_from(garde.len() - 1).unwrap_or(SP_ERR_BAD_INPUT)
+}
+
+/// Écrit les **positions de coupe** d'un mot, en indices de **points de code**.
+///
+/// La sortie est une suite de `u16` en petit-boutiste. Une position `p`
+/// signifie : couper **après** le `p`-ᵉ caractère.
+///
+/// ⚠️ Les indices comptent des **points de code**, pas des unités UTF-16 : la
+/// fonction appelante doit découper avec `Array.from(mot)` et non `mot[i]`.
+/// Pour un caractère hors plan multilingue, les deux diffèrent — et la césure
+/// ne s'applique de toute façon jamais à ces écritures.
+///
+/// Renvoie le nombre de coupes, ou `SP_ERR_TOO_SMALL` en renseignant `out_len`
+/// avec la taille nécessaire (protocole en deux passes habituel).
+///
+/// # Safety
+///
+/// `mot` doit désigner `mot_len` octets lisibles ; `dst` `dst_cap` octets
+/// inscriptibles ; `out_len` un `u32`.
+#[no_mangle]
+pub unsafe extern "C" fn sp_cesure_coupes(
+    rang: u32,
+    mot: *const u8,
+    mot_len: usize,
+    dst: *mut u8,
+    dst_cap: usize,
+    out_len: *mut u32,
+) -> i32 {
+    if out_len.is_null() {
+        return SP_ERR_NULL;
+    }
+    let Some(octets) = (unsafe { as_slice(mot, mot_len) }) else {
+        return SP_ERR_NULL;
+    };
+    let Ok(texte) = core::str::from_utf8(octets) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let garde = CESURES.lock().unwrap_or_else(|e| e.into_inner());
+    let Some(cesure) = garde.get(rang as usize) else {
+        return SP_ERR_BAD_INPUT;
+    };
+    let coupes = cesure
+        .motifs()
+        .map(|motifs| motifs.fragments(texte))
+        .unwrap_or_else(|| vec![texte.to_string()]);
+
+    // Les positions se déduisent des fragments : c'est exactement ainsi que
+    // `Motifs::fragments` les a produits, donc la recomposition est fidèle.
+    let mut positions: Vec<u16> = Vec::with_capacity(coupes.len().saturating_sub(1));
+    let mut cumul = 0usize;
+    for fragment in coupes.iter().take(coupes.len().saturating_sub(1)) {
+        cumul += fragment.chars().count();
+        match u16::try_from(cumul) {
+            Ok(valeur) => positions.push(valeur),
+            // Un mot de plus de 65 535 caractères n'existe pas dans un texte
+            // composé ; s'il arrive, on le refuse plutôt que de tronquer.
+            Err(_) => return SP_ERR_BAD_INPUT,
+        }
+    }
+
+    let besoin = positions.len() * 2;
+    unsafe { *out_len = besoin as u32 };
+    if besoin > dst_cap {
+        return SP_ERR_TOO_SMALL;
+    }
+    if positions.is_empty() {
+        return 0;
+    }
+    let Some(zone) = (unsafe { as_slice_mut(dst, besoin) }) else {
+        return SP_ERR_NULL;
+    };
+    for (index, position) in positions.iter().enumerate() {
+        let octets = position.to_le_bytes();
+        zone[index * 2] = octets[0];
+        zone[index * 2 + 1] = octets[1];
+    }
+    positions.len() as i32
 }
 
 /// Ajoute une ou plusieurs opérations de dessin à la page courante.
@@ -1932,5 +2071,261 @@ mod tests {
             panic!("la ligne de texte doit être lisible");
         };
         assert_eq!(text, "50\\%");
+    }
+
+    // ───────────────────────── césure ─────────────────────────
+
+    /// Une spécification minimale, mais **complète** : sans la ligne `!bornes`
+    /// le dictionnaire est refusé, donc les tests de succès doivent la porter.
+    ///
+    /// Les motifs sont volontairement minuscules : ce qui est vérifié ici est le
+    /// **contrat de la frontière** (chargement, rangs, protocole en deux passes),
+    /// pas la qualité linguistique des coupes — celle-ci est mesurée mot à mot
+    /// contre Hypher par `scripts/validate-branchement.mjs`.
+    const SPEC_MINIMALE: &str = "!bornes\t2\t3\n3\t1bi1bli1o1th1ha";
+
+    /// Charger un dictionnaire rend son rang, et les rangs s'enchaînent.
+    #[test]
+    fn frontiere_cesure_chargement_et_rangs() {
+        sp_cesure_reset();
+        assert_eq!(sp_cesure_nombre(), 0);
+
+        let spec = SPEC_MINIMALE.as_bytes();
+        let premier = unsafe { sp_cesure_charge(spec.as_ptr(), spec.len()) };
+        assert_eq!(premier, 0, "le premier dictionnaire prend le rang 0");
+        let second = unsafe { sp_cesure_charge(spec.as_ptr(), spec.len()) };
+        assert_eq!(second, 1, "le suivant prend le rang 1");
+        assert_eq!(sp_cesure_nombre(), 2);
+
+        // Deux dictionnaires qui partagent le même rang seraient un défaut
+        // invisible : la seconde langue se couperait avec les motifs de la
+        // première. C'est exactement ce que ce test verrouille.
+        assert_ne!(premier, second);
+
+        sp_cesure_reset();
+        assert_eq!(sp_cesure_nombre(), 0, "la remise a zero vide la liste");
+    }
+
+    /// Un dictionnaire sans bornes est **refusé**, pas complété par des valeurs
+    /// devinées : des bornes inventées décideraient de coupes non demandées.
+    #[test]
+    fn frontiere_cesure_spec_incomplete_refusee() {
+        sp_cesure_reset();
+        let sans_bornes = b"3\t1bi1bli1o";
+        let code = unsafe { sp_cesure_charge(sans_bornes.as_ptr(), sans_bornes.len()) };
+        assert_eq!(code, SP_ERR_BAD_INPUT);
+        assert_eq!(
+            sp_cesure_nombre(),
+            0,
+            "un refus ne doit rien laisser charge"
+        );
+
+        // Un texte qui n'est pas de l'UTF-8 valide est refusé aussi.
+        let octets = [0xFFu8, 0xFE, 0xFD];
+        assert_eq!(
+            unsafe { sp_cesure_charge(octets.as_ptr(), octets.len()) },
+            SP_ERR_BAD_INPUT
+        );
+    }
+
+    /// Le protocole en deux passes : tampon vide → `SP_ERR_TOO_SMALL` + taille
+    /// annoncée, puis écriture réelle.
+    #[test]
+    fn frontiere_cesure_deux_passes() {
+        sp_cesure_reset();
+        let spec = SPEC_MINIMALE.as_bytes();
+        let rang = unsafe { sp_cesure_charge(spec.as_ptr(), spec.len()) };
+        assert_eq!(rang, 0);
+
+        let mot = "bibliothèque";
+        let mut besoin = 0u32;
+        let code = unsafe {
+            sp_cesure_coupes(
+                rang as u32,
+                mot.as_ptr(),
+                mot.len(),
+                ptr::null_mut(),
+                0,
+                &mut besoin,
+            )
+        };
+        assert_eq!(
+            code, SP_ERR_TOO_SMALL,
+            "un tampon vide doit signaler la taille"
+        );
+        assert!(besoin > 0, "« {mot} » doit avoir au moins une coupe");
+        assert_eq!(besoin % 2, 0, "les positions sont des u16 : taille paire");
+
+        let mut tampon = vec![0u8; besoin as usize];
+        let mut ecrit = 0u32;
+        let code = unsafe {
+            sp_cesure_coupes(
+                rang as u32,
+                mot.as_ptr(),
+                mot.len(),
+                tampon.as_mut_ptr(),
+                tampon.len(),
+                &mut ecrit,
+            )
+        };
+        assert_eq!(
+            code as usize,
+            (besoin / 2) as usize,
+            "une position par coupe"
+        );
+        assert_eq!(ecrit, besoin);
+
+        // Les positions doivent tomber **dans** le mot et être croissantes :
+        // une position hors bornes ferait paniquer le découpage de l'appelant.
+        let caracteres = mot.chars().count();
+        let mut precedente = 0usize;
+        for index in 0..ecrit as usize / 2 {
+            let position = u16::from_le_bytes([tampon[index * 2], tampon[index * 2 + 1]]) as usize;
+            assert!(position > precedente, "positions croissantes attendues");
+            assert!(position < caracteres, "position {position} hors du mot");
+            precedente = position;
+        }
+    }
+
+    /// Les positions comptent des **points de code**, pas des unités UTF-16.
+    /// C'est la seule chose que l'appelante doit savoir pour découper juste.
+    #[test]
+    fn frontiere_cesure_positions_en_points_de_code() {
+        sp_cesure_reset();
+        let spec = SPEC_MINIMALE.as_bytes();
+        let rang = unsafe { sp_cesure_charge(spec.as_ptr(), spec.len()) };
+        assert_eq!(rang, 0);
+
+        // Un mot hors BMP placé après « bibliothèque » : en UTF-16 il compterait
+        // pour deux unités, et toutes les positions suivantes seraient décalées.
+        let mot = "bibliothèque𝄞";
+        let mut besoin = 0u32;
+        let code = unsafe {
+            sp_cesure_coupes(
+                rang as u32,
+                mot.as_ptr(),
+                mot.len(),
+                ptr::null_mut(),
+                0,
+                &mut besoin,
+            )
+        };
+        assert_eq!(code, SP_ERR_TOO_SMALL);
+
+        let mut tampon = vec![0u8; besoin as usize];
+        let mut ecrit = 0u32;
+        assert!(
+            unsafe {
+                sp_cesure_coupes(
+                    rang as u32,
+                    mot.as_ptr(),
+                    mot.len(),
+                    tampon.as_mut_ptr(),
+                    tampon.len(),
+                    &mut ecrit,
+                )
+            } >= 0
+        );
+
+        let caracteres = mot.chars().count();
+        let en_unites_utf16 = mot.encode_utf16().count();
+        assert!(
+            caracteres < en_unites_utf16,
+            "le cas de test doit bien contenir un caractere hors BMP"
+        );
+        for index in 0..ecrit as usize / 2 {
+            let position = u16::from_le_bytes([tampon[index * 2], tampon[index * 2 + 1]]) as usize;
+            assert!(
+                position < caracteres,
+                "la position {position} doit se lire en points de code ({caracteres}), \
+                 pas en unites UTF-16 ({en_unites_utf16})"
+            );
+        }
+    }
+
+    /// Un rang inconnu, une entrée nulle ou non UTF-8 : refus explicites.
+    #[test]
+    fn frontiere_cesure_refus() {
+        sp_cesure_reset();
+        let mot = "tableau";
+        let mut besoin = 0u32;
+        let mut tampon = vec![0u8; 64];
+
+        assert_eq!(
+            unsafe {
+                sp_cesure_coupes(
+                    7,
+                    mot.as_ptr(),
+                    mot.len(),
+                    tampon.as_mut_ptr(),
+                    tampon.len(),
+                    &mut besoin,
+                )
+            },
+            SP_ERR_BAD_INPUT,
+            "un rang qui n'existe pas doit etre refuse"
+        );
+
+        let spec = SPEC_MINIMALE.as_bytes();
+        let rang = unsafe { sp_cesure_charge(spec.as_ptr(), spec.len()) };
+        assert_eq!(rang, 0);
+
+        // Une chaine vide est un cas **legitime**, pas une erreur : c'est la
+        // regle du contrat (`as_slice` accepte un pointeur nul des lors que la
+        // longueur est nulle). Un mot vide n'a simplement aucune coupe.
+        let mut vide = 0u32;
+        assert_eq!(
+            unsafe { sp_cesure_coupes(rang as u32, ptr::null(), 0, ptr::null_mut(), 0, &mut vide) },
+            0,
+            "un mot vide n'a pas de coupe, ce n'est pas un refus"
+        );
+
+        // Un pointeur nul avec une longueur non nulle, en revanche, est refuse :
+        // on ne peut pas lire ce qui n'existe pas.
+        assert_eq!(
+            unsafe {
+                sp_cesure_coupes(
+                    rang as u32,
+                    ptr::null(),
+                    5,
+                    tampon.as_mut_ptr(),
+                    64,
+                    &mut besoin,
+                )
+            },
+            SP_ERR_NULL
+        );
+
+        // `out_len` est obligatoire : sans lui, l'appelant n'apprendrait pas la
+        // taille necessaire, donc le protocole n'aurait pas de sens.
+        assert_eq!(
+            unsafe {
+                sp_cesure_coupes(
+                    rang as u32,
+                    mot.as_ptr(),
+                    mot.len(),
+                    tampon.as_mut_ptr(),
+                    tampon.len(),
+                    ptr::null_mut(),
+                )
+            },
+            SP_ERR_NULL
+        );
+
+        sp_cesure_reset();
+        assert_eq!(
+            unsafe {
+                sp_cesure_coupes(
+                    0,
+                    mot.as_ptr(),
+                    mot.len(),
+                    tampon.as_mut_ptr(),
+                    64,
+                    &mut besoin,
+                )
+            },
+            SP_ERR_BAD_INPUT,
+            "sans dictionnaire charge, il n'y a pas de rang 0"
+        );
     }
 }

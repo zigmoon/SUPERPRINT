@@ -70,6 +70,43 @@ Step 'compression : DEFLATE verifie dans les deux sens contre zlib' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-compression.mjs }
 }
 
+# Validation du BRANCHEMENT dans l'application : la colle et le noyau reels sont
+# mis face aux dictionnaires reels du produit, et les fragments doivent etre
+# identiques mot pour mot. C'est la mesure qui autorise a poser le branchement
+# dans `superprint/app/`.
+Step 'branchement : la colle contre les dictionnaires du produit' { node scripts/validate-branchement.mjs }
+
+# Aucune derive possible entre la colle du depot et celle qui est livree : ce
+# sont les memes octets, sinon l'etape suivante mesurerait autre chose que ce
+# qui est dans l'application.
+Step 'colle livree identique a celle du depot' {
+  $paires = @(
+    @{ Source = 'web/superprint-core.js'; Livree = '../superprint/app/JS/superprint-core.js' },
+    @{ Source = 'dist/superprint_core.wasm'; Livree = '../superprint/app/JS/superprint_core.wasm' }
+  )
+  $identiques = $true
+  foreach ($paire in $paires) {
+    if (-not (Test-Path $paire.Livree)) {
+      Write-Host "   fichier absent : $($paire.Livree)" -ForegroundColor Red
+      $identiques = $false
+      continue
+    }
+    $a = (Get-FileHash $paire.Source -Algorithm SHA256).Hash
+    $b = (Get-FileHash $paire.Livree -Algorithm SHA256).Hash
+    if ($a -ne $b) {
+      Write-Host "   DIVERGENCE : $($paire.Livree) differe de $($paire.Source)" -ForegroundColor Red
+      Write-Host "   copier avec : Copy-Item $($paire.Source) $($paire.Livree) -Force" -ForegroundColor Yellow
+      $identiques = $false
+    }
+  }
+  if (-not $identiques) { $script:ok = $false }
+}
+
+# Validation du branchement TEL QU'IL EST LIVRE : les fichiers de
+# `superprint/app/JS/` sont evalues dans un contexte qui imite le navigateur,
+# puis le moteur installe est compare a `Hypher` — parite, reversibilite, repli.
+Step 'branchement livre : parite, reversibilite, repli' { node scripts/validate-branchement-app.mjs }
+
 Pop-Location
 
 if ($ok) {

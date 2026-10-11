@@ -17,6 +17,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 superprint-core = { path = "../superprint-core" }
+superprint-compress = { path = "../superprint-compress" }
 superprint-font = { path = "../superprint-font" }
 superprint-image = { path = "../superprint-image" }
 superprint-pdf = { path = "../superprint-pdf" }
+superprint-text = { path = "../superprint-text" }

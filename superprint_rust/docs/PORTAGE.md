@@ -68,6 +68,11 @@ c'est exactement ce qu'on veut sortir du JavaScript.
 françaises de `main.js` (lecture seule) et compare les deux moteurs mot pour
 mot. Voir la section « Mesure » plus bas.
 
+**Branché dans l'application** : `superprint/app/JS/superprint-branchement.js`
+remplace le moteur de césure par le noyau Rust, pour les **cinq** langues
+(fr, en, de, es, it), sans toucher à `main.js`. Voir la section « Branchement »
+plus bas.
+
 ### B2. Compression 🟡 → ✅ (fait)
 
 | Étape de SuperPrint | Source actuelle | Rust |
@@ -194,7 +199,7 @@ Du plus utile au moins utile, en tenant compte du risque :
 
 | Rang | Module | Pourquoi maintenant |
 |---|---|---|
-| ~~1~~ | ~~Césure (module 5)~~ | ✅ **fait** — débloque toute la composition |
+| ~~1~~ | ~~Césure (module 5)~~ | ✅ **fait**, et ✅ **branché** dans l'application (5 langues) |
 | ~~2~~ | ~~Compression Flate~~ | ✅ **fait** — 108× sur du vectoriel, 2,4× sur le `.wasm` |
 | 3 | **Imposition (planches)** | défaut **mesuré** cité par le rapport interne |
 | 4 | **Preflight** | c'est ce qui fait accepter un fichier par un imprimeur |
@@ -205,6 +210,13 @@ Du plus utile au moins utile, en tenant compte du risque :
 | 9 | Lecture de profil ICC | avantage immédiat limité (lcms fait le travail) |
 | 10 | Import ZIP + XML (docx, idml, odt) | gros, mais `inflate` est fait |
 | 11 | Pathfinder, PostScript/EPS | les deux plus difficiles |
+
+**Ce qui est déjà porté n'est pas pour autant branché.** Le branchement se fait
+composant par composant, avec sa propre preuve et son propre repli. Restent à
+brancher, parmi ce qui existe : les conversions de couleurs, les unités, le
+RunLength et la réduction d'image (`sp_downscale_bilinear_rgb` — le gain de
+performance le plus net). Chacun suit le même patron que la césure, décrit en
+section F.
 
 ---
 
@@ -221,8 +233,91 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | Images | repli JavaScript | identique au bit près |
 | PDF | `pdf-lib` (lecteur tiers) | ouvrable, boîtes et tons directs conformes |
 | Texte | `pdf.js` (lecteur tiers) | **caractères relus en clair** |
-| **Césure** | `hypher.js` + règles FR de `main.js` | **2 597 mots, six champs identiques** |
+| **Césure** | `hypher.js` + règles FR de `main.js` | **2 644 mots, sept champs identiques** |
 | **Compression** | `zlib` de Node | **aller-retour croisé**, 15 jeux, 2 sens |
+| **Branchement césure (colle)** | `hypher.js` + dictionnaires du produit | **5 langues, 2 433 mots identiques** |
+| **Branchement césure (livré)** | fichiers réels de `superprint/app/JS/` | **2 129 mots × 5 langues, réversibilité et repli** |
 
 Les scripts correspondants sont dans `scripts/` et sont tous enchaînés par
 `scripts/check.ps1`.
+
+---
+
+## F. Branchement dans l'application
+
+Un module Rust n'est utile que **branché**. Le branchement se fait
+**composant par composant**, selon une règle stricte :
+
+> **Ajouter, jamais modifier.** Chaque composant branché est un fichier
+> nouveau, plus une ligne dans `index.html`. Retirer cette ligne remet
+> l'application exactement dans son état précédent.
+
+Aucune ligne de `main.js` n'est touchée — ni maintenant, ni plus tard. C'est ce
+qui rend le branchement réversible et le diagnostic simple : un défaut vient
+forcément du fichier ajouté.
+
+### Le point d'accroche, et pourquoi c'est le bon
+
+`main.js` consulte **déjà** un moteur externe avant le sien :
+
+```js
+// main.js, ligne 5201 (et 11462, au moment du calcul)
+const hyphenator = (window.hyphenators && window.hyphenators[lang]) || hyphenators[lang];
+```
+
+C'est une couture prévue par le produit. Poser `window.hyphenators[lang]`
+remplace donc **le dictionnaire de césure et lui seul** : tout le reste —
+bornes de composition, groupes insécables, digraphes, filtrage, traits de
+césure — continue dans `main.js`, intact. Un branchement à un autre endroit
+aurait forcément dupliqué ces règles.
+
+### Ce qui a été posé
+
+| Fichier | Rôle |
+|---|---|
+| `superprint/app/JS/superprint_core.wasm` | le noyau compilé (copie de `superprint_rust/dist/`) |
+| `superprint/app/JS/superprint-core.js` | la colle (copie de `superprint_rust/web/`) |
+| `superprint/app/JS/superprint-branchement.js` | **le branchement** |
+| `superprint/app/index.html` | deux lignes `<script>`, après les dictionnaires |
+| `superprint/app/service-worker.js` | les trois fichiers précachés, `CACHE_NAME` incrémenté |
+
+### Les garanties
+
+1. **Délégation immédiate.** Au chargement, `window.hyphenators` est posé avec
+des moteurs qui appellent `Hypher`. Il n'existe donc **aucun instant** où la
+césure serait absente.
+2. **Bascule, jamais substitution.** Quand le noyau est prêt, chaque moteur
+commence à répondre par Rust. Ce n'est pas un remplacement d'objet : le moteur
+posé garde la même forme, donc toute référence déjà prise continue de
+fonctionner.
+3. **Repli automatique.** Si un appel au noyau échoue en cours de route, le
+moteur repasse **sur-le-champ** à `Hypher` et le signale une fois. La
+composition en cours ne casse pas.
+4. **Réversibilité.** `SuperPrintBranchement.desactiver()` repasse tout sur
+`Hypher` ; retirer les deux lignes de `index.html` retire le branchement.
+5. **Découpage en points de code.** Les positions rendues par le noyau comptent
+des caractères, pas des unités UTF-16 : le découpage se fait sur
+`Array.from(mot)`. C'est documenté aux deux bouts (Rust et colle).
+
+### Ce que le branchement ne fait pas
+
+Il ne replie **rien** en JavaScript. Si le module WebAssembly est refusé par le
+navigateur, la césure reste sur `Hypher` — qui est exactement le comportement
+d'aujourd'hui. Réécrire un second moteur de césure aurait produit une variante
+approximative, donc un défaut visible ; le refus est préférable.
+
+### La mesure, et l'anti-dérive
+
+Deux contrôles, tous deux dans `check.ps1` :
+
+- `scripts/validate-branchement.mjs` — la colle et le noyau contre les
+  dictionnaires du produit, cinq langues.
+- `scripts/validate-branchement-app.mjs` — les **fichiers livrés** évalués dans
+  un contexte qui imite le navigateur (ordre de `index.html`, `fetch` simulé),
+  puis comparés à `Hypher` : parité, **réversibilité**, et **repli** quand le
+  noyau manque.
+
+Une étape du même fichier compare les **empreintes SHA-256** de
+`web/superprint-core.js` et `dist/superprint_core.wasm` avec leurs copies dans
+`superprint/app/JS/`. Sans elle, le contrôle vérifierait autre chose que ce qui
+est livré.

@@ -327,6 +327,13 @@
       writeSpotPage: indisponible('writeSpotPage', raison),
       writeSpotPageGray: indisponible('writeSpotPageGray', raison),
       createDocument: indisponible('createDocument', raison),
+      // La césure n'est **jamais** simulée en JavaScript : le repli laisse le
+      // branchement sur `Hypher`, qui donne exactement le même résultat. Une
+      // seconde implémentation approximative serait pire que pas de repli.
+      chargerMotifs: indisponible('cesure.chargerMotifs', raison),
+      cesureReset: indisponible('cesure.cesureReset', raison),
+      coupes: indisponible('cesure.coupes', raison),
+      fragments: indisponible('cesure.fragments', raison),
     };
   }
 
@@ -932,6 +939,42 @@
       });
     }
 
+    /**
+     * Les **positions de coupe** d'un mot, en indices de caractères.
+     *
+     * Sémantique identique à `Hypher.prototype.hyphenate` : le dictionnaire
+     * **seul**. Le filtrage typographique reste à l'appelant — c'est ce qui
+     * permet de remplacer le moteur sans changer le comportement visible.
+     *
+     * Le noyau annonce la taille nécessaire en deux passes : on commence donc
+     * avec un petit tampon, sans supposer une longueur maximale.
+     */
+    function coupesMotif(rang, mot) {
+      var octets = encoder.encode(String(mot));
+      return portee(function (ctx) {
+        var pMot = ctx.poser(octets);
+        var pLen = ctx.allouer(4);
+        var capacite = 128;
+        var tampon = ctx.allouer(capacite);
+        var code = exports.sp_cesure_coupes(rang, pMot, octets.length, tampon, capacite, pLen);
+        if (code === ERR.TOO_SMALL) {
+          // Le noyau a écrit la taille nécessaire dans `pLen` : on alloue, on
+          // recommence. Une seule reprise suffit, la taille ne change pas.
+          capacite = ctx.lu32(pLen);
+          tampon = ctx.allouer(capacite);
+          code = exports.sp_cesure_coupes(rang, pMot, octets.length, tampon, capacite, pLen);
+        }
+        verifier(code, 'cesure.coupes');
+        // Les positions sont des `u16` en petit-boutiste, écrits par Rust.
+        var vue = ctx.lire(tampon, code * 2);
+        var positions = [];
+        for (var i = 0; i < code; i += 1) {
+          positions.push(vue[i * 2] | (vue[i * 2 + 1] << 8));
+        }
+        return positions;
+      });
+    }
+
     return {
       backend: 'wasm',
       version: (function () {
@@ -1018,6 +1061,62 @@
           );
           return ctx.lire(dst, dstW * dstH * 3);
         });
+      },
+
+      /**
+       * Charge un dictionnaire de **césure** et rend son rang.
+       *
+       * `definition` est l'objet de `hyphenation-*.js` tel quel :
+       *
+       * ```js
+       * { leftmin: 2, rightmin: 3, patterns: { 3: '1ç1j1q', … }, exceptions: '…' }
+       * ```
+       *
+       * Les motifs sont traduits dans le format que le noyau lit, puis chargés
+       * **une seule fois** : la césure est appelée pour chaque mot, on ne
+       * reconstruit donc pas l'arbre à chaque appel.
+       */
+      chargerMotifs: function (definition) {
+        var spec = serialiserMotifs(definition);
+        var octets = encoder.encode(spec);
+        return portee(function (ctx) {
+          var p = ctx.poser(octets);
+          var rang = exports.sp_cesure_charge(p, octets.length);
+          verifier(rang, 'cesure.chargerMotifs');
+          return rang;
+        });
+      },
+
+      /** Vide les dictionnaires chargés. */
+      cesureReset: function () {
+        verifier(exports.sp_cesure_reset(), 'cesure.reset');
+        return exports.sp_cesure_nombre();
+      },
+
+      /** Les **positions de coupe** d'un mot, en indices de caractères. */
+      coupes: coupesMotif,
+
+      /**
+       * Le mot découpé aux positions de coupe — la forme attendue par
+       * l'application : un tableau dont la concaténation redonne le mot.
+       *
+       * ⚠️ Le découpage se fait sur `Array.from(mot)`, car les positions du
+       * noyau comptent des **points de code**. Découper avec `mot[i]` décalerait
+       * tout texte contenant un caractère hors plan multilingue.
+       */
+      fragments: function (rang, mot) {
+        var texte = String(mot);
+        var positions = coupesMotif(rang, texte);
+        if (positions.length === 0) return [texte];
+        var caracteres = Array.from(texte);
+        var morceaux = [];
+        var debut = 0;
+        for (var i = 0; i < positions.length; i += 1) {
+          morceaux.push(caracteres.slice(debut, positions[i]).join(''));
+          debut = positions[i];
+        }
+        morceaux.push(caracteres.slice(debut).join(''));
+        return morceaux;
       },
 
       downscaleNearestRgb: function (rgb, srcW, srcH, dstW, dstH) {
@@ -1205,8 +1304,64 @@
     return lignes.join('\n');
   }
 
-  function pourMille(valeur) {
-    var v = Math.round(Number(valeur) * 1000);
+  /**
+   * Sérialise un dictionnaire de césure pour la frontière C.
+   *
+   * `definition` est l'objet de `hyphenation-*.js`, utilisé **tel quel** : les
+   * motifs ne sont pas recopiés dans le dépôt, ils restent la seule source de
+   * vérité. Le format produit est celui que lit `Motifs::depuis_spec` :
+   *
+   * ```text
+   * !bornes<TAB>2<TAB>3
+   * 3<TAB>1ç1j1q
+   * !exceptions<TAB>as·so·ci·a·tion
+   * ```
+   *
+   * Les groupes sont triés par taille pour que la même définition produise
+   * toujours la même spécification — l'arbre obtenu est le même, mais comparer
+   * deux exécutions devient possible.
+   */
+  function serialiserMotifs(definition) {
+    if (!definition || typeof definition !== 'object') {
+      throw new CoreError('dictionnaire de césure absent', {
+        code: ERR.BAD_INPUT,
+        fn: 'cesure.chargerMotifs',
+      });
+    }
+    var gauche = Number(definition.leftmin);
+    var droite = Number(definition.rightmin);
+    if (!isFinite(gauche) || !isFinite(droite) || gauche < 0 || droite < 0) {
+      throw new CoreError(
+        'bornes de césure invalides (leftmin=' + definition.leftmin +
+          ', rightmin=' + definition.rightmin + ')',
+        { code: ERR.BAD_INPUT, fn: 'cesure.chargerMotifs' },
+      );
+    }
+    var lignes = ['!bornes\t' + gauche + '\t' + droite];
+    var motifs = definition.patterns || {};
+    var tailles = Object.keys(motifs)
+      .map(Number)
+      .filter(function (n) {
+        return isFinite(n) && n > 0;
+      })
+      .sort(function (a, b) {
+        return a - b;
+      });
+    for (var i = 0; i < tailles.length; i++) {
+      var corps = String(motifs[String(tailles[i])] == null ? '' : motifs[String(tailles[i])]);
+      if (corps) lignes.push(tailles[i] + '\t' + corps);
+    }
+    // Les tabulations et sauts de ligne casseraient la lecture : une exception
+    // est faite de lettres et de points médians, il n'y en a pas en pratique,
+    // mais on ne fait pas confiance à un fichier externe.
+    var exceptions = definition.exceptions;
+    if (typeof exceptions === 'string' && exceptions.trim()) {
+      lignes.push('!exceptions\t' + exceptions.replace(/[\t\r\n]+/g, ' ').trim());
+    }
+    return lignes.join('\n');
+  }
+
+  function pourMille(valeur) {    var v = Math.round(Number(valeur) * 1000);
     if (!isFinite(v) || v < 0 || v > 1000) {
       throw new CoreError('composante CMJN hors bornes (attendu 0–1) : ' + valeur, {
         code: ERR.BAD_INPUT,

@@ -187,9 +187,15 @@ titre('calcul côté JavaScript');
 const joindre = (liste) => (Array.isArray(liste) && liste.length > 1 ? liste.join('|') : '-');
 
 function attenduJavaScript(mot) {
-  // Positions du dictionnaire, filtrées par les règles françaises : c'est
-  // exactement ce que fait `Cesure::coupes` côté Rust.
+  // ⚠️ La PREMIÈRE colonne comparée est le dictionnaire **seul** : c'est le
+  // niveau exact auquel le branchement se fera dans l'application (voir
+  // `superprint/app/JS/superprint-branchement.js`). Tout ce qui suit —
+  // filtrage, tirets — reste à l'application, et n'est comparé que pour
+  // information.
   const fragments = hypher.hyphenate(mot);
+  const brut = (fragments && fragments.length ? fragments : [mot]).join('|');
+
+  // Positions du dictionnaire, filtrées par les règles françaises.
   const positions = [];
   let cumul = 0;
   for (let k = 0; k < fragments.length - 1; k += 1) {
@@ -219,6 +225,7 @@ function attenduJavaScript(mot) {
 
   return [
     mot,
+    brut,
     coupes.join(','),
     frontieres,
     joindre(spSyllabesFR(mot)),
@@ -280,7 +287,16 @@ check('autant de lignes des deux côtés', obtenu.length === attendu.length, `${
 // ── 6. Comparaison, champ par champ ─────────────────────────────────────────
 titre('comparaison');
 
-const CHAMPS = ['mot', 'coupes du dictionnaire', 'frontières', 'syllabes', 'groupes', 'filtre', 'tirets'];
+const CHAMPS = [
+  'mot',
+  'fragments du dictionnaire (niveau du branchement)',
+  'coupes du dictionnaire',
+  'frontières',
+  'syllabes',
+  'groupes',
+  'filtre',
+  'tirets',
+];
 const ecarts = [];
 const parChamp = new Map(CHAMPS.map((nom) => [nom, 0]));
 
@@ -317,7 +333,7 @@ titre('contrôle ciblé des cas qui avaient échoué dans l’application');
 const parMot = new Map(obtenu.map((l) => [l.split('\t')[0], l.split('\t')]));
 const tiretsDe = (mot) => {
   const ligne = parMot.get(mot);
-  return ligne ? ligne[6] : null;
+  return ligne ? ligne[7] : null;
 };
 
 // Ces quatre-là sont les coupes fautives **mesurées** dans l'historique du
@@ -363,7 +379,7 @@ check(
 function obtenirRecompositions(lignes) {
   return lignes.map((ligne) => {
     const champs = ligne.split('\t');
-    const morceaux = champs[5] === '-' ? [champs[0]] : champs[5].split('|');
+    const morceaux = champs[6] === '-' ? [champs[0]] : champs[6].split('|');
     return { mot: champs[0], recompose: morceaux.join('') };
   });
 }

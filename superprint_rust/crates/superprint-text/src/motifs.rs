@@ -125,6 +125,66 @@ impl Motifs {
         motifs
     }
 
+    /// Une **spécification** complète, sous forme de texte.
+    ///
+    /// C'est le format que la frontière C reçoit et que l'exemple de contrôle
+    /// écrit : un seul lecteur, donc un seul jeu de règles, donc pas de dérive
+    /// possible entre ce qui est mesuré et ce qui est livré.
+    ///
+    /// ```text
+    /// !bornes<TAB>2<TAB>3
+    /// 3<TAB>1ç1j1q
+    /// 4<TAB>1f2lab2h2c
+    /// !exceptions<TAB>as·so·ci·a·tion, ta·ble
+    /// ```
+    ///
+    /// Renvoie `None` si la ligne `!bornes` est absente : sans elle, le
+    /// dictionnaire n'aurait pas de bornes — et des bornes devinées seraient
+    /// pires qu'un refus.
+    #[must_use]
+    pub fn depuis_spec(specification: &str) -> Option<Self> {
+        let mut bornes: Option<(usize, usize)> = None;
+        let mut groupes: Vec<(usize, String)> = Vec::new();
+        let mut exceptions: Option<String> = None;
+
+        for ligne in specification.lines() {
+            let ligne = ligne.trim_end();
+            if ligne.is_empty() {
+                continue;
+            }
+            if let Some(reste) = ligne.strip_prefix("!bornes") {
+                let champs: Vec<&str> = reste.trim().split('\t').collect();
+                let gauche = champs.first()?.trim().parse().ok()?;
+                let droite = champs.get(1)?.trim().parse().ok()?;
+                bornes = Some((gauche, droite));
+                continue;
+            }
+            if let Some(reste) = ligne.strip_prefix("!exceptions") {
+                exceptions = Some(reste.trim_start_matches('\t').to_string());
+                continue;
+            }
+            let mut champs = ligne.splitn(2, '\t');
+            let (Some(premier), Some(second)) = (champs.next(), champs.next()) else {
+                continue;
+            };
+            let Ok(taille) = premier.trim().parse::<usize>() else {
+                continue;
+            };
+            groupes.push((taille, second.to_string()));
+        }
+
+        let (gauche, droite) = bornes?;
+        let references: Vec<(usize, &str)> = groupes
+            .iter()
+            .map(|(taille, texte)| (*taille, texte.as_str()))
+            .collect();
+        let mut motifs = Self::depuis_compacte(gauche, droite, &references);
+        if let Some(liste) = &exceptions {
+            motifs = motifs.avec_exceptions(liste);
+        }
+        Some(motifs)
+    }
+
     /// Ajoute les exceptions, au format de `Hyphenator.js` :
     /// `"as·so·ci·a·tion, ta·ble"`. Le séparateur de syllabes est `·`
     /// (U+00B7).
@@ -486,6 +546,47 @@ mod tests {
         // Même résultat sur un mot qui déclenche le motif.
         let mot = "façade";
         assert_eq!(texte.coupes(mot), compact.coupes(mot));
+    }
+
+    #[test]
+    fn la_specification_complete_est_lue() {
+        // Le format exact que la frontière C reçoit et que l'exemple écrit.
+        let spec = "!bornes\t2\t3\n\
+                    3\t1ç1j1q\n\
+                    4\t1f2lab2h2c\n\
+                    !exceptions\tas\u{00B7}so\u{00B7}ci\u{00B7}a\u{00B7}tion\n";
+        let motifs = Motifs::depuis_spec(spec).expect("spécification lisible");
+        assert_eq!(motifs.left_min(), 2);
+        assert_eq!(motifs.right_min(), 3);
+        assert_eq!(motifs.nombre_de_motifs(), 5);
+        assert_eq!(
+            motifs.fragments("association"),
+            vec!["as", "so", "ci", "a", "tion"],
+            "l'exception doit être lue"
+        );
+    }
+
+    #[test]
+    fn une_specification_sans_bornes_est_refusee() {
+        // Des bornes devinées seraient pires qu'un refus : elles décideraient
+        // de coupes que l'utilisateur n'a jamais demandées.
+        assert!(Motifs::depuis_spec("3\t1ç1j1q\n").is_none());
+        assert!(Motifs::depuis_spec("").is_none());
+        assert!(
+            Motifs::depuis_spec("!bornes\t2\n").is_none(),
+            "borne droite absente"
+        );
+    }
+
+    #[test]
+    fn la_specification_egale_le_chargement_direct() {
+        let spec = "!bornes\t2\t3\n3\t1ç1j1q\n";
+        let par_spec = Motifs::depuis_spec(spec).unwrap();
+        let direct = Motifs::depuis_compacte(2, 3, &[(3, "1ç1j1q")]);
+        assert_eq!(par_spec.nombre_de_motifs(), direct.nombre_de_motifs());
+        for mot in ["façade", "leçon", "reçu", "garçon"] {
+            assert_eq!(par_spec.fragments(mot), direct.fragments(mot));
+        }
     }
 
     #[test]

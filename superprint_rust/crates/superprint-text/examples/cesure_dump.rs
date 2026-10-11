@@ -21,8 +21,13 @@
 //! Sortie, une ligne par mot, champs séparés par des tabulations :
 //!
 //! ```text
-//! mot  coupes  frontieres  syllabes  groupes  filtre  tirets
+//! mot  brut  coupes  frontieres  syllabes  groupes  filtre  tirets
 //! ```
+//!
+//! ⚠️ La colonne `brut` est celle qui compte pour le **branchement** : c'est le
+//! dictionnaire **seul**, exactement ce que rend `Hypher.prototype.hyphenate`.
+//! Brancher à ce niveau laisse à l'application toutes ses règles françaises —
+//! on ne remplace que ce qu'on a prouvé identique.
 
 use std::env;
 use std::fs;
@@ -126,6 +131,14 @@ fn lire_motifs(description: &str) -> (usize, usize, Vec<(usize, String)>, Option
 fn ligne(mot: &str, cesure: &Cesure) -> String {
     let caracteres: Vec<char> = mot.chars().collect();
 
+    // Le dictionnaire **seul** : c'est le niveau auquel le branchement de
+    // l'application se fait, donc celui qu'il faut prouver.
+    let brut = cesure
+        .motifs()
+        .map(|m| m.fragments(mot))
+        .unwrap_or_else(|| vec![mot.to_string()]);
+    let brut_texte = brut.join("|");
+
     let coupes: Vec<String> = cesure.coupes(mot).iter().map(usize::to_string).collect();
 
     // Un caractère par frontière : la comparaison position par position est
@@ -168,6 +181,7 @@ fn ligne(mot: &str, cesure: &Cesure) -> String {
 
     [
         mot.to_string(),
+        brut_texte,
         coupes.join(","),
         frontieres,
         syllabes,
