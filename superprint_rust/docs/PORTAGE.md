@@ -7,42 +7,72 @@ qui existe, et dit pour chaque domaine l'un de ces quatre états :
 | État | Sens |
 |---|---|
 | ✅ **porté** | le Rust existe, il est testé, et sa sortie est vérifiée par un outil tiers |
+| � **branché** | porté **et** appelé par l'application (ou offert par le branchement) |
 | 🟡 **portable** | calcul pur et déterministe : **doit** passer en Rust, pas encore fait |
 | 🟠 **portable plus tard** | faisable, mais demande une chaîne (ZIP+XML, décodage JPEG…) |
 | ❌ **à garder en JS** | dépend du DOM, de WebGL, du réseau ou du navigateur — le porter n'aurait pas de sens, et la raison est écrite |
 
-Les domaines marqués ✅ **plus bas** (B1, B2) sont ceux réalisés dans ce
-chantier ; les autres portent leur état réel.
+Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-11) :
 
-Les lignes sont mesurées, pas estimées : `superprint_rust/crates` = **8 567
-lignes** de Rust (29 fichiers, tests compris) contre **104 574 lignes** de
-JavaScript applicatif (hors bibliothèques tierces) → **≈ 8 %**. Le portage est
-réel, il est loin d'être fini, et ce document dit exactement où il en est.
-> ⚠️ **Aucun de ces modules n'est encore appelé par l'application.**
-> `superprint/` n'a pas été modifié : ce sont des gains disponibles, pas des
-> gains acquis. La bascule est décrite dans `web/BRANCHEMENT.md`.
+| | |
+|---|---|
+| Rust (`crates/`, 8 crates, tests compris) | **15 126 lignes** |
+| dont annotations `#[test]` | 329 |
+| exemples et scripts de contrôle | 688 lignes |
+| exports `sp_*` de la frontière C | **41** (0 import) |
+| module livrable | 342 Ko |
+| JavaScript applicatif (hors bibliothèques tierces) | **125 944 lignes** |
+| dont `main.js` | 99 157 lignes |
+| dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
+
+**Avancement : il n'y a pas un pourcentage, il y en a quatre** — et ils ne mesurent
+pas la même chose. Dire « 13 % » sans préciser serait trompeur.
+
+| Métrique | Mesure | Ce qu'elle dit |
+|---|---|---|
+| **Domaines terminés** | **3,5 / 11** → **32 %** | l'avancement réel du travail identifié |
+| dont **branchés** dans l'application | **1 / 4** construits → **25 %** | ce qui sert vraiment à l'utilisateur |
+| **Volume JS porté** (somme des plages citées) | **2 791 / 18 803** → **15 %** | le poids du travail restant |
+| **Lignes** Rust / JS | 15 126 / 111 501 → **13,6 %** | ⚠️ le plus trompeur des quatre |
+
+Pourquoi le ratio par lignes trompe : il compare du Rust qui contient ses tests, un
+écrivain PDF complet **sans équivalent JS**, et 4 000 lignes de lecteur de polices,
+à un JavaScript dont la moitié est de la gestion d'interface. Il ne bouge presque
+pas quand un module est fini, et il bougerait beaucoup si on portait une plage
+facile. **Le seul chiffre à suivre est le premier : les domaines.**
+
+> ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **la césure
+> est le seul composant que l'application utilise réellement**. La compression est
+> employée par notre propre exporteur ; l'imposition et la réduction d'image sont
+> **mesurées et offertes** par `SuperPrintBranchement`, mais ne remplacent rien
+> (voir la section F, et la raison : les fonctions correspondantes de `main.js`
+> sont privées à son IIFE).
 
 ---
 
 ## A. Ce qui est déjà porté, et vérifié
 
-| # | Étape de SuperPrint | Rust | Preuve |
-|---|---|---|---|
-| 1 | Unités mm / pt / px / cm / in | `core::units` | comparé à la formule, 42 conversions |
-| 2 | RVB → CMJN, CMJN → RVB, luminance | `core::color`, `core::color8` | parité **au bit près** vs WAT, 250 000 pixels |
-| 3 | Fond perdu, traits de coupe, format fini | `core::geometry`, `pdf::boxes` | `pdf-lib` (3 boîtes, toujours écrites) |
-| 4 | Tons directs `/Separation` + **teintes** | `pdf::spot`, `pdf::colorspace` | `pdf-lib` : 2 `/Separation`, teintes relues |
-| 5 | `MediaBox` / `TrimBox` / `BleedBox` | `pdf::boxes` | `pdf-lib`, 196 × 266 mm |
-| 6 | Document multi-pages, vectoriel, images | `pdf::document` | 6 PDF relus par `pdf-lib` |
-| 7 | Filtre `RunLength` | `image::compress` | décodeur écrit depuis l'ISO 32000-2 |
-| 8 | Réduction d'image, ciblage DPI | `image::resample` | identique au repli JS, octet pour octet |
-| 9 | Métadonnées `/Info` (accents, typographie FR) | `pdf::object` | lues par `pdf-lib` : « café », tiret cadratin |
-| 10 | `OutputIntent` + profil ICC fourni | `pdf::document` | `pdf-lib` : `/S /GTS_PDFX` |
-| 11 | Analyse de police TrueType (`cmap`, métriques) | `superprint-font` | 31 tests, police synthétique **et** vraie police |
-| 12 | Texte : `Type0` / `Identity-H` / `/FontFile2` | `pdf::font`, `pdf::document` | **`pdf.js` relit les caractères en clair** |
-| 13 | Texte extractible (`/ToUnicode`) | `pdf::font` | `pdf.js` : accents, apostrophe, tiret cadratin |
-| 14 | Frontière C (32 fonctions, 0 import) | `superprint-wasm` | `WebAssembly.Module.imports` = ∅ |
-| 15 | Colle web + repli JS mesuré | `web/superprint-core.js` | parité du repli octet pour octet |
+| # | Étape de SuperPrint | Rust | Preuve | Branché |
+|---|---|---|---|---|
+| 1 | Unités mm / pt / px / cm / in | `core::units` | comparé à la formule, 42 conversions | — |
+| 2 | RVB → CMJN, CMJN → RVB, luminance | `core::color`, `core::color8` | parité **au bit près** vs WAT, 250 000 pixels | — |
+| 3 | Fond perdu, traits de coupe, format fini | `core::geometry`, `pdf::boxes` | `pdf-lib` (3 boîtes, toujours écrites) | — |
+| 4 | Tons directs `/Separation` + **teintes** | `pdf::spot`, `pdf::colorspace` | `pdf-lib` : 2 `/Separation`, teintes relues | — |
+| 5 | `MediaBox` / `TrimBox` / `BleedBox` | `pdf::boxes` | `pdf-lib`, 196 × 266 mm | — |
+| 6 | Document multi-pages, vectoriel, images | `pdf::document` | 6 PDF relus par `pdf-lib` | — |
+| 7 | Filtre `RunLength` | `image::compress` | décodeur écrit depuis l'ISO 32000-2 | — |
+| 8 | Réduction d'image, ciblage DPI | `image::resample` | **motif fin préservé**, énergie conservée | 🟢 offert |
+| 9 | Métadonnées `/Info` (accents, typographie FR) | `pdf::object` | lues par `pdf-lib` : « café », tiret cadratin | — |
+| 10 | `OutputIntent` + profil ICC fourni | `pdf::document` | `pdf-lib` : `/S /GTS_PDFX` | — |
+| 11 | Analyse de police TrueType (`cmap`, métriques) | `superprint-font` | 31 tests, police synthétique **et** vraie police | — |
+| 12 | Texte : `Type0` / `Identity-H` / `/FontFile2` | `pdf::font`, `pdf::document` | **`pdf.js` relit les caractères en clair** | — |
+| 13 | Texte extractible (`/ToUnicode`) | `pdf::font` | `pdf.js` : accents, apostrophe, tiret cadratin | — |
+| 14 | Frontière C (**41** fonctions, 0 import) | `superprint-wasm` | `WebAssembly.Module.imports` = ∅ | — |
+| 15 | Colle web + repli JS mesuré | `web/superprint-core.js` | parité du repli octet pour octet | — |
+| 16 | **Césure** (Liang + règles FR) | `text::motifs`, `text::francais`, `text::Cesure` | `hypher.js`, **2 644 mots, 7 champs identiques** | ✅ **branché** |
+| 17 | **Compression DEFLATE / zlib** | `compress::{deflate,inflate,zlib}` | croisé avec `zlib` de Node, 15 jeux, 2 sens | 🟢 exporteur |
+| 18 | **Imposition** (ordre, feuille, repères) | `superprint-impose` | `main.js` **extrait tel quel** : 25 tailles, 3 copies, 16 traits | 🟢 offert |
+| 19 | **Réduction par moyenne de surface** | `image::resample::downscale_area` | exact **au bit près**, anti-crénelage mesuré | 🟢 offert |
 
 ---
 
