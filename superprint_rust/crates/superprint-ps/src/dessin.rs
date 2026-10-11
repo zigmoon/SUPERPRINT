@@ -1,12 +1,17 @@
-//! Le dessin produit : matrices, chemins, couleurs, peintures.
+//! Le dessin produit : chemins, couleurs, peintures.
 //!
-//! ## La matrice, et sa convention
+//! ## La matrice
 //!
 //! PostScript décrit une transformation par six nombres `[a b c d tx ty]`, et
 //! applique `(x, y) → (a·x + c·y + tx, b·x + d·y + ty)`. `concat` **pré**-multiplie :
 //! la matrice donnée s'applique **avant** celle en cours. C'est cette convention
 //! qui fait qu'un `translate` suivi d'un `scale` met l'échelle d'abord dans le
 //! repère local — et c'est ce que tout programme PostScript suppose.
+//!
+//! Cette matrice est désormais définie dans **`superprint-path`**
+//! ([`superprint_path::matrice::Matrice`]), dont dépendent les trois importeurs
+//! de dessin (PostScript, SVG, et la géométrie elle-même). Elle est ré-exportée
+//! ici : `superprint_ps::Matrice` reste valide.
 //!
 //! ## Ce qui est enregistré, et dans quel repère
 //!
@@ -69,110 +74,10 @@ impl Couleur {
 }
 
 /// Une matrice de transformation `[a b c d tx ty]`.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Matrice(pub [f64; 6]);
-
-impl Default for Matrice {
-    fn default() -> Self {
-        Self::identite()
-    }
-}
-
-impl Matrice {
-    /// La matrice identité.
-    #[must_use]
-    pub const fn identite() -> Self {
-        Self([1.0, 0.0, 0.0, 1.0, 0.0, 0.0])
-    }
-
-    /// Une translation.
-    #[must_use]
-    pub const fn translation(dx: f64, dy: f64) -> Self {
-        Self([1.0, 0.0, 0.0, 1.0, dx, dy])
-    }
-
-    /// Une mise à l'échelle.
-    #[must_use]
-    pub const fn echelle(fx: f64, fy: f64) -> Self {
-        Self([fx, 0.0, 0.0, fy, 0.0, 0.0])
-    }
-
-    /// Une rotation d'un angle en degrés (sens direct).
-    #[must_use]
-    pub fn rotation(degres: f64) -> Self {
-        let radians = degres.to_radians();
-        Self([
-            radians.cos(),
-            radians.sin(),
-            -radians.sin(),
-            radians.cos(),
-            0.0,
-            0.0,
-        ])
-    }
-
-    /// La composition `self ∘ autre` : `self` s'applique **avant** `autre`.
-    ///
-    /// C'est la convention de `concat` en PostScript.
-    #[must_use]
-    pub fn concatener(&self, autre: Self) -> Self {
-        let [a1, b1, c1, d1, tx1, ty1] = self.0;
-        let [a2, b2, c2, d2, tx2, ty2] = autre.0;
-        Self([
-            a1 * a2 + b1 * c2,
-            a1 * b2 + b1 * d2,
-            c1 * a2 + d1 * c2,
-            c1 * b2 + d1 * d2,
-            tx1 * a2 + ty1 * c2 + tx2,
-            tx1 * b2 + ty1 * d2 + ty2,
-        ])
-    }
-
-    /// Applique la matrice à un point.
-    #[must_use]
-    pub fn appliquer(&self, p: Point) -> Point {
-        let [a, b, c, d, tx, ty] = self.0;
-        Point::new(a * p.x + c * p.y + tx, b * p.x + d * p.y + ty)
-    }
-
-    /// Le déterminant : nul si la transformation écrase le plan.
-    #[must_use]
-    pub fn determinant(&self) -> f64 {
-        self.0[0] * self.0[3] - self.0[1] * self.0[2]
-    }
-
-    /// Le déterminant est-il non nul ?
-    #[must_use]
-    pub fn est_inversible(&self) -> bool {
-        self.determinant() != 0.0 && self.est_finie()
-    }
-
-    /// L'inverse, ou la matrice identité si la transformation n'est pas
-    /// inversible.
-    #[must_use]
-    pub fn inverse(&self) -> Self {
-        let det = self.determinant();
-        if det == 0.0 || !det.is_finite() {
-            return Self::identite();
-        }
-        let [a, b, c, d, tx, ty] = self.0;
-        // L'inverse d'une matrice affine `[[a c tx],[b d ty],[0 0 1]]`.
-        Self([
-            d / det,
-            -b / det,
-            -c / det,
-            a / det,
-            (c * ty - d * tx) / det,
-            (b * tx - a * ty) / det,
-        ])
-    }
-
-    /// Toutes les valeurs sont-elles finies ?
-    #[must_use]
-    pub fn est_finie(&self) -> bool {
-        self.0.iter().all(|v| v.is_finite())
-    }
-}
+///
+/// Définie dans `superprint-path` — la convention est la même pour PostScript et
+/// pour SVG — et ré-exportée ici pour que `superprint_ps::Matrice` reste valide.
+pub use superprint_path::matrice::Matrice;
 
 /// Ce qu'on fait d'un chemin.
 #[derive(Clone, Copy, Debug, PartialEq)]

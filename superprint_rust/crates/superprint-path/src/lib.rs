@@ -16,6 +16,7 @@
 //! | Module | Contenu | Pourquoi |
 //! |---|---|---|
 //! | [`point`] | point, vecteur, boîte englobante | la base, sans fioriture |
+//! | [`matrice`] | matrice affine `[a b c d tx ty]`, composition, inverse | la même convention que PostScript et SVG, écrite une fois |
 //! | [`courbe`] | Bézier quadratique et cubique : évaluation, **aplatissement** adaptatif, boîte, subdivision, longueur | le produit n'en a pas besoin puisqu'il a Paper.js ; le nôtre si, et l'écrivain PDF en manquait |
 //! | [`polygone`] | anneau, aire signée, **règles de remplissage** (`nonzero`, pair-impair), appartenance d'un point | c'est le sens même d'une forme pleine |
 //! | [`booleen`] | union, intersection, différence, exclusion | le Pathfinder |
@@ -58,11 +59,13 @@
 
 pub mod booleen;
 pub mod courbe;
+pub mod matrice;
 pub mod point;
 pub mod polygone;
 
 pub use booleen::{operer, Operation};
 pub use courbe::Courbe;
+pub use matrice::Matrice;
 pub use point::{Boite, Point};
 pub use polygone::{Contour, Polygone, Regle};
 

@@ -16,11 +16,11 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-11) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 17 crates, tests compris) | **37 942 lignes** |
-| dont annotations `#[test]` | 863 tests, tous verts |
+| Rust (`crates/`, 17 crates, tests compris) | **41 885 lignes** |
+| dont annotations `#[test]` | 937 tests, tous verts |
 | exports `sp_*` de la frontière C | **48** (0 import), sur **deux** modules |
 | modules livrables | 380 Ko (noyau) + **245 Ko** (import PostScript, à la demande) |
-| étapes de contrôle (`scripts/check.ps1`) | **28** |
+| étapes de contrôle (`scripts/check.ps1`) | **29** |
 | JavaScript applicatif (hors bibliothèques tierces) | **126 581 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
@@ -32,8 +32,8 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 |---|---|---|
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
 | dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript | ce qui sert vraiment à l'utilisateur |
-| **Volume JS porté** (somme des plages citées) | **13 787 / 18 803** → **73 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 37 942 / 112 138 → **33,8 %** | ⚠️ le plus trompeur des quatre |
+| **Volume JS porté** (somme des plages citées) | **13 832 / 18 803** → **74 %** | le poids du travail restant |
+| **Lignes** Rust / JS | 41 885 / 112 138 → **37,4 %** | ⚠️ le plus trompeur des quatre |
 
 La plage ajoutée par l'import PostScript est mesurée ainsi : dans
 `superprint/app/JS/sp-eps-import.js` (939 lignes), tout ce qui précède
@@ -42,25 +42,33 @@ La plage ajoutée par l'import PostScript est mesurée ainsi : dans
 SVG, le score d'interface) reste en JavaScript, parce que c'est du dessin dans le
 navigateur.
 
+La plage ajoutée par l'import **SVG** est plus courte, et il faut le dire : c'est
+`addSvgFromContent` (25 lignes) et `handleDroppedSvgFile` (20 lignes) de
+`main.js`, soit **45 lignes** — parce que tout le reste de l'analyse était fait
+par **Fabric.js**, une bibliothèque tierce qu'on ne compte pas dans le
+JavaScript applicatif. Le noyau Rust remplace donc ici du code tiers, pas du code
+du produit : c'est la **source unique** et la mesure qui gagnent, pas le volume.
+
 Les 11 domaines, nommés, avec leur état : **césure** ✅ (branché) ·
 **compression Flate** ✅ · **imposition** ✅ · **prépresse** ✅ · **nuanciers** ✅ ·
 **image** ✅ · **profils ICC** ✅ · **PDF/X** ✅ · **pagination et chaînage** ✅ ·
-**géométrie vectorielle / Pathfinder** ✅ · **import docx/odt/idml/EPS/AI** ✅
-(le PostScript **branché**, le docx non). **Conversion de couleurs** ✅ (branchée).
+**géométrie vectorielle / Pathfinder** ✅ · **import docx/odt/idml/EPS/AI/SVG** ✅
+(le PostScript **branché**, le docx et le SVG non). **Conversion de couleurs** ✅
+(branchée).
 
 **Aucun domaine n'est ouvert.** Ce qui reste ne sont plus des domaines, mais des
 **limites à l'intérieur de domaines terminés** — et elles sont toutes écrites, dans
 les sections B correspondantes, sous le titre « ce qui n'est pas fait ». Les plus
 notables : le `.doc` binaire (OLE2) et le modèle de cellules du `.xlsx` ne sont pas
 lus ; le RTF est **reconnu mais pas analysé** ; `arct`/`arcto` sont **refusés** et
-non interprétés ; un `clip` est **enregistré mais non appliqué** ; et les `.ai`
+non interprétés ; un `clip` est **enregistré mais non appliqué** ; les `.ai`
 enregistrés en PDF sont **refusés** au lieu d'être lus (le noyau écrit du PDF, il
-n'en lit pas).
+n'en lit pas) ; et en SVG, `<image>`, `<use>`, les dégradés, les découpages et les
+feuilles de style sont **refusés en les nommant**, plutôt que rendus de travers.
 
 Le portage n'est pas fini pour autant : sur les 11 domaines, **deux sont
 branchés**, plus **la moitié d'un troisième** (l'import : le PostScript est
-branché, le docx ne l'est pas). Les huit autres sont mesurés, testés, et
-offerts — utiliser le noyau
+branché). Les huit autres sont mesurés, testés, et offerts — utiliser le noyau
 suppose de changer une ligne dans `main.js`, et la règle de ce dépôt est de ne pas
 y toucher (section F).
 
@@ -117,6 +125,7 @@ déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
 | 27 | **Conteneur ZIP** (lecture, DEFLATE, CRC-32) | `superprint-zip` | 10 fichiers réels relus par un lecteur écrit à part : **56 entrées, 569 826 octets identiques** | 🟢 offert |
 | 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères | 🟢 offert |
 | 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné) | `superprint-ps` | 4 témoins, **174 sommets** comparés à un interpréteur écrit à part ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
+| 30 | **Dessin SVG** (commandes de chemin, formes, transformations) | `superprint-doc::svg` | **40 SVG réels** du dépôt, **172 formes et 10 404 sommets** comparés à un lecteur écrit à part ; tolérance mesurée sur la courbe vraie ; table des couleurs relevée du produit | 🟢 offert |
 
 ---
 
@@ -389,8 +398,9 @@ testée.
 
 **Ce qui n'est pas fait** : l'épaississement d'un trait (transformer un contour en
 surface, avec joins et extrémités) et les décalages de courbe. Ils sont utiles mais
-ne sont pas ce que le produit demandait au Pathfinder ; ils viendraient avec
-l'import SVG et le rendu de plume.
+ne sont pas ce que le produit demandait au Pathfinder ; ils viendraient avec le
+**rendu de plume** et un épaississement de contour — l'import SVG, lui, s'en passe :
+il lit l'épaisseur, il ne la dessine pas.
 
 ### B8. Import de documents 🟠 → ✅ (fait, et mesuré)
 
@@ -402,7 +412,7 @@ l'import SVG et le rendu de plume.
 | `.idml` (InDesign) | `main.js` 41812-45723 (~3 900 l.) | ✅ `superprint-doc::idml` |
 | EPS / AI (PostScript) | `sp-eps-import.js` (869 l.) | ✅ `superprint-ps` |
 | RTF, HTML, TXT | `sp-doc-import.js` | ❌ **reconnus mais non analysés** (voir plus bas) |
-| SVG | délégué au navigateur | ❌ à faire : le parseur XML existe désormais |
+| SVG | délégué au navigateur (`fabric.loadSVGFromString`) | ✅ `superprint-doc::svg` — commandes de chemin, formes, transformations, aplatissement |
 
 Le domaine se découpe en trois, et chacun a sa preuve.
 
@@ -513,8 +523,12 @@ est **assumé et mesuré**, et il est le seul du domaine.
 - le **RTF** est reconnu mais non analysé, et le `.doc` binaire (OLE2) non plus ;
 - le `.xlsx` n'est pas lu comme un classeur : son XML est atteignable, mais le
   modèle de cellules n'est pas porté ;
-- l'**import SVG** attend toujours : le parseur XML et la géométrie sont là, la
-  correspondance des commandes de chemin reste à écrire.
+- en **SVG**, ce dont l'ignorance perdrait du dessin est **refusé** en le nommant
+  (`<image>`, `<use>`, un remplissage `url(#…)`, `clip-path`, `mask`, `filter`,
+  une feuille `<style>`), et ce qui décrit sans dessiner est **compté**
+  (`defs`, `title`, `metadata`, les déclarations de dégradé) ; le **texte** est
+  lu — position, corps, famille, ancre — mais **non dessiné**, le noyau ne
+  devinant pas de police ; les éléments inconnus sont comptés, jamais dessinés.
 
 Ces limites sont les mêmes que celles du produit, à deux exceptions près — et les
 deux vont dans le même sens : le noyau **refuse** là où le produit **ignore**
@@ -525,9 +539,64 @@ deux vont dans le même sens : le noyau **refuse** là où le produit **ignore**
 y ajouter. L'interpréteur vient de `crates/superprint-ps`, et le noyau est
 livré dans **son propre** module WebAssembly (245 Ko, chargé à la demande) pour ne
 pas alourdir celui du démarrage. Le **docx, l'odt, l'idml et le SVG restent
-offerts** : leur point d'accroche est `_spImportDocxFile`, mais l'analyse y est
-enchevêtrée avec `mammoth` et la génération de HTML, donc avec `flowHtmlIntoPages`
-qui est privée à l'IIFE de `main.js`.
+offerts** : leur point d'accroche est `_spImportDocxFile` pour les trois premiers,
+et `addSvgFromContent` — appelée par `handleDroppedSvgFile`, toutes deux privées à
+l'IIFE de `main.js` — pour le SVG. L'analyse du docx est enchevêtrée avec `mammoth`
+et la génération de HTML, donc avec `flowHtmlIntoPages`, privée elle aussi.
+
+#### B8d. Le dessin SVG — de la géométrie, pas du texte
+
+Un SVG n'est pas un texte : c'est un **dessin**. Et le produit ne le lisait pas
+lui-même — il appelait `fabric.loadSVGFromString()`, c'est-à-dire qu'il
+**déléguait tout au navigateur** : analyse XML, commandes de chemin,
+transformations, styles. C'est le seul domaine du portage où le JavaScript
+applicatif ne contenait **rien** à porter (45 lignes de plomberie autour de
+l'appel), et où tout était déjà en Rust, sauf que ce Rust était celui d'une
+bibliothèque tierce.
+
+`superprint-doc::svg` écrit cette analyse. Ce qu'il fait, en trois étages :
+
+| Étage | Contenu |
+|---|---|
+| **XML** | réutilisé de `superprint_doc::xml`, avec les **entités du DTD interne** que le SVG sait résoudre depuis ce travail |
+| **Structure** | `svg`, `g`, `switch`, `defs`, `title`, `foreignObject`, `display`, `visibility`, `requiredExtensions` |
+| **Géométrie** | `M L H V C S Q T A Z` (absolus et relatifs, répétitions implicites comprises), `rect` (coins arrondis compris), `circle`, `ellipse`, `line`, `polyline`, `polygon`, `transform`, unités CSS |
+
+Les courbes sont **aplaties** par `superprint_path::courbe::Courbe::aplatir` —
+c'est-à-dire le **même** aplatissement que l'interpréteur PostScript, avec la même
+tolérance et le même critère de platitude (écart à la corde **et** projection des
+points de contrôle). Un SVG lu et un EPS lu se ressemblent donc : des polylignes
+dans le repère de la page, avec leur remplissage et leur contour.
+
+**Deux propriétés ont été écrites, puis trouvées.** La première concerne les
+**entités du DTD interne** : Illustrator écrit ses espaces de noms en entités
+(`xmlns:i="&ns_ai;"`), et sans elles `sper_typo.svg` — 83 Ko, l'icône du produit —
+était **refusé**. Le deuxième concerne le texte : un `<text>` est lu — position,
+corps, famille, ancre, gras — mais **non dessiné**, parce que dessiner un glyphe
+demande une police que le noyau ne devine pas. C'est le même partage que
+l'écrivain PDF, qui prend une police explicite.
+
+**Ce qui est refusé, et pourquoi.** La règle est la même que pour le PostScript :
+ce dont l'ignorance **perd du dessin** est refusé en le nommant — `<image>`,
+`<use>`, un remplissage `url(#…)` (dégradé ou motif), `clip-path`, `mask`,
+`filter`, une feuille `<style>`. Ce qui **décrit sans dessiner** (`defs`,
+`title`, `metadata`, une déclaration de dégradé **non employée**) est **compté**
+dans `DocumentSvg::non_rendus` et n'arrête rien. Un `.svg` qui contient un
+dégradé défini mais jamais utilisé se lit donc entièrement ; le jour où il
+l'emploie, le noyau refuse et le dit.
+
+**La vérification** (`scripts/validate-svg.mjs`) n'écrit pas moins qu'un second
+lecteur : son **propre** analyseur XML, son **propre** lecteur de `d`, sa
+**propre** matrice, sa **propre** conversion d'arc et son **propre**
+aplatissement. Puis :
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| les **40 SVG réels du dépôt**, forme par forme | **172 formes, 10 404 sommets**, pire écart **5,0e-10** |
+| aires connues par construction (rectangle, cercle, ellipse, coins arrondis, triangle, `z`) | exactes, ou à 2,6e-4 près pour les courbes (l'aire d'une polyligne inscrite) |
+| tolérance d'aplatissement, mesurée **contre la courbe vraie** (4 000 points par essai, 9 essais) | pire rapport **0,995** — la tolérance est tenue, et de peu, c'est la mesure qui le dit |
+| table des couleurs nommées | **143 noms relevés de `jspdf.umd.min.js`**, tous identiques ; six orthographes en plus, déclarées |
+| refus | 7 refus nommés, et « ce qui décrit » compté sans arrêter la lecture |
 
 ### B9. Profil ICC (module 7) 🟡 → ✅ (fait, et mesuré)
 
@@ -666,6 +735,7 @@ Du plus utile au moins utile, en tenant compte du risque :
 | ~~12~~ | ~~Conteneur ZIP~~ | ✅ **fait et mesuré** — 10 fichiers réels, 56 entrées, 569 826 octets identiques |
 | ~~13~~ | ~~Import docx / odt / idml~~ | ✅ **fait et mesuré** — 1 414 paragraphes identiques, invariante sur 328 000 caractères |
 | ~~14~~ | ~~PostScript / EPS~~ | ✅ **fait et mesuré** — 4 témoins, tolérance vérifiée sur la courbe vraie, 20 refus nommés |
+| ~~15~~ | ~~Dessin SVG~~ | ✅ **fait et mesuré** — 40 fichiers réels, sommets et aires contre un lecteur écrit à part |
 
 **Ce qui est porté n'est pas pour autant branché, et ce qui est branché n'est
 pas pour autant utile.** Les leçons, à relire avant de brancher le composant
@@ -718,6 +788,7 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | **Conteneur ZIP** | lecteur ZIP écrit à part (annuaire + `inflateRawSync`), archives fabriquées à la main | **56 entrées, 569 826 octets identiques au bit près**, 14 refus nommés, saveur reconnue |
 | **Import docx / odt / idml** | analyseur XML et extracteurs écrits à part, plus une invariante de texte | **1 414 paragraphes identiques**, 328 000 caractères sans perte, 3 fautes du noyau trouvées |
 | **Import PostScript** | interpréteur PostScript écrit à part (lexeur, pile, matrice, aplatissement) | **174 sommets identiques à 1e-6**, aires connues exactes, tolérance mesurée sur la courbe vraie |
+| **Import SVG** | analyseur XML, lecteur de `d`, matrice, arcs et aplatissement écrits à part | **40 fichiers réels, 172 formes, 10 404 sommets identiques à 5e-10**, aires connues exactes, table des couleurs relevée de `jspdf.umd.min.js` (143 noms) |
 | **Branchement césure (colle)** | `hypher.js` + dictionnaires du produit | **5 langues, 2 433 mots identiques** |
 | **Branchement césure (livré)** | fichiers réels de `superprint/app/JS/` | **2 129 mots × 5 langues, réversibilité et repli** |
 | **Branchement couleurs (livré)** | `_spCmykConvert` **extraite de `main.js`**, colle et module réels | **40 000 cas, écart 0**, et `desactiver()` repose l'originale |

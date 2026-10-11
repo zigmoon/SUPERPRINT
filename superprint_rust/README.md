@@ -29,8 +29,9 @@ documente les défauts **mesurés** sur la chaîne d'export PDF (fichiers de
 
 ## État actuel
 
-**Cinq crates, testés et validés — dont un module WebAssembly réellement
-chargeable par un navigateur.**
+**Dix-sept crates, testés et validés — dont deux modules WebAssembly réellement
+chargeables par un navigateur.** La liste ci-dessous n'est pas exhaustive :
+l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 
 - **`superprint-core`** — primitives pures : `units` (mm/pt/px/cm/in),
   `color` (RVB/CMJN/luma), `geometry` (fond perdu, traits de coupe).
@@ -80,6 +81,18 @@ chargeable par un navigateur.**
 - **`superprint-image`** — **module n° 4** : **traitement d'image**. Tampons
   typés RVB/gris, **réduction** bilinéaire ou plus proche voisin, ciblage DPI,
   filtre PDF **RunLength**.
+- **`superprint-doc`** — **import de documents et de dessin**. Les formats
+  documentaires `.docx`, `.odt` et `.idml`, analysés depuis le conteneur ZIP
+  (`superprint-zip`) : paragraphes, styles, niveau de titre, listes, tableaux,
+  images et format de page, chaînables vers la pagination. Et le **dessin SVG** :
+  les commandes de chemin de la spécification (`M L H V C S Q T A Z`, absolues et
+  relatives), `rect` à coins arrondis, `circle`, `ellipse`, `line`, `polyline`,
+  `polygon`, `transform`, unités CSS, attributs de présentation hérités — les
+  courbes **aplaties** par la même géométrie que l'interpréteur PostScript, dans le
+  repère du canevas. Ce dont l'ignorance **perdrait du dessin** est refusé en le
+  nommant (`image`, `use`, dégradés, `clip-path`, feuille `<style>`), et ce qui
+  **décrit sans dessiner** est compté. Le contrôle confronte le noyau à un lecteur
+  écrit à part sur **40 SVG réels du dépôt, 172 formes, 10 404 sommets**.
 - **`superprint-wasm`** — **la frontière C**, et le seul crate en `cdylib` :
   c'est lui qui produit le `.wasm` du navigateur. **32 fonctions** exposées
   (unités, couleurs sur octets, luminance, RunLength, réduction, page de
@@ -90,12 +103,16 @@ chargeable par un navigateur.**
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **268 tests unitaires** (`superprint-compress` 35,
-> `superprint-core` 12, `superprint-font` 31, `superprint-image` 16,
-> `superprint-pdf` 85, `superprint-text` 69, `superprint-wasm` 20) — tous verts.
+> wasm32-unknown-unknown`, et **937 tests unitaires** (`superprint-compress` 36,
+> `superprint-core` 37, `superprint-doc` 117, `superprint-eps-wasm` 5,
+> `superprint-flow` 51, `superprint-font` 31, `superprint-icc` 21,
+> `superprint-image` 110, `superprint-impose` 35, `superprint-path` 71,
+> `superprint-pdf` 109, `superprint-preflight` 45, `superprint-ps` 86,
+> `superprint-swatch` 46, `superprint-text` 73, `superprint-wasm` 38,
+> `superprint-zip` 26) — tous verts.
 >
-> Le module livrable est construit dans **`dist/superprint_core.wasm`** (≈ 273 Ko),
-> chargé **sans le moindre import**, et validé sur six points :
+> Le module livrable est construit dans **`dist/superprint_core.wasm`** (≈ 380 Ko),
+> chargé **sans le moindre import**, et validé sur huit points :
 >
 > - **parité croisée** — sur 250 000 pixels, RVB→CMJN, CMJN→RVB et la luminance
 >   sont **identiques au bit près** à l'implémentation écrite à la main en WAT
@@ -120,20 +137,27 @@ chargeable par un navigateur.**
 >   comparés **mot pour mot** sur 2 597 mots de prose française et 84 cas
 >   pièges : les six valeurs comparées sont identiques ;
 > - **compression** — le codec DEFLATE est confronté au **`zlib` de Node**, dans
->   les deux sens, sur 15 jeux ; les flux abîmés sont refusés nommément.
+>   les deux sens, sur 15 jeux ; les flux abîmés sont refusés nommément ;
+> - **import SVG** — un lecteur écrit à part (son analyseur XML, son lecteur de
+>   `d`, sa matrice, ses arcs, son aplatissement) donne **les mêmes 10 404
+>   sommets à 5e-10 près** sur les 40 SVG réels du dépôt, et la table des couleurs
+>   nommées est relevée de `jspdf.umd.min.js`, un par un.
 >
 > Un `pwsh -File scripts/check.ps1` enchaîne tout, validation comprise.
 
-Aucun module n'est encore appelé par l'application. **Le branchement, lui, est
-prêt** : `web/superprint-core.js` charge le noyau et expose des fonctions simples,
-avec un **repli JavaScript** dont la parité est mesurée octet pour octet. Voir
-`web/BRANCHEMENT.md`. `superprint/` n'a **pas** été modifié.
+Aucun module n'est encore appelé par l'application, **sauf trois** : la césure, la
+conversion RVB → CMJN et l'import PostScript, branchés sans modifier `main.js`
+(voir `docs/PORTAGE.md`, section F). **Le reste du branchement est prêt** :
+`web/superprint-core.js` charge le noyau et expose des fonctions simples, avec un
+**repli JavaScript** dont la parité est mesurée octet pour octet. Voir
+`web/BRANCHEMENT.md`.
 
-Le noyau représente à ce jour **environ 9 %** du JavaScript applicatif de
-SuperPrint — et ce chiffre, comme tout le reste, est mesuré, pas estimé :
-`docs/PORTAGE.md` donne l'inventaire **étape par étape, fonction par fonction**,
-avec ce qui est porté, ce qui reste à porter, et ce qui **ne doit pas** l'être
-(interface, WebGL, WebRTC, service worker, moteurs C compilés).
+Le noyau représente à ce jour **37,4 %** du JavaScript applicatif de
+SuperPrint — en lignes, c'est le plus trompeur des quatre chiffres qui mesurent
+l'avancement : `docs/PORTAGE.md` les donne tous les quatre, avec l'inventaire
+**étape par étape, fonction par fonction**, ce qui est porté, ce qui reste à
+porter, et ce qui **ne doit pas** l'être (interface, WebGL, WebRTC, service
+worker, moteurs C compilés).
 
 ## Prérequis
 

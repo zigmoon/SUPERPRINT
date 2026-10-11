@@ -218,6 +218,18 @@ Step 'import : docx, odt et idml contre un extracteur independant, et invariante
   if ($LASTEXITCODE -eq 0) { node scripts/validate-doc.mjs }
 }
 
+# Validation de l'IMPORT SVG : un lecteur ECRIT A PART (son propre analyseur XML,
+# son propre lecteur de commandes de chemin, sa propre matrice, sa propre
+# conversion d'arc et son propre aplatissement) confronte le noyau sur les 40 SVG
+# reels du depot, FORME PAR FORME et SOMMET PAR SOMMET. Puis les aires connues par
+# construction, la tolerance d'aplatissement mesuree contre la courbe vraie, les
+# refus nommes, et la table des couleurs nommees comparee a celle du produit
+# (`jspdf.umd.min.js`, lue sans etre modifiee).
+Step 'import SVG : 40 SVG reels, sommets et aires, tolerance, refus, couleurs' {
+  & $cargo build -p superprint-doc --example svg_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-svg.mjs }
+}
+
 # Validation de l'IMPORT POSTSCRIPT : .eps, et les .ai enregistres en EPS. Le
 # controle confronte le noyau a un INTERPRETEUR ECRIT A PART (son propre lexeur,
 # sa propre pile, sa propre matrice, son propre aplatissement), dessin par dessin

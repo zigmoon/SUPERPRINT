@@ -18,6 +18,7 @@ name = "superprint-doc"
 version = "0.2.0"
 dependencies = [
  "superprint-flow",
+ "superprint-path",
  "superprint-zip",
 ]
 

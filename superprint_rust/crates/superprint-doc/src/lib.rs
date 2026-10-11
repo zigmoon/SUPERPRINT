@@ -1,17 +1,23 @@
-//! # superprint-doc — import de documents
+//! # superprint-doc — import de documents et de dessin vectoriel
 //!
 //! ## Ce que ce crate fait
 //!
-//! Il ouvre un `.docx`, un `.odt` ou un `.idml` et en tire ce dont une mise en
-//! page a besoin : **les paragraphes**, leur **style**, leur **niveau de titre**,
-//! les **images** qu'ils appellent, et le **format de page**.
+//! **Trois formats de texte** — il ouvre un `.docx`, un `.odt` ou un `.idml` et
+//! en tire ce dont une mise en page a besoin : **les paragraphes**, leur
+//! **style**, leur **niveau de titre**, les **images** qu'ils appellent, et le
+//! **format de page**.
+//!
+//! **Un format de dessin** — il ouvre un **SVG** ([`svg`]) et en tire les
+//! **formes** : commandes de chemin, formes élémentaires, transformations,
+//! attributs de présentation, aplatis en polylignes dans le repère du canevas.
 //!
 //! Le produit s'appuyait pour cela sur Mammoth (621 Ko) et sur `jszip` pour
-//! `.docx`, sur `DOMParser` pour `.odt`, et sur du code maison pour `.idml`. Ici,
+//! `.docx`, sur `DOMParser` pour `.odt`, sur du code maison pour `.idml`, et sur
+//! **le navigateur lui-même** pour le SVG (`fabric.loadSVGFromString`). Ici,
 //! tout est calculé : conteneur ([`superprint_zip`]), analyse XML ([`xml`]),
-//! lecture des trois formats.
+//! lecture des trois formats de texte, et lecture du dessin vectoriel.
 //!
-//! ## Les trois formats, et ce qui les rapproche
+//! ## Les trois formats de texte, et ce qui les rapproche
 //!
 //! | Format | Racine du texte | Style | Format de page |
 //! |---|---|---|---|
@@ -19,7 +25,7 @@
 //! | `.odt` | `content.xml`, éléments `text:p` et `text:h` | `text:style-name` | `style:page-layout` (`fo:page-width`) |
 //! | `.idml` | `Stories/Story_*.xml`, élément `Content` | `ParagraphStyleRange/@AppliedParagraphStyle` | `Spreads/*.xml`, `Page/@GeometricBounds` (points) |
 //!
-//! ## La sortie est un [`Memoire`], et elle sait se chaîner
+//! ## La sortie du texte est un [`Memoire`], et elle sait se chaîner
 //!
 //! [`Memoire::fluidifier`] rend un [`superprint_flow::Flux`] — donc un document
 //! importé peut être **paginé** par le reste du noyau, sans conversion
@@ -27,6 +33,14 @@
 //! `<text:line-break/>` dans ODF) devient un paragraphe sans retrait de première
 //! ligne : c'est exactement ce qu'il est — la même phrase qui continue à la
 //! ligne suivante.
+//!
+//! ## La sortie du dessin est un [`svg::DocumentSvg`]
+//!
+//! [`svg::Forme`] porte des polylignes **déjà aplaties** dans le repère du
+//! canevas, avec leur remplissage et leur contour ; c'est la même forme de
+//! sortie que l'interpréteur PostScript (`superprint-ps`), et la même convention
+//! de fermeture (le premier point est répété). Un SVG lu est donc directement
+//! réutilisable par la géométrie booléenne ou par l'écrivain PDF.
 //!
 //! ## Ce qui est refusé, et ce qui est avoué
 //!
@@ -41,7 +55,11 @@
 //!   perdues — c'est la limite du modèle de [`Paragraphe`], et elle est dite ;
 //! - un `.ai` moderne est un **PDF**, pas du PostScript : ce crate ne l'ouvre
 //!   pas, et le détecteur de format le dit ([`superprint_zip::lecture::ressemble_a_une_archive`]
-//!   aidant, via `zip_dump format`).
+//!   aidant, via `zip_dump format`) ;
+//! - en SVG, tout ce dont l'ignorance **perd du dessin** est refusé (`image`,
+//!   `use`, un dégradé, un `clip-path`, une feuille `<style>`), et tout ce qui
+//!   **décrit** sans dessiner (`defs`, `title`, `metadata`…) est **compté** dans
+//!   [`svg::DocumentSvg::non_rendus`].
 //!
 //! Feuille de route : `docs/PORTAGE.md` (domaine « import de documents »).
 
@@ -51,6 +69,7 @@
 pub mod docx;
 pub mod idml;
 pub mod odt;
+pub mod svg;
 pub mod xml;
 
 use std::fmt;

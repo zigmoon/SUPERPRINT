@@ -174,11 +174,18 @@ check(
 // ── 3. Parité, mot pour mot ─────────────────────────────────────────────────
 titre('parité : moteur installé contre moteur du produit');
 
-const prose = (
-  await Promise.all(
-    ['faq.html', 'ORGANISATION.md', 'TRADEMARKS.md'].map((nom) => readFile(join(root, '..', 'superprint', nom), 'utf8')),
-  )
-).join('\n');
+// Le corpus est de la prose française **du produit**, lue sans être modifiée.
+// Les trois fichiers cités ne sont pas garantis présents : l'application en a
+// déplacé au fil des versions. Ce qui compte est le corpus, donc on lit ceux qui
+// existent et on REFUSE de mesurer si la prose n'est pas suffisante — un corpus
+// trop court rendrait la parité facile sans le dire.
+const SOURCES_DE_PROSE = ['faq.html', 'ORGANISATION.md', 'TRADEMARKS.md', 'NOTICE.md', 'llms.txt'];
+const lues = [];
+for (const nom of SOURCES_DE_PROSE) {
+  const chemin = join(root, '..', 'superprint', nom);
+  if (existsSync(chemin)) lues.push(await readFile(chemin, 'utf8'));
+}
+const prose = lues.join('\n');
 const MOT_PROPRE = /^[\p{Letter}\p{Mn}'\u2019\u2010\u2011\u2013\u2014-]+$/u;
 const corpus = [
   ...new Set(

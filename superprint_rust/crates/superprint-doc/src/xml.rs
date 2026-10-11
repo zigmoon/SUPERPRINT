@@ -12,14 +12,16 @@
 //!
 //! | Élément | État |
 //! |---|---|
-//! | Déclaration `<?xml … ?>`, commentaires, `<!DOCTYPE …>`, sections `CDATA` | ✅ ignorés proprement |
+//! | Déclaration `<?xml … ?>`, commentaires, sections `CDATA` | ✅ ignorés proprement |
 //! | Attributs entre guillemets simples ou doubles, `>` dans une valeur | ✅ |
 //! | Entités `&amp;` `&lt;` `&gt;` `&quot;` `&apos;` | ✅ les cinq du XML |
 //! | Entités numériques `&#160;` et `&#x2019;` | ✅ |
 //! | Quelques entités nommées du HTML (`&nbsp;`, `&mdash;`…) | ✅ et **listées** : XML ne les définit pas, mais les documents réels en contiennent |
 //! | Préfixes d'espace de noms (`w:`, `text:`, `fo:`…) | ✅ conservés tels quels |
-//! | DTD interne, entités définies par le document | ❌ **refusées** en tant qu'entité inconnue |
+//! | **Déclarations `<!ENTITY nom "valeur">` du sous-ensemble interne** | ✅ résolues, et c'est **nécessaire** : Illustrator écrit `xmlns:x="&ns_extend;"` dans ses SVG |
+//! | Entité qui s'appelle elle-même, ou cycle entre entités | ❌ **refusées** ([`ErreurXml::EntiteRecursive`]) |
 //! | Entités externes (`SYSTEM`, `PUBLIC`) | ❌ **refusées** : une entité externe est un accès au réseau ou au disque |
+//! | Entité paramètre (`<!ENTITY % …>`, `%nom;`) | ❌ **non étendues** : elles décrivent la grammaire du DTD, pas le contenu du document |
 //!
 //! ## Comment on désigne un élément
 //!
@@ -38,6 +40,20 @@ use std::fmt;
 /// du récursif. Refuser au-delà de cette profondeur est plus utile que de
 /// planter : aucun document de traitement de texte réel n'atteint 128 niveaux.
 pub const PROFONDEUR_MAX: usize = 128;
+
+/// Nombre maximal d'entités déclarées que le sous-ensemble interne peut porter.
+///
+/// Les fichiers réels en déclarent une poignée (Illustrator : huit, pour ses
+/// espaces de noms). Un document qui en déclare des milliers n'est pas une mise
+/// en page ; c'est un fichier hostile, et la table d'entités est le bon endroit
+/// pour le dire.
+pub const ENTITES_MAX: usize = 256;
+
+/// Profondeur maximale de développement d'une entité.
+///
+/// `<!ENTITY a "&b;">` est licite ; `<!ENTITY a "&a;">` ne l'est pas. Une borne
+/// explicite évite d'avoir à démontrer l'absence de cycle.
+pub const ENTITES_PROFONDEUR_MAX: usize = 8;
 
 /// ERREUR D'ANALYSE
 ///
@@ -82,6 +98,25 @@ pub enum ErreurXml {
     },
     /// Le document imbrique plus de [`PROFONDEUR_MAX`] balises.
     TropProfond,
+    /// Une déclaration `<!ENTITY nom SYSTEM "…">` désigne une ressource
+    /// extérieure : entité **refusée**.
+    ///
+    /// Une entité externe est un accès au réseau ou au disque déclenché par le
+    /// contenu d'un fichier. Un import de document n'a jamais besoin de cela.
+    EntiteExterne {
+        /// Nom de l'entité déclarée.
+        nom: String,
+    },
+    /// Le sous-ensemble interne déclare plus de [`ENTITES_MAX`] entités.
+    TropDEntites {
+        /// Nombre de déclarations lues avant de refuser.
+        compte: usize,
+    },
+    /// Une entité se référence elle-même, directement ou par un cycle.
+    EntiteRecursive {
+        /// Nom de l'entité qui boucle.
+        nom: String,
+    },
     /// Aucun élément racine n'a été trouvé.
     SansRacine,
 }
@@ -110,12 +145,131 @@ impl fmt::Display for ErreurXml {
                 f,
                 "document imbriqué à plus de {PROFONDEUR_MAX} niveaux : refusé plutôt que d'épuiser la pile"
             ),
+            Self::EntiteExterne { nom } => write!(
+                f,
+                "l'entité {nom} est déclarée avec SYSTEM ou PUBLIC : une entité externe est \
+                 un accès au réseau ou au disque, hors du sujet d'un import"
+            ),
+            Self::TropDEntites { compte } => write!(
+                f,
+                "plus de {ENTITES_MAX} entités déclarées ({compte} lues) : refusé plutôt que \
+                 de croire à un document de mise en page"
+            ),
+            Self::EntiteRecursive { nom } => write!(
+                f,
+                "l'entité {nom} se référence elle-même : le développement ne s'arrêterait jamais"
+            ),
             Self::SansRacine => write!(f, "aucun élément racine dans le document"),
         }
     }
 }
 
 impl std::error::Error for ErreurXml {}
+
+/// Les entités générales déclarées par le sous-ensemble interne du `DOCTYPE`.
+///
+/// ## Pourquoi ce n'est pas un détail
+///
+/// Illustrator écrit ses espaces de noms en entités :
+///
+/// ```text
+/// <!DOCTYPE svg PUBLIC "…" "http://…/svg11-basic.dtd" [
+///   <!ENTITY ns_extend "http://ns.adobe.com/Extensibility/1.0/">
+///   <!ENTITY ns_ai "http://ns.adobe.com/AdobeIllustrator/10.0/">
+/// ]>
+/// <svg xmlns:x="&ns_extend;" xmlns:i="&ns_ai;" …>
+/// ```
+///
+/// Sans ces déclarations, `&ns_extend;` est une **entité inconnue** et le
+/// fichier est refusé. Et ce ne sont pas des fichiers exotiques : ce sont les
+/// deux logos du dépôt (`icons/sper_typo.svg`, `icons/studio_print_logo_blanc.svg`).
+///
+/// ## Ce que la table ne fait pas
+///
+/// - les entités **externes** (`SYSTEM`, `PUBLIC`) sont refusées à la
+///   déclaration ([`ErreurXml::EntiteExterne`]) ;
+/// - les entités **paramètre** (`%nom;`) ne sont pas étendues : elles décrivent
+///   la grammaire du DTD, jamais le contenu du document ;
+/// - un cycle est refusé ([`ErreurXml::EntiteRecursive`]) au lieu de boucler.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Entites {
+    declarations: Vec<(String, String)>,
+}
+
+impl Entites {
+    /// Le nombre d'entités déclarées.
+    #[must_use]
+    pub fn nombre(&self) -> usize {
+        self.declarations.len()
+    }
+
+    /// Les noms déclarés, dans l'ordre du document.
+    pub fn noms(&self) -> impl Iterator<Item = &str> {
+        self.declarations.iter().map(|(nom, _)| nom.as_str())
+    }
+
+    /// La valeur d'une entité, `&autre;` internes déjà développés.
+    ///
+    /// Rend `None` si le développement boucle ou dépasse
+    /// [`ENTITES_PROFONDEUR_MAX`]. Une référence à une entité **inconnue** est
+    /// laissée telle quelle : c'est [`resoudre_entites_avec`] qui la signalera,
+    /// avec le nom fautif.
+    #[must_use]
+    pub fn valeur(&self, nom: &str) -> Option<String> {
+        let mut courant = self.valeur_simple(nom)?.to_string();
+        let mut vus: Vec<String> = vec![nom.to_string()];
+        for _ in 0..ENTITES_PROFONDEUR_MAX {
+            let caracteres: Vec<char> = courant.chars().collect();
+            let mut suivant = String::with_capacity(courant.len());
+            let mut i = 0usize;
+            let mut reference = false;
+            while i < caracteres.len() {
+                if caracteres[i] == '&' {
+                    if let Some((nom_suivant, fin)) = lire_reference(&caracteres, i) {
+                        if let Some(valeur) = self.valeur_simple(&nom_suivant) {
+                            if vus.contains(&nom_suivant) {
+                                return None;
+                            }
+                            vus.push(nom_suivant);
+                            suivant.push_str(valeur);
+                            reference = true;
+                            i = fin;
+                            continue;
+                        }
+                    }
+                }
+                suivant.push(caracteres[i]);
+                i += 1;
+            }
+            if !reference {
+                return Some(suivant);
+            }
+            courant = suivant;
+        }
+        None
+    }
+
+    fn valeur_simple(&self, nom: &str) -> Option<&str> {
+        self.declarations
+            .iter()
+            .find(|(n, _)| n == nom)
+            .map(|(_, v)| v.as_str())
+    }
+}
+
+/// Lit le nom d'une entité à la position d'un `&`, et rend la position après le
+/// `;`.
+fn lire_reference(caracteres: &[char], position: usize) -> Option<(String, usize)> {
+    let mut i = position + 1;
+    while i < caracteres.len() && caracteres[i] != ';' && caracteres[i] != '&' && i - position < 41
+    {
+        i += 1;
+    }
+    if i >= caracteres.len() || caracteres[i] != ';' || i == position + 1 {
+        return None;
+    }
+    Some((caracteres[position + 1..i].iter().collect(), i + 1))
+}
 
 /// Un nœud de l'arbre : un élément, ou du texte.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -248,11 +402,26 @@ impl Element {
 ///
 /// Voir [`ErreurXml`].
 pub fn analyser(texte: &str) -> Result<Element, ErreurXml> {
+    analyser_avec_entites(texte).map(|(racine, _)| racine)
+}
+
+/// Analyse un document XML et rend son élément racine **et** les entités
+/// générales qu'il déclare.
+///
+/// C'est la même analyse que [`analyser`], à ceci près qu'elle rend aussi la
+/// table des entités : utile pour dire, dans un rapport d'import, ce que le
+/// document exigeait.
+///
+/// # Erreurs
+///
+/// Voir [`ErreurXml`].
+pub fn analyser_avec_entites(texte: &str) -> Result<(Element, Entites), ErreurXml> {
     let octets: Vec<char> = texte.chars().collect();
     let mut position = 0usize;
     let mut racine: Option<Element> = None;
+    let mut entites = Entites::default();
     loop {
-        ignorer_bruit(&octets, &mut position);
+        ignorer_bruit(&octets, &mut position, &mut entites)?;
         if position >= octets.len() {
             break;
         }
@@ -274,21 +443,31 @@ pub fn analyser(texte: &str) -> Result<Element, ErreurXml> {
             // Un deuxième élément racine : le XML bien formé n'en admet qu'un.
             return Err(ErreurXml::SansRacine);
         }
-        let (element, suivante) = lire_element(&octets, position, 0)?;
+        let (element, suivante) = lire_element(&octets, position, 0, &entites)?;
         racine = Some(element);
         position = suivante;
     }
-    racine.ok_or(ErreurXml::SansRacine)
+    racine
+        .map(|racine| (racine, entites))
+        .ok_or(ErreurXml::SansRacine)
 }
 
 /// Saute ce qui n'apporte rien : déclaration, commentaires, doctype.
-fn ignorer_bruit(octets: &[char], position: &mut usize) {
+///
+/// Le `DOCTYPE` n'est pas seulement sauté : son **sous-ensemble interne** est
+/// lu, parce que c'est là que les entités générales sont déclarées
+/// ([`Entites`]).
+fn ignorer_bruit(
+    octets: &[char],
+    position: &mut usize,
+    entites: &mut Entites,
+) -> Result<(), ErreurXml> {
     loop {
         while *position < octets.len() && octets[*position].is_whitespace() {
             *position += 1;
         }
         if *position + 1 >= octets.len() || octets[*position] != '<' {
-            return;
+            return Ok(());
         }
         let suivant = octets[*position + 1];
         // `<?xml …?>` et `<?autre …?>` : on va jusqu'au `?>`.
@@ -311,23 +490,206 @@ fn ignorer_bruit(octets: &[char], position: &mut usize) {
             *position = (i + 3).min(octets.len());
             continue;
         }
-        // `<!DOCTYPE …>` — sauté sans être interprété.
+        // `<!DOCTYPE …>` — ses entités générales sont lues, le reste est sauté.
         if suivant == '!' {
-            let mut i = *position + 2;
-            let mut crochets = 0usize;
-            while i < octets.len() {
-                match octets[i] {
-                    '[' => crochets += 1,
-                    ']' => crochets = crochets.saturating_sub(1),
-                    '>' if crochets == 0 => break,
-                    _ => {}
-                }
-                i += 1;
-            }
-            *position = (i + 1).min(octets.len());
+            *position = lire_doctype(octets, *position, entites)?;
             continue;
         }
-        return;
+        return Ok(());
+    }
+}
+
+/// Lit un `<!DOCTYPE …>`, enregistre ses entités générales et rend la position
+/// qui suit le `>` final.
+///
+/// Le sous-ensemble interne est délimité par `[` … `]`. Il est parcouru
+/// déclaration par déclaration ; ce qui n'est pas une `<!ENTITY>` (`<!ELEMENT>`,
+/// `<!ATTLIST>`, commentaire, instruction) est sauté sans être interprété.
+fn lire_doctype(octets: &[char], depart: usize, entites: &mut Entites) -> Result<usize, ErreurXml> {
+    // 1. Trouver la fin de la déclaration, `[` … `]` compris.
+    let mut i = depart + 2;
+    let mut crochets = 0usize;
+    let mut fin_sous_ensemble: Option<(usize, usize)> = None;
+    let mut guillemet: Option<char> = None;
+    while i < octets.len() {
+        let c = octets[i];
+        if let Some(q) = guillemet {
+            if c == q {
+                guillemet = None;
+            }
+            i += 1;
+            continue;
+        }
+        match c {
+            '"' | '\'' => guillemet = Some(c),
+            '[' => {
+                if crochets == 0 {
+                    fin_sous_ensemble = Some((i, 0));
+                }
+                crochets += 1;
+            }
+            ']' => {
+                if crochets == 1 {
+                    if let Some((debut, _)) = fin_sous_ensemble {
+                        fin_sous_ensemble = Some((debut, i));
+                    }
+                }
+                crochets = crochets.saturating_sub(1);
+            }
+            '>' if crochets == 0 => {
+                i += 1;
+                break;
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    let apres = i.min(octets.len());
+
+    // 2. Lire les déclarations du sous-ensemble interne, s'il y en a un.
+    if let Some((debut, fin)) = fin_sous_ensemble {
+        if fin > debut {
+            lire_sous_ensemble(octets, debut + 1, fin, entites)?;
+        }
+    }
+    Ok(apres)
+}
+
+/// Lit les déclarations d'entité générale d'un sous-ensemble interne.
+fn lire_sous_ensemble(
+    octets: &[char],
+    debut: usize,
+    fin: usize,
+    entites: &mut Entites,
+) -> Result<(), ErreurXml> {
+    let mut i = debut;
+    while i < fin {
+        // Sauter ce qui n'est pas une déclaration : espaces, commentaires,
+        // instructions, `%param;`.
+        if octets[i].is_whitespace() {
+            i += 1;
+            continue;
+        }
+        if octets[i] != '<' {
+            i += 1;
+            continue;
+        }
+        if octets.get(i + 1) == Some(&'!') && octets.get(i + 2) == Some(&'-') {
+            let mut j = i + 4;
+            while j + 2 < fin && !(octets[j] == '-' && octets[j + 1] == '-' && octets[j + 2] == '>')
+            {
+                j += 1;
+            }
+            i = (j + 3).min(fin);
+            continue;
+        }
+        if octets.get(i + 1) == Some(&'?') {
+            let mut j = i + 2;
+            while j + 1 < fin && !(octets[j] == '?' && octets[j + 1] == '>') {
+                j += 1;
+            }
+            i = (j + 2).min(fin);
+            continue;
+        }
+        if !mot_suit(octets, i + 2, "ENTITY", fin) {
+            // `<!ELEMENT …>`, `<!ATTLIST …>`, `<!NOTATION …>` : sautés jusqu'au
+            // `>`, guillemets respectés.
+            let mut j = i + 2;
+            let mut guillemet: Option<char> = None;
+            while j < fin {
+                let c = octets[j];
+                if let Some(q) = guillemet {
+                    if c == q {
+                        guillemet = None;
+                    }
+                } else if c == '"' || c == '\'' {
+                    guillemet = Some(c);
+                } else if c == '>' {
+                    break;
+                }
+                j += 1;
+            }
+            i = (j + 1).min(fin);
+            continue;
+        }
+        // `<!ENTITY …>` : le nom, puis la valeur.
+        let mut j = i + "<!ENTITY".len();
+        while j < fin && octets[j].is_whitespace() {
+            j += 1;
+        }
+        if octets.get(j) == Some(&'%') {
+            // Entité paramètre : elle décrit la grammaire du DTD, pas le
+            // contenu du document. Sautée, jamais étendue.
+            let mut k = j;
+            while k < fin && octets[k] != '>' {
+                k += 1;
+            }
+            i = (k + 1).min(fin);
+            continue;
+        }
+        let nom: String = {
+            let debut_nom = j;
+            while j < fin
+                && (octets[j].is_alphanumeric()
+                    || octets[j] == '_'
+                    || octets[j] == '-'
+                    || octets[j] == '.'
+                    || octets[j] == ':')
+            {
+                j += 1;
+            }
+            octets[debut_nom..j].iter().collect()
+        };
+        while j < fin && octets[j].is_whitespace() {
+            j += 1;
+        }
+        if mot_suit(octets, j, "SYSTEM", fin) || mot_suit(octets, j, "PUBLIC", fin) {
+            return Err(ErreurXml::EntiteExterne { nom });
+        }
+        let Some(&guillemet) = octets.get(j).filter(|c| **c == '"' || **c == '\'') else {
+            // Déclaration sans valeur littérale et sans SYSTEM/PUBLIC : rien à
+            // enregistrer. On saute, sans inventer de valeur.
+            let mut k = j;
+            while k < fin && octets[k] != '>' {
+                k += 1;
+            }
+            i = (k + 1).min(fin);
+            continue;
+        };
+        j += 1;
+        let debut_valeur = j;
+        while j < fin && octets[j] != guillemet {
+            j += 1;
+        }
+        let valeur: String = octets[debut_valeur..j.min(fin)].iter().collect();
+        if entites.declarations.len() >= ENTITES_MAX {
+            return Err(ErreurXml::TropDEntites {
+                compte: entites.declarations.len() + 1,
+            });
+        }
+        entites.declarations.push((nom, valeur));
+        i = (j + 1).min(fin);
+    }
+    Ok(())
+}
+
+/// Un mot-clé du DTD commence-t-il à cette position, suivi d'un blanc ou d'un
+/// `>` ?
+fn mot_suit(octets: &[char], position: usize, mot: &str, fin: usize) -> bool {
+    let longueur = mot.chars().count();
+    if position + longueur > fin {
+        return false;
+    }
+    if !mot
+        .chars()
+        .enumerate()
+        .all(|(rang, c)| octets.get(position + rang) == Some(&c))
+    {
+        return false;
+    }
+    match octets.get(position + longueur) {
+        None => true,
+        Some(c) => c.is_whitespace() || *c == '>' || *c == '[',
     }
 }
 
@@ -336,6 +698,7 @@ fn lire_element(
     octets: &[char],
     position: usize,
     profondeur: usize,
+    entites: &Entites,
 ) -> Result<(Element, usize), ErreurXml> {
     if profondeur >= PROFONDEUR_MAX {
         return Err(ErreurXml::TropProfond);
@@ -411,7 +774,7 @@ fn lire_element(
                             position: debut,
                         });
                     }
-                    valeur = resoudre_entites(&octets[debut..i])?;
+                    valeur = resoudre_entites_avec(&octets[debut..i], entites)?;
                     i += 1;
                 }
                 attributs.push((cle, valeur));
@@ -442,7 +805,7 @@ fn lire_element(
                         position: i,
                     });
                 }
-                pousser_texte(&mut enfants, &mut texte_courant)?;
+                pousser_texte(&mut enfants, &mut texte_courant, entites)?;
                 return Ok((
                     Element {
                         nom,
@@ -456,7 +819,7 @@ fn lire_element(
                 // Section CDATA : son contenu est **littéral**. Les entités n'y
                 // sont pas résolues — c'est la définition même de CDATA, et
                 // les résoudre changerait le sens du document.
-                pousser_texte(&mut enfants, &mut texte_courant)?;
+                pousser_texte(&mut enfants, &mut texte_courant, entites)?;
                 let debut = i + 9;
                 let mut j = debut;
                 while j + 2 < octets.len()
@@ -474,15 +837,16 @@ fn lire_element(
             // contenu : c'est du bruit, on le saute et on continue.
             if octets.get(i + 1) == Some(&'!') || octets.get(i + 1) == Some(&'?') {
                 let mut j = i;
-                ignorer_bruit(octets, &mut j);
+                let mut bruit = Entites::default();
+                ignorer_bruit(octets, &mut j, &mut bruit)?;
                 if j != i {
-                    pousser_texte(&mut enfants, &mut texte_courant)?;
+                    pousser_texte(&mut enfants, &mut texte_courant, entites)?;
                     i = j;
                     continue;
                 }
             }
-            pousser_texte(&mut enfants, &mut texte_courant)?;
-            let (enfant, suivante) = lire_element(octets, i, profondeur + 1)?;
+            pousser_texte(&mut enfants, &mut texte_courant, entites)?;
+            let (enfant, suivante) = lire_element(octets, i, profondeur + 1, entites)?;
             enfants.push(Noeud::Element(enfant));
             i = suivante;
             continue;
@@ -499,12 +863,16 @@ fn lire_element(
 /// garantit qu'aucun texte n'échappe à la résolution des entités — c'était un
 /// vrai défaut : les attributs étaient résolus, le texte ne l'était pas, et
 /// `&amp;` s'affichait littéralement dans un document contenant « AT&T ».
-fn pousser_texte(enfants: &mut Vec<Noeud>, brut: &mut String) -> Result<(), ErreurXml> {
+fn pousser_texte(
+    enfants: &mut Vec<Noeud>,
+    brut: &mut String,
+    entites: &Entites,
+) -> Result<(), ErreurXml> {
     if brut.is_empty() {
         return Ok(());
     }
     let caracteres: Vec<char> = brut.chars().collect();
-    let texte = resoudre_entites(&caracteres)?;
+    let texte = resoudre_entites_avec(&caracteres, entites)?;
     brut.clear();
     enfants.push(Noeud::Texte(texte));
     Ok(())
@@ -557,10 +925,25 @@ const ENTITES_HTML: &[(&str, &str)] = &[
 
 /// Résout les entités d'un fragment de texte.
 ///
+/// Les cinq entités du XML, les entités numériques et les entités HTML connues,
+/// **sans** les entités déclarées par le document. Pour celles-ci, voir
+/// [`resoudre_entites_avec`].
+///
 /// # Erreurs
 ///
 /// [`ErreurXml::EntiteInconnue`] ou [`ErreurXml::EntiteNumeriqueInvalide`].
 pub fn resoudre_entites(fragment: &[char]) -> Result<String, ErreurXml> {
+    resoudre_entites_avec(fragment, &Entites::default())
+}
+
+/// Résout les entités d'un fragment, **entités déclarées comprises**.
+///
+/// # Erreurs
+///
+/// [`ErreurXml::EntiteInconnue`], [`ErreurXml::EntiteNumeriqueInvalide`], ou
+/// [`ErreurXml::EntiteRecursive`] quand une entité déclarée se référence
+/// elle-même.
+pub fn resoudre_entites_avec(fragment: &[char], entites: &Entites) -> Result<String, ErreurXml> {
     let mut sortie = String::with_capacity(fragment.len());
     let mut i = 0usize;
     while i < fragment.len() {
@@ -616,9 +999,18 @@ pub fn resoudre_entites(fragment: &[char]) -> Result<String, ErreurXml> {
                 "gt" => ">".to_string(),
                 "quot" => "\"".to_string(),
                 "apos" => "'".to_string(),
-                autre => match ENTITES_HTML.iter().find(|(n, _)| *n == autre) {
-                    Some((_, remplacement)) => (*remplacement).to_string(),
-                    None => return Err(ErreurXml::EntiteInconnue { nom }),
+                "amp" => "&".to_string(),
+                autre => match entites.valeur(autre) {
+                    Some(valeur) => valeur,
+                    None if entites.noms().any(|n| n == autre) => {
+                        return Err(ErreurXml::EntiteRecursive {
+                            nom: autre.to_string(),
+                        })
+                    }
+                    None => match ENTITES_HTML.iter().find(|(n, _)| *n == autre) {
+                        Some((_, remplacement)) => (*remplacement).to_string(),
+                        None => return Err(ErreurXml::EntiteInconnue { nom }),
+                    },
                 },
             }
         };
@@ -649,6 +1041,106 @@ mod tests {
         let racine = analyser(xml).unwrap();
         assert_eq!(racine.nom, "racine");
         assert_eq!(racine.chercher("a").len(), 1);
+    }
+
+    #[test]
+    fn entites_du_sous_ensemble_interne_sont_resolues() {
+        // La forme exacte d'Illustrator : les espaces de noms sont des entités.
+        let xml = "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1 Basic//EN\" \
+                   \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-basic.dtd\" [\n\
+                     <!ENTITY ns_extend \"http://ns.adobe.com/Extensibility/1.0/\">\n\
+                     <!ENTITY ns_ai 'http://ns.adobe.com/AdobeIllustrator/10.0/'>\n\
+                   ]>\n\
+                   <svg xmlns:x=\"&ns_extend;\" xmlns:i=\"&ns_ai;\">café</svg>";
+        let (racine, entites) = analyser_avec_entites(xml).unwrap();
+        assert_eq!(entites.nombre(), 2);
+        assert_eq!(
+            racine.attribut("xmlns:x"),
+            Some("http://ns.adobe.com/Extensibility/1.0/")
+        );
+        assert_eq!(
+            racine.attribut("xmlns:i"),
+            Some("http://ns.adobe.com/AdobeIllustrator/10.0/")
+        );
+        assert_eq!(racine.texte(), "café");
+    }
+
+    #[test]
+    fn une_entite_peut_en_appeler_une_autre() {
+        let xml = "<!DOCTYPE a [ <!ENTITY base \"http://exemple/\"> \
+                   <!ENTITY chemin \"&base;chemin\"> ]>\
+                   <a href=\"&chemin;\"/>";
+        let racine = analyser(xml).unwrap();
+        assert_eq!(racine.attribut("href"), Some("http://exemple/chemin"));
+    }
+
+    #[test]
+    fn une_entite_externe_est_refusee_en_la_nommant() {
+        let xml = "<!DOCTYPE a [ <!ENTITY ext SYSTEM \"http://exemple/x\"> ]><a/>";
+        let erreur = analyser(xml).unwrap_err();
+        assert!(
+            matches!(&erreur, ErreurXml::EntiteExterne { nom } if nom == "ext"),
+            "{erreur:?}"
+        );
+        assert!(erreur.to_string().contains("ext"), "{erreur}");
+    }
+
+    #[test]
+    fn une_entite_qui_se_reference_elle_meme_est_refusee() {
+        let xml = "<!DOCTYPE a [ <!ENTITY boucle \"&boucle;\"> ]><a x=\"&boucle;\"/>";
+        let erreur = analyser(xml).unwrap_err();
+        assert!(
+            matches!(&erreur, ErreurXml::EntiteRecursive { nom } if nom == "boucle"),
+            "{erreur:?}"
+        );
+    }
+
+    #[test]
+    fn une_entite_parametre_est_sautee_sans_etre_etendue() {
+        let xml = "<!DOCTYPE a [ <!ENTITY % forme \"(a|b)\"> <!ENTITY garde \"ok\"> ]>\
+                   <a x=\"&garde;\"/>";
+        let (racine, entites) = analyser_avec_entites(xml).unwrap();
+        assert_eq!(entites.nombre(), 1);
+        assert_eq!(racine.attribut("x"), Some("ok"));
+    }
+
+    #[test]
+    fn les_declarations_non_entite_sont_sautees() {
+        // `<!ATTLIST>` contient des `>` dans des valeurs entre guillemets : le
+        // découpage doit les respecter, sinon la déclaration suivante serait
+        // lue de travers.
+        let xml = "<!DOCTYPE a [\n\
+                     <!ELEMENT a (#PCDATA)>\n\
+                     <!ATTLIST a x CDATA \"a>b\" y CDATA \"y\">\n\
+                     <!ENTITY apres \"bonjour\">\n\
+                   ]>\n\
+                   <a t=\"&apres;\"/>";
+        let racine = analyser(xml).unwrap();
+        assert_eq!(racine.attribut("t"), Some("bonjour"));
+    }
+
+    #[test]
+    fn trop_d_entites_est_refuse() {
+        let mut xml = String::from("<!DOCTYPE a [");
+        for i in 0..(ENTITES_MAX + 1) {
+            xml.push_str(&format!("<!ENTITY e{i} \"v\">"));
+        }
+        xml.push_str("]><a/>");
+        let erreur = analyser(&xml).unwrap_err();
+        assert!(
+            matches!(erreur, ErreurXml::TropDEntites { .. }),
+            "{erreur:?}"
+        );
+    }
+
+    #[test]
+    fn une_entite_inconnue_est_toujours_refusee() {
+        let xml = "<!DOCTYPE a [ <!ENTITY connu \"x\"> ]><a x=\"&inconnu;\"/>";
+        let erreur = analyser(xml).unwrap_err();
+        assert!(
+            matches!(&erreur, ErreurXml::EntiteInconnue { nom } if nom == "inconnu"),
+            "{erreur:?}"
+        );
     }
 
     #[test]
