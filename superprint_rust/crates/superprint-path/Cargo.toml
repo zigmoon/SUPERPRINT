@@ -1,0 +1,12 @@
+[package]
+name = "superprint-path"
+description = "Geometrie vectorielle du noyau Rust de SuperPrint : courbes de Bezier (aplatissement, boite, subdivision), polygones avec regles de remplissage, et operations booleennes (union, intersection, difference, exclusion) — ce que le produit confiait a Paper.js."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+superprint-core = { path = "../superprint-core" }

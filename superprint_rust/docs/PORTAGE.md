@@ -16,11 +16,11 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-11) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 9 crates, tests compris) | **16 802 lignes** |
-| dont annotations `#[test]` | 380 |
-| exemples et scripts de contrôle | 4 770 lignes |
+| Rust (`crates/`, 13 crates, tests compris) | **28 608 lignes** |
+| dont annotations `#[test]` | 684 tests, tous verts |
 | exports `sp_*` de la frontière C | **43** (0 import) |
-| module livrable | 369 Ko |
+| module livrable | 379 Ko |
+| étapes de contrôle (`scripts/check.ps1`) | **22** |
 | JavaScript applicatif (hors bibliothèques tierces) | **125 944 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
@@ -30,10 +30,21 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 
 | Métrique | Mesure | Ce qu'elle dit |
 |---|---|---|
-| **Domaines terminés** | **4,5 / 11** → **41 %** | l'avancement réel du travail identifié |
-| dont **branchés** dans l'application | **1 / 5** construits → **20 %** | ce qui sert vraiment à l'utilisateur |
-| **Volume JS porté** (somme des plages citées) | **2 791 / 18 803** → **15 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 16 802 / 111 501 → **15,1 %** | ⚠️ le plus trompeur des quatre |
+| **Domaines terminés** | **10 / 11** → **91 %** | l'avancement réel du travail identifié |
+| dont **branchés** dans l'application | **1 / 10** construits → **10 %** | ce qui sert vraiment à l'utilisateur |
+| **Volume JS porté** (somme des plages citées) | **6 512 / 18 803** → **35 %** | le poids du travail restant |
+| **Lignes** Rust / JS | 28 608 / 111 501 → **25,7 %** | ⚠️ le plus trompeur des quatre |
+
+Les 11 domaines, nommés, avec leur état : **césure** ✅ (le seul branché) ·
+**compression Flate** ✅ · **imposition** ✅ · **prépresse** ✅ · **nuanciers** ✅ ·
+**image** ✅ · **profils ICC** ✅ · **PDF/X** ✅ · **pagination et chaînage** ✅ ·
+**géométrie vectorielle / Pathfinder** ✅ · **import docx/EPS/IDML** 🟠 **non fait,
+et assumé**.
+
+Le domaine restant est celui qui demande le plus de code pour le moins de valeur
+immédiate (une chaîne ZIP + XML, plus un sous-ensemble de PostScript). Il est
+declé « plus tard » depuis le début, et il ne bouge pas : c'est le seul endroit du
+document où l'avancement n'est pas mesuré par un script de contrôle.
 
 Pourquoi le ratio par lignes trompe : il compare du Rust qui contient ses tests, un
 écrivain PDF complet **sans équivalent JS**, et 4 000 lignes de lecteur de polices,
@@ -42,12 +53,14 @@ pas quand un module est fini, et il bougerait beaucoup si on portait une plage
 facile. **Le seul chiffre à suivre est le premier : les domaines.**
 
 > ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **la césure
-> est le seul composant que l'application utilise réellement.** La compression est
-> employée par notre propre exporteur ; l'imposition, la réduction d'image et le
-> prépresse sont **mesurés et offerts** par `SuperPrintBranchement`, mais ne
-> remplacent rien (voir la section F, et la raison : les fonctions correspondantes
-> de `main.js` sont privées à son IIFE, et le prépresse attend un pont qui n'existe
-> pas encore).
+> reste le seul composant que l'application utilise réellement.** La compression
+> est employée par notre propre exporteur ; l'imposition, la réduction d'image,
+> le prépresse, les nuanciers, les filtres d'image, la lecture ICC, la
+déclaration PDF/X, la pagination et le Pathfinder sont **mesurés et offerts** par
+> `SuperPrintBranchement` (ou livrés comme crates), mais ne remplacent rien dans
+> l'espace de travail (voir la section F, et la raison : les fonctions
+> correspondantes de `main.js` sont privées à son IIFE, et le prépresse attend un
+> pont qui n'existe pas encore).
 
 ---
 
@@ -75,6 +88,12 @@ facile. **Le seul chiffre à suivre est le premier : les domaines.**
 | 18 | **Imposition** (ordre, feuille, repères) | `superprint-impose` | `main.js` **extrait tel quel** : 25 tailles, 3 copies, 16 traits | 🟢 offert |
 | 19 | **Réduction par moyenne de surface** | `image::resample::downscale_area` | exact **au bit près**, anti-crénelage mesuré | 🟢 offert |
 | 20 | **Prépresse** (9 contrôles) | `superprint-preflight` | détection **et** silence, 45 tests, refus des règles illisibles | 🟢 offert |
+| 21 | **Nuanciers** (7 bibliothèques, 688 teintes) | `superprint-swatch`, `core::lab` | catalogue comparé **octet par octet** à `swatchbooks.js`, lecture `.ase`, recherche | 🟢 offert |
+| 22 | **Traitement d'image** (niveaux, courbes, filtres, netteté, médiane, encrage, alpha, recadrage) | `superprint-image` | repli JS indépendant écrit à part, comparaison octet pour octet | 🟢 offert |
+| 23 | **Lecture de profil ICC** | `superprint-icc` | relecture indépendante des 3 profils du produit, **écart à la spécification mesuré** | 🟢 offert |
+| 24 | **PDF/X** (XMP, `OutputIntent`, revendication) | `pdf::xmp`, `pdf::document` | `pdf-lib` relit le paquet XMP et les quatre clés de conformité | 🟢 offert |
+| 25 | **Pagination et chaînage** | `superprint-flow` | invariante vérifiée (16 cas), défaut de la méthode du produit **mesuré** (18 coupures au milieu d'un mot contre 0) | 🟢 offert |
+| 26 | **Géométrie vectorielle et Pathfinder** | `superprint-path` | surface du résultat vérifiée sur **212 000 points**, 45 identités d'aires | 🟢 offert |
 
 ---
 
@@ -209,25 +228,45 @@ et rien ne la convertit. `SuperPrintBranchement.prepresse(doc)` est donc offert
 et mesuré, mais la relier à l'espace de travail demande le pont
 Fabric → `Document` qui reste à faire.
 
-### B5. Nuanciers et bibliothèques de tons directs 🟡
+### B5. Nuanciers et bibliothèques de tons directs 🟡 → ✅ (fait, et mesuré)
 
-`app/JS/swatchbooks.js` (1 015 l.) + les données `app/icc/`. Pantone, Toyo
-Color Finder, Focoltone, HKS, RAL, NCS : nom → composantes CMJN/RVB. C'est une
-**table + une recherche** : portable tel quel, et `SpotInk` existe déjà côté
-Rust pour recevoir le résultat.
+| Étape de SuperPrint | Source actuelle | Rust |
+|---|---|---|
+| Catalogue des bibliothèques (Pantone, Toyo, Focoltone, HKS, RAL, NCS) | `app/JS/swatchbooks.js` (1 015 l.) | ✅ `swatch::catalogue`, données engendrées par `scripts/extract-swatchbooks.mjs` |
+| Lecture d'un nuancier au format **`.ase`** (Adobe Swatch Exchange) | `main.js` (`lireAse`) | ✅ `swatch::ase` |
+| Recherche d'une teinte par son nom | `main.js` | ✅ `swatch::recherche` (accents et casse repliés) |
+| Teinte la plus proche dans un espace perceptuel | absent du produit | ✅ `swatch::plus_proche`, `core::lab::delta_e2000` |
 
-### B6. Traitement d'image avancé 🟡 → 🟢 (réduction faite)
+**7 bibliothèques, 688 teintes**, extraites du produit et comparées **octet par
+octet**. La conversion hexadécimal ↔ RVB et la recherche sont vérifiées contre un
+repli JavaScript construit sur la décomposition Unicode, indépendamment de la
+table d'accents explicite du noyau.
+
+`core::lab` apporte ce que le produit n'avait pas : XYZ, Lab, adaptation
+chromatique de Bradford, `ΔE*76` et `ΔE*2000`. Ce dernier est validé contre le
+**jeu d'essai publié** (Sharma, Wu et Dalal) à 2 × 10⁻⁴ près — une référence
+scientifique, pas un chiffre maison.
+
+**Divergence mesurée, et assumée.** Sur un `.ase` dont le **dernier** bloc est en
+niveaux de gris, le produit lit trois flottants alors que le modèle en déclare un :
+il lit hors du tampon, lève une exception et **perd la teinte**. Le noyau lit le
+nombre déclaré, et rend une teinte de plus. Ce n'est pas une correction opportune :
+c'est un écart mesuré sur un fichier réel, et le script de contrôle l'affiche
+(« produit 1 teinte, noyau 2 »).
+
+### B6. Traitement d'image 🟡 → ✅ (fait, et mesuré)
 
 | Étape | Source | Rust |
 |---|---|---|
 | Réduction à la résolution utile | `drawImage` du navigateur | ✅ `image::resample::downscale_area` |
 | Taille utile pour un placement | `main.js` (implicite) | ✅ `image::resample::target_size_for_dpi` |
 | Réduction rapide (plus proche voisin) | — | ✅ `image::resample::downscale_nearest` |
-| Recadrage / masque d'image | `main.js` 26531-26830 | 🟡 porté en partie par `ImageXObject` |
-| Filtres (niveaux, seuil, négatif) | `main.js` 73798-74344 | 🟡 **convolutions** : calcul pur, à porter |
-| Simulation d'encrage / soft proofing CMJN | `main.js` 23360-23475 | 🟡 ≈ `core::color` étendu |
-| Décodage JPEG / PNG | délégué au navigateur | 🟠 gros morceau, mais faisable |
-| Canal alpha | — | ❌ **non géré** : le noyau travaille en RVB et en gris |
+| Recadrage | `main.js` 26531-26830 | ✅ `RgbImage::recadrer`, `GrayImage::recadrer` |
+| Niveaux, courbes, gamma, auto-niveaux | `main.js` 73798-74344 | ✅ `image::niveaux` |
+| Flou gaussien, netteté (masque flou), médiane | `main.js` 73798-74344 | ✅ `image::filtres` |
+| Simulation d'encrage, GCR, limite de taux | `main.js` 23360-23475 | ✅ `image::encrage` |
+| Canal alpha, composition, aplatissement | **absent** du produit | ✅ `image::alpha` |
+| Décodage JPEG / PNG | délégué au navigateur | 🟠 **reste au navigateur**, comme avant |
 
 **La réduction, et ce qui la rend nécessaire.** Le produit laissait le navigateur
 rééchantillonner par `drawImage` — c'est-à-dire, en pratique, une interpolation
@@ -244,10 +283,21 @@ la bonne réponse est le gris moyen, 32 :
 | interpolation bilinéaire (≈ `drawImage`) | **0** |
 | plus proche voisin | **0** |
 
-**Preuve mesurée** : `scripts/validate-reduction.mjs` vérifie l'exactitude **au
+**Preuve mesurée** : `scripts/validate-reduction.mjs` vérifie la réduction **au
 bit près** contre une moyenne arithmétique entière calculée indépendamment, la
-survie du motif fin, la conservation de l'énergie (0,005 à 0,4 % d'écart), et
-les invariants (jamais d'agrandissement, identité à taille égale, déterminisme).
+survie du motif fin, la conservation de l'énergie (0,005 à 0,4 % d'écart), et les
+invariants (jamais d'agrandissement, identité à taille égale, déterminisme).
+`scripts/validate-image.mjs` traite le reste du domaine : niveaux, courbes, flou
+(en 2D d'un seul tenant côté repli, séparable côté noyau), médiane, netteté,
+limite d'encrage, composition alpha, recadrage. La comparaison est **à l'octet
+près**, sauf le flou, toléré à une unité — l'écart entre un filtre séparable et un
+filtre 2D est un arrondi, et il est mesuré plutôt que caché.
+
+Les **propriétés** sont vérifiées, et pas seulement les valeurs : la limite
+d'encrage est idempotente et ne relève jamais un canal ; un calque entièrement
+transparent laisse le fond intact ; un recadrage ne fabrique jamais de pixel et
+refuse un rectangle qui ne recouvre rien ; un document déjà sous la limite
+ressort **inchangé, octet pour octet**.
 
 **Ce que la mesure a appris** : la vitesse **n'est pas** l'argument. Sur
 3 000 × 2 000 pixels, le noyau Rust met le même temps qu'une boucle JavaScript
@@ -257,15 +307,69 @@ annule le gain du calcul. Ce module vaut par sa **méthode**, pas par sa vitesse
 **lente**. La bonne question n'est donc jamais « est-ce que Rust va plus vite ? »
 mais « est-ce que le calcul est juste, et assez gros pour un seul appel ? ».
 
-### B7. Géométrie vectorielle 🟡
+### B7. Géométrie vectorielle 🟡 → ✅ (fait, et mesuré)
 
-| Étape | Source | Remarque |
+| Étape | Source | Rust |
 |---|---|---|
-| Plume / Bézier (dessin et édition de nœuds) | `simple-pen-tool.js` (1 010 l.) | la **géométrie** est portable ; la souris reste au navigateur |
-| Pathfinder : union, soustraction, intersection | `main.js` 86085-90 000 | découpage polygonale — difficile mais calcul pur |
-| Aplatissement de courbes, offsets, épaississement | réparti | réutilisable par le PDF (`Path` en manque) |
+| Plume / Bézier : évaluation, subdivision, boîte exacte | `simple-pen-tool.js` (1 010 l.) | ✅ `path::courbe` |
+| **Aplatissement** de courbes à une tolérance donnée | Paper.js | ✅ `path::courbe::aplatir` — et la tolérance est **vérifiée** |
+| Règles de remplissage `nonzero` / pair-impair | Paper.js | ✅ `path::polygone::{enroulements, croisements}` |
+| Pathfinder : union, soustraction, intersection, exclusion | Paper.js (`unite`, `subtract`, `intersect`, `exclude`) | ✅ `path::booleen` |
+| Normalisation d'anneaux (sommets confondus, alignés) | Paper.js | ✅ `Polygone::nettoyer` |
 
-### B8. Import de documents 🟠
+La **géométrie** est portée ; la **souris** et le rendu de la plume restent au
+navigateur, et c'est leur place.
+
+**Le produit ne calculait rien lui-même** : `performPaperOperation` convertit les
+formes Fabric en chemins Paper.js et appelle la bibliothèque — **235 Ko de code
+tiers**. Ce crate porte l'algèbre booléenne, sans aucune dépendance.
+
+**La méthode, et pourquoi elle résiste aux cas tordus.** Les arêtes des deux
+formes sont découpées à tous leurs contacts ; chaque morceau est ensuite classé par
+une question **purement ensembliste** — la forme du résultat est-elle remplie d'un
+côté du segment, et pas de l'autre ? — puis orienté avec la partie remplie à
+gauche, et enfin enchaîné en anneaux. L'élégance du classement est qu'il ne connaît
+pas l'opération : union, intersection, différence et exclusion ne diffèrent que par
+une fonction de deux booléens. Les arêtes **colinéaires** — deux carrés qui se
+touchent, cas où les implémentations naïves se cassent — tombent donc naturellement,
+sans code particulier.
+
+Quand deux formes ne se touchent qu'en un **point**, le sommet voit quatre
+segments : le noyau prend le virage **le plus à gauche**, ce qui détache les deux
+formes l'une de l'autre et rend deux anneaux **simples**. Un anneau qui se croise
+en un point serait une forme dont « dedans » n'a pas de sens, ce qui est la moindre
+des choses à éviter pour un résultat de Pathfinder.
+
+**La vérification** (`scripts/validate-path.mjs`) ne demande pas au noyau s'il est
+content de lui : elle prend les anneaux du résultat, demande à ce résultat s'il
+contient chaque point d'un échantillon, et compare avec la **définition
+ensembliste** appliquée aux deux formes d'entrée, recalculée en JavaScript.
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| surface du résultat, point par point | **212 000 points, 0 désaccord** |
+| anneaux du résultat non auto-intersectants | 53 / 53 |
+| identités d'aires (`A∪B + A∩B = A + B`, etc.) | 45 / 45 |
+| refus, et refus injustifiés | 7 refus justifiés, **0 injustifié** |
+| aplatissement dans la tolérance (5 courbes × 4 tolérances) | pire rapport écart/tolérance : **0,98** |
+
+**Une faute de tracé trouvée par la mesure, et corrigée.** Le critère de platitude
+classique — l'écart des points de contrôle à la corde — déclarait **plate** une
+courbe dont tous les points de contrôle sont **alignés** sur la corde. C'est
+exactement le cas d'une poignée tirée en arrière, ce qui arrive dès qu'on édite un
+nœud. La courbe **rebrousse** au-delà de ses extrémités, et la polyligne restait à
+0,74 de la courbe **quelle que soit la tolérance demandée** — 0,1 comme 0,001 —
+parce que la subdivision s'arrêtait au premier niveau. Aucun test unitaire ne
+l'avait vu ; c'est le contrôle d'écart qui l'a montré. Le critère exige maintenant
+que les points de contrôle se **projettent** sur la corde, et la régression est
+testée.
+
+**Ce qui n'est pas fait** : l'épaississement d'un trait (transformer un contour en
+surface, avec joins et extrémités) et les décalages de courbe. Ils sont utiles mais
+ne sont pas ce que le produit demandait au Pathfinder ; ils viendraient avec
+l'import SVG et le rendu de plume.
+
+### B8. Import de documents 🟠 (toujours pas fait, et c'est le seul)
 
 | Étape | Source | Remarque |
 |---|---|---|
@@ -273,34 +377,107 @@ mais « est-ce que le calcul est juste, et assez gros pour un seul appel ? ».
 | RTF, HTML, TXT | `sp-doc-import.js` | analyse syntaxique, portable |
 | EPS / AI (PostScript) | `sp-eps-import.js` (869 l.) | sous-ensemble PostScript — gros morceau |
 | IDML (InDesign) | `main.js` 41812-45723 | ZIP + XML, ~4 000 l. de JS |
-| SVG | délégué au navigateur | parseur XML + `Path` |
+| SVG | délégué au navigateur | parseur XML + `path::{Courbe, Polygone}`, désormais disponibles |
 
-### B9. Profil ICC (module 7) 🟡
+C'est le **seul** domaine encore ouvert. Ce qui existe déjà et servira :
+`compress::inflate` pour le ZIP, `path::Courbe` et `path::Polygone` pour les tracés
+importés.
 
-Lire en-tête et balises d'un profil ICC. La **transformation** reste à
+### B9. Profil ICC (module 7) 🟡 → ✅ (fait, et mesuré)
+
+Lire l'en-tête et les balises d'un profil ICC. La **transformation** reste à
 `lcms-wasm` (Little CMS, C compilé — on ne réécrit pas un moteur de gestion de
-couleurs). Savoir **lire** un profil permet déjà de vérifier la cohérence de
-l'`OutputIntent` et de refuser un profil faux.
+couleurs), et le noyau ne cherche pas à la refaire.
 
-### B10. PDF/X et conformité 🟡
+Ce que `superprint-icc` sait faire : identité (`Espace`, `Classe`), version, point
+blanc, description du profil (encodage v2 et v4), tables de balises avec taille
+déclarée et taille calculée, et les **trois conditions** qui font qu'un profil peut
+servir de condition d'impression.
 
-XMP (bloc de métadonnées XML), identification de la condition d'impression,
-écriture du `GTS_PDFXVersion`. Aujourd'hui l'exporteur **ne revendique aucune**
-conformité PDF/X, et le dit — c'est honnête, mais c'est le dernier verrou avant
-qu'un imprimeur puisse accepter le fichier les yeux fermés.
+**Ce que la mesure a appris, et qui vaut d'être su.** Les profils livrés par Adobe
+**ne suivent pas la mise en page de la spécification**. Sur `CoatedFOGRA39`, les
+balises `mft2` sont **1 520 octets plus courtes** que la spécification ne l'exige
+(en-tête de 52 octets au lieu de 48, table de sortie de 12 octets au lieu de
+1 536), et les balises `mft1` **40 octets plus longues**. La mise en page réelle est
+déductible — et c'est **précisément pourquoi le noyau refuse de la déduire** : un
+lecteur qui connaît la particularité d'Adobe se casse en silence sur un profil
+conforme. Le noyau mesure l'écart et le publie ; il ne devine pas.
 
-### B11. Texte : pagination, chaînage, habillage 🟡
+`scripts/validate-icc.mjs` relit les trois profils réels de façon indépendante
+(en-tête, nom, point blanc, les 10 à 14 balises avec leur décalage, leur taille et
+leur type), vérifie les écarts, éprouve les refus (fichier tronqué, signature
+détruite, taille déclarée absurde, table de balises débordante, balise pointant
+hors du fichier), et passe **83 fichiers tronqués ou corrompus** au noyau : aucun
+plantage, un refus à chaque fois.
 
-| Étape | Source | Remarque |
+### B10. PDF/X et conformité 🟡 → ✅ (fait, et mesuré)
+
+Le noyau écrivait un `/Info` complet et un `OutputIntent` porteur du profil, et
+**rien d'autre** : un imprimeur recevait un fichier qui **avait l'air** d'un PDF/X
+sans en porter la déclaration. Sur un PDF/X, c'est la déclaration qui engage, pas
+la ressemblance.
+
+Ce qui est écrit : paquet **XMP** complet (`/Metadata` en flux `Subtype /XML`),
+`GTS_PDFXVersion`, `GTS_PDFXConformance`, `pdfaid:part`, `pdfaid:conformance`, les
+métadonnées `dc:` et `pdf:`, et une date stockée **une seule fois** en ISO 8601,
+convertie à l'écriture — une date illisible est **omise** plutôt que recopiée.
+
+La conformité est un **type à trois valeurs**, pas une chaîne libre : `PDF/X-1a`,
+`PDF/X-3` et `PDF/X-4`, chacune portant ce qu'elle engage. Il en découle des
+**refus**, et c'est là que le module vaut quelque chose : revendiquer PDF/X **sans**
+profil fourni est refusé (un faux PDF/X est pire qu'un PDF ordinaire) ; `PDF/X-1a`
+avec une image en RVB est refusé ; le **même fichier** sous `PDF/X-3` est accepté.
+
+`scripts/validate-pdfx.mjs` relit le PDF avec `pdf-lib`, vérifie l'équilibre des
+balises XML, les quatre clés de conformité attendues pour chaque norme, compare le
+profil ICC embarqué **octet par octet** (639 Ko), éprouve les trois refus, et ajoute
+un **contrôle négatif** : le même document sans revendication ne doit porter **ni**
+XMP, **ni** `/Metadata`, **ni** `GTS_PDFXVersion`.
+
+### B11. Texte : pagination, chaînage, habillage 🟡 → ✅ (fait, et mesuré)
+
+| Étape | Source | Rust |
 |---|---|---|
-| Chaînage de blocs texte (le texte coule de bloc en bloc) | `main.js` 30890-31626 | logique pure, aujourd'hui mêlée au canvas |
-| Auto-pagination, estimation de pages | `main.js` 25909-26530, 48456 | « coulage » de texte |
-| Retraits de paragraphe | `main.js` 11889-11989 | règles typographiques |
-| Clip de `TextBox` à hauteur fixe | `main.js` 12034-13748 | géométrie |
-| Styles typographiques (16 combinaisons) | `main.js` 72158-73046 | données + règles |
+| Chaînage de blocs texte | `main.js` 30890-31626 | ✅ `flow::repartition`, `flow::chaine` |
+| Auto-pagination, coulage de texte | `main.js` 25909-26530, 48456 | ✅ `flow::repartition::repartir` |
+| Retraits de paragraphe, espaces avant/après | `main.js` 11889-11989 | ✅ `flow::flux::Paragraphe` |
+| Veuves et orphelines | absent du produit | ✅ `coupure_inacceptable` |
+| Clip de `TextBox` à hauteur fixe | `main.js` 12034-13748 | 🟠 reste au navigateur : c'est du rendu |
+| Styles typographiques (16 combinaisons) | `main.js` 72158-73046 | 🟠 données d'interface, à porter avec le branchement |
 
-Tout cela a besoin du module 5 (césure) — qui est **fait** — et du module 6
-(polices) — qui est **fait**. Le chemin est donc ouvert.
+**Le défaut que ce domaine traite est mesuré dans le produit lui-même.**
+`initDimensions()` coûte 1,9 ms sur 1 000 caractères, 45,8 ms sur 50 000,
+8 270 ms sur 300 000. Une chaîne de **124 blocs sur 403 123 caractères prend
+128 secondes**, application gelée. Et ce n'est pas seulement lent : couper sur un
+indice de **caractère** tombe **au milieu d'un mot**.
+
+Le noyau compose **une fois** en lignes, puis répartit les lignes. Mesuré :
+
+| | méthode du produit | noyau |
+|---|---|---|
+| coupures au milieu d'un mot (8 géométries de contrôle) | **18** | **0** |
+| recompositions, 18 059 caractères sur 40 cadres | **101** | **1** |
+| coût de 200 → 800 paragraphes | — | 1 400 → 5 600 mesures, 1 ms → 4 ms (linéaire) |
+
+**Aucun caractère perdu ni dupliqué** : c'est une invariante, pas un espoir.
+`Repartition::verifier` compare le flux de caractères du texte placé et du reste à
+celui de l'entrée, et le nombre de cadres à celui de la chaîne. Seize cas la
+vérifient, et trois tests fabriquent **délibérément** une perte, une ligne perdue,
+un doublon et un mauvais nombre de cadres pour s'assurer que le contrôle les
+attrape.
+
+**Limite de l'invariante, écrite là où elle s'applique** : le compositionneur insère
+des tirets conditionnels de césure, et un tiret conditionnel est indistinguable d'un
+tiret authentique une fois le texte placé. L'invariante porte donc sur les caractères
+**hors espaces et hors tirets**. Ce n'est pas une faiblesse cachée : c'est la limite
+exacte de ce qui est vérifiable sur du texte composé.
+
+**Espaces, veuves et orphelines.** L'espace après un paragraphe appartient à la
+**transition**, pas au paragraphe : il est reporté sur la première ligne du
+paragraphe suivant et fusionné par `max` avec son espace avant. Une coupure entre
+deux cadres est refusée si elle laisse moins de deux lignes d'un côté ou de l'autre,
+et un paragraphe qui tiendrait entier dans un cadre part au cadre suivant plutôt que
+d'être coupé.
 
 ---
 
@@ -327,36 +504,42 @@ Ce n'est pas une concession de paresse : porter ces domaines serait un
 
 Du plus utile au moins utile, en tenant compte du risque :
 
-| Rang | Module | Pourquoi maintenant |
+| Rang | Module | État |
 |---|---|---|
 | ~~1~~ | ~~Césure (module 5)~~ | ✅ **fait**, et ✅ **branché** dans l'application (5 langues) |
 | ~~2~~ | ~~Compression Flate~~ | ✅ **fait** — 108× sur du vectoriel, 2,4× sur le `.wasm` |
 | ~~3~~ | ~~Imposition (planches)~~ | ✅ **fait et mesuré** — ordre, feuille et traits de coupe contre `main.js` |
 | ~~4~~ | ~~Preflight~~ | ✅ **fait et mesuré** — 9 contrôles, détection **et** silence |
-| ~~8~~ | ~~Réduction d'image~~ | ✅ **fait et mesuré** — remonte ici : c'est le défaut de **justesse** le plus net |
-| 5 | **Nuanciers** | les tons directs existent déjà côté Rust : il manque les données |
-| 6 | PDF/X : XMP | dernier verrou de conformité |
-| 7 | Pagination / chaînage | débloqué par les modules 5 et 6, désormais présents |
-| 8 | Filtres, niveaux, simulation d'encrage | calcul pur, réutilise `core::color` |
-| 9 | Lecture de profil ICC | avantage immédiat limité (lcms fait le travail) |
-| 10 | Import ZIP + XML (docx, idml, odt) | gros, mais `inflate` est fait |
-| 11 | Pathfinder, PostScript/EPS | les deux plus difficiles |
+| ~~5~~ | ~~Nuanciers~~ | ✅ **fait et mesuré** — catalogue comparé octet par octet, 688 teintes |
+| ~~6~~ | ~~PDF/X : XMP~~ | ✅ **fait et mesuré** — déclaration écrite, et refusée quand elle serait un mensonge |
+| ~~7~~ | ~~Pagination / chaînage~~ | ✅ **fait et mesuré** — défaut du produit mesuré (18 coupures au milieu d'un mot contre 0) |
+| ~~8~~ | ~~Filtres, niveaux, encrage, alpha~~ | ✅ **fait et mesuré** — repli JS indépendant, à l'octet près |
+| ~~9~~ | ~~Lecture de profil ICC~~ | ✅ **fait et mesuré** — et l'écart des profils Adobe à la spécification est publié |
+| ~~10~~ | ~~Réduction d'image~~ | ✅ **fait et mesuré** — remonté au rang 4 : c'était le défaut de **justesse** le plus net |
+| ~~11~~ | ~~Pathfinder~~ | ✅ **fait et mesuré** — 212 000 points vérifiés contre la définition ensembliste |
+| **12** | **Import ZIP + XML (docx, idml, odt)** | 🟠 **le seul qui reste** — gros, mais `inflate` est fait |
+| **13** | **PostScript / EPS** | 🟠 sous-ensemble de PostScript : le morceau le plus ingrat du lot |
 
 **Ce qui est porté n'est pas pour autant branché, et ce qui est branché n'est
-pas pour autant utile.** Les deux leçons des deux derniers composants, à relire
-avant de choisir le suivant :
+pas pour autant utile.** Les leçons, à relire avant de brancher le composant
+suivant :
 
 - La **césure** est branchée et **plus lente** (1,6 à 2,5×) : elle vivait en
   Rust pour l'unification, pas pour la vitesse.
 - La **réduction d'image** est plus juste (elle retrouve un motif que
   l'échantillonnage fait disparaître) mais **pas plus rapide** : à volume égal,
   la copie des pixels dans la mémoire du module annule le gain du calcul.
+- Le **chaînage** est le premier composant dont la mesure a montré, non pas une
+  différence de vitesse, mais un **défaut de justesse chez le produit** : couper
+  sur un indice de caractère coupe au milieu des mots. C'est ce défaut, et non un
+  gain de temps, qui justifie son branchement.
 
-Rester à brancher, parmi ce qui existe : les conversions de couleurs, les
-unités, le RunLength. L'imposition et la réduction d'image sont **offertes**
-par `SuperPrintBranchement` mais pas branchées : les fonctions correspondantes de
-`main.js` sont privées à son IIFE, et la règle est de **ne pas modifier**
-`main.js`. Voir la section F pour la ligne exacte à changer.
+Rester à brancher, parmi ce qui existe : les conversions de couleurs, les unités,
+le RunLength. L'imposition, la réduction d'image, le prépresse, les nuanciers, les
+filtres, la lecture ICC, la déclaration PDF/X, le chaînage et le Pathfinder sont
+**offerts** par `SuperPrintBranchement` (ou livrés comme crates), mais pas branchés :
+les fonctions correspondantes de `main.js` sont privées à son IIFE, et la règle est
+de **ne pas modifier** `main.js`. Voir la section F pour la ligne exacte à changer.
 
 ---
 
@@ -378,6 +561,12 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | **Imposition** | `calculateImposition`, les 3 copies de la taille de feuille et les `pdf.line()` **extraits de `main.js`** | **25 tailles d'ordre, 3 copies × 4 configurations, 16 traits de coupe** |
 | **Réduction d'image** | moyenne arithmétique entière calculée indépendamment | **au bit près**, motif fin préservé, énergie conservée |
 | **Prépresse** | documents construits et rapport relu par les **mêmes** outils que l'application | **détection *et* silence** : 9 contrôles, chacune des deux moitiés mesurée |
+| **Nuanciers** | `swatchbooks.js`, `index.html` et le `lireAse` du produit, **extraits** | **catalogue identique octet par octet**, 7 bibliothèques, 688 teintes, divergence `.ase` exposée |
+| **Traitement d'image** | repli JavaScript écrit à part, et formules de la spécification | **à l'octet près** (flou : ±1, mesuré), plus les propriétés (idempotence, ne relève jamais un canal) |
+| **Profils ICC** | relecture indépendante des 3 profils réels + 83 fichiers abîmés | **écart à la spécification calculé** (1 520 octets sur `mft2`), aucun plantage, un refus par fichier |
+| **PDF/X** | `pdf-lib` + contrôle d'équilibre XML + comparaison octet par octet du profil | **déclaration exacte, refus des trois mensonges, et contrôle négatif** |
+| **Pagination et chaînage** | invariante de caractères + méthode du produit rejouée en JS | **16 cas sans perte, 18 coupures au milieu d'un mot contre 0, 101 recompositions contre 1** |
+| **Géométrie vectorielle** | définition ensembliste des opérations, appliquée aux entrées en JS | **212 000 points sans désaccord, 45 identités d'aires, 0 refus injustifié** |
 | **Branchement césure (colle)** | `hypher.js` + dictionnaires du produit | **5 langues, 2 433 mots identiques** |
 | **Branchement césure (livré)** | fichiers réels de `superprint/app/JS/` | **2 129 mots × 5 langues, réversibilité et repli** |
 | **Branchement imposition + réduction** | fichiers réels, dans un bac à sable navigateur | **plan conforme, composants indépendants de la césure** |

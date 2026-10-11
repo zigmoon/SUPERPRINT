@@ -50,6 +50,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-path"
+version = "0.2.0"
+dependencies = [
+ "superprint-core",
+]
+
+[[package]]
 name = "superprint-pdf"
 version = "0.2.0"
 dependencies = [

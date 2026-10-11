@@ -180,6 +180,18 @@ Step 'pagination : invariant, coupures entre lignes, cout en recompositions' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-flow.mjs }
 }
 
+# Validation de la GEOMETRIE VECTORIELLE : l'aplatissement des courbes (la
+# polyligne doit rester dans la tolerance demandee, verifie en recalculant la
+# courbe de l'autre cote) et le Pathfinder (union, intersection, difference,
+# exclusion). C'est le domaine que le produit confiait a Paper.js — 235 Ko de
+# bibliotheque tierce. La verification est independante : le script demande au
+# RESULTAT, pour 212 000 points, s'il les contient, et compare avec la definition
+# ensembliste appliquee aux deux formes d'entree.
+Step 'vecteurs : aplatissement dans la tolerance, et Pathfinder verifie par la surface' {
+  & $cargo build -p superprint-path --example path_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-path.mjs }
+}
+
 Pop-Location
 
 if ($ok) {
