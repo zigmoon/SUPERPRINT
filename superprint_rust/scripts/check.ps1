@@ -20,12 +20,14 @@ if (-not (Test-Path $cargo)) {
 
 Push-Location $root
 $ok = $true
+$echecs = [System.Collections.Generic.List[string]]::new()
 
 function Step($label, $script) {
   Write-Host "-- $label" -ForegroundColor Cyan
   & $script
   if ($LASTEXITCODE -ne 0) {
-    Write-Host "   x echec : $label" -ForegroundColor Red
+    Write-Host "   x echec ($LASTEXITCODE) : $label" -ForegroundColor Red
+    $script:echecs.Add("$label (code $LASTEXITCODE)")
     $script:ok = $false
   }
 }
@@ -98,7 +100,10 @@ Step 'colle livree identique a celle du depot' {
       $identiques = $false
     }
   }
-  if (-not $identiques) { $script:ok = $false }
+  if (-not $identiques) {
+    $script:echecs.Add('colle livree identique a celle du depot (hash different)')
+    $script:ok = $false
+  }
 }
 
 # Validation du branchement TEL QU'IL EST LIVRE : les fichiers de
@@ -165,6 +170,16 @@ Step 'PDF/X : XMP, OutputIntent, profil embarque, et les refus' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-pdfx.mjs }
 }
 
+# Validation de la PAGINATION : la repartition du noyau (composer une fois, puis
+# repartir les lignes) est mise face a la methode du produit (bissection sur le
+# nombre de caracteres). Mesure de l'invariante — aucun caractere perdu —, du
+# DEFAUT de la methode par caracteres (elle coupe AU MILIEU DES MOTS : 18 fois sur
+# les cas de controle, contre 0 pour le noyau), et du cout en recompositions.
+Step 'pagination : invariant, coupures entre lignes, cout en recompositions' {
+  & $cargo build -p superprint-flow --example flow_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-flow.mjs }
+}
+
 Pop-Location
 
 if ($ok) {
@@ -173,4 +188,5 @@ if ($ok) {
 }
 
 Write-Host "`nECHEC : au moins une etape a echoue." -ForegroundColor Red
+foreach ($e in $echecs) { Write-Host "  - $e" -ForegroundColor Red }
 exit 1

@@ -32,6 +32,18 @@ pub enum ImageError {
         /// `(largeur, hauteur)` reçues.
         recu: (u32, u32),
     },
+    /// Le rectangle demandé ne recouvre aucun pixel de l'image.
+    ///
+    /// Le recadrage **rogne** le rectangle sur les bords de l'image (une
+    /// sélection qui dépasse ne fabrique jamais de pixel), mais si le rectangle
+    /// est entièrement dehors, il n'y a rien à rendre — et rendre une image vide
+    /// serait pire que refuser.
+    RecadrageHorsImage {
+        /// Rectangle demandé : `(x, y, largeur, hauteur)`.
+        demande: (i64, i64, u32, u32),
+        /// Dimensions de l'image qui l'a refusé.
+        image: (u32, u32),
+    },
 }
 
 impl std::fmt::Display for ImageError {
@@ -50,11 +62,47 @@ impl std::fmt::Display for ImageError {
                 "images de tailles différentes : {}×{} attendu, {}×{} reçu",
                 attendu.0, attendu.1, recu.0, recu.1
             ),
+            Self::RecadrageHorsImage { demande, image } => write!(
+                f,
+                "rectangle {}+{} {}×{} hors de l'image {}×{}",
+                demande.0, demande.1, demande.2, demande.3, image.0, image.1
+            ),
         }
     }
 }
 
 impl std::error::Error for ImageError {}
+
+/// Rogne un rectangle `(x, y, largeur, hauteur)` sur une image `(largeur,
+/// hauteur)`, et rend les bornes `(x0, y0, x1, y1)` en coordonnées de pixels
+/// (bornes supérieures **exclues**).
+///
+/// Le rectangle peut commencer à gauche ou au-dessus de l'image (`x` ou `y`
+/// négatifs) : c'est le cas d'une sélection tirée vers l'extérieur. Elle est
+/// **rognée**, jamais complétée — un recadrage ne fabrique pas de pixel.
+fn rogner(
+    x: i64,
+    y: i64,
+    largeur: u32,
+    hauteur: u32,
+    image: (u32, u32),
+) -> Result<(usize, usize, usize, usize), ImageError> {
+    let x1 = x
+        .saturating_add(i64::from(largeur))
+        .clamp(0, i64::from(image.0));
+    let y1 = y
+        .saturating_add(i64::from(hauteur))
+        .clamp(0, i64::from(image.1));
+    let x0 = x.clamp(0, i64::from(image.0));
+    let y0 = y.clamp(0, i64::from(image.1));
+    if x0 >= x1 || y0 >= y1 {
+        return Err(ImageError::RecadrageHorsImage {
+            demande: (x, y, largeur, hauteur),
+            image,
+        });
+    }
+    Ok((x0 as usize, y0 as usize, x1 as usize, y1 as usize))
+}
 
 /// Image en couleurs, 3 octets par pixel (rouge, vert, bleu).
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -142,6 +190,35 @@ impl RgbImage {
             data: out,
         }
     }
+
+    /// Extrait un rectangle de l'image — le calcul du recadrage.
+    ///
+    /// Le produit recadre en dessinant avec `drawImage` sur un canevas, la
+    /// sélection étant bornée par les poignées de l'interface. Le calcul, lui,
+    /// tient en une copie de lignes : c'est ce qui est porté ici.
+    ///
+    /// La sélection est **rognée** aux bords de l'image ; un recadrage ne
+    /// fabrique jamais de pixel.
+    ///
+    /// # Erreurs
+    ///
+    /// [`ImageError::RecadrageHorsImage`] si le rectangle ne recouvre aucun
+    /// pixel — plutôt que de rendre une image vide.
+    pub fn recadrer(&self, x: i64, y: i64, largeur: u32, hauteur: u32) -> Result<Self, ImageError> {
+        let (x0, y0, x1, y1) = rogner(x, y, largeur, hauteur, (self.width, self.height))?;
+        let largeur = x1 - x0;
+        let lignes = y1 - y0;
+        let mut data = Vec::with_capacity(largeur * lignes * Self::CHANNELS);
+        for ligne in y0..y1 {
+            let debut = (ligne * self.width as usize + x0) * Self::CHANNELS;
+            data.extend_from_slice(&self.data[debut..debut + largeur * Self::CHANNELS]);
+        }
+        Ok(Self {
+            width: largeur as u32,
+            height: lignes as u32,
+            data,
+        })
+    }
 }
 
 /// Image en niveaux de gris, 1 octet par pixel.
@@ -209,6 +286,30 @@ impl GrayImage {
         }
         Ok(self.data[y as usize * self.width as usize + x as usize])
     }
+
+    /// Extrait un rectangle de l'image. Mêmes règles que
+    /// [`RgbImage::recadrer`] : sélection rognée aux bords, refus si le
+    /// rectangle ne recouvre aucun pixel.
+    ///
+    /// # Erreurs
+    ///
+    /// [`ImageError::RecadrageHorsImage`] si le rectangle ne recouvre aucun
+    /// pixel.
+    pub fn recadrer(&self, x: i64, y: i64, largeur: u32, hauteur: u32) -> Result<Self, ImageError> {
+        let (x0, y0, x1, y1) = rogner(x, y, largeur, hauteur, (self.width, self.height))?;
+        let largeur = x1 - x0;
+        let lignes = y1 - y0;
+        let mut data = Vec::with_capacity(largeur * lignes);
+        for ligne in y0..y1 {
+            let debut = ligne * self.width as usize + x0;
+            data.extend_from_slice(&self.data[debut..debut + largeur]);
+        }
+        Ok(Self {
+            width: largeur as u32,
+            height: lignes as u32,
+            data,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -259,5 +360,87 @@ mod tests {
         // Le blanc doit rester blanc, le noir rester noir.
         assert_eq!(gray.pixel(0, 0).unwrap(), 255);
         assert_eq!(gray.pixel(1, 0).unwrap(), 0);
+    }
+
+    /// Une image 4×3 dont chaque pixel vaut `10*y + x` : le recadrage doit
+    /// rendre exactement la sous-matrice attendue, sans décalage de ligne.
+    fn damier() -> RgbImage {
+        let mut data = Vec::new();
+        for y in 0..3u32 {
+            for x in 0..4u32 {
+                let v = (10 * y + x) as u8;
+                data.extend_from_slice(&[v, v, v]);
+            }
+        }
+        RgbImage::from_data(4, 3, data).unwrap()
+    }
+
+    #[test]
+    fn recadrage_au_centre() {
+        let img = damier();
+        let c = img.recadrer(1, 1, 2, 2).unwrap();
+        assert_eq!((c.width(), c.height()), (2, 2));
+        assert_eq!(c.data(), &[11, 11, 11, 12, 12, 12, 21, 21, 21, 22, 22, 22]);
+    }
+
+    #[test]
+    fn recadrage_du_coin() {
+        let img = damier();
+        let c = img.recadrer(0, 0, 1, 1).unwrap();
+        assert_eq!(c.data(), &[0, 0, 0]);
+        // Et le coin opposé, pour vérifier que la dernière ligne est bien prise.
+        let c = img.recadrer(3, 2, 1, 1).unwrap();
+        assert_eq!(c.data(), &[23, 23, 23]);
+    }
+
+    #[test]
+    fn recadrage_debordant_est_rogne() {
+        let img = damier();
+        // Sélection tirée vers l'extérieur : elle est rognée, pas complétée.
+        let c = img.recadrer(-2, -2, 4, 4).unwrap();
+        assert_eq!((c.width(), c.height()), (2, 2));
+        assert_eq!(c.data(), &[0, 0, 0, 1, 1, 1, 10, 10, 10, 11, 11, 11]);
+        // Dépassement à droite et en bas : on garde ce qui est dedans.
+        let c = img.recadrer(2, 2, 100, 100).unwrap();
+        assert_eq!((c.width(), c.height()), (2, 1));
+        assert_eq!(c.data(), &[22, 22, 22, 23, 23, 23]);
+    }
+
+    #[test]
+    fn recadrage_entierement_dehors_refuse() {
+        let img = damier();
+        for (x, y, l, h) in [(4, 0, 2, 2), (0, 3, 2, 2), (-5, 0, 3, 2), (0, -5, 2, 3)] {
+            assert!(
+                matches!(
+                    img.recadrer(x, y, l, h),
+                    Err(ImageError::RecadrageHorsImage { .. })
+                ),
+                "le rectangle {x},{y} {l}×{h} doit être refusé"
+            );
+        }
+    }
+
+    #[test]
+    fn recadrage_paysage_et_portrait() {
+        let img = damier();
+        // Une ligne entière : le sens des données ne doit pas s'inverser.
+        let c = img.recadrer(0, 1, 4, 1).unwrap();
+        assert_eq!(c.data().len(), 12);
+        assert_eq!(&c.data()[0..3], &[10, 10, 10]);
+        assert_eq!(&c.data()[9..12], &[13, 13, 13]);
+        // Une colonne entière.
+        let c = img.recadrer(2, 0, 1, 3).unwrap();
+        assert_eq!((c.width(), c.height()), (1, 3));
+        assert_eq!(c.data(), &[2, 2, 2, 12, 12, 12, 22, 22, 22]);
+    }
+
+    #[test]
+    fn recadrage_gris_et_identite() {
+        let img = damier().to_gray();
+        let c = img.recadrer(1, 0, 2, 1).unwrap();
+        assert_eq!(c.data(), &[1, 2]);
+        // Recadrer sur toute l'image ne change rien.
+        let tout = img.recadrer(0, 0, 4, 3).unwrap();
+        assert_eq!(tout, img);
     }
 }

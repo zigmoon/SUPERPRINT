@@ -286,6 +286,26 @@ function aplatirJs(src) {
   return sortie;
 }
 
+/* Recadrage : extraction d'un rectangle, rogné aux bords de l'image. Rendre
+   `null` quand le rectangle ne recouvre aucun pixel — c'est le cas que le noyau
+   doit REFUSER plutôt que de rendre une image vide. */
+function recadrerJs(src, taille, canaux, x, y, l, h) {
+  const [largeurImage, hauteurImage] = taille;
+  const x1 = Math.min(Math.max(x + l, 0), largeurImage);
+  const y1 = Math.min(Math.max(y + h, 0), hauteurImage);
+  const x0 = Math.min(Math.max(x, 0), largeurImage);
+  const y0 = Math.min(Math.max(y, 0), hauteurImage);
+  if (x0 >= x1 || y0 >= y1) return null;
+  const L = x1 - x0;
+  const H = y1 - y0;
+  const sortie = new Uint8Array(L * H * canaux);
+  for (let ligne = 0; ligne < H; ligne += 1) {
+    const debut = ((y0 + ligne) * largeurImage + x0) * canaux;
+    sortie.set(src.subarray(debut, debut + L * canaux), ligne * L * canaux);
+  }
+  return sortie;
+}
+
 /* ─────────────────── 1. niveaux et courbes ─────────────────── */
 
 titre('niveaux et courbes : à l’octet près');
@@ -529,6 +549,113 @@ for (const mode of ['normal', 'multiplier', 'ecran', 'obscurcir', 'eclaircir', '
   const depart = Date.now();
   lancer('composer', cheminFond, cheminDessus, 'normal', temporaire('compose-gros.raw'));
   console.log(`  (composition 256×256 : ${Date.now() - depart} ms, processus compris)`);
+}
+
+/* ─────────────────── 5. recadrage ─────────────────── */
+
+titre('recadrage : extraction exacte, rognage aux bords, refus du vide');
+
+const sourceRvB = engendrer('couleurs', 3, 7);
+const cheminSource = ecrireEntree('source-rvb.raw', sourceRvB);
+
+/* Le damier de contrôle : chaque pixel porte une valeur distincte, ce qui rend
+   un décalage de ligne, de colonne ou de canaux impossible à rater. */
+const damier = new Uint8Array(256 * 256 * 3);
+for (let y = 0; y < 256; y += 1) {
+  for (let x = 0; x < 256; x += 1) {
+    const base = (y * 256 + x) * 3;
+    damier[base] = x;
+    damier[base + 1] = y;
+    damier[base + 2] = (x + y) % 256;
+  }
+}
+const cheminDamier = ecrireEntree('damier.raw', damier);
+
+const recadrages = [
+  { nom: 'au centre', x: 40, y: 20, l: 100, h: 60 },
+  { nom: 'sur une ligne entière', x: 0, y: 128, l: 256, h: 1 },
+  { nom: 'sur une colonne entière', x: 200, y: 0, l: 1, h: 256 },
+  { nom: 'd’un seul pixel', x: 255, y: 255, l: 1, h: 1 },
+  { nom: 'de l’image entière', x: 0, y: 0, l: 256, h: 256 },
+  { nom: 'débordant à gauche et au-dessus', x: -30, y: -10, l: 80, h: 40 },
+  { nom: 'débordant à droite et en dessous', x: 200, y: 240, l: 500, h: 500 },
+  { nom: 'débordant des quatre côtés', x: -50, y: -50, l: 400, h: 400 },
+];
+
+let recadragesJustes = 0;
+for (const c of recadrages) {
+  for (const [nom, source, taille, canaux, chemin] of [
+    ['rvb', sourceRvB, [256, 256], 3, cheminSource],
+    ['damier', damier, [256, 256], 3, cheminDamier],
+  ]) {
+    lancer('recadrer', chemin, String(c.x), String(c.y), String(c.l), String(c.h), temporaire('crop.raw'));
+    const recu = lireSortie('crop.raw');
+    const attendu = recadrerJs(source, taille, canaux, c.x, c.y, c.l, c.h);
+    if (attendu === null) continue;
+    if (identique(recu, attendu)) recadragesJustes += 1;
+    else check(`recadrage ${c.nom} (${nom})`, false, `${recu.length} octets reçus, ${attendu.length} attendus`);
+  }
+}
+check(
+  `les ${recadrages.length * 2} recadrages rendent exactement la sous-image attendue`,
+  recadragesJustes === recadrages.length * 2,
+  `${recadragesJustes} justes`,
+);
+
+{
+  /* Les cas rognés méritent un contrôle explicite de TAILLE : c'est la seule
+     chose qu'un décalage de ligne laisserait passer. */
+  const rognes = [
+    { x: -30, y: -10, l: 80, h: 40, L: 50, H: 30 },
+    { x: 200, y: 240, l: 500, h: 500, L: 56, H: 16 },
+    { x: -50, y: -50, l: 400, h: 400, L: 256, H: 256 },
+  ];
+  let taillesJustes = true;
+  for (const r of rognes) {
+    lancer('recadrer', cheminDamier, String(r.x), String(r.y), String(r.l), String(r.h), temporaire('crop-taille.raw'));
+    const recu = lireSortie('crop-taille.raw');
+    if (recu.length !== r.L * r.H * 3) {
+      taillesJustes = false;
+      console.log(`    ${r.x},${r.y} ${r.l}×${r.h} : ${recu.length} octets, ${r.L * r.H * 3} attendus`);
+    }
+  }
+  check('une sélection débordante est bien rognée à la bonne taille', taillesJustes);
+}
+
+{
+  /* Le refus : un rectangle entièrement dehors ne doit pas rendre une image
+     vide, mais une erreur. Le code de sortie le dit. */
+  let refuses = 0;
+  const dehors = [
+    [256, 0, 10, 10],
+    [0, 256, 10, 10],
+    [-40, 0, 10, 10],
+    [0, -40, 10, 10],
+    [10, 10, 0, 10],
+  ];
+  for (const [x, y, l, h] of dehors) {
+    let code = 0;
+    try {
+      lancer('recadrer', cheminDamier, String(x), String(y), String(l), String(h), temporaire('crop-vide.raw'));
+    } catch (e) {
+      code = e.status ?? 1;
+    }
+    if (code !== 0) refuses += 1;
+    else check(`recadrage vide ${x},${y} ${l}×${h} refusé`, false, 'le noyau a rendu une image');
+  }
+  check(`les ${dehors.length} recadrages vides sont refusés`, refuses === dehors.length, `${refuses} refus`);
+  check('et aucun recadrage vide n’a été écrit', !existsSync(temporaire('crop-vide.raw')));
+}
+
+{
+  /* Une image en gris se recadre aussi : un canal au lieu de trois. */
+  let gris = new Uint8Array(256 * 256);
+  for (let y = 0; y < 256; y += 1) for (let x = 0; x < 256; x += 1) gris[y * 256 + x] = (x * 3 + y) % 256;
+  const cheminGris = ecrireEntree('gris-crop.raw', gris);
+  lancer('recadrer-gris', cheminGris, '10', '20', '30', '40', temporaire('crop-gris.raw'));
+  const recu = lireSortie('crop-gris.raw');
+  const attendu = recadrerJs(gris, [256, 256], 1, 10, 20, 30, 40);
+  check('recadrage d’une image en gris', identique(recu, attendu), `${recu.length} octets`);
 }
 
 console.log(`\n${ok ? 'OK : les filtres d’image du noyau font exactement ce que dit leur repli.' : 'ÉCHEC : voir les lignes \u2717 ci-dessus.'}`);

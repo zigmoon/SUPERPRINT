@@ -23,6 +23,7 @@
 //! image_dump encrage    <entree> <taux-gcr> <limite>         <sortie>
 //! image_dump composer   <fond> <dessus> <mode>               <sortie>
 //! image_dump aplatir    <entree>                             <sortie>
+//! image_dump recadrer   <entree> <x> <y> <largeur> <hauteur> <sortie>
 //! ```
 //!
 //! Toutes les entrées font 256 × 256 pixels ; le nombre de canaux est celui du
@@ -201,6 +202,42 @@ fn main() -> ExitCode {
             match alpha(chemin) {
                 Ok(src) => src.aplatir_sur_blanc().data().to_vec(),
                 Err(e) => return erreur(&e),
+            }
+        }
+        "recadrer" | "recadrer-gris" => {
+            let (Some(chemin), Some(x), Some(y), Some(l), Some(h)) = (
+                entrees.first(),
+                entrees.get(1),
+                entrees.get(2),
+                entrees.get(3),
+                entrees.get(4),
+            ) else {
+                return usage();
+            };
+            let (Ok(x), Ok(y), Ok(l), Ok(h)) = (
+                x.parse::<i64>(),
+                y.parse::<i64>(),
+                l.parse::<u32>(),
+                h.parse::<u32>(),
+            ) else {
+                return usage();
+            };
+            if mode == "recadrer" {
+                match rgb(chemin) {
+                    Ok(src) => match src.recadrer(x, y, l, h) {
+                        Ok(c) => c.data().to_vec(),
+                        Err(e) => return erreur(&e.to_string()),
+                    },
+                    Err(e) => return erreur(&e),
+                }
+            } else {
+                match gris(chemin) {
+                    Ok(src) => match src.recadrer(x, y, l, h) {
+                        Ok(c) => c.data().to_vec(),
+                        Err(e) => return erreur(&e.to_string()),
+                    },
+                    Err(e) => return erreur(&e),
+                }
             }
         }
         autre => {
