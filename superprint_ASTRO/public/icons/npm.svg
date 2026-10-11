@@ -1,16 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 32" width="26" height="26" role="img" aria-label="npm">
-  <!-- Le logotype npm : les trois lettres, dessinees en geometrie (le logotype npm
-       EST un mot-symbole, il n'y a pas de symbole separe a reprendre).
-       Couleur FIGEE a l'encre de la charte (#17130D) : un SVG charge par une
-       balise img est isole et n'heriterait pas de `currentColor`.
-       NB : jamais de double tiret dans un commentaire XML, c'est interdit. -->
-  <g fill="none" stroke="#17130D" stroke-width="2.2" stroke-linecap="round">
-    <path d="M4 25V14"/>
-    <path d="M4 19a3 3 0 0 1 6 0v6"/>
-    <path d="M13 14v16"/>
-    <path d="M13 19a3 3 0 0 1 6 0v3a3 3 0 0 1-6 0"/>
-    <path d="M22 25V14"/>
-    <path d="M22 19a2.5 2.5 0 0 1 5 0v6"/>
-    <path d="M27 19a2.5 2.5 0 0 1 5 0v6"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="#CB3837" role="img" aria-label="npm">
+  <!-- Trace OFFICIEL de la marque, extrait de simple-icons (CC0-1.0) et recopie tel quel.
+       Couleur : rouge officiel npm.
+       NB : jamais de double tiret dans un commentaire XML, c est interdit. -->
+  <path d="M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z"/>
 </svg>
