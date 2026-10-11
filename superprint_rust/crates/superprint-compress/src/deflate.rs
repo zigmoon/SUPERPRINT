@@ -70,14 +70,18 @@ const LONGUEUR_MAX: usize = 258;
 const BLOC_STOCKE_MAX: usize = 65_535;
 
 /// Compresse un tampon entier : un seul bloc, figé ou stocké.
+///
+/// ⚠️ Les jetons sont **diffusés** au fur et à mesure, jamais accumulés : un
+/// `Vec<Jeton>` coûterait 24 octets par octet d'entrée, soit 100 Mo pour une
+/// image de 4 Mo. Sur un moteur qui doit tenir dans la mémoire d'un navigateur,
+/// c'est disqualifiant — c'est une mesure, pas une intuition : l'exemple image
+/// du dépôt a échoué exactement là avant cette correction.
 #[must_use]
 pub fn compresser(donnees: &[u8], niveau: Compression) -> Vec<u8> {
     let mut figes = BitEcrivain::new();
     figes.bit(1, 1); // BFINAL : dernier bloc
     figes.bit(1, 2); // BTYPE : 01 = Huffman figé
-    for jeton in jetons(donnees, niveau) {
-        ecrire_jeton(&mut figes, &jeton);
-    }
+    parcourir(donnees, niveau, |jeton| ecrire_jeton(&mut figes, &jeton));
     ecrire_symbole(&mut figes, 256); // fin de bloc
     let compresse = figes.terminer();
 
@@ -124,29 +128,34 @@ enum Jeton {
     Correspondance { longueur: usize, distance: usize },
 }
 
-/// Produit la suite de jetons LZ77.
-fn jetons(donnees: &[u8], niveau: Compression) -> Vec<Jeton> {
-    let mut sortie = Vec::with_capacity(donnees.len() / 2 + 1);
+/// Parcourt les données et **diffuse** la suite de jetons LZ77.
+fn parcourir(donnees: &[u8], niveau: Compression, mut emettre: impl FnMut(Jeton)) {
     // En dessous de trois octets, il n'y a rien à hacher : tout est littéral.
     // ⚠️ `saturating_sub` seul ne suffit pas — il rendrait 0 pour un tampon
     // d'un octet, ce qui ferait lire `donnees[2]`. C'est le corpus de contrôle
     // qui a fait tomber ce cas, pas un raisonnement.
     if donnees.len() < LONGUEUR_MIN {
-        return donnees
-            .iter()
-            .map(|octet| Jeton::Litteral(*octet))
-            .collect();
+        for octet in donnees {
+            emettre(Jeton::Litteral(*octet));
+        }
+        return;
     }
     let chaine_max = niveau.chaine_max();
     let paresseux = niveau.paresseux();
 
     // Table de hachage des trios : `tete[h]` donne la dernière position vue
-    // dont les trois octets hachés valent `h`, et `precedent[p]` la précédente
-    // pour la même valeur. C'est la chaîne de recherche.
+    // dont les trois octets hachés valent `h`, et `precedent` la précédente pour
+    // la même valeur. C'est la chaîne de recherche.
+    //
+    // ⚠️ `precedent` est dimensionné sur la **fenêtre** (32 768), pas sur
+    // l'entrée : c'est ce que fait zlib, et l'indice est pris modulo la fenêtre.
+    // Le dimensionner sur `donnees.len()` coûtait 8 octets par octet d'entrée —
+    // 34 Mo pour une image de 4 Mo, au-delà de ce qu'un bac à sable WASI tolère.
     const BITS_HACHAGE: u32 = 15;
     const TAILLE_TABLE: usize = 1 << BITS_HACHAGE;
+    let masque = FENETRE - 1;
     let mut tete = vec![usize::MAX; TAILLE_TABLE];
-    let mut precedent = vec![0usize; donnees.len().max(1)];
+    let mut precedent = vec![usize::MAX; FENETRE];
 
     let hacher = |index: usize| -> usize {
         let a = u32::from(donnees[index]);
@@ -186,7 +195,7 @@ fn jetons(donnees: &[u8], niveau: Compression) -> Vec<Jeton> {
                 if essais >= chaine_max {
                     break;
                 }
-                let suivant = precedent[candidat];
+                let suivant = precedent[candidat & masque];
                 // Une chaîne remonte le temps : une position qui n'est pas
                 // strictement antérieure marque la fin.
                 if suivant == usize::MAX || suivant >= candidat {
@@ -198,9 +207,9 @@ fn jetons(donnees: &[u8], niveau: Compression) -> Vec<Jeton> {
 
         // Correspondance trop courte : un littéral coûte moins cher.
         if meilleur.0 < LONGUEUR_MIN {
-            sortie.push(Jeton::Litteral(donnees[position]));
+            emettre(Jeton::Litteral(donnees[position]));
             // On inscrit la position dans la chaîne pour les recherches à venir.
-            precedent[position] = tete[h];
+            precedent[position & masque] = tete[h];
             tete[h] = position;
             position += 1;
             continue;
@@ -213,7 +222,7 @@ fn jetons(donnees: &[u8], niveau: Compression) -> Vec<Jeton> {
         // on la prendra au tour suivant. C'est ce qui évite de consommer une
         // bonne suite pour une médiocre.
         if paresseux && position < limite {
-            precedent[position] = tete[h];
+            precedent[position & masque] = tete[h];
             tete[h] = position;
             let h_suivant = hacher(position + 1);
             let mut meilleur_suivant = 0usize;
@@ -237,7 +246,7 @@ fn jetons(donnees: &[u8], niveau: Compression) -> Vec<Jeton> {
                     if essais >= chaine_max || meilleur_suivant >= LONGUEUR_MAX {
                         break;
                     }
-                    let suivant = precedent[candidat];
+                    let suivant = precedent[candidat & masque];
                     if suivant == usize::MAX || suivant >= candidat {
                         break;
                     }
@@ -246,22 +255,20 @@ fn jetons(donnees: &[u8], niveau: Compression) -> Vec<Jeton> {
             }
             // « Nettement » : un octet de plus ne justifie pas de retarder.
             if meilleur_suivant > longueur + 1 {
-                sortie.push(Jeton::Litteral(donnees[position]));
+                emettre(Jeton::Litteral(donnees[position]));
                 position += 1;
                 continue;
             }
         }
 
-        sortie.push(Jeton::Correspondance { longueur, distance });
+        emettre(Jeton::Correspondance { longueur, distance });
         // Toutes les positions traversées entrent dans la chaîne : sauter ces
         // inscriptions coûterait des correspondances plus loin.
         let fin = (position + longueur).min(donnees.len() - LONGUEUR_MIN + 1);
         for p in position..fin {
             if p + 2 < donnees.len() {
                 let hp = hacher(p);
-                if let Some(cellule) = precedent.get_mut(p) {
-                    *cellule = tete[hp];
-                }
+                precedent[p & masque] = tete[hp];
                 tete[hp] = p;
             }
         }
@@ -270,10 +277,9 @@ fn jetons(donnees: &[u8], niveau: Compression) -> Vec<Jeton> {
 
     // Ce qui reste après la dernière correspondance.
     while position < donnees.len() {
-        sortie.push(Jeton::Litteral(donnees[position]));
+        emettre(Jeton::Litteral(donnees[position]));
         position += 1;
     }
-    sortie
 }
 
 /// Les longueurs et les codes de base de la RFC 1951, table §3.2.5.
@@ -548,6 +554,27 @@ mod tests {
     fn les_donnees_de_plus_de_65_535_octets_passent() {
         let donnees: Vec<u8> = (0..200_000u32).map(|i| (i % 7) as u8).collect();
         aller_retour(&donnees);
+    }
+
+    #[test]
+    fn plusieurs_megaoctets_ne_consomment_qu_une_fenetre() {
+        // 5 Mo : la mémoire ne doit dépendre que de la **fenêtre**, pas de la
+        // taille de l'entrée.
+        //
+        // ⚠️ C'est un test de non-régression, et il vient d'un échec réel :
+        // l'exemple image du dépôt (4 Mo) sortait du bac à sable WASI sans un
+        // mot, parce que la chaîne de recherche coûtait 8 octets par octet
+        // d'entrée et la liste de jetons 24. Ce test les aurait interdits tous
+        // les deux.
+        let donnees: Vec<u8> = (0..5_000_000u32).map(|i| ((i / 7) % 251) as u8).collect();
+        let comprime = compresser(&donnees, Compression::Defaut);
+        assert!(
+            comprime.len() < donnees.len() / 4,
+            "un contenu si répétitif devrait se réduire de beaucoup : {}",
+            comprime.len()
+        );
+        let relu = super::super::inflate::decompresser(&comprime).expect("flux valide");
+        assert!(relu == donnees, "les octets relus doivent être identiques");
     }
 
     #[test]
