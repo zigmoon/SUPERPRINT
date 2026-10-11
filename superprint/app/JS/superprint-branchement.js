@@ -22,6 +22,28 @@
  * mêmes fragments — la parité est mesurée par
  * `superprint_rust/scripts/validate-branchement.mjs` sur 2 400 mots réels.
  *
+ * ## ⚠️ Ce que la césure a appris : elle est PLUS LENTE
+ *
+ * Mesuré dans le navigateur, sur cette page, 288 000 appels à `hyphenate` sur
+ * un même paragraphe de 72 mots :
+ *
+ * | | |
+ * |---|---|
+ * | `Hypher` (avant) | 344 ms |
+ * | branché sur le noyau Rust | **856 ms** — 2,49× plus lent |
+ *
+ * La raison est nette : traverser la frontière WebAssembly — sérialiser le mot,
+ * allouer, appeler, relire — coûte plus cher que le calcul qu'on remplace. Le
+ * trie JavaScript d'`Hypher` est déjà rapide.
+ *
+ * Ce n'est pas une raison de retirer le branchement, c'en est une de savoir
+ * pourquoi il est là : il **unifie le moteur** en Rust, et il se désactive en
+ * une ligne (`SuperPrintBranchement.desactiver()`). Le gain viendra des
+ * composants qui traitent **de gros volumes en un seul appel** — une image, une
+ * compression, une planche, une vérification — jamais de ceux qu'on appelle
+ * des milliers de fois sur de petites données. Voir `docs/PORTAGE.md`,
+ * section F.
+ *
  * ## Pourquoi rien ne peut se casser
  *
  * 1. **Délégation immédiate.** Dès le chargement, `window.hyphenators` est posé

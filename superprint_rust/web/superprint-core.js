@@ -864,15 +864,33 @@
 
     var encoder = new TextEncoder();
     /**
-     * Vue neuve sur la mémoire. ⚠️ Jamais mise en cache : `memory.buffer` change
-     * d'identité dès que Rust agrandit la mémoire.
+     * Le tampon mémoire sous-jacent, pour ne recréer les vues que lorsqu'il
+     * change. La règle reste la même qu'avant — **ne jamais réutiliser une vue
+     * au-delà du changement de tampon** — mais on peut observer ce changement
+     * au lieu de le supposer : `memory.buffer` est un objet neuf après chaque
+     * agrandissement, et la comparaison d'identité est exacte.
      */
+    var tamponMemoire = null;
+    var vue8 = null;
+    var vue32 = null;
+
+    function memoire() {
+      if (tamponMemoire !== memory.buffer) {
+        tamponMemoire = memory.buffer;
+        vue8 = new Uint8Array(tamponMemoire);
+        vue32 = new DataView(tamponMemoire);
+      }
+      return vue8;
+    }
+
+    /** Vue neuve sur une plage de la mémoire. */
     function u8(ptr, len) {
       return new Uint8Array(memory.buffer, ptr, len);
     }
 
     function lu32(ptr) {
-      return new DataView(memory.buffer).getUint32(ptr, true);
+      memoire();
+      return vue32.getUint32(ptr, true);
     }
 
     /**
@@ -940,40 +958,93 @@
     }
 
     /**
+     * Tampons de travail de la césure, alloués **une fois** et réutilisés.
+     *
+     * La césure est appelée pour chaque mot d'un texte. Allouer puis libérer
+     * trois blocs par mot coûtait plus cher que le calcul lui-même — c'est la
+     * mesure faite dans le navigateur qui l'a montré, avant que ce cache
+     * n'existe : 470 ms pour 60 000 mots, contre 116 ms pour `Hypher`.
+     *
+     * ⚠️ Seuls les **pointeurs** sont conservés, jamais une vue : un pointeur
+     * est un décalage dans la mémoire linéaire, il reste valable après un
+     * agrandissement. Ces deux blocs ne sont jamais rendus — deux allocations
+     * par moteur chargé, ce n'est pas une fuite.
+     */
+    var pratique = { entree: 0, entreeTaille: 0, sortie: 0, sortieTaille: 0 };
+
+    function reserver(cible, taille) {
+      if (pratique[cible + 'Taille'] >= taille) return pratique[cible];
+      if (pratique[cible]) free(pratique[cible], pratique[cible + 'Taille']);
+      // On arrondit à la puissance de deux suivante : un texte contient des
+      // mots courts et quelques mots longs, on ne veut pas réallouer à chaque
+      // mot un peu plus long que le précédent.
+      var capacite = 1024;
+      while (capacite < taille) capacite *= 2;
+      var bloc = alloc(capacite);
+      if (!bloc) throw new CoreError('allocation refusée dans la mémoire du module', { code: ERR.NULL });
+      pratique[cible] = bloc;
+      pratique[cible + 'Taille'] = capacite;
+      return bloc;
+    }
+
+    /**
      * Les **positions de coupe** d'un mot, en indices de caractères.
      *
      * Sémantique identique à `Hypher.prototype.hyphenate` : le dictionnaire
      * **seul**. Le filtrage typographique reste à l'appelant — c'est ce qui
      * permet de remplacer le moteur sans changer le comportement visible.
      *
-     * Le noyau annonce la taille nécessaire en deux passes : on commence donc
-     * avec un petit tampon, sans supposer une longueur maximale.
+     * Pas d'allocation ni de copie : on écrit dans le tampon d'entrée, on lit
+     * les positions dans le tampon de sortie, et on empile les nombres dans un
+     * tableau. Le noyau annonce la taille nécessaire en deux passes, mais la
+     * seconde n'a lieu qu'une fois, pour un mot plus long que tous les
+     * précédents.
      */
     function coupesMotif(rang, mot) {
-      var octets = encoder.encode(String(mot));
-      return portee(function (ctx) {
-        var pMot = ctx.poser(octets);
-        var pLen = ctx.allouer(4);
-        var capacite = 128;
-        var tampon = ctx.allouer(capacite);
-        var code = exports.sp_cesure_coupes(rang, pMot, octets.length, tampon, capacite, pLen);
-        if (code === ERR.TOO_SMALL) {
-          // Le noyau a écrit la taille nécessaire dans `pLen` : on alloue, on
-          // recommence. Une seule reprise suffit, la taille ne change pas.
-          capacite = ctx.lu32(pLen);
-          tampon = ctx.allouer(capacite);
-          code = exports.sp_cesure_coupes(rang, pMot, octets.length, tampon, capacite, pLen);
-        }
-        verifier(code, 'cesure.coupes');
-        // Les positions sont des `u16` en petit-boutiste, écrits par Rust.
-        var vue = ctx.lire(tampon, code * 2);
-        var positions = [];
-        for (var i = 0; i < code; i += 1) {
-          positions.push(vue[i * 2] | (vue[i * 2 + 1] << 8));
-        }
-        return positions;
-      });
+      var octets = encoder.encode(mot);
+      // ⚠️ L'ordre compte. `alloc` peut agrandir la mémoire, donc détacher le
+      // tampon : on réserve **toutes** les zones d'abord, et on demande une vue
+      // fraîche seulement après. Vue fraîche encore après l'appel, car c'est le
+      // noyau lui-même qui alloue en interne.
+      var pMot = reserver('entree', octets.length || 1);
+      var pLen = reserver('longueur', 4);
+      var pSortie = reserver('sortie', 2048);
+      if (octets.length) memoire().set(octets, pMot);
+      var code = exports.sp_cesure_coupes(
+        rang,
+        pMot,
+        octets.length,
+        pSortie,
+        pratique.sortieTaille,
+        pLen,
+      );
+      if (code === ERR.TOO_SMALL) {
+        // Le noyau a écrit la taille nécessaire dans `pLen` : on alloue, on
+        // recommence. La taille ne change pas, une reprise suffit.
+        pSortie = reserver('sortie', lu32(pLen));
+        code = exports.sp_cesure_coupes(
+          rang,
+          pMot,
+          octets.length,
+          pSortie,
+          pratique.sortieTaille,
+          pLen,
+        );
+      }
+      verifier(code, 'cesure.coupes');
+      // Les positions sont des `u16` en petit-boutiste, écrits par Rust. On les
+      // lit sur place, sans recopier le tampon — d'où la vue demandée
+      // maintenant et non avant l'appel.
+      var mem = memoire();
+      var positions = new Array(code);
+      for (var i = 0; i < code; i += 1) {
+        positions[i] = mem[pSortie + i * 2] | (mem[pSortie + i * 2 + 1] << 8);
+      }
+      return positions;
     }
+
+    /** Un mot contient-il une paire de substitution (écriture hors plan multilingue) ? */
+    var PAIRES_DE_SUBSTITUTION = /[\uD800-\uDFFF]/;
 
     return {
       backend: 'wasm',
@@ -1100,20 +1171,30 @@
        * Le mot découpé aux positions de coupe — la forme attendue par
        * l'application : un tableau dont la concaténation redonne le mot.
        *
-       * ⚠️ Le découpage se fait sur `Array.from(mot)`, car les positions du
-       * noyau comptent des **points de code**. Découper avec `mot[i]` décalerait
-       * tout texte contenant un caractère hors plan multilingue.
+       * ⚠️ Les positions du noyau comptent des **points de code**. Tant que le
+       * mot n'a pas de paire de substitution, un point de code vaut une unité
+       * UTF-16 et `String.prototype.slice` découpe juste — c'est le chemin
+       * courant, et il évite de construire un tableau de caractères.
+       * Sinon on passe par `Array.from`, qui groupe bien les paires.
        */
       fragments: function (rang, mot) {
-        var texte = String(mot);
+        var texte = mot;
         var positions = coupesMotif(rang, texte);
         if (positions.length === 0) return [texte];
-        var caracteres = Array.from(texte);
         var morceaux = [];
         var debut = 0;
-        for (var i = 0; i < positions.length; i += 1) {
-          morceaux.push(caracteres.slice(debut, positions[i]).join(''));
-          debut = positions[i];
+        if (!PAIRES_DE_SUBSTITUTION.test(texte)) {
+          for (var i = 0; i < positions.length; i += 1) {
+            morceaux.push(texte.slice(debut, positions[i]));
+            debut = positions[i];
+          }
+          morceaux.push(texte.slice(debut));
+          return morceaux;
+        }
+        var caracteres = Array.from(texte);
+        for (var j = 0; j < positions.length; j += 1) {
+          morceaux.push(caracteres.slice(debut, positions[j]).join(''));
+          debut = positions[j];
         }
         morceaux.push(caracteres.slice(debut).join(''));
         return morceaux;

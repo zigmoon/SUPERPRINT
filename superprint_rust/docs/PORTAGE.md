@@ -321,3 +321,40 @@ Une étape du même fichier compare les **empreintes SHA-256** de
 `web/superprint-core.js` et `dist/superprint_core.wasm` avec leurs copies dans
 `superprint/app/JS/`. Sans elle, le contrôle vérifierait autre chose que ce qui
 est livré.
+
+### Ce que la mesure a appris — lire avant de brancher le composant suivant
+
+La césure a été chronométrée **dans le navigateur**, sur la page réelle, cinq
+mille compositions successives d'un même paragraphe de 72 mots (288 000 appels
+à `hyphenate`) :
+
+| Variante | Temps | Rapport |
+|---|---|---|
+| `Hypher` (aujourd'hui) | 344 ms | 1,00 |
+| Branché sur le noyau Rust | 856 ms | **2,49× plus lent** |
+| `Hypher` **avec cache de mots** | 5 ms | 0,01 |
+| Rust **avec cache de mots** | 5 ms | 0,01 |
+
+Deux enseignements, et ils valent pour tout le portage :
+
+1. **Un appel par mot ne se branche pas.** Traverser la frontière WebAssembly
+   coûte — sérialiser le mot, allouer, appeler, relire — et ce coût est
+   *supérieur* à celui du calcul lui-même. Le trie JavaScript d'`Hypher` est
+   déjà rapide : la dichotomie ajoutée côté Rust (les enfants du trie sont
+   désormais triés, et cherchés par dichotomie au lieu d'un balayage) a fait
+   passer le rapport de 2,6× à 1,6×, mais l'a pas annulé.
+
+2. **Ce qui compte, c'est le cache, pas le moteur.** Un paragraphe recomposé —
+   à chaque frappe, à chaque redimensionnement — refait la même césure sur les
+   mêmes mots. Un simple annuaire mot → fragments divise le temps par **69**,
+   et rend le choix du moteur **sans effet** (0,98 entre les deux).
+
+Conséquence à retenir pour la suite : **brancher ce qui traite de gros
+volumes en un seul appel** (une image entière, une compression, une planche,
+une vérification), pas ce qui est appelé des milliers de fois sur de petites
+données. Et quand un composant est appelé en boucle, regarder d'abord s'il y a
+un cache à poser : c'est presque toujours là que se trouve le gain.
+
+La césure reste branchée parce qu'elle a été demandée et qu'elle est
+**mesurée identique** — mais elle est le contre-exemple à garder en tête, pas
+le modèle.

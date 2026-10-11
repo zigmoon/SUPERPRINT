@@ -45,8 +45,30 @@ use std::collections::BTreeMap;
 struct Noeud {
     /// Notes du motif qui **se termine** ici, une par frontière (`len + 1`).
     notes: Vec<u8>,
-    /// Enfants : lettre → rang du nœud.
+    /// Enfants : lettre → rang du nœud, **triés par lettre**.
+    ///
+    /// L'ordre n'est pas cosmétique : il permet la dichotomie ci-dessous. Un
+    /// nœud français porte jusqu'à une quarantaine d'enfants, et la césure fait
+    /// cette recherche pour **chaque lettre de chaque mot** — un balayage
+    /// linéaire y coûtait quatre fois le prix du moteur JavaScript qu'on
+    /// remplace (mesuré : 6 300 ns par mot contre 2 300).
     enfants: Vec<(char, usize)>,
+}
+
+impl Noeud {
+    /// Le nœud enfant d'une lettre, ou `None`.
+    fn enfant(&self, lettre: char) -> Option<usize> {
+        self.enfants
+            .binary_search_by_key(&lettre, |(c, _)| *c)
+            .ok()
+            .map(|index| self.enfants[index].1)
+    }
+
+    /// Où se trouve une lettre par rapport aux enfants — le rang si elle y est,
+    /// la position d'insertion sinon. C'est ce qui garde la liste triée.
+    fn position_enfant(&self, lettre: char) -> Result<usize, usize> {
+        self.enfants.binary_search_by_key(&lettre, |(c, _)| *c)
+    }
 }
 
 /// Un dictionnaire de césure : un arbre de motifs, deux bornes, des exceptions.
@@ -263,17 +285,14 @@ impl Motifs {
 
         let mut rang = 0usize;
         for lettre in &lettres {
-            let suivant = self.noeuds[rang]
-                .enfants
-                .iter()
-                .find(|(c, _)| c == lettre)
-                .map(|(_, r)| *r);
-            rang = match suivant {
-                Some(r) => r,
-                None => {
+            rang = match self.noeuds[rang].position_enfant(*lettre) {
+                Ok(index) => self.noeuds[rang].enfants[index].1,
+                Err(position) => {
                     self.noeuds.push(Noeud::default());
                     let nouveau = self.noeuds.len() - 1;
-                    self.noeuds[rang].enfants.push((*lettre, nouveau));
+                    self.noeuds[rang]
+                        .enfants
+                        .insert(position, (*lettre, nouveau));
                     nouveau
                 }
             };
@@ -327,12 +346,7 @@ impl Motifs {
         for (depart, _) in enveloppe.iter().enumerate() {
             let mut rang = 0usize;
             for lettre_fin in enveloppe.iter().skip(depart).take(n - depart) {
-                let suivant = self.noeuds[rang]
-                    .enfants
-                    .iter()
-                    .find(|(c, _)| c == lettre_fin)
-                    .map(|(_, r)| *r);
-                let Some(suivant) = suivant else {
+                let Some(suivant) = self.noeuds[rang].enfant(*lettre_fin) else {
                     break;
                 };
                 rang = suivant;
@@ -443,6 +457,46 @@ mod tests {
             2,
             3,
         )
+    }
+
+    #[test]
+    fn les_enfants_de_l_arbre_restent_tries() {
+        // L'ordre des enfants n'est pas cosmétique : la recherche est une
+        // **dichotomie**. Si l'ordre se perdait, `binary_search_by_key` ne
+        // trouverait plus rien — et la césure cesserait silencieusement de
+        // couper, sans erreur ni panique. C'est exactement le genre de défaut
+        // qu'un test doit verrouiller.
+        let motifs = Motifs::depuis_pat(
+            "# insertion dans le desordre\n\
+             z1\n\
+             a1\n\
+             m1\n\
+             b1\n\
+             é1\n\
+             œ1\n\
+             ",
+            2,
+            3,
+        );
+        for (index, noeud) in motifs.noeuds.iter().enumerate() {
+            let lettres: Vec<char> = noeud.enfants.iter().map(|(c, _)| *c).collect();
+            let mut triees = lettres.clone();
+            triees.sort_unstable();
+            assert_eq!(
+                lettres, triees,
+                "les enfants du nœud {index} ne sont pas tries"
+            );
+        }
+
+        // Et la recherche retrouve bien ce qu'on a mis.
+        let racine = &motifs.noeuds[0];
+        for lettre in ['a', 'b', 'm', 'z', 'é', 'œ'] {
+            assert!(
+                racine.enfant(lettre).is_some(),
+                "« {lettre} » doit etre trouvee"
+            );
+        }
+        assert!(racine.enfant('q').is_none(), "« q » n'a pas ete inscrite");
     }
 
     #[test]

@@ -853,37 +853,51 @@ pub unsafe extern "C" fn sp_cesure_coupes(
     let Some(cesure) = garde.get(rang as usize) else {
         return SP_ERR_BAD_INPUT;
     };
-    let coupes = cesure
-        .motifs()
-        .map(|motifs| motifs.fragments(texte))
-        .unwrap_or_else(|| vec![texte.to_string()]);
+    let Some(motifs) = cesure.motifs() else {
+        // Un dictionnaire sans motifs ne coupe rien — ce n'est pas une erreur.
+        unsafe { *out_len = 0 };
+        return 0;
+    };
 
-    // Les positions se déduisent des fragments : c'est exactement ainsi que
-    // `Motifs::fragments` les a produits, donc la recomposition est fidèle.
-    let mut positions: Vec<u16> = Vec::with_capacity(coupes.len().saturating_sub(1));
-    let mut cumul = 0usize;
-    for fragment in coupes.iter().take(coupes.len().saturating_sub(1)) {
-        cumul += fragment.chars().count();
-        match u16::try_from(cumul) {
-            Ok(valeur) => positions.push(valeur),
+    // Les positions sont filtrées, triées et dédoublonnées **exactement** comme
+    // `motifs::decouper` le fait pour ses fragments : c'est cette égalité-là qui
+    // garantit que la colle, qui découpe à ces positions, retrouve les fragments
+    // que le dictionnaire seul aurait rendus. On lit `coupes` plutôt que
+    // `fragments` parce que `fragments` alloue une chaîne par morceau, et
+    // l'appelant n'a besoin que des positions.
+    let caracteres = texte.chars().count();
+    let mut positions: Vec<usize> = motifs
+        .coupes(texte)
+        .into_iter()
+        .filter(|i| *i > 0 && *i < caracteres)
+        .collect();
+    positions.sort_unstable();
+    positions.dedup();
+
+    // Les positions vont par paires d'octets : on ne garde que celles qui
+    // tiennent, plutôt que de tout refuser à cause d'une seule.
+    let mut retenues = Vec::with_capacity(positions.len());
+    for position in &positions {
+        match u16::try_from(*position) {
+            Ok(valeur) => retenues.push(valeur),
             // Un mot de plus de 65 535 caractères n'existe pas dans un texte
             // composé ; s'il arrive, on le refuse plutôt que de tronquer.
             Err(_) => return SP_ERR_BAD_INPUT,
         }
     }
 
-    let besoin = positions.len() * 2;
+    let besoin = retenues.len() * 2;
     unsafe { *out_len = besoin as u32 };
     if besoin > dst_cap {
         return SP_ERR_TOO_SMALL;
     }
-    if positions.is_empty() {
+    if retenues.is_empty() {
         return 0;
     }
     let Some(zone) = (unsafe { as_slice_mut(dst, besoin) }) else {
         return SP_ERR_NULL;
     };
-    for (index, position) in positions.iter().enumerate() {
+    for (index, position) in retenues.iter().enumerate() {
         let octets = position.to_le_bytes();
         zone[index * 2] = octets[0];
         zone[index * 2 + 1] = octets[1];
