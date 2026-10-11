@@ -565,6 +565,14 @@
     <script src="JS/hyphenation-de.js" defer></script>
     <script src="JS/hyphenation-es.js" defer></script>
     <script src="JS/hyphenation-it.js" defer></script>
+    <!-- 🦀 Branchement du noyau Rust (WebAssembly) — AJOUT, sans modification de
+         l'existant. `superprint-core.js` est la colle ; `superprint-branchement.js`
+         installe ses moteurs dans `window.hyphenators`, que `main.js` consulte
+         déjà AVANT son propre Hypher (lignes 5201 et 11462). Si le noyau ne se
+         charge pas, la césure continue avec Hypher : aucun changement visible.
+         Retirer ces deux lignes remet l'application à l'identique. -->
+    <script src="JS/superprint-core.js?v=20261011-v612-rust-cesure" defer></script>
+    <script src="JS/superprint-branchement.js?v=20261011-v612-rust-cesure" defer></script>
     <!-- ⚠️ pdfjsLib.GlobalWorkerOptions.workerSrc est configuré par ensurePdfImportLib()
          (main.js) juste après le chargement à la demande de JS/pdf.min.js.
          Toute ressource externe est bannie (politique 100% local). -->

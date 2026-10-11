@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.611-fondations-open-source';
+const CACHE_NAME = 'superprint-shell-v1.7.612-rust-cesure';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -51,6 +51,13 @@ const APP_SHELL = [
   './JS/hyphenation-de.js',
   './JS/hyphenation-es.js',
   './JS/hyphenation-it.js',
+  // 🦀 Branchement du noyau Rust : la colle, le noyau et le branchement.
+  // Précachés parce qu'ils sont demandés au démarrage — les laisser au
+  // cache-first à la demande ne changerait rien au trafic, mais laisserait un
+  // premier lancement hors-ligne sans césure branchée.
+  './JS/superprint-core.js',
+  './JS/superprint-branchement.js',
+  './JS/superprint_core.wasm',
   './CSS/fonts.css',
   './CSS/fonts/BebasNeue-400-normal-latin.woff2',
   './CSS/fonts/BebasNeue-400-normal-latin-ext.woff2',
