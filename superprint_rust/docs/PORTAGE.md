@@ -12,14 +12,14 @@ qui existe, et dit pour chaque domaine l'un de ces quatre états :
 | 🟠 **portable plus tard** | faisable, mais demande une chaîne (ZIP+XML, décodage JPEG…) |
 | ❌ **à garder en JS** | dépend du DOM, de WebGL, du réseau ou du navigateur — le porter n'aurait pas de sens, et la raison est écrite |
 
-Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-11) :
+Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-12) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 17 crates, tests compris) | **43 134 lignes** |
-| dont annotations `#[test]` | 963 tests, tous verts |
+| Rust (`crates/`, 17 crates, tests compris) | **43 523 lignes** |
+| dont annotations `#[test]` | 970 tests, tous verts |
 | exports `sp_*` de la frontière C | **48** (0 import), sur **deux** modules |
-| modules livrables | 380 Ko (noyau) + **245 Ko** (import PostScript, à la demande) |
+| modules livrables | 380 Ko (noyau) + **322 Ko** (import PostScript, à la demande) |
 | étapes de contrôle (`scripts/check.ps1`) | **29** |
 | JavaScript applicatif (hors bibliothèques tierces) | **126 581 lignes** |
 | dont `main.js` | 99 157 lignes |
@@ -33,7 +33,7 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
 | dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript | ce qui sert vraiment à l'utilisateur |
 | **Volume JS porté** (somme des plages citées) | **13 832 / 18 803** → **74 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 43 134 / 112 138 → **38,5 %** | ⚠️ le plus trompeur des quatre |
+| **Lignes** Rust / JS | 43 523 / 112 138 → **38,8 %** | ⚠️ le plus trompeur des quatre |
 
 La plage ajoutée par l'import PostScript est mesurée ainsi : dans
 `superprint/app/JS/sp-eps-import.js` (939 lignes), tout ce qui précède
@@ -109,7 +109,7 @@ déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
 | 11 | Analyse de police TrueType (`cmap`, métriques) | `superprint-font` | 31 tests, police synthétique **et** vraie police | — |
 | 12 | Texte : `Type0` / `Identity-H` / `/FontFile2` | `pdf::font`, `pdf::document` | **`pdf.js` relit les caractères en clair** | — |
 | 13 | Texte extractible (`/ToUnicode`) | `pdf::font` | `pdf.js` : accents, apostrophe, tiret cadratin | — |
-| 14 | Frontière C (**41** fonctions, 0 import) | `superprint-wasm` | `WebAssembly.Module.imports` = ∅ | — |
+| 14 | Frontière C (**44** fonctions, 0 import) | `superprint-wasm` | `WebAssembly.Module.imports` = ∅ | — |
 | 15 | Colle web + repli JS mesuré | `web/superprint-core.js` | parité du repli octet pour octet | — |
 | 16 | **Césure** (Liang + règles FR) | `text::motifs`, `text::francais`, `text::Cesure` | `hypher.js`, **2 644 mots, 7 champs identiques** | ✅ **branché** |
 | 17 | **Compression DEFLATE / zlib** | `compress::{deflate,inflate,zlib}` | croisé avec `zlib` de Node, 15 jeux, 2 sens | 🟢 exporteur |
@@ -121,11 +121,11 @@ déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
 | 23 | **Lecture de profil ICC** | `superprint-icc` | relecture indépendante des 3 profils du produit, **écart à la spécification mesuré** | 🟢 offert |
 | 24 | **PDF/X** (XMP, `OutputIntent`, revendication) | `pdf::xmp`, `pdf::document` | `pdf-lib` relit le paquet XMP et les quatre clés de conformité | 🟢 offert |
 | 25 | **Pagination et chaînage** | `superprint-flow` | invariante vérifiée (16 cas), défaut de la méthode du produit **mesuré** (18 coupures au milieu d'un mot contre 0) | 🟢 offert |
-| 26 | **Géométrie vectorielle et Pathfinder** | `superprint-path` | surface du résultat vérifiée sur **212 000 points**, 45 identités d'aires |
+| 26 | **Géométrie vectorielle et Pathfinder** | `superprint-path` | surface du résultat vérifiée sur **224 000 points**, 45 identités d'aires, 0 refus injustifié |
 | 31 | **Épaississement d'un trait** (jonctions, extrémités, limite d'onglet) | `path::plume` | la **définition** (distance au tracé) recalculée à part sur **1,5 million de points** : le rond est *égal*, l'onglet plus grand, le biseau plus petit | 🟢 offert | 🟢 offert |
 | 27 | **Conteneur ZIP** (lecture, DEFLATE, CRC-32) | `superprint-zip` | 10 fichiers réels relus par un lecteur écrit à part : **56 entrées, 569 826 octets identiques** | 🟢 offert |
 | 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères | 🟢 offert |
-| 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné) | `superprint-ps` | 4 témoins, **174 sommets** comparés à un interpréteur écrit à part ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
+| 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné, découpage appliqué) | `superprint-ps` | 4 témoins, **109 sommets** comparés à un interpréteur écrit à part, et le dessin découpé vérifié sur **1 525 points** ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
 | 30 | **Dessin SVG** (commandes de chemin, formes, transformations) | `superprint-doc::svg` | **40 SVG réels** du dépôt, **172 formes et 10 404 sommets** comparés à un lecteur écrit à part ; tolérance mesurée sur la courbe vraie ; table des couleurs relevée du produit | 🟢 offert |
 
 ---
@@ -381,11 +381,34 @@ ensembliste** appliquée aux deux formes d'entrée, recalculée en JavaScript.
 
 | Contrôle | Résultat mesuré |
 |---|---|
-| surface du résultat, point par point | **212 000 points, 0 désaccord** |
-| anneaux du résultat non auto-intersectants | 53 / 53 |
-| identités d'aires (`A∪B + A∩B = A + B`, etc.) | 45 / 45 |
-| refus, et refus injustifiés | 7 refus justifiés, **0 injustifié** |
+| surface du résultat, point par point | **224 000 points, 0 désaccord** |
+| anneaux du résultat non auto-intersectants | 56 / 56 |
+| identités d'aires (`A∪B + A∩B = A + B`, etc.) | 45 / 45 (1 cas écarté, voir plus bas) |
+| refus, et refus injustifiés | 8 refus justifiés, **0 injustifié** |
 | aplatissement dans la tolérance (5 courbes × 4 tolérances) | pire rapport écart/tolérance : **0,98** |
+
+**Une seconde faute trouvée par la mesure, et elle rendait un vide silencieux.**
+Les arêtes d'une forme n'étaient découpées qu'à leurs contacts avec **l'autre**
+forme — jamais avec les anneaux de **la même** forme. Une forme composée dont
+deux anneaux se chevauchent, cas légal (et exactement ce que produit un `clip`
+PostScript à plusieurs sous-chemins), voyait donc son classement « dedans /
+dehors » faux, son chaînage ne produisait aucun anneau, et l'opération rendait
+`ResultatVide` — **sans un mot**. C'est le découpage PostScript qui l'a révélé :
+l'intersection d'un carré de 3600 avec la réunion de deux carrés de 100 qui se
+chevauchent en 25 rendait 175 attendus, et rien du tout. Le corpus de contrôle
+porte maintenant ce cas, et son aire écrite à la main :
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| deux carrés de 100 qui se chevauchent en 25, sous la règle non nulle | aire **175** = 100 + 100 − 25 |
+| les deux mêmes, sous la règle pair-impair | aire **150** = 100 + 100 − 2 × 25 |
+| le cas au corpus de `validate-path.mjs` | **12 000 points** de plus, 0 désaccord |
+
+> Les **identités d'aires** ne sont pas vérifiables sur ce cas, et le script le
+> dit : l'aire **signée** d'une forme dont les anneaux se recouvrent compte le
+> recouvrement deux fois, alors que l'aire de sa surface ne le compte qu'une.
+> C'est une limite de la mesure, pas du calcul — la surface, elle, reste vérifiée
+> point par point, par la même définition que partout ailleurs.
 
 **Une faute de tracé trouvée par la mesure, et corrigée.** Le critère de platitude
 classique — l'écart des points de contrôle à la corde — déclarait **plate** une
@@ -457,17 +480,24 @@ géométrie.
 Le carré fermé, biseaux, vaut **78,000 exactement** (un triangle de `h²/2` coupé
 par coin). J'avais d'abord écrit **77,657** — la mesure a corrigé mon attendu.
 
-> **Ce que l'épaississement débloque.** `clip` — le découpage PostScript — n'est
-> pas appliqué aujourd'hui, et la raison écrite était : « découper un trait
-> demande de le convertir en surface, et découper vraiment demande une algèbre de
-> régions ». **Les deux existent maintenant** : `path::booleen` pour l'algèbre,
-> `path::plume` pour la conversion. Ce qui reste n'est donc plus un obstacle
-> conceptuel mais un **branchement** : l'état graphique doit porter la région
-> courante (`gsave`/`grestore` la sauvent), `peindre` doit intersecter, et —
-> c'est le vrai coût — **l'interpréteur indépendant de `validate-ps.mjs` doit
-> modéliser le découpage**, sinon la preuve « dessin par dessin, sommet par
-> sommet » perdrait sa valeur au lieu d'être étendue. C'est la prochaine étape,
-> et elle mérite son propre contrôle.
+> **Ce que l'épaississement débloque, et ce qu'il a débloqué.** `clip` — le
+> découpage PostScript — n'était pas appliqué, et la raison écrite était :
+> « découper un trait demande de le convertir en surface, et découper vraiment
+> demande une algèbre de régions ». **Les deux existent maintenant** (`plume`
+> pour la conversion, `booleen` pour l'algèbre), et le découpage **est appliqué**
+> (voir B8c). Le branchement devait porter trois choses de plus :
+>
+> - la région dans l'**état graphique**, pour que `gsave`/`grestore`/`save`/
+>   `restore` la rendent d'eux-mêmes. C'est un **rang** dans un registre qui ne
+>   fait que s'allonger, et non la région elle-même : l'état reste `Copy`, et
+>   copier un chemin de trois mille sommets à chaque `gsave` n'aurait rien
+>   apporté ;
+> - `peindre` qui **intersecte** — y compris pour un **trait**, qui devient
+>   alors une **surface remplie** de la couleur du trait. Ce n'est pas un
+>   raccourci : c'est ce que veut dire découper un trait ;
+> - et surtout **l'interpréteur indépendant de `validate-ps.mjs`**, qui devait
+>   modéliser le découpage — sans quoi la preuve « dessin par dessin, sommet par
+>   sommet » aurait perdu sa valeur au lieu d'être étendue.
 
 ### B8. Import de documents 🟠 → ✅ (fait, et mesuré)
 
@@ -568,19 +598,63 @@ est **assumé et mesuré**, et il est le seul du domaine.
 
 | Contrôle | Résultat mesuré |
 |---|---|
-| dessins et sommets comparés à un interpréteur écrit à part | 4 témoins EPS, **11 dessins, 174 sommets**, écart sous 1e-6 |
+| dessins et sommets comparés à un interpréteur écrit à part | 4 témoins EPS, **11 dessins, 109 sommets**, écart sous 1e-6 |
+| **le découpage appliqué** : le dessin rendu est-il le dessin non découpé ∩ la région ? | **1 dessin découpé, 1 525 points** vérifiés hors bande, 0 désaccord |
 | aires connues par construction (rectangle, triangle) | 18 000 / 2 200 / 80 000 / 34 000 / 67 600 — exactes au dix-millième |
+| aires de découpage, connues par construction (8 cas unitaires) | 25 · 40 · 175 · 150 · 25 · 100 · 400 — **exactes** |
 | tolérance d'aplatissement, **par l'écart à la courbe vraie** | 0,5 → écart **0,474** ; 0,05 → **0,0366** ; 0,005 → **0,0023** |
 | un cercle de rayon 40 | aire à **0,1 %** de π r², boîte au centième |
 | refus nommés | **20 / 20**, chacun nomme l'opérateur *et* la raison |
 | opérateur inconnu | signalé, et le dessin est quand même lu |
 
+#### B8c-bis. Le découpage, appliqué et mesuré
+
+`clip`/`W` et `eoclip`/`W*` **posent une région** que les formes suivantes sont
+intersectées. Trois décisions y sont, et chacune a une raison :
+
+- **la région vit dans l'état graphique**, sous forme d'un **rang** dans un
+  registre qui ne fait que s'allonger. Un `gsave`/`grestore`/`save`/`restore` la
+  rend donc d'elle-même, sans une ligne de plus — et l'état reste `Copy`, ce qui
+  évite de copier un chemin de plusieurs milliers de sommets à chaque
+  sauvegarde ;
+- **deux découpages s'empilent** au lieu d'être intersectés au moment du `clip` :
+  l'intersection est associative, donc l'appliquer de proche en proche en
+  peignant donne la même région, et cela évite de faire tourner l'algèbre
+  booléenne sur deux régions dont l'intersection n'est peut-être pas simple ;
+- **un trait découpé devient une surface remplie**, de la couleur du trait. Un
+  trait n'a pas d'intersection avec une région ; c'est la surface qu'il encre qui
+  en a une. Le dire est plus honnête que de rendre un trait amputé.
+
+Ce que le noyau fait quand il ne peut pas : une intersection **vide** fait
+disparaître le dessin (c'est exact), et un **refus** de l'algèbre — un anneau qui
+s'auto-intersecte, un trait insoluble — fait peindre la forme **entière**, comme
+avant, avec un avertissement qui le dit. Peindre un peu trop se voit ; un objet
+perdu ne se voit pas.
+
+La preuve, elle, ne pouvait pas rester « dessin par dessin, sommet par sommet » :
+le noyau applique le découpage, l'interpréteur de contrôle ne l'applique pas. La
+comparaison est donc **stricte jusqu'au premier `clip` et sur le chemin du `clip`
+lui-même**, puis la propriété vérifiée devient sa **définition** — le dessin rendu
+est le dessin non découpé restreint à la région — et elle se vérifie **point par
+point**, hors d'une bande autour des bords où l'appartenance n'est pas décidable.
+C'est la même méthode que `validate-path.mjs` emploie pour les opérations
+booléennes, appliquée au même objet.
+
+| Contrôle du découpage | Résultat mesuré |
+|---|---|
+| `eps-illustrator.eps` (un vrai témoin, avec un `clip` réel) | le dessin découpé est l'intersection : **1 525 points** hors bande, 0 désaccord |
+| la région elle-même, recalculée par le contrôle | chemin du `clip` identique **sommet par sommet** |
+| aire d'un remplissage découpé à moitié | **25** exactement (un carré 5..10) |
+| aire d'un trait découpé (trait 4 de large, coupé à x ≤ 10) | **40** exactement (rectangle 10 × 4) |
+| forme entièrement hors de la région | disparaît, sans avertissement |
+| `eoclip` contre `clip` sur un chemin qui se recroise | **150** contre **175** — les deux règles sont distinctes |
+| `gsave`/`grestore` et `save`/`restore` | rendent le découpage précédent (25 puis 100, 400) |
+
 **Ce qui n'est pas fait, et qui est écrit ici pour ne pas être découvert :**
 
 - `arct` et `arcto` (arc tangent à deux droites) sont **refusés**, pas approximés ;
-- un `clip` est **enregistré** comme un dessin, mais **non appliqué** aux formes
-  suivantes : découper vraiment demande une algèbre de régions, et l'avertissement
-  est posé. Le produit, lui, ne le conserve pas du tout ;
+- le découpage **est appliqué** (voir B8c-bis) ; le dessin du `clip` reste
+  enregistré et non peint, comme le produit l'attend ;
 - le **texte** n'est pas interprété (donc pas de libellés) ;
 - **`s` n'est pas deviné** : la spécification le donne pour `scale`, le produit le
   lit comme `stroke` (`sp-eps-import.js`, ligne 643). Deviner reviendrait, dans un
@@ -599,13 +673,15 @@ est **assumé et mesuré**, et il est le seul du domaine.
 
 Ces limites sont les mêmes que celles du produit, à deux exceptions près — et les
 deux vont dans le même sens : le noyau **refuse** là où le produit **ignore**
-(`show`, `arct`), et il **conserve** ce que le produit **jette** (`clip`).
+(`show`, `arct`), et il **applique** ce que le produit **jette** (`clip`).
 
 **Le PostScript est branché** (voir la section F, « L'import PostScript ») :
 `main.js` accepte un `window.SPEps` déjà posé, il n'y a donc eu aucune ligne à
 y ajouter. L'interpréteur vient de `crates/superprint-ps`, et le noyau est
-livré dans **son propre** module WebAssembly (245 Ko, chargé à la demande) pour ne
-pas alourdir celui du démarrage. Le **docx, l'odt, l'idml et le SVG restent
+livré dans **son propre** module WebAssembly (**322 Ko**, chargé à la demande)
+pour ne pas alourdir celui du démarrage, qui reste à **380 Ko** — le découpage
+appliqué ne lui a rien coûté, et la mesure le vérifie à chaque contrôle. Le
+**docx, l'odt, l'idml et le SVG restent
 offerts** : leur point d'accroche est `_spImportDocxFile` pour les trois premiers,
 et `addSvgFromContent` — appelée par `handleDroppedSvgFile`, toutes deux privées à
 l'IIFE de `main.js` — pour le SVG. L'analyse du docx est enchevêtrée avec `mammoth`
@@ -798,7 +874,7 @@ Du plus utile au moins utile, en tenant compte du risque :
 | ~~8~~ | ~~Filtres, niveaux, encrage, alpha~~ | ✅ **fait et mesuré** — repli JS indépendant, à l'octet près |
 | ~~9~~ | ~~Lecture de profil ICC~~ | ✅ **fait et mesuré** — et l'écart des profils Adobe à la spécification est publié |
 | ~~10~~ | ~~Réduction d'image~~ | ✅ **fait et mesuré** — remonté au rang 4 : c'était le défaut de **justesse** le plus net |
-| ~~11~~ | ~~Pathfinder~~ | ✅ **fait et mesuré** — 212 000 points vérifiés contre la définition ensembliste |
+| ~~11~~ | ~~Pathfinder~~ | ✅ **fait et mesuré** — 224 000 points vérifiés contre la définition ensembliste |
 | ~~12~~ | ~~Conteneur ZIP~~ | ✅ **fait et mesuré** — 10 fichiers réels, 56 entrées, 569 826 octets identiques |
 | ~~13~~ | ~~Import docx / odt / idml~~ | ✅ **fait et mesuré** — 1 414 paragraphes identiques, invariante sur 328 000 caractères |
 | ~~14~~ | ~~PostScript / EPS~~ | ✅ **fait et mesuré** — 4 témoins, tolérance vérifiée sur la courbe vraie, 20 refus nommés |
@@ -851,11 +927,11 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | **Profils ICC** | relecture indépendante des 3 profils réels + 83 fichiers abîmés | **écart à la spécification calculé** (1 520 octets sur `mft2`), aucun plantage, un refus par fichier |
 | **PDF/X** | `pdf-lib` + contrôle d'équilibre XML + comparaison octet par octet du profil | **déclaration exacte, refus des trois mensonges, et contrôle négatif** |
 | **Pagination et chaînage** | invariante de caractères + méthode du produit rejouée en JS | **16 cas sans perte, 18 coupures au milieu d'un mot contre 0, 101 recompositions contre 1** |
-| **Géométrie vectorielle** | définition ensembliste des opérations, appliquée aux entrées en JS | **212 000 points sans désaccord, 45 identités d'aires, 0 refus injustifié** |
+| **Géométrie vectorielle** | définition ensembliste des opérations, appliquée aux entrées en JS | **224 000 points sans désaccord, 45 identités d'aires, 0 refus injustifié** |
 | **Épaississement de trait** | la **définition** (distance au tracé) recalculée par force brute, plus les aires connues par construction | **1 542 657 points sans désaccord** pour le rond, 0 point manquant pour l'onglet, 0 point ajouté pour le biseau, 6 aires exactes |
 | **Conteneur ZIP** | lecteur ZIP écrit à part (annuaire + `inflateRawSync`), archives fabriquées à la main | **56 entrées, 569 826 octets identiques au bit près**, 14 refus nommés, saveur reconnue |
 | **Import docx / odt / idml** | analyseur XML et extracteurs écrits à part, plus une invariante de texte | **1 414 paragraphes identiques**, 328 000 caractères sans perte, 3 fautes du noyau trouvées |
-| **Import PostScript** | interpréteur PostScript écrit à part (lexeur, pile, matrice, aplatissement) | **174 sommets identiques à 1e-6**, aires connues exactes, tolérance mesurée sur la courbe vraie |
+| **Import PostScript** | interpréteur PostScript écrit à part (lexeur, pile, matrice, aplatissement) | **109 sommets identiques à 1e-6**, le dessin découpé vérifié sur **1 525 points**, aires connues exactes, tolérance mesurée sur la courbe vraie |
 | **Import SVG** | analyseur XML, lecteur de `d`, matrice, arcs et aplatissement écrits à part | **40 fichiers réels, 172 formes, 10 404 sommets identiques à 5e-10**, aires connues exactes, table des couleurs relevée de `jspdf.umd.min.js` (143 noms) |
 | **Branchement césure (colle)** | `hypher.js` + dictionnaires du produit | **5 langues, 2 433 mots identiques** |
 | **Branchement césure (livré)** | fichiers réels de `superprint/app/JS/` | **2 129 mots × 5 langues, réversibilité et repli** |
@@ -1113,7 +1189,7 @@ pas du tout, **`window.SPEps` reste absent** et rien ne change pour l'utilisateu
 #### Ce que le noyau a corrigé, et que le JavaScript ne faisait pas
 
 L'interpréteur est celui qui est testé depuis le début
-(`crates/superprint-ps`, 4 096 lignes, 86 tests). Les fautes relevées en le
+(`crates/superprint-ps`, 4 390 lignes, 93 tests). Les fautes relevées en le
 mesurant — `]` et `}` refusés par le lexeur, `/nom` qui bouclait à l'infini,
 `{ … }` exécuté au lieu d'être empilé, `rmoveto` mélangeant deux repères, `arc`
 avec une longueur de poignée fausse hors des quarts de tour, `q`/`Q`

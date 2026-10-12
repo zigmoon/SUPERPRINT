@@ -21,10 +21,23 @@
 //!
 //! ## Le découpage
 //!
-//! `clip` est **enregistré** comme une opération, mais il n'est **pas appliqué**
-//! aux formes suivantes : découper vraiment demanderait une algèbre booléenne de
-//! régions, et le noyau préfère le dire que de laisser croire que la forme est
-//! découpée. L'avertissement est posé une fois, à la première occurrence.
+//! `clip` **est appliqué** : le noyau intersecte chaque forme peinte avec la
+//! région de découpage en vigueur ([`superprint_path::booleen`]). Le dessin du
+//! découpage lui-même reste **enregistré** ([`Peinture::Tronque`]) : c'est ce
+//! que la colle Fabric lit pour ne pas le peindre, et ce que le vérificateur
+//! indépendant lit pour recalculer la région de son côté.
+//!
+//! Trois conséquences, et elles se voient :
+//!
+//! - un **trait** découpé devient une **surface** remplie. Un trait n'a pas
+//!   d'intersection avec une région ; c'est la surface qu'il encre qui en a une.
+//!   La peinture change donc de nature, et la couleur ne change pas ;
+//! - une forme **entièrement hors** de la région n'est plus peinte du tout :
+//!   elle disparaît, et c'est exact ;
+//! - une forme que l'algèbre **refuse** de découper (un anneau qui
+//!   s'auto-intersecte, un trait insoluble) est peinte **entière**, comme avant
+//!   ce changement, avec un avertissement qui le dit. Peindre un peu trop se
+//!   voit ; perdre un objet ne se voit pas.
 
 use superprint_path::point::Point;
 
@@ -91,8 +104,17 @@ pub enum Peinture {
         /// Épaisseur du trait, en points.
         epaisseur: f64,
     },
-    /// Région de découpage (`clip`, `eoclip`) : enregistrée, non appliquée.
+    /// Région de découpage (`clip`, `W`), de règle **non nulle** : le dessin est
+    /// enregistré, et la région qu'il décrit découpe les peintures suivantes.
     Tronque,
+    /// Région de découpage de règle **pair-impair** (`eoclip`, `W*`).
+    ///
+    /// La distinction n'est pas cosmétique : sous la règle non nulle, deux
+    /// anneaux tournant dans le même sens s'additionnent — un « trou » doit être
+    /// inversé pour en être un. Sous la règle pair-impair, la parité suffit.
+    /// Sur un chemin qui s'auto-croise, les deux découpent des régions
+    /// différentes.
+    TronquePairImpair,
 }
 
 impl Peinture {
@@ -104,7 +126,14 @@ impl Peinture {
             Self::RempliPairImpair => "remplissage-pair-impair",
             Self::Contour { .. } => "contour",
             Self::Tronque => "decoupage",
+            Self::TronquePairImpair => "decoupage-pair-impair",
         }
+    }
+
+    /// Est-ce un découpage (et non une peinture) ?
+    #[must_use]
+    pub fn est_decoupage(&self) -> bool {
+        matches!(self, Self::Tronque | Self::TronquePairImpair)
     }
 }
 

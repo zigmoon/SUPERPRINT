@@ -209,6 +209,7 @@ fn rendu_dessins(document: &DocumentPs) -> String {
             Peinture::RempliPairImpair => ("remplissage-pair-impair".to_string(), "-".to_string()),
             Peinture::Contour { epaisseur } => ("contour".to_string(), format!("{epaisseur:.9}")),
             Peinture::Tronque => ("decoupage".to_string(), "-".to_string()),
+            Peinture::TronquePairImpair => ("decoupage-pair-impair".to_string(), "-".to_string()),
         };
         let couleur = match dessin.couleur {
             Couleur::Gris(g) => format!("gris\t{g:.9}\t-\t-\t-"),

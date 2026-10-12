@@ -315,6 +315,20 @@ const CORPUS = [
     A: [carre(0, 0, 20), [...carre(6, 6, 8)].reverse()],
     B: [carre(10, 10, 15)],
   },
+  {
+    // Deux anneaux d'une MÊME forme qui se chevauchent : c'est ce qu'un `clip`
+    // PostScript à plusieurs sous-chemins produit, et c'est le cas qui a révélé
+    // que les arêtes d'une forme n'étaient pas découpées à leurs contacts avec
+    // les anneaux de cette même forme. La surface, elle, se vérifie comme les
+    // autres — point par point, contre la définition.
+    nom: 'anneaux qui se chevauchent dans la même forme',
+    A: [carre(0, 0, 10), carre(5, 5, 10)],
+    B: [carre(-20, -20, 60)],
+    // L'aire signée d'une forme dont les anneaux se recouvrent n'est pas l'aire
+    // de sa surface : le recouvrement y est compté deux fois. Les identités
+    // d'aires, qui reposent sur cette égalité, ne sont donc pas vérifiables ici.
+    anneauxSuperposes: true,
+  },
   { nom: 'rectangle très allongé', A: [carre(0, 0, 100)], B: [[[40, -5], [60, -5], [60, 5], [40, 5]]] },
 ];
 
@@ -325,6 +339,7 @@ let refusLegitimes = 0;
 let refusSuspects = 0;
 let identitesJustes = 0;
 let identitesTestees = 0;
+let identitesEcartees = 0;
 let formesSimples = 0;
 let resultatsTestes = 0;
 let premierDesaccord = '';
@@ -451,7 +466,13 @@ for (const cas of CORPUS) {
     const r = resultats[operation];
     return r.messageErreur ? 0 : r.aire;
   };
-  if (resultats.union && resultats.intersection) {
+  if (cas.anneauxSuperposes) {
+    // Une forme dont deux anneaux se recouvrent a une aire **signée** qui n'est
+    // pas l'aire de sa surface : le recouvrement y compte deux fois. Les
+    // identités d'aires ne sont donc pas vérifiables ici — la surface, elle,
+    // l'est par les points ci-dessus, et c'est la même définition.
+    identitesEcartees += 1;
+  } else if (resultats.union && resultats.intersection) {
     identitesTestees += 1;
     const somme = aireDe('union') + aireDe('intersection');
     const aireA = cas.A.reduce((s, a) => s + aire(a), 0);
@@ -506,6 +527,9 @@ check(
 check(
   `les identités d’aires tiennent (${identitesJustes} / ${identitesTestees})`,
   identitesJustes === identitesTestees,
+  identitesEcartees
+    ? `${identitesEcartees} cas écarté(s) : anneaux d’une même forme qui se recouvrent (l’aire signée n’y est pas l’aire de la surface)`
+    : '',
 );
 check('aucun refus injustifié', refusSuspects === 0);
 

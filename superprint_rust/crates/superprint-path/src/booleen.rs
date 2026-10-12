@@ -125,8 +125,16 @@ pub fn operer_avec(
     // registre de points : c'est ce registre qui garantit qu'un point
     // d'intersection calculé deux fois (une par arête) est bien le même.
     let mut registre = Registre::new(tolerance);
-    let aretes_a = decouper_contour(&a, &b, tolerance, &mut registre);
-    let aretes_b = decouper_contour(&b, &a, tolerance, &mut registre);
+    // Chaque forme est découpée aux contacts avec les arêtes de **l'autre** ET
+    // avec les siennes. Les siennes comptent : une forme composée dont deux
+    // anneaux se chevauchent — ce qu'un `clip` PostScript à plusieurs
+    // sous-chemins produit couramment — a des arêtes internes qui se croisent,
+    // et sans ces points de coupe le classement « dedans / dehors » d'un
+    // segment entier serait faux. Le résultat était alors un `ResultatVide`
+    // silencieux, c'est-à-dire une forme perdue sans un mot.
+    let coupeurs: [&Contour; 2] = [&a, &b];
+    let aretes_a = decouper_contour(&a, &coupeurs, tolerance, &mut registre);
+    let aretes_b = decouper_contour(&b, &coupeurs, tolerance, &mut registre);
 
     // Classification et orientation, puis dédoublonnage : deux arêtes
     // parfaitement superposées ne font qu'un bord.
@@ -274,44 +282,46 @@ fn nettoyer_contour(contour: &Contour, tolerance: f64) -> Contour {
     }
 }
 
-/// Découpe les arêtes de `forme` à tous leurs contacts avec les arêtes de
-/// `autre`, et enregistre tous les points obtenus dans `registre`.
+/// Découpe les arêtes de `forme` à tous leurs contacts avec les arêtes des
+/// formes de `coupeurs` — `forme` elle-même comprise —, et enregistre tous les
+/// points obtenus dans `registre`.
 fn decouper_contour(
     forme: &Contour,
-    autre: &Contour,
+    coupeurs: &[&Contour],
     tolerance: f64,
     registre: &mut Registre,
 ) -> Vec<(Point, Point)> {
-    let aretes_autre = autre.aretes();
-    let boite_autre = autre.boite();
+    let sources: Vec<(Boite, Vec<(Point, Point)>)> =
+        coupeurs.iter().map(|c| (c.boite(), c.aretes())).collect();
     let mut sortie = Vec::new();
     for (p, q) in forme.aretes() {
         let p = registre.enregistrer(p);
         let q = registre.enregistrer(q);
         // Un premier tri par boîte : inutile de découper une arête qui ne
-        // croise même pas la boîte de l'autre forme.
+        // croise même pas la boîte d'une forme.
         let boite_arete = {
             let mut b = Boite::du_point(p);
             b.englober(q);
             b.elargie(tolerance)
         };
-        if !boite_arete.recouvre(boite_autre) {
-            sortie.push((p, q));
-            continue;
-        }
         let mut coupes: Vec<f64> = vec![0.0, 1.0];
-        for (r, s) in &aretes_autre {
-            let (r, s) = (*r, *s);
-            if !boite_arete.recouvre({
-                let mut b = Boite::du_point(r);
-                b.englober(s);
-                b
-            }) {
+        for (boite_source, aretes_source) in &sources {
+            if !boite_arete.recouvre(*boite_source) {
                 continue;
             }
-            for t in parametres_de_contact(p, q, r, s, tolerance) {
-                if t > 0.0 && t < 1.0 {
-                    coupes.push(t);
+            for (r, s) in aretes_source {
+                let (r, s) = (*r, *s);
+                if !boite_arete.recouvre({
+                    let mut b = Boite::du_point(r);
+                    b.englober(s);
+                    b
+                }) {
+                    continue;
+                }
+                for t in parametres_de_contact(p, q, r, s, tolerance) {
+                    if t > 0.0 && t < 1.0 {
+                        coupes.push(t);
+                    }
                 }
             }
         }

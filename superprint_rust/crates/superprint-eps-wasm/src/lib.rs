@@ -273,6 +273,7 @@ fn format_eps(document: &superprint_ps::DocumentPs) -> String {
             Peinture::RempliPairImpair => ("eofill", String::new()),
             Peinture::Contour { epaisseur } => ("stroke", format!("{epaisseur:.4}")),
             Peinture::Tronque => ("clip", String::new()),
+            Peinture::TronquePairImpair => ("eoclip", String::new()),
         };
         let composantes = dessin.couleur.composantes();
         let _ = write!(

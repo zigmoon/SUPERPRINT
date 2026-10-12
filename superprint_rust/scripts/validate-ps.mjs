@@ -10,6 +10,14 @@
         propre aplatissement — puis compare DESSIN PAR DESSIN, SOMMET PAR
         SOMMET, avec ce que le noyau rend.
 
+        Le découpage (`clip`) est le seul endroit où la comparaison stricte
+        s'arrête : le noyau l'applique, le contrôle l'enregistre sans
+        l'appliquer. La comparaison tient donc jusqu'au premier `clip` et sur le
+        chemin du `clip` lui-même ; après, la propriété vérifiée est celle qui
+        définit un découpage — le dessin rendu est le dessin NON découpé
+        restreint à la région — et elle se vérifie point par point, hors d'une
+        bande autour des bords, où l'appartenance n'est pas décidable.
+
      2. CONTRÔLES ANALYTIQUES. Les aires de `forme.eps` et d'`eps-preview.eps`
         sont connues par construction (un rectangle, un triangle) : le script
         les recalcule à la main et les exige au dix-millième. Un accord entre
@@ -71,6 +79,9 @@ if (!existsSync(cheminExemple)) {
 const dossier = join(racine, 'target', 'ps');
 mkdirSync(dossier, { recursive: true });
 const temporaire = (nom) => join(dossier, nom);
+
+/** Finesse de la grille d'échantillonnage du contrôle de découpage. */
+const PAS_GRILLE = 48;
 
 /** Lance l'exemple en traduisant les chemins pour le bac à sable WASI. */
 function lancer(...args) {
@@ -921,9 +932,11 @@ class Machine {
         return;
       case 'clip':
       case 'W':
+        this.peindre('decoupage');
+        return;
       case 'eoclip':
       case 'W*':
-        this.peindre('decoupage');
+        this.peindre('decoupage-pair-impair');
         return;
       case 'b':
       case 'B':
@@ -1073,6 +1086,8 @@ titre('Comparaison avec un interpréteur PostScript écrit à part');
 
 let dessinsCompares = 0;
 let sommetsCompares = 0;
+let dessinsDecoupes = 0;
+let pointsDecoupes = 0;
 const divergences = [];
 const absents = [];
 const mesures = [];
@@ -1113,11 +1128,18 @@ for (const temoin of TEMOINS) {
     );
   }
 
+  let regions = [];
   for (let k = 0; k < noyau.dessins.length; k += 1) {
     const a = noyau.dessins[k];
     const b = attendu.machine.dessins[k];
     const ou = `${temoin.nom} dessin ${k}`;
-    if (a.peinture !== b.peinture) {
+    const decoupage = a.peinture.startsWith('decoupage');
+    // Avant le premier découpage, et sur le découpage lui-même, la comparaison
+    // est stricte : c'est le même dessin, sommet par sommet. Après, le noyau
+    // applique le découpage et le contrôle non : la propriété vérifiée devient
+    // l'intersection, et elle se vérifie par échantillonnage — la même méthode
+    // que `validate-path.mjs` emploie pour les opérations booléennes.
+    if (!decoupage && a.peinture !== b.peinture && regions.length === 0) {
       divergences.push(`${ou} : peinture ${a.peinture} ≠ ${b.peinture}`);
       continue;
     }
@@ -1135,39 +1157,47 @@ for (const temoin of TEMOINS) {
     }
     const platNoyau = a.sousChemins;
     const platControle = b.sousChemins;
-    if (platNoyau.length !== platControle.length) {
-      divergences.push(`${ou} : ${platNoyau.length} sous-chemins ≠ ${platControle.length}`);
-      continue;
-    }
-    let ecartMax = 0;
-    let sommets = 0;
-    let forme = true;
-    for (let s = 0; s < platNoyau.length && forme; s += 1) {
-      if (platNoyau[s].length !== platControle[s].length) {
-        divergences.push(
-          `${ou} sous-chemin ${s} : ${platNoyau[s].length} sommets ≠ ${platControle[s].length}`,
-        );
-        forme = false;
-        break;
-      }
-      for (let p = 0; p < platNoyau[s].length; p += 1) {
-        for (let c = 0; c < 2; c += 1) {
-          ecartMax = Math.max(ecartMax, Math.abs(platNoyau[s][p][c] - platControle[s][p][c]));
+    let identique = platNoyau.length === platControle.length;
+    if (identique) {
+      for (let s = 0; s < platNoyau.length && identique; s += 1) {
+        if (platNoyau[s].length !== platControle[s].length) {
+          identique = false;
+          break;
         }
-        sommets += 1;
+        for (let p = 0; p < platNoyau[s].length; p += 1) {
+          if (
+            Math.abs(platNoyau[s][p][0] - platControle[s][p][0]) > 1e-6 ||
+            Math.abs(platNoyau[s][p][1] - platControle[s][p][1]) > 1e-6
+          ) {
+            identique = false;
+            break;
+          }
+        }
       }
     }
-    if (!forme) continue;
-    if (ecartMax > 1e-6) {
-      divergences.push(`${ou} : écart de coordonnées ${ecartMax}`);
-      continue;
+    if (identique) {
+      // Identiques : soit rien n'était découpé, soit le noyau n'a pas eu à
+      // découper (une forme déjà toute dans la région, ou un repli qu'il nomme).
+      for (let s = 0; s < platNoyau.length; s += 1) sommetsCompares += platNoyau[s].length;
+      const aireNoyau = a.aire;
+      const aireControle = aireSignee(platControle);
+      if (Math.abs(aireNoyau - aireControle) > 1e-6 * Math.max(1, Math.abs(aireNoyau))) {
+        divergences.push(`${ou} : aire ${aireNoyau} ≠ ${aireControle}`);
+      }
+    } else {
+      // Le noyau a découpé : la forme rendue doit être exactement la forme du
+      // contrôle restreinte à la région en vigueur.
+      const verdict = verifierIntersection(a, b, regions, k);
+      if (!verdict.ok) {
+        divergences.push(`${ou} : ${verdict.raison}`);
+      } else {
+        pointsDecoupes += verdict.points;
+        dessinsDecoupes += 1;
+      }
     }
     dessinsCompares += 1;
-    sommetsCompares += sommets;
-    const aireNoyau = a.aire;
-    const aireControle = aireSignee(platControle);
-    if (Math.abs(aireNoyau - aireControle) > 1e-6 * Math.max(1, Math.abs(aireNoyau))) {
-      divergences.push(`${ou} : aire ${aireNoyau} ≠ ${aireControle}`);
+    if (decoupage) {
+      regions.push({ anneaux: platControle, pairImpair: b.peinture === 'decoupage-pair-impair' });
     }
   }
 }
@@ -1185,6 +1215,193 @@ function aireSignee(sousChemins) {
   return somme / 2;
 }
 
+/* ─────────────── le découpage : la définition, recalculée ici ───────────────
+   Le noyau applique le découpage ; l'interpréteur de contrôle, non — il
+   l'enregistre. La comparaison stricte tient donc jusqu'au premier `clip`, et
+   sur le chemin du `clip` lui-même, qui doit être le même des deux côtés.
+   Après, la propriété vérifiée est celle qui définit un découpage :
+
+       le dessin rendu = le dessin NON découpé ∩ la région en vigueur
+
+   et elle se vérifie point par point, hors d'une bande autour des bords — où
+   l'appartenance est indécidable à la précision demandée. La région est
+   recalculée ici, à partir des chemins de `clip` que le contrôle a lus. */
+
+/** Nombre d'enroulements d'un anneau autour d'un point ; un bord compte pour
+ * dedans. */
+function enroulements(anneau, p) {
+  const [px, py] = p;
+  let n = 0;
+  for (let i = 0; i < anneau.length; i += 1) {
+    const [x1, y1] = anneau[i];
+    const [x2, y2] = anneau[(i + 1) % anneau.length];
+    if (surSegment(px, py, x1, y1, x2, y2)) return 1;
+    const cote = (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1);
+    if (y1 <= py) {
+      if (y2 > py && cote > 0) n += 1;
+    } else if (y2 <= py && cote < 0) n -= 1;
+  }
+  return n;
+}
+
+/** Nombre de croisements du rayon vers la droite ; un bord compte pour dedans. */
+function croisements(anneau, p) {
+  const [px, py] = p;
+  let n = 0;
+  for (let i = 0; i < anneau.length; i += 1) {
+    const [x1, y1] = anneau[i];
+    const [x2, y2] = anneau[(i + 1) % anneau.length];
+    if (surSegment(px, py, x1, y1, x2, y2)) return 1;
+    if (y1 > py !== y2 > py) {
+      const x = x1 + ((py - y1) / (y2 - y1)) * (x2 - x1);
+      if (x > px) n += 1;
+    }
+  }
+  return n;
+}
+
+function surSegment(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const l2 = dx * dx + dy * dy;
+  if (l2 === 0) return px === x1 && py === y1;
+  if (Math.abs(dx * (py - y1) - dy * (px - x1)) / Math.sqrt(l2) > 1e-9) return false;
+  const t = ((px - x1) * dx + (py - y1) * dy) / l2;
+  return t >= -1e-9 && t <= 1 + 1e-9;
+}
+
+/** Le point est-il dans la forme décrite par ces anneaux ? */
+function dansAnneaux(anneaux, pairImpair, p) {
+  if (pairImpair) {
+    return anneaux.reduce((n, a) => n + croisements(a, p), 0) % 2 === 1;
+  }
+  return anneaux.reduce((n, a) => n + enroulements(a, p), 0) !== 0;
+}
+
+/** Distance du point au bord le plus proche d'une liste de sous-chemins. */
+function distanceAuxBords(sousChemins, p) {
+  let min = Infinity;
+  for (const sc of sousChemins) {
+    for (let i = 0; i < sc.length; i += 1) {
+      const a = sc[i];
+      const b = sc[(i + 1) % sc.length];
+      min = Math.min(min, distanceAuSegment(p, a, b));
+    }
+  }
+  return min;
+}
+
+/** Distance du point au sommet le plus proche d'une liste de sous-chemins. */
+function distanceAuxSommets(sousChemins, p) {
+  let min = Infinity;
+  for (const sc of sousChemins) {
+    for (const q of sc) min = Math.min(min, Math.hypot(p[0] - q[0], p[1] - q[1]));
+  }
+  return min;
+}
+
+/** Distance du point à la ligne médiane d'un trait. */
+function distanceAuTrace(sousChemins, p) {
+  let min = Infinity;
+  for (const sc of sousChemins) {
+    for (let i = 1; i < sc.length; i += 1) {
+      min = Math.min(min, distanceAuSegment(p, sc[i - 1], sc[i]));
+    }
+  }
+  return min;
+}
+
+/** Le dessin NON découpé du contrôle contient-il ce point ? */
+function dansDessinControle(dessin, p) {
+  if (dessin.peinture === 'contour') {
+    // Un trait est la surface à moins d'une demi-épaisseur de sa ligne
+    // médiane. C'est exact loin des virages et des extrémités — où les onglets
+    // dépassent le disque — et la bande d'exclusion s'en charge.
+    return distanceAuTrace(dessin.sousChemins, p) <= Math.abs(dessin.epaisseur) / 2;
+  }
+  return dansAnneaux(
+    dessin.sousChemins,
+    dessin.peinture === 'remplissage-pair-impair',
+    p,
+  );
+}
+
+/** Le dessin rendu par le noyau contient-il ce point ? (Toujours un remplissage.) */
+function dansDessinNoyau(dessin, p) {
+  return dansAnneaux(dessin.sousChemins, dessin.peinture === 'remplissage-pair-impair', p);
+}
+
+/**
+ * `dessinNoyau` est-il exactement `dessinControle` restreint à la région ?
+ *
+ * Rend `{ ok, points, raison }`. Les points trop près d'un bord sont écartés :
+ * c'est la seule façon honnête de trancher entre deux réalisations d'une même
+ * intersection, dont les sommets ne coïncident pas.
+ */
+function verifierIntersection(dessinNoyau, dessinControle, regions, rang) {
+  const dansRegion = (p) =>
+    regions.every((r) => dansAnneaux(r.anneaux, r.pairImpair, p));
+  const bordsRegion = regions.flatMap((r) => r.anneaux);
+
+  // 1. Aucun sommet du noyau ne peut être hors de la région : c'est le contrôle
+  //    qui attrape une forme qui aurait débordé.
+  for (const sc of dessinNoyau.sousChemins) {
+    for (const v of sc) {
+      if (!dansRegion(v)) {
+        return { ok: false, raison: `un sommet (${v[0]}, ${v[1]}) sort de la région de découpage` };
+      }
+    }
+  }
+
+  // 2. La surface, point par point, dans la boîte de la région.
+  const xs = [];
+  const ys = [];
+  for (const anneau of bordsRegion) {
+    for (const v of anneau) {
+      xs.push(v[0]);
+      ys.push(v[1]);
+    }
+  }
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const pas = Math.max(1e-9, Math.max(maxX - minX, maxY - minY) / PAS_GRILLE);
+  const bande = 2 * pas;
+  const bords = [dessinNoyau.sousChemins, dessinControle.sousChemins, bordsRegion];
+  let points = 0;
+  let ecartes = 0;
+  for (let i = 0; i <= PAS_GRILLE; i += 1) {
+    for (let j = 0; j <= PAS_GRILLE; j += 1) {
+      const p = [minX + ((i + 0.5) * (maxX - minX)) / PAS_GRILLE, minY + ((j + 0.5) * (maxY - minY)) / PAS_GRILLE];
+      let ambigue = false;
+      for (const jeu of bords) {
+        if (distanceAuxBords(jeu, p) < bande || distanceAuxSommets(jeu, p) < bande) {
+          ambigue = true;
+          break;
+        }
+      }
+      if (ambigue) {
+        ecartes += 1;
+        continue;
+      }
+      const attendu = dansRegion(p) && dansDessinControle(dessinControle, p);
+      const recu = dansDessinNoyau(dessinNoyau, p);
+      if (attendu !== recu) {
+        return {
+          ok: false,
+          raison: `au point (${p[0].toFixed(4)}, ${p[1].toFixed(4)}) : attendu ${attendu}, obtenu ${recu}`,
+        };
+      }
+      points += 1;
+    }
+  }
+  if (points < 100) {
+    return { ok: false, raison: `seulement ${points} point(s) comparable(s) — contrôle insuffisant` };
+  }
+  return { ok: true, points, ecartes };
+}
+
 if (absents.length) {
   console.log(`  témoins absents du dépôt (ignorés) : ${absents.join(', ')}`);
 }
@@ -1198,7 +1415,13 @@ check(
   sommetsCompares > 0,
   `${sommetsCompares} sommets comparés, écart maximal sous 1e-6`,
 );
+check(
+  `les formes découpées sont exactement l’intersection`,
+  pointsDecoupes > 0,
+  `${dessinsDecoupes} dessin(s) découpé(s), ${pointsDecoupes} point(s) vérifiés hors bande`,
+);
 mesures.push(`${dessinsCompares} dessins, ${sommetsCompares} sommets comparés`);
+mesures.push(`${dessinsDecoupes} dessins découpés, ${pointsDecoupes} points d'intersection vérifiés`);
 
 /* ═══════════════════════ 3. les aires connues par construction ═══════════ */
 

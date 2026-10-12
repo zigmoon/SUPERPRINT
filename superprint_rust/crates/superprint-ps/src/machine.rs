@@ -44,8 +44,12 @@
 
 use std::collections::{HashMap, HashSet};
 
+use superprint_path::booleen::{operer_avec, Operation};
 use superprint_path::courbe::Courbe;
-use superprint_path::point::Point;
+use superprint_path::plume::{epaissir, fermeture_deduite, Plume};
+use superprint_path::point::{Boite, Point};
+use superprint_path::polygone::{Contour, Polygone, Regle};
+use superprint_path::ErreurPath;
 
 use crate::dessin::{Couleur, Dessin, Matrice, Peinture};
 use crate::lexeur::Objet;
@@ -72,6 +76,15 @@ pub struct EtatGraphique {
     /// Le facteur de planéité (accepté, sans effet : le noyau aplatit à sa
     /// propre tolérance, documentée).
     pub planeite: f64,
+    /// La région de découpage en vigueur, désignée par son rang dans le
+    /// registre de la machine ([`Machine::decoupages`]).
+    ///
+    /// Un **rang**, et non la région elle-même : l'état est copié à chaque
+    /// `gsave`, et copier une région de plusieurs milliers de sommets à chaque
+    /// sauvegarde serait payer cher pour un état qui ne la modifie jamais. Le
+    /// registre, lui, ne fait que s'allonger : un rang reste valide même après
+    /// le `grestore` qui l'a rendu inatteignable.
+    pub decoupage: Option<u32>,
 }
 
 impl Default for EtatGraphique {
@@ -81,8 +94,24 @@ impl Default for EtatGraphique {
             couleur: Couleur::Gris(0.0),
             epaisseur: 1.0,
             planeite: 1.0,
+            decoupage: None,
         }
     }
+}
+
+/// Une région de découpage posée, et celle qu'elle recouvre.
+///
+/// Les découpages s'**empilent** au lieu d'être intersectés au moment du
+/// `clip` : l'intersection est associative, donc l'appliquer de proche en
+/// proche, au moment de peindre, donne exactement la même région — et cela
+/// évite de faire tourner l'algèbre booléenne sur deux découpages dont
+/// l'intersection n'est peut-être pas simple. La chaîne est ce que `grestore`
+/// défait d'un seul geste : un état, et son rang.
+struct Decoupage {
+    /// La région décrite par le chemin du `clip`.
+    region: Contour,
+    /// Le découpage qu'il remplace, s'il y en avait un.
+    precedent: Option<u32>,
 }
 
 /// La machine PostScript.
@@ -96,6 +125,9 @@ pub struct Machine {
     point_courant: Option<Point>,
     depart_sous_chemin: Option<Point>,
     dessins: Vec<Dessin>,
+    /// Le registre des régions de découpage : il ne fait que s'allonger, et
+    /// c'est l'état graphique qui dit laquelle est en vigueur.
+    decoupages: Vec<Decoupage>,
     operateurs: HashSet<String>,
     inconnus: Vec<String>,
     blocs_ignores: usize,
@@ -125,6 +157,7 @@ impl Machine {
             point_courant: None,
             depart_sous_chemin: None,
             dessins: Vec::new(),
+            decoupages: Vec::new(),
             operateurs: HashSet::new(),
             inconnus: Vec::new(),
             blocs_ignores: 0,
@@ -374,6 +407,15 @@ impl Machine {
     }
 
     /// Peint le chemin courant et repart à zéro.
+    ///
+    /// ## Ce que fait un découpage ici
+    ///
+    /// `clip` ne peint rien : il **pose** une région. Les peintures suivantes
+    /// sont intersectées avec elle ([`Machine::decouper`]). Le dessin du
+    /// découpage est malgré tout enregistré — c'est le contrat de la frontière
+    /// (`superprint-eps-wasm` le nomme `clip`, la colle Fabric l'ignore) et
+    /// c'est aussi ce qui permet à un vérificateur extérieur de refaire la
+    /// région sans nous croire.
     fn peindre(&mut self, peinture: Peinture) -> Result<(), ErreurPs> {
         if self.chemin.is_empty() {
             return Err(ErreurPs::CheminVide {
@@ -385,12 +427,6 @@ impl Machine {
                 limite: DESSINS_MAX,
             });
         }
-        if peinture == Peinture::Tronque {
-            self.avertir(
-                "les découpages (`clip`) sont enregistrés mais NON appliqués aux formes \
-                 suivantes : découper vraiment demanderait une algèbre de régions",
-            );
-        }
         let dessin = Dessin {
             sous_chemins: std::mem::take(&mut self.chemin),
             peinture,
@@ -398,8 +434,92 @@ impl Machine {
         };
         self.point_courant = None;
         self.depart_sous_chemin = None;
-        self.dessins.push(dessin);
+        match peinture {
+            Peinture::Tronque | Peinture::TronquePairImpair => {
+                self.poser_decoupage(&dessin, peinture == Peinture::TronquePairImpair);
+                self.dessins.push(dessin);
+            }
+            _ => match self.etat().decoupage {
+                None => self.dessins.push(dessin),
+                Some(rang) => {
+                    if let Some(coupe) = self.decouper(dessin, rang) {
+                        self.dessins.push(coupe);
+                    }
+                }
+            },
+        }
         Ok(())
+    }
+
+    /// Pose un découpage, en chaîne avec celui qui était en vigueur.
+    ///
+    /// PostScript intersecte le chemin courant avec le découpage courant : la
+    /// nouvelle région **s'ajoute** à l'ancienne, elle ne la remplace pas. La
+    /// chaîne garde les deux, et c'est au moment de peindre que l'intersection
+    /// se fait — dans les deux sens possibles, ce qui ne coûte rien.
+    fn poser_decoupage(&mut self, dessin: &Dessin, pair_impair: bool) {
+        let regle = if pair_impair {
+            Regle::PairImpair
+        } else {
+            Regle::NonZero
+        };
+        let region = Contour::avec_regle(anneaux_de(&dessin.sous_chemins), regle);
+        let precedent = self.etat().decoupage;
+        // Le registre est borné par `DESSINS_MAX` : chaque découpage pousse aussi
+        // un dessin, et un dessin de plus est refusé au-dessus de cette borne.
+        let rang = self.decoupages.len() as u32;
+        self.decoupages.push(Decoupage { region, precedent });
+        self.etat_mut().decoupage = Some(rang);
+    }
+
+    /// Le dessin découpé par la région en vigueur, ou `None` s'il ne reste rien.
+    ///
+    /// `None` n'est pas une erreur : une forme entièrement hors de la région
+    /// n'encrera rien, et c'est exact.
+    fn decouper(&mut self, dessin: Dessin, rang: u32) -> Option<Dessin> {
+        let mut dessin = dessin;
+        let mut rang = Some(rang);
+        while let Some(courant) = rang {
+            let entree = &self.decoupages[courant as usize];
+            let region = entree.region.clone();
+            rang = entree.precedent;
+            dessin = self.couper(dessin, &region)?;
+        }
+        Some(dessin)
+    }
+
+    /// Une seule intersection : le dessin, et une région.
+    fn couper(&mut self, dessin: Dessin, region: &Contour) -> Option<Dessin> {
+        if region.anneaux.is_empty() || !boites_se_croisent(&dessin, region) {
+            return None;
+        }
+        let surface = match surface_de(&dessin, self.tolerance) {
+            Ok(surface) => surface,
+            Err(raison) => return Some(self.replier(dessin, &raison)),
+        };
+        if surface.anneaux.is_empty() {
+            // Un remplissage sans aire n'encrait déjà rien avant le découpage.
+            return None;
+        }
+        match operer_avec(&surface, region, Operation::Intersection, 0.0) {
+            Ok(surface) => dessin_de_surface(&surface, dessin.couleur),
+            // Formes disjointes : il n'y a rien à peindre, et ce n'est pas une
+            // anomalie.
+            Err(ErreurPath::ResultatVide) => None,
+            Err(erreur) => Some(self.replier(dessin, &erreur.to_string())),
+        }
+    }
+
+    /// Peint **entier** un dessin que l'algèbre refuse de découper, en le disant.
+    ///
+    /// C'est le comportement d'avant le découpage, conservé comme repli : peindre
+    /// un peu trop se voit, alors qu'un objet perdu ne se voit pas. Chaque repli
+    /// est nommé, et le vérificateur compte les replis.
+    fn replier(&mut self, dessin: Dessin, raison: &str) -> Dessin {
+        self.avertir(format!(
+            "découpage non appliqué à un dessin ({raison}) : la forme est peinte entière"
+        ));
+        dessin
     }
 
     /// Un arc de cercle remplacé par des Béziers.
@@ -1214,7 +1334,7 @@ impl Machine {
                 self.peindre(Peinture::Contour { epaisseur })
             }
             "clip" | "W" => self.peindre(Peinture::Tronque),
-            "eoclip" | "W*" => self.peindre(Peinture::Tronque),
+            "eoclip" | "W*" => self.peindre(Peinture::TronquePairImpair),
             "showpage" => {
                 self.pages += 1;
                 Ok(())
@@ -1346,6 +1466,112 @@ impl Machine {
             avertissements: self.avertissements,
         }
     }
+}
+
+/// Les anneaux d'une forme, à partir de ses sous-chemins.
+///
+/// Deux filtres, tous les deux exacts : un sous-chemin de moins de trois
+/// sommets n'enferme aucune surface, et un anneau d'aire nulle non plus. Les
+/// garder ferait refuser l'algèbre booléenne pour une dégénérescence qui ne
+/// change rien au dessin.
+fn anneaux_de(sous_chemins: &[Vec<Point>]) -> Vec<Polygone> {
+    sous_chemins
+        .iter()
+        .filter(|sous_chemin| sous_chemin.len() >= 3)
+        .map(|sous_chemin| Polygone::nouveau(sous_chemin.clone()))
+        .filter(|anneau| anneau.aire_absolue() > 0.0)
+        .collect()
+}
+
+/// Le dessin converti en **surface pleine**, ou la raison qui l'en empêche.
+///
+/// Un remplissage est déjà une surface. Un trait, non : il faut l'**épaissir**
+/// ([`superprint_path::plume`]), parce que découper un trait revient à découper
+/// la surface qu'il encre. Les deux styles du PostScript sont respectés — bords
+/// coupés net, virages en onglet sous la limite de 10 — et un trait qui se
+/// replie sur lui-même est refusé plutôt que rendu de travers.
+fn surface_de(dessin: &Dessin, tolerance: f64) -> Result<Contour, String> {
+    match dessin.peinture {
+        Peinture::Rempli => Ok(Contour::avec_regle(
+            anneaux_de(&dessin.sous_chemins),
+            Regle::NonZero,
+        )),
+        Peinture::RempliPairImpair => Ok(Contour::avec_regle(
+            anneaux_de(&dessin.sous_chemins),
+            Regle::PairImpair,
+        )),
+        Peinture::Contour { epaisseur } => {
+            let mut plume = Plume::nouvelle(epaisseur);
+            plume.tolerance = tolerance;
+            let fermes: Vec<bool> = dessin
+                .sous_chemins
+                .iter()
+                .map(|sous_chemin| fermeture_deduite(sous_chemin))
+                .collect();
+            epaissir(&dessin.sous_chemins, &fermes, &plume).map_err(|e| e.to_string())
+        }
+        Peinture::Tronque | Peinture::TronquePairImpair => {
+            Err("un découpage n'est pas une peinture".to_string())
+        }
+    }
+}
+
+/// Les boîtes du dessin et de la région se croisent-elles ?
+///
+/// C'est un **élagage**, pas une décision : deux boîtes disjointes ne peuvent
+/// pas avoir d'intersection de surface, donc répondre « non » est exact. Pour un
+/// trait, la boîte de la ligne médiane est élargie de `11 × h` — la limite
+/// d'onglet de 10 plus la demi-épaisseur — parce qu'un virage en onglet déborde
+/// du disque, et qu'un élagage doit pêcher par excès, jamais par défaut.
+fn boites_se_croisent(dessin: &Dessin, region: &Contour) -> bool {
+    let Some((min, max)) = dessin.boite() else {
+        return false;
+    };
+    let debord = match dessin.peinture {
+        Peinture::Contour { epaisseur } => epaisseur.abs() * 0.5 * 11.0,
+        _ => 0.0,
+    };
+    let gauche = Boite {
+        min: Point::new(min.x - debord, min.y - debord),
+        max: Point::new(max.x + debord, max.y + debord),
+    };
+    let droite = region.boite();
+    gauche.min.x <= droite.max.x
+        && droite.min.x <= gauche.max.x
+        && gauche.min.y <= droite.max.y
+        && droite.min.y <= gauche.max.y
+}
+
+/// Un **remplissage** à partir d'une surface.
+///
+/// Trois détails, et chacun a une raison :
+///
+/// - les anneaux sont refermés en **répétant** le premier point, parce que c'est
+///   la convention du noyau et ce que la colle Fabric lit pour fermer un
+///   sous-chemin ;
+/// - la règle est `non nulle`, quelle que soit celle de l'entrée : l'algèbre
+///   booléenne oriente chaque anneau avec la partie remplie **à sa gauche**,
+///   donc les trous sortent inversés et se percent d'eux-mêmes ;
+/// - la couleur ne change pas, et la peinture devient un remplissage : un trait
+///   découpé est une surface, pas un trait.
+fn dessin_de_surface(surface: &Contour, couleur: Couleur) -> Option<Dessin> {
+    let mut sous_chemins = Vec::with_capacity(surface.anneaux.len());
+    for anneau in &surface.anneaux {
+        if anneau.points.len() < 3 {
+            continue;
+        }
+        let mut points = anneau.points.clone();
+        points.push(points[0]);
+        sous_chemins.push(points);
+    }
+    if sous_chemins.is_empty() {
+        return None;
+    }
+    Some(Dessin {
+        sous_chemins,
+        peinture: Peinture::Rempli,
+        couleur,
+    })
 }
 
 /// Lit six nombres dans un tableau, pour en faire une matrice.
@@ -1873,7 +2099,7 @@ mod tests {
     }
 
     #[test]
-    fn clips_enregistre_avec_un_avertissement() {
+    fn decoupage_enregistre_sans_avertissement() {
         let valeurs = executer(
             "newpath 0 0 moveto 10 0 lineto 10 10 lineto closepath clip \
              newpath 0 0 moveto 5 0 lineto 5 5 lineto closepath fill",
@@ -1881,8 +2107,147 @@ mod tests {
         .unwrap();
         assert_eq!(valeurs.dessins.len(), 2);
         assert_eq!(valeurs.dessins[0].peinture, Peinture::Tronque);
-        assert_eq!(valeurs.avertissements.len(), 1);
-        assert!(valeurs.avertissements[0].contains("clip"));
+        assert_eq!(valeurs.avertissements.len(), 0);
+    }
+
+    #[test]
+    fn decoupage_coupe_un_remplissage_qui_deborde() {
+        // Le carré 0..10 découpe un carré 5..15 : il doit rester 5..10, donc
+        // 25 points carrés, et pas 100.
+        let valeurs = executer(
+            "newpath 0 0 moveto 10 0 lineto 10 10 lineto 0 10 lineto closepath clip \
+             newpath 5 5 moveto 15 5 lineto 15 15 lineto 5 15 lineto closepath fill",
+        )
+        .unwrap();
+        assert_eq!(valeurs.dessins.len(), 2);
+        assert_eq!(valeurs.avertissements.len(), 0);
+        let coupe = &valeurs.dessins[1];
+        assert_eq!(coupe.peinture, Peinture::Rempli);
+        assert!(
+            (coupe.aire().abs() - 25.0).abs() < 1e-9,
+            "aire {}",
+            coupe.aire()
+        );
+        for sommet in coupe.sous_chemins.iter().flatten() {
+            assert!(
+                (5.0..=10.0).contains(&sommet.x) && (5.0..=10.0).contains(&sommet.y),
+                "sommet hors du découpage : {sommet:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn decoupage_retire_une_forme_entierement_dehors() {
+        let valeurs = executer(
+            "newpath 0 0 moveto 10 0 lineto 10 10 lineto 0 10 lineto closepath clip \
+             newpath 50 50 moveto 60 50 lineto 60 60 lineto closepath fill",
+        )
+        .unwrap();
+        // Le dessin du découpage seul, et rien d'autre.
+        assert_eq!(valeurs.dessins.len(), 1);
+        assert_eq!(valeurs.avertissements.len(), 0);
+    }
+
+    #[test]
+    fn decoupage_sur_un_trait_donne_une_surface() {
+        // Un trait horizontal épais de (0,5) à (20,5), épaisseur 4 : la surface
+        // est un rectangle de 20 × 4 = 80, découpé à x ≤ 10 : il reste 40.
+        let valeurs = executer(
+            "newpath 0 0 moveto 10 0 lineto 10 10 lineto 0 10 lineto closepath clip \
+             4 setlinewidth newpath 0 5 moveto 20 5 lineto stroke",
+        )
+        .unwrap();
+        assert_eq!(valeurs.dessins.len(), 2);
+        assert_eq!(valeurs.dessins[1].peinture, Peinture::Rempli);
+        assert!(
+            (valeurs.dessins[1].aire().abs() - 40.0).abs() < 1e-9,
+            "aire {}",
+            valeurs.dessins[1].aire()
+        );
+    }
+
+    #[test]
+    fn grestore_rend_le_decoupage_precedent() {
+        let valeurs = executer(
+            "newpath 0 0 moveto 10 0 lineto 10 10 lineto 0 10 lineto closepath clip \
+             gsave \
+             newpath 5 5 moveto 15 5 lineto 15 15 lineto 5 15 lineto closepath clip \
+             newpath -20 -20 moveto 40 -20 lineto 40 40 lineto -20 40 lineto closepath fill \
+             grestore \
+             newpath -20 -20 moveto 40 -20 lineto 40 40 lineto -20 40 lineto closepath fill",
+        )
+        .unwrap();
+        // Sous les deux découpages : le carré 5..10, soit 25. Après `grestore`,
+        // il ne reste que le découpage extérieur 0..10 : 100.
+        let sous_les_deux = valeurs.dessins[2].aire().abs();
+        let apres = valeurs.dessins[3].aire().abs();
+        assert!(
+            (sous_les_deux - 25.0).abs() < 1e-9,
+            "aire sous les deux découpages : {sous_les_deux}"
+        );
+        assert!(
+            (apres - 100.0).abs() < 1e-9,
+            "aire après grestore : {apres}"
+        );
+    }
+
+    #[test]
+    fn save_et_restore_rendent_le_decoupage() {
+        let valeurs = executer(
+            "save /s exch def newpath 0 0 moveto 10 0 lineto 10 10 lineto 0 10 lineto closepath clip \
+             s restore \
+             newpath 0 0 moveto 20 0 lineto 20 20 lineto 0 20 lineto closepath fill",
+        )
+        .unwrap();
+        let dernier = valeurs.dessins.last().unwrap();
+        assert!(
+            (dernier.aire().abs() - 400.0).abs() < 1e-9,
+            "aire {}",
+            dernier.aire()
+        );
+    }
+
+    #[test]
+    fn eoclip_distingue_les_deux_regles() {
+        // Un chemin qui se croise : deux carrés qui se chevauchent, une seule
+        // boucle dans le même sens. Sous la règle non nulle la réunion fait 175,
+        // sous la règle pair-impair le recouvrement est évidé : 150.
+        let source = |operateur: &str| {
+            format!(
+                "newpath 0 0 moveto 10 0 lineto 10 10 lineto 0 10 lineto closepath \
+                 5 5 moveto 15 5 lineto 15 15 lineto 5 15 lineto closepath \
+                 {operateur} \
+                 newpath -20 -20 moveto 40 -20 lineto 40 40 lineto -20 40 lineto closepath fill"
+            )
+        };
+        let non_nulle = executer(&source("clip")).unwrap();
+        let pair_impair = executer(&source("eoclip")).unwrap();
+        assert_eq!(non_nulle.dessins[0].peinture, Peinture::Tronque);
+        assert_eq!(pair_impair.dessins[0].peinture, Peinture::TronquePairImpair);
+        assert_eq!(non_nulle.dessins.len(), 2);
+        assert_eq!(pair_impair.dessins.len(), 2);
+        let a = non_nulle.dessins[1].aire().abs();
+        let b = pair_impair.dessins[1].aire().abs();
+        assert!((a - 175.0).abs() < 1e-9, "règle non nulle : aire {a}");
+        assert!((b - 150.0).abs() < 1e-9, "règle pair-impair : aire {b}");
+    }
+
+    #[test]
+    fn deux_decoupages_s_intersectent() {
+        // Deux rectangles qui se croisent en diagonale : l'intersection est un
+        // carré de 10 × 10, découpant un grand carré qui les couvre tous deux.
+        let valeurs = executer(
+            "newpath 0 0 moveto 10 0 lineto 10 10 lineto 0 10 lineto closepath clip \
+             newpath 5 5 moveto 15 5 lineto 15 15 lineto 5 15 lineto closepath clip \
+             newpath -20 -20 moveto 40 -20 lineto 40 40 lineto -20 40 lineto closepath fill",
+        )
+        .unwrap();
+        let dernier = valeurs.dessins.last().unwrap();
+        assert!(
+            (dernier.aire().abs() - 25.0).abs() < 1e-9,
+            "aire {}",
+            dernier.aire()
+        );
     }
 
     #[test]

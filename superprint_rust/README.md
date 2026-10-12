@@ -94,7 +94,7 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
   **décrit sans dessiner** est compté. Le contrôle confronte le noyau à un lecteur
   écrit à part sur **40 SVG réels du dépôt, 172 formes, 10 404 sommets**.
 - **`superprint-wasm`** — **la frontière C**, et le seul crate en `cdylib` :
-  c'est lui qui produit le `.wasm` du navigateur. **32 fonctions** exposées
+  c'est lui qui produit le `.wasm` du navigateur. **44 fonctions** exposées
   (unités, couleurs sur octets, luminance, RunLength, réduction, page de
   démonstration, document complet **et texte**),
   **aucun import** — donc `WebAssembly.instantiate(bytes, {})` suffit, sans
@@ -103,11 +103,11 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **963 tests unitaires** (`superprint-compress` 36,
+> wasm32-unknown-unknown`, et **970 tests unitaires** (`superprint-compress` 36,
 > `superprint-core` 37, `superprint-doc` 120, `superprint-eps-wasm` 5,
 > `superprint-flow` 51, `superprint-font` 31, `superprint-icc` 21,
 > `superprint-image` 110, `superprint-impose` 35, `superprint-path` 94,
-> `superprint-pdf` 109, `superprint-preflight` 45, `superprint-ps` 86,
+> `superprint-pdf` 109, `superprint-preflight` 45, `superprint-ps` 93,
 > `superprint-swatch` 46, `superprint-text` 73, `superprint-wasm` 38,
 > `superprint-zip` 26) — tous verts.
 >
@@ -141,7 +141,13 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 > - **import SVG** — un lecteur écrit à part (son analyseur XML, son lecteur de
 >   `d`, sa matrice, ses arcs, son aplatissement) donne **les mêmes 10 404
 >   sommets à 5e-10 près** sur les 40 SVG réels du dépôt, et la table des couleurs
->   nommées est relevée de `jspdf.umd.min.js`, un par un.
+>   nommées est relevée de `jspdf.umd.min.js`, un par un ;
+> - **découpage PostScript** — `clip` est **appliqué** : la région décrite par le
+>   chemin du `clip` intersecte les formes suivantes, dans l'état graphique (donc
+>   `gsave`/`grestore`/`save`/`restore` la rendent d'eux-mêmes). Un trait découpé
+>   devient une surface remplie de la couleur du trait. Le contrôle écrit à part
+>   vérifie que le dessin rendu est **exactement** le dessin non découpé
+>   restreint à la région : **1 525 points** sur un témoin réel, 0 désaccord.
 >
 > Un `pwsh -File scripts/check.ps1` enchaîne tout, validation comprise.
 
@@ -152,7 +158,7 @@ conversion RVB → CMJN et l'import PostScript, branchés sans modifier `main.js
 **repli JavaScript** dont la parité est mesurée octet pour octet. Voir
 `web/BRANCHEMENT.md`.
 
-Le noyau représente à ce jour **37,4 %** du JavaScript applicatif de
+Le noyau représente à ce jour **38,8 %** du JavaScript applicatif de
 SuperPrint — en lignes, c'est le plus trompeur des quatre chiffres qui mesurent
 l'avancement : `docs/PORTAGE.md` les donne tous les quatre, avec l'inventaire
 **étape par étape, fonction par fonction**, ce qui est porté, ce qui reste à
