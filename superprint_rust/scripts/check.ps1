@@ -42,7 +42,24 @@ Step 'cargo test (wasm32-wasip1)'           { & $cargo test --target wasm32-wasi
 # exemples puis relus par pdf-lib (le lecteur emprunté au produit). C'est ce
 # contrôle qui a révélé le bug des boîtes de page que les tests unitaires
 # laissaient passer.
-Step 'démonstration image → PDF + pdf-lib'  { pwsh -File (Join-Path $PSScriptRoot 'demo-image.ps1') | Out-Null }
+<#
+  PAS DE FLÈCHE UNICODE DANS UN LIBELLÉ.
+
+  `check.ps1` est en UTF-8 SANS BOM, et un libellé contenait « → » (U+2192) — la
+  ligne de l'étape « démonstration image ». Lancé par Windows PowerShell 5.1, qui
+  lit un fichier sans BOM en ANSI, la séquence UTF-8 de « → » (E2 86 92) se relit
+  « â†’ » : le dernier octet (0x92) devient une APOSTROPHE COURBE, et PowerShell
+  accepte les apostrophes courbes comme guillemets. La chaîne se fermait donc au
+  milieu du libellé, `PDF` devenait un argument séparé, et `Step` recevait une
+  commande nommée « PDF » :
+
+      & : Le terme «PDF» n'est pas reconnu comme nom d'applet de commande…
+
+  Le libellé est maintenant en ASCII. Les ACCENTS ne cassent rien (ils ne
+  deviennent pas des guillemets) : seul ce caractère était en cause.
+#>
+Step 'démonstration image -> PDF + pdf-lib'  { pwsh -File (Join-Path $PSScriptRoot 'demo-image.ps1') | Out-Null }
+
 
 # Validation du MODULE LIVRABLE : le .wasm navigateur est construit, chargé sans
 # aucun import, comparé octet pour octet aux modules WAT écrits à la main, et ses
