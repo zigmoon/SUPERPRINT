@@ -181,9 +181,11 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 >
 > Un `pwsh -File scripts/check.ps1` enchaîne tout, validation comprise.
 
-Aucun module n'est encore appelé par l'application, **sauf trois** : la césure, la
-conversion RVB → CMJN et l'import PostScript, branchés sans modifier `main.js`
-(voir `docs/PORTAGE.md`, section F). **Le reste du branchement est prêt** :
+Aucun module n'est encore appelé par l'application, **sauf cinq** : la césure, la
+conversion RVB → CMJN, l'import PostScript, l'import de documents et le contrôle
+prépresse. Trois d'entre eux sont branchés sans modifier `main.js` ; l'import de
+documents y ajoute **trois lignes ajoutées** (voir `docs/PORTAGE.md`, section F).
+**Le reste du branchement est prêt** :
 `web/superprint-core.js` charge le noyau et expose des fonctions simples, avec un
 **repli JavaScript** dont la parité est mesurée octet pour octet. Voir
 `web/BRANCHEMENT.md`.

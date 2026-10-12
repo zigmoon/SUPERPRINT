@@ -245,10 +245,13 @@ donc retirer la ligne remet l'application à l'identique :
 | import PostScript / EPS | `app/JS/superprint-eps.js` | `superprint_eps.wasm` (324,8 Ko, **à la demande**) | `sp-eps-import.js` |
 | export PDF imposé | `app/JS/superprint-montage.js` | le **même** module que le branchement | l'export vectoriel du produit |
 | import de documents (`.odt`/`.ods`/`.odp`, `.idml`) | `app/JS/superprint-doc.js` | `superprint_doc.wasm` (290,1 Ko, **à la demande**) | `_spTexteOdf` du produit, conservée dans `window.__spTexteOdfJs` |
+| contrôle prépresse | `app/JS/superprint-prepresse.js` | le **même** module que le branchement — **aucun octet de plus** | aucun : sans noyau, la colle ne dit rien et l'export part |
 
 `main.js` n'a **jamais** été modifié pour les trois premiers : chaque joint est une
 couture que le produit offrait déjà (`window.hyphenators`, `window._spCmykConvert`,
-`if (window.SPEps)`, `window.exportImposedPDF || exportImposedPDF`).
+`if (window.SPEps)`, `window.exportImposedPDF || exportImposedPDF`). Le
+**prépresse** non plus : `window.confirmExport` était déjà posé et lu par
+`index.html`.
 
 Le quatrième a demandé **trois lignes ajoutées** — c'est une première, et elle est
 écrite pour ne pas être découverte :
@@ -276,6 +279,11 @@ node scripts/validate-montage-branchement.mjs
 # l'import de documents BRANCHÉ : le texte du produit et celui du noyau sur les
 # mêmes octets, puis la chaîne complète (repli compris)
 node scripts/validate-doc-branchement.mjs
+
+# le prépresse BRANCHÉ : le contrat relu dans main.js, l'échelle mesurée (85 dpi
+# sur le témoin documenté), l'invariance du retournement mesurée elle aussi, et
+# le repli
+node scripts/validate-prepresse-branchement.mjs
 
 # le TEXTE : police embarquée, composition, puis relecture des caractères par
 # pdf.js — c'est la table /ToUnicode qui est mise à l'épreuve

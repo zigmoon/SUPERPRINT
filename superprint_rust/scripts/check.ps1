@@ -92,7 +92,10 @@ Step 'colle livree identique a celle du depot' {
     @{ Source = 'web/superprint-montage.js'; Livree = '../superprint/app/JS/superprint-montage.js' },
     # Et pour l'import de documents : sa colle et son module, comme l'EPS.
     @{ Source = 'web/superprint-doc.js'; Livree = '../superprint/app/JS/superprint-doc.js' },
-    @{ Source = 'dist/superprint_doc.wasm'; Livree = '../superprint/app/JS/superprint_doc.wasm' }
+    @{ Source = 'dist/superprint_doc.wasm'; Livree = '../superprint/app/JS/superprint_doc.wasm' },
+    # Et pour le prepresse : sa colle SEULE — le noyau est celui du branchement,
+    # qui est deja dans la liste ci-dessus. Le prepresse n'ajoute aucun octet.
+    @{ Source = 'web/superprint-prepresse.js'; Livree = '../superprint/app/JS/superprint-prepresse.js' }
   )
   $identiques = $true
   foreach ($paire in $paires) {
@@ -276,6 +279,21 @@ Step 'import de documents branche : contrat relu, ecart mesure, et la chaine com
   & $cargo build -p superprint-doc --example doc_dump --target wasm32-wasip1 --release
   if ($LASTEXITCODE -eq 0) { pwsh -File scripts/build-wasm.ps1 }
   if ($LASTEXITCODE -eq 0) { node scripts/validate-doc-branchement.mjs }
+}
+
+# Validation du PREPRESSE BRANCHE. Aucun module de plus : le prepresse vit dans
+# le noyau precache, et la colle n'ajoute que son propre fichier. Le controle
+# relit le contrat dans main.js (le joint `window.confirmExport`, et les QUATRE
+# champs que confirmExport lit vraiment — `bleed`, `cropMarks`,
+# `exportIncludeBleed`, `cmykIccProfile`), puis fait tourner la colle sur le VRAI
+# module : un objet plus large que le format deborde, le meme ramene a
+# l'interieur ne dit plus rien, et surtout il MESURE que les constats sont
+# invariants sous le retournement vertical — donc que ce controle ne peut pas
+# valider cette convention, et ne le pretend pas. Le temoin documente est repris :
+# 400 x 300 px sur 120 mm doit donner 85 dpi. Enfin les objets non decrits sont
+# comptes et nommes, et le repli (noyau absent, document fautif) est eprouve.
+Step 'prepresse branche : contrat, echelle mesuree, invariant dit, et le repli' {
+  node scripts/validate-prepresse-branchement.mjs
 }
 
 # Validation de l'IMPORT SVG : un lecteur ECRIT A PART (son propre analyseur XML,

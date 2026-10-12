@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.618-rust-doc';
+const CACHE_NAME = 'superprint-shell-v1.7.619-rust-prepresse';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -77,6 +77,12 @@ const APP_SHELL = [
   // l'EPS : il ne sert qu'aux imports de documents, et il est récupéré à la
   // demande puis mis en cache — le deuxième import est donc local.
   './JS/superprint-doc.js',
+  // 🦀 Contrôle prépresse : la colle seulement, et elle est précachée parce que
+  // `index.html` la demande au démarrage — c'est elle qui enveloppe
+  // `window.confirmExport`, et l'export doit être contrôlé même hors ligne. Elle
+  // n'ajoute AUCUN octet de noyau : le prépresse vit dans superprint_core.wasm,
+  // déjà précaché ci-dessus (`sp_preflight` est l'un de ses 49 exports).
+  './JS/superprint-prepresse.js',
   './CSS/fonts.css',
   './CSS/fonts/BebasNeue-400-normal-latin.woff2',
   './CSS/fonts/BebasNeue-400-normal-latin-ext.woff2',

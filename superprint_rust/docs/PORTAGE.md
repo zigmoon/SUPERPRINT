@@ -20,7 +20,7 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-12) :
 | dont tests (`#[test]` + exemples de documentation) | 1048 + 7, tous verts |
 | exports `sp_*` de la frontière C | **56** (0 import), sur **trois** modules |
 | modules livrables | 406,5 Ko (noyau) + **324,8 Ko** (PostScript) + **290,1 Ko** (documents), les deux derniers à la demande |
-| étapes de contrôle (`scripts/check.ps1`) | **34** |
+| étapes de contrôle (`scripts/check.ps1`) | **35** |
 | JavaScript applicatif (hors bibliothèques tierces) | **126 581 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
@@ -31,7 +31,7 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | Métrique | Mesure | Ce qu'elle dit |
 |---|---|---|
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
-| dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript **+** l'import de documents **+** l'export imposé | ce qui sert vraiment à l'utilisateur |
+| dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript **+** l'import de documents **+** l'export imposé **+** le prépresse | ce qui sert vraiment à l'utilisateur |
 | **Volume JS porté** (somme des plages citées) | **13 832 / 18 803** → **74 %** | le poids du travail restant |
 | **Lignes** Rust / JS | 48 770 / 112 138 → **43,5 %** | ⚠️ le plus trompeur des quatre |
 
@@ -71,8 +71,9 @@ feuilles de style sont **refusés en les nommant**, plutôt que rendus de traver
 
 Le portage n'est pas fini pour autant : sur les 11 domaines, **trois sont
 branchés**, plus **la moitié de l'import** (le PostScript et les documents le
-sont). Les autres sont mesurés, testés, et offerts — utiliser le noyau
-suppose de changer une ligne dans `main.js`, et la règle de ce dépôt est de ne pas
+sont) et **le prépresse**. Les autres sont mesurés, testés, et offerts — utiliser
+le noyau suppose de changer une ligne dans `main.js`, et la règle de ce dépôt est
+de ne pas
 y toucher sans raison mesurée (section F).
 
 Pourquoi le ratio par lignes trompe : il compare du Rust qui contient ses tests, un
@@ -81,22 +82,22 @@ Pourquoi le ratio par lignes trompe : il compare du Rust qui contient ses tests,
 pas quand un module est fini, et il bougerait beaucoup si on portait une plage
 facile. **Le seul chiffre à suivre est le premier : les domaines.**
 
-> ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **quatre
+> ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **cinq
 > composants tournent réellement en Rust** dans l'application livrée : la césure
 > (cinq langues) et la conversion RVB → CMJN, par
 > `superprint/app/JS/superprint-branchement.js` ; **l'import PostScript**, par
 > `superprint/app/JS/superprint-eps.js` ; **l'import de documents**
-> (`.odt`/`.ods`/`.odp`/`.idml`), par `superprint/app/JS/superprint-doc.js` ; et
-> **l'export PDF imposé**, par `superprint/app/JS/superprint-montage.js`. Dans les
-> quatre cas le noyau est prioritaire, et le code du produit prend le relais s'il
+> (`.odt`/`.ods`/`.odp`/`.idml`), par `superprint/app/JS/superprint-doc.js` ;
+> **l'export PDF imposé**, par `superprint/app/JS/superprint-montage.js` ; et le
+> **contrôle prépresse**, par `superprint/app/JS/superprint-prepresse.js`. Dans les
+> cinq cas le noyau est prioritaire, et le code du produit prend le relais s'il
 > manque quoi que ce soit.
 > La compression est employée par notre propre exporteur ; l'imposition, la réduction d'image,
-> le prépresse, les nuanciers, les filtres d'image, la lecture ICC, la
-> déclaration PDF/X, la pagination, le Pathfinder et le dessin SVG sont
+> les nuanciers, les filtres d'image, la lecture ICC,
+> la déclaration PDF/X, la pagination, le Pathfinder et le dessin SVG sont
 > **mesurés et offerts** par les colles (ou livrés comme crates),
 > mais ne remplacent rien dans l'espace de travail (voir la section F, et la
-> raison : les fonctions correspondantes de `main.js` sont privées à son IIFE, et
-> le prépresse attend un pont qui n'existe pas encore).
+> raison : les fonctions correspondantes de `main.js` sont privées à son IIFE).
 
 ---
 
@@ -123,7 +124,7 @@ facile. **Le seul chiffre à suivre est le premier : les domaines.**
 | 17 | **Compression DEFLATE / zlib** | `compress::{deflate,inflate,zlib}` | croisé avec `zlib` de Node, 15 jeux, 2 sens | 🟢 exporteur |
 | 18 | **Imposition** (ordre, feuille, pose, zone autorisée, repères) | `superprint-impose` | `main.js` **extrait tel quel** : 25 tailles, 3 copies, 8 poses × 2 places à 1e-9 mm, 16 traits | 🟢 offert |
 | 19 | **Réduction par moyenne de surface** | `image::resample::downscale_area` | exact **au bit près**, anti-crénelage mesuré | 🟢 offert |
-| 20 | **Prépresse** (9 contrôles) | `superprint-preflight` | détection **et** silence, 45 tests, refus des règles illisibles | 🟢 offert |
+| 20 | **Prépresse** (9 contrôles) | `superprint-preflight` | détection **et** silence, 45 tests, refus des règles illisibles ; **branché** : 8 constats sur 13 conduits, les 5 autres nommés | ✅ **branché** |
 | 21 | **Nuanciers** (7 bibliothèques, 688 teintes) | `superprint-swatch`, `core::lab` | catalogue comparé **octet par octet** à `swatchbooks.js`, lecture `.ase`, recherche | 🟢 offert |
 | 22 | **Traitement d'image** (niveaux, courbes, filtres, netteté, médiane, encrage, alpha, recadrage) | `superprint-image` | repli JS indépendant écrit à part, comparaison octet pour octet | 🟢 offert |
 | 23 | **Lecture de profil ICC** | `superprint-icc` | relecture indépendante des 3 profils du produit, **écart à la spécification mesuré** | 🟢 offert |
@@ -408,11 +409,49 @@ dans le document du noyau — transparence non aplatie, surimpression, séparati
 des tons directs par canal, épaisseur de trait en dessous de 0,25 pt. Ces
 contrôles demandent des informations que le modèle ne porte pas encore.
 
-**Non branché, et pourquoi** : le prépresse examine un `Document` **du noyau**,
-et ce document n'existe pas dans l'application — la composition vit dans Fabric,
-et rien ne la convertit. `SuperPrintBranchement.prepresse(doc)` est donc offert
-et mesuré, mais la relier à l'espace de travail demande le pont
-Fabric → `Document` qui reste à faire.
+**Branché depuis le 2026-10-13, et voici comment — sans un octet de plus.** Le
+prépresse vit dans `superprint_core.wasm`, le module **précaché** : `sp_preflight`
+est l'un de ses 49 exports (mesuré par `validate-wasm.mjs`). La colle
+`web/superprint-prepresse.js` n'ajoute donc **que son propre fichier**, et
+`main.js` n'est **pas** touché : le joint `window.confirmExport` (posé par
+`main.js`, lu par `index.html` en `window.confirmExport || confirmExport`) suffit
+à l'envelopper.
+
+Ce qui a dû être construit, c'est la **description** : porter l'état de
+l'application dans le modèle du noyau. Les faits qui l'ont permis :
+
+| Ce qu'il fallait | Où il est |
+|---|---|
+| le format, le fond perdu, les objets | `window.saveProjectSP_toObject()`, la même source que le montage |
+| le fond perdu, les traits de coupe, le mode, le profil | `#bleed`, `#cropMarks`, `#exportIncludeBleed`, `input[name="colorMode"]`, `#cmykIccProfile` — **les quatre mêmes que `confirmExport` lit** |
+| l'unité des objets | des **points PostScript** : `1 unité = 1 point`, mesuré sur la planche du montage |
+
+**Ce que ce contrôle conduit, et ce qu'il ne conduit pas.** Huit des treize
+constats : fond perdu, réserve de repères, résolution des images, couverture
+d'encre, noir quadrichrome sur trait fin, débordement, document vide, images
+posées nulle part. Les cinq autres sont **nommés dans le rapport**, parce qu'un
+contrôle qu'on croit actif mais qui ne s'applique pas est pire qu'un contrôle
+absent : les polices, le noir quadrichrome sur **texte** fin et le texte vivant
+demandent une police **TrueType**, et l'application ne livre que du **WOFF2** —
+le noyau refuse même l'OpenType à contours CFF. La cohérence du profil, elle,
+demande un profil, qui n'existe qu'en CMJN.
+
+**Et un objet qui ne peut pas être décrit est compté, jamais deviné** : les
+tracés (`Fabric.Path`), les groupes, le texte, un objet tourné. Le rapport dit
+combien. Un constat faux fait désactiver le contrôle : la colle préfère
+**s'abstenir** — elle ne montre alors rien du tout — que de parler d'un document
+qu'elle n'a pas décrit.
+
+> ⚠️ **Ce que ce contrôle ne peut pas vérifier, et qui est mesuré.** Les constats
+> du prépresse sont **invariants sous le retournement vertical** : la zone
+> autorisée va de −fond à format+fond, qui se correspond avec elle-même par
+> `y ↦ hauteur − y`. `validate-prepresse-branchement.mjs` le **mesure** — le même
+> objet posé aux deux extrémités opposées de la toile rend exactement les mêmes
+> codes — et le dit, plutôt que de faire croire à un contrôle de convention. Ce
+> qui est vérifiable, et qui l'est : **l'échelle**, sur le témoin documenté
+> ci-dessus (400 × 300 px sur 120 mm → **85 dpi**, retrouvé par le branchement),
+> et le fait qu'un objet plus large que le format **déborde** quand le même
+> ramené à l'intérieur **ne dit rien**.
 
 ### B5. Nuanciers et bibliothèques de tons directs 🟡 → ✅ (fait, et mesuré)
 
@@ -1649,7 +1688,7 @@ La valeur de la réduction d'image, elle, se branche **dans notre propre
 exporteur** : `sp_reduce_for_placement` réduit avant d'embarquer l'image, et ce
 chemin-là est entièrement à nous — aucune ligne de `main.js` en jeu.
 
-### Le prépresse : offert, et volontairement pas branché
+### Le prépresse : branché, et ce qu'il a fallu pour le devenir
 
 `SuperPrintBranchement.prepresse(document)` examine un document **du noyau** :
 
@@ -1660,17 +1699,33 @@ rapport.compte;            // { erreurs, avertissements, informations }
 rapport.constats;          // [{ code, gravite, page, message, … }]
 ```
 
-Il n'est **pas** branché, et cette fois la raison n'est pas une fonction privée :
-c'est que **le document n'existe pas**. La composition vit dans Fabric ; rien ne
-la convertit en `Document` du noyau. Brancher le prépresse pour de bon demande
-donc d'abord un pont Fabric → `Document` — un vrai morceau de travail, et pas une
-ligne dans `main.js`. Tant que ce pont n'existe pas, un prépresse « branché »
-rendrait un rapport vide sur un document vide : exactement le genre de contrôle
-qui fait perdre confiance. Il attend donc son pont, et il le dit.
+Il n'était **pas** branché, et la raison n'était pas une fonction privée : **le
+document n'existait pas**. La composition vit dans Fabric, et rien ne la
+convertissait. Le pont existe maintenant — `web/superprint-prepresse.js` — et il
+tient en trois idées :
+
+- **le joint était déjà là.** `index.html` appelle `window.confirmExport ||
+  confirmExport` : envelopper cette porte ne demande **aucune** ligne de
+  `main.js`, contrairement à l'import de documents ;
+- **le noyau était déjà là.** Le prépresse vit dans le module **précaché** : la
+  colle n'ajoute que son propre fichier, **zéro octet** de WebAssembly de plus.
+  C'est le premier branchement qui ne coûte rien à personne ;
+- **la description, elle, est le vrai travail.** Format, fond perdu, traits de
+  coupe, mode et profil viennent des **mêmes champs** que `confirmExport` lit ;
+  les objets viennent de `saveProjectSP_toObject()`. Les images sont **décodées**
+  pour donner au noyau leurs dimensions naturelles contre leur boîte posée —
+  c'est ce qui attrape une photo à 85 dpi.
+
+Ce qu'il refuse de faire, et c'est le cœur du dispositif : **deviner**. Un objet
+dont la géométrie ne se convertit pas sans supposition (un tracé, un groupe, un
+objet tourné) est **compté**, et le rapport dit combien ; les constats qu'il ne
+peut pas conduire sont **nommés**. Un rapport bâti sur une description incomplète
+ferait des constats faux, et un constat faux fait désactiver le contrôle — la
+colle préfère alors **ne rien montrer du tout**.
 
 ### La mesure, et l'anti-dérive
 
-Sept contrôles de branchement, tous dans `check.ps1` :- `scripts/validate-branchement.mjs` — la colle et le noyau contre les
+Huit contrôles de branchement, tous dans `check.ps1` :- `scripts/validate-branchement.mjs` — la colle et le noyau contre les
   dictionnaires du produit, cinq langues.
 - `scripts/validate-branchement-app.mjs` — les **fichiers livrés** évalués dans
   un contexte qui imite le navigateur (ordre de `index.html`, `fetch` simulé),
@@ -1697,6 +1752,14 @@ Sept contrôles de branchement, tous dans `check.ps1` :- `scripts/validate-branc
   deux textes affichés, puis la chaîne complète avec le vrai module — un `.odt`
   du noyau, un `.ods` et une entité nommée qui **retombent** sur le produit, un
   noyau absent qui retombe aussi, et `retirer()` qui rend l'état d'avant.
+- `scripts/validate-prepresse-branchement.mjs` — le prépresse : le contrat relu
+  dans `main.js` (le joint, et les **quatre champs** que `confirmExport` lit
+  vraiment), l'échelle mesurée sur le **témoin documenté** (400 × 300 px sur
+  120 mm → 85 dpi), un objet plus large que le format qui déborde **et** le même
+  ramené à l'intérieur qui ne dit rien, les objets non décrits comptés et
+  **nommés**, l'**invariance** des constats sous le retournement vertical
+  **mesurée** (donc ce contrôle ne prétend pas valider cette convention), et le
+  repli — noyau absent, document fautif, `retirer()`.
 
 Un composant qui en rend un autre dépendant est un défaut : c'est ce que le
 troisième contrôle ci-dessus interdit. Lier le chargement du noyau à la présence
