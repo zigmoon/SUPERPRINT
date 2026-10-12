@@ -16,7 +16,7 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-12) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 19 crates, tests compris) | **47 178 lignes** |
+| Rust (`crates/`, 18 crates, tests compris) | **47 178 lignes** |
 | dont annotations `#[test]` | 1023 tests, tous verts |
 | exports `sp_*` de la frontière C | **53** (0 import), sur **deux** modules |
 | modules livrables | 406 Ko (noyau) + **322 Ko** (import PostScript, à la demande) |
@@ -50,10 +50,12 @@ JavaScript applicatif. Le noyau Rust remplace donc ici du code tiers, pas du cod
 du produit : c'est la **source unique** et la mesure qui gagnent, pas le volume.
 
 Les 11 domaines, nommés, avec leur état : **césure** ✅ (branché) ·
-**compression Flate** ✅ · **imposition** ✅ · **prépresse** ✅ · **nuanciers** ✅ ·
+**compression Flate** ✅ · **imposition** ✅ (branché : la planche imposée passe
+par le noyau) · **prépresse** ✅ · **nuanciers** ✅ ·
 **image** ✅ · **profils ICC** ✅ · **PDF/X** ✅ · **pagination et chaînage** ✅ ·
 **géométrie vectorielle / Pathfinder** ✅ · **import docx/odt/idml/EPS/AI/SVG** ✅
-(le PostScript **branché**, le docx et le SVG non). **Conversion de couleurs** ✅
+(seul le PostScript est **branché** ; le docx, l'odt, l'idml et le SVG restent
+offerts, et B3b dit pourquoi). **Conversion de couleurs** ✅
 (branchée).
 
 **Aucun domaine n'est ouvert.** Ce qui reste ne sont plus des domaines, mais des
@@ -78,14 +80,17 @@ Pourquoi le ratio par lignes trompe : il compare du Rust qui contient ses tests,
 pas quand un module est fini, et il bougerait beaucoup si on portait une plage
 facile. **Le seul chiffre à suivre est le premier : les domaines.**
 
-> ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **deux
-> composants tournent réellement en Rust** dans l'espace de travail — la césure et
-> la conversion RVB →
-> CMJN — plus **l'import PostScript**, entièrement interprété par le noyau. La compression
-> est employée par notre propre exporteur ; l'imposition, la réduction d'image,
+> ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **trois
+> composants tournent réellement en Rust** dans l'application livrée : la césure
+> (cinq langues) et la conversion RVB → CMJN, par
+> `superprint/app/JS/superprint-branchement.js` ; **l'import PostScript**, par
+> `superprint/app/JS/superprint-eps.js` ; et **l'export PDF imposé**, par
+> `superprint/app/JS/superprint-montage.js`. Dans les trois cas le noyau est
+> prioritaire, et le code du produit prend le relais s'il manque quoi que ce soit.
+> La compression est employée par notre propre exporteur ; l'imposition, la réduction d'image,
 > le prépresse, les nuanciers, les filtres d'image, la lecture ICC, la
-déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
-> **mesurés et offerts** par `SuperPrintBranchement` (ou livrés comme crates),
+> déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
+> **mesurés et offerts** par les colles (ou livrés comme crates),
 > mais ne remplacent rien dans l'espace de travail (voir la section F, et la
 > raison : les fonctions correspondantes de `main.js` sont privées à son IIFE, et
 > le prépresse attend un pont qui n'existe pas encore).
@@ -814,13 +819,14 @@ deux vont dans le même sens : le noyau **refuse** là où le produit **ignore**
 `main.js` accepte un `window.SPEps` déjà posé, il n'y a donc eu aucune ligne à
 y ajouter. L'interpréteur vient de `crates/superprint-ps`, et le noyau est
 livré dans **son propre** module WebAssembly (**322 Ko**, chargé à la demande)
-pour ne pas alourdir celui du démarrage, qui reste à **380 Ko** — le découpage
-appliqué ne lui a rien coûté, et la mesure le vérifie à chaque contrôle. Le
+pour ne pas alourdir celui du démarrage — le découpage appliqué ne lui a rien
+coûté, et la mesure le vérifie à chaque contrôle. Le
 **docx, l'odt, l'idml et le SVG restent
-offerts** : leur point d'accroche est `_spImportDocxFile` pour les trois premiers,
-et `addSvgFromContent` — appelée par `handleDroppedSvgFile`, toutes deux privées à
-l'IIFE de `main.js` — pour le SVG. L'analyse du docx est enchevêtrée avec `mammoth`
-et la génération de HTML, donc avec `flowHtmlIntoPages`, privée elle aussi.
+offerts**, et la raison est mesurée en B3b : leur point d'accroche est
+`_spImportDocxFile` pour les trois premiers, mais l'extraction et la composition
+sont privées à l'IIFE de `main.js` (`_spTexteOdf`, `_spAstVersHtml`,
+`flowHtmlIntoPages`), et pour le SVG le joint réel — `fabric.loadSVGFromString` —
+n'est pas souhaitable, le lecteur du noyau étant délibérément plus strict.
 
 #### B8c-ter. Le RTF — porté par **comparaison**, pas par réécriture
 
