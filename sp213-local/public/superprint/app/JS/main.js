@@ -40769,6 +40769,17 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 });
             });
         }
+        /* 🦀 BRANCHEMENT RUST — AJOUT (deux lignes). `superprint-doc.js` lit
+           cette ligne, garde l'original dans `window.__spTexteOdfJs`, et pose
+           son enveloppe : le noyau Rust lit le document quand il sait le faire,
+           et **cette fonction** prend le relais dès qu'il refuse (un `.ods` ou
+           un `.odp` ne sont pas des textes ODF) ou qu'il n'est pas disponible.
+           C'est le patron déjà employé dans ce fichier par
+           `window._spAstVersHtml = _spAstVersHtml;` (ligne 40103).
+           Sans la colle, `window._spTexteOdf` vaut exactement la fonction
+           ci-dessus : rien ne change. Retirer ces lignes remet l'application à
+           l'identique. */
+        window._spTexteOdf = _spTexteOdf;
 
         // 🆕 v1.7.569 — TAILLE RÉELLE DES IMAGES DU .docx.
         //   MESURÉ : une image insérée à 40 mm dans Word arrivait à 340 px (120 mm),
@@ -40863,8 +40874,28 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 try { t = H ? H.spLegacyDocToText(new Uint8Array(buf)) : ''; } catch (_) { t = ''; }
                 return { texte: t, libelle: 'Word 97-2003 (.doc)' };
             }
+            /* 🦀 BRANCHEMENT RUST — AJOUT. Avant cette branche, un `.idml` tombait
+               dans la toute dernière, `_spDecodeTexte(buf)` : le décodage texte
+               d'une archive ZIP, donc du binaire illisible. Le noyau en lit les
+               paragraphes (`superprint-doc`). Si la colle n'est pas chargée,
+               `window.SuperPrintDoc` est absent et le comportement d'avant est
+               conservé, à l'identique. */
+            if (type === 'idml' || ext === 'idml') {
+                try {
+                    if (window.SuperPrintDoc && window.SuperPrintDoc.texteNoyau && buf) {
+                        var rIdml = await window.SuperPrintDoc.texteNoyau(new Uint8Array(buf));
+                        if (rIdml && typeof rIdml.texte === 'string' && rIdml.texte) {
+                            return { texte: rIdml.texte, libelle: 'InDesign (.idml)' };
+                        }
+                    }
+                } catch (_) {}
+            }
             if (type === 'odf' || ext === 'odt' || ext === 'ods' || ext === 'odp') {
-                return { texte: await _spTexteOdf(buf), libelle: 'OpenDocument (.' + (ext || 'odt') + ')' };
+                /* 🦀 BRANCHEMENT RUST — le noyau d'abord quand la colle est là,
+                   la fonction du produit sinon. `window._spTexteOdf` est posé
+                   juste après la définition de `_spTexteOdf`. */
+                var lireOdf = window._spTexteOdf || _spTexteOdf;
+                return { texte: await lireOdf(buf), libelle: 'OpenDocument (.' + (ext || 'odt') + ')' };
             }
             if (type === 'html' || ext === 'html' || ext === 'htm') {
                 return { texte: _spDecodeTexte(buf), libelle: 'HTML', estHtml: true };

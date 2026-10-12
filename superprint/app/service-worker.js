@@ -3,7 +3,13 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.619-rust-prepresse';
+/* ⚠️ `CACHE_NAME` porte **la version de `version.txt`**, et c'est la règle de ce
+   projet : elle a été suivie à l'identique par les 37 versions 1.7.579 → 1.7.611.
+   Le suffixe décrit la livraison ; c'est lui qui change quand les fichiers
+   précachés changent, et c'est ce qui invalide le cache d'un utilisateur.
+   Le contrôle `_dev/scripts/_make_zip_492.cjs` exige que ce nom contienne
+   `version.txt` — ne pas repartir sur une numérotation parallèle. */
+const CACHE_NAME = 'superprint-shell-v1.7.611-rust-prepresse';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
