@@ -1409,11 +1409,18 @@ import * as THREE from './three.module.min.js';
         var s = 256;
         var cv = document.createElement('canvas'); cv.width = s; cv.height = s;
         var ctx = cv.getContext('2d');
+        /* ⚠️ UNE BANDE LARGE ET DOUCE, PAS UNE RAIE. Une première version montait à
+           0,85 sur 12 % de la diagonale : sur une page blanche, cela se lisait comme un
+           DÉFAUT D'IMPRESSION (une raie claire en travers) plutôt que comme une
+           brillance. Une matière brillante renvoie la lumière sur une plage étendue et
+           sans arête : le profil est donc étalé, et son maximum n'est qu'à 0,42. */
         var g = ctx.createLinearGradient(0, s, s, 0);   // diagonale bas-gauche → haut-droite
         g.addColorStop(0.00, 'rgba(255,255,255,0)');
-        g.addColorStop(0.38, 'rgba(255,255,255,0)');
-        g.addColorStop(0.50, 'rgba(255,255,255,0.85)');
-        g.addColorStop(0.62, 'rgba(255,255,255,0)');
+        g.addColorStop(0.22, 'rgba(255,255,255,0.06)');
+        g.addColorStop(0.40, 'rgba(255,255,255,0.26)');
+        g.addColorStop(0.50, 'rgba(255,255,255,0.42)');
+        g.addColorStop(0.62, 'rgba(255,255,255,0.22)');
+        g.addColorStop(0.80, 'rgba(255,255,255,0.05)');
         g.addColorStop(1.00, 'rgba(255,255,255,0)');
         ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
         var t = new THREE.CanvasTexture(cv);
@@ -1461,6 +1468,20 @@ import * as THREE from './three.module.min.js';
         if (!u.grain) {
             var gm = new THREE.MeshBasicMaterial({
                 transparent: true, depthWrite: false, side: THREE.FrontSide,
+                /* ⚠️ MÉLANGE NORMAL, ET PAS `MultiplyBlending` — ESSAYÉ, MESURÉ, REJETÉ.
+                   Le modèle juste serait une multiplication (c'est ce que fait l'éditeur,
+                   `mix-blend-mode:multiply` : le grain assombrit, il n'éclaircit pas).
+                   Mais en WebGL la multiplication fixe (`MultiplyBlending`) ne peut PAS
+                   être pondérée par l'alpha de la texture : elle multiplie TOUTES les
+                   composantes, y compris là où le grain est transparent. Mesuré dans
+                   l'aperçu 3D, même carré de page : le grain passait de 10,35 à
+                   29,5/255, la TEINTE du papier disparaissait (ivoire 244/247/247 au
+                   lieu de 247/242/230 — donc plus chaud du tout) et les zones
+                   transparentes de la texture écrasaient la page vers le noir.
+                   Le mélange normal, lui, module le contraste de part et d'autre de la
+                   teinte (le blanc de la texture n'est présent QUE là où l'alpha est
+                   non nul) : mesuré 1,47/255 sur l'ivoire et 10,35/255 sur le kraft,
+                   avec la teinte exacte. C'est ce qu'on garde. */
             });
             gm.toneMapped = false; gm.fog = false;
             u.grain = new THREE.Mesh(geoPlane, gm);
@@ -1487,13 +1508,18 @@ import * as THREE from './three.module.min.js';
                recale sur la page, exactement comme les faces avant/arrière
                (`layoutLeaves`, qui ne traitait que celles-ci). */
             u.grain.position.x = u.front ? u.front.position.x : 0;
-            /* Le grain DOSE la matière. `p.grain * 1.5` porte le recyclé (0,42) à
-               0,63 — visible — et laisse le blanc couché (0,05) à 0,075, c'est-à-dire
-               lisse : un papier lisse ne doit pas être sale. Sur une feuille
-               translucide, le grain s'atténue : il est porté par la feuille, il doit
-               donc s'effacer avec elle. */
+            /* Le grain DOSE la matière.
+               ⚠️ LA COURBE EST EN PUISSANCE (`grain^0,7`), ET CE N'EST PAS UN DÉTAIL :
+               l'opacité multiplie une texture dont le CONTRASTE est lui-même
+               proportionnel à `grain`. Une simple proportion rendait donc le résultat
+               quadratique — mesuré dans l'aperçu 3D, écart-type de luminance sur un
+               même carré de page : 0,61/255 pour l'ivoire (invisible, et c'est juste :
+               c'est un papier fin) mais seulement 6,84/255 pour le kraft, c'est-à-dire
+               à peine perceptible alors qu'il s'agit d'un papier très texturé.
+               Avec `grain^0,7` les papiers texturés montent (kraft → 0,75 d'opacité)
+               et les papiers lisses restent lisses (blanc couché → 0,19). */
             var facteurFeuille = translucide ? (0.45 + 0.55 * opacite) : 1;
-            u.grain.material.opacity = clamp((p.grain || 0) * 1.5 * facteurFeuille, 0, 0.8);
+            u.grain.material.opacity = clamp(Math.pow(p.grain || 0, 0.7) * 1.6 * facteurFeuille, 0, 0.88);
             u.grain.material.needsUpdate = true;
         }
 
@@ -1517,7 +1543,8 @@ import * as THREE from './three.module.min.js';
             u.reflet.position.x = u.front ? u.front.position.x : 0;
             if (u.reflet.geometry !== geoPlane) u.reflet.geometry = geoPlane;
             u.reflet.material.map = textureDeReflet();
-            u.reflet.material.opacity = 0.22 * (translucide ? opacite : 1);
+            // Le reflet ne doit jamais LAVER la page : il suggère une brillance.
+            u.reflet.material.opacity = 0.34 * (translucide ? opacite : 1);
             u.reflet.material.needsUpdate = true;
         }
     }

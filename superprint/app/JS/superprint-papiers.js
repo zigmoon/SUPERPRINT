@@ -52,7 +52,7 @@
     if (window.__spPapiersInstalle) return;
     window.__spPapiersInstalle = true;
 
-    var VERSION = 'v2-papiers-menu-image';
+    var VERSION = 'v4-papiers-widget';
 
     /* ─────────────────────────────────────────────────────────── Catalogue ──
        `grain`      : quantité d'ASPÉRITÉS, de 0 (lisse) à 1 (très marqué).
@@ -116,6 +116,9 @@
         return h >>> 0;
     }
 
+    /** Borne une valeur entre deux autres. */
+    function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
     /** Les composantes RGB d'une couleur #rrggbb. */
     function rgbDe(hex) {
         var m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '#ffffff'));
@@ -156,21 +159,31 @@
         var d = img.data;
         var force = papier.grain;
         var pas = Math.max(2, Math.round(s / 64));
-        var blocs = Math.ceil(s / pas) + 1;
+        /* ⚠️ LE NOMBRE DE BLOCS EST EXACTEMENT `s / pas`, ET LE BRUIT SE REFERME SUR
+           LUI-MÊME (voir l'échantillonnage). C'est ce qui rend la tuile SANS COUTURE :
+           elle est répétée 4 × 6 fois sur la page (voir `reglerRepetitionGrain`), et un
+           bruit qui ne se referme pas y dessinerait une grille de lignes — un papier
+           quadrillé, pas un papier texturé. */
+        var blocs = Math.max(2, Math.round(s / pas));
+        pas = s / blocs;                            // pas exact → la tuile se referme
         var bruit = new Float32Array(blocs * blocs);
         for (var i = 0; i < bruit.length; i++) bruit[i] = rnd();
 
         for (var y = 0; y < s; y++) {
             for (var x = 0; x < s; x++) {
                 var bx = (x / pas) | 0, by = (y / pas) | 0;
-                // Interpolation bilinéaire entre les coins du bloc : grain continu.
+                // Interpolation bilinéaire entre les coins du bloc, avec RETOUR AU
+                // DÉBUT : la dernière colonne touche la première (modulo).
                 var fx = (x % pas) / pas, fy = (y % pas) / pas;
+                var bx1 = (bx + 1) % blocs, by1 = (by + 1) % blocs;
                 var v00 = bruit[by * blocs + bx];
-                var v10 = bruit[by * blocs + Math.min(bx + 1, blocs - 1)];
-                var v01 = bruit[Math.min(by + 1, blocs - 1) * blocs + bx];
-                var v11 = bruit[Math.min(by + 1, blocs - 1) * blocs + Math.min(bx + 1, blocs - 1)];
+                var v10 = bruit[by * blocs + bx1];
+                var v01 = bruit[by1 * blocs + bx];
+                var v11 = bruit[by1 * blocs + bx1];
                 var v = (v00 * (1 - fx) + v10 * fx) * (1 - fy) + (v01 * (1 - fx) + v11 * fx) * fy;
                 // En plus du lissé, une pointe de bruit fin : ce sont les aspérités.
+                // (Celui-là se referme par construction : il est tiré PIXEL par PIXEL,
+                //  donc la tuile est déjà périodique au pixel près.)
                 v = v * 0.82 + rnd() * 0.18;
                 /* ⚠️ LES DEUX COEFFICIENTS DÉCIDENT SI LE GRAIN SE VOIT, et ils ont
                    été relevés à l'usage : à 0,55 / 0,85, un papier très texturé
@@ -180,8 +193,8 @@
                    (`u.grain.material.opacity` dans sp-3d-preview.js). */
                 var a = (v - 0.5) * 2 * force * 255;
                 var k = (y * s + x) * 4;
-                if (a >= 0) { d[k] = 255; d[k + 1] = 255; d[k + 2] = 255; d[k + 3] = Math.min(255, a * 0.62); }
-                else { d[k] = 0; d[k + 1] = 0; d[k + 2] = 0; d[k + 3] = Math.min(255, -a * 0.95); }
+                if (a >= 0) { d[k] = 255; d[k + 1] = 255; d[k + 2] = 255; d[k + 3] = Math.min(255, a * 0.70); }
+                else { d[k] = 0; d[k + 1] = 0; d[k + 2] = 0; d[k + 3] = Math.min(255, -a * 1.0); }
             }
         }
         ctx.putImageData(img, 0, 0);
@@ -189,21 +202,27 @@
         /* ── LES FIBRES. Presque toutes dans le même sens (le sens de fabrication de
            la feuille), plus longues et plus douces que les aspérités du bruit. Elles
            sont plus larges quand le canevas l'est (`lineWidth`), pour que la même
-           matière apparaisse à toutes les résolutions. */
+           matière apparaisse à toutes les résolutions.
+           ⚠️ CHAQUE FIBRE EST TRACÉE CINQ FOIS (elle, et ses quatre copies d'un bord à
+           l'autre) : sans cela, une fibre qui sort du canevas est COUPÉE NET au bord et
+           la répétition montre un liseré de fibres tronquées à chaque jointure. */
         var fibres = Math.max(6, Math.round(s / 5));
         ctx.lineCap = 'round';
+        ctx.lineWidth = Math.max(1, s / 256);
         for (var n = 0; n < fibres; n++) {
             var x0 = rnd() * s, y0 = rnd() * s;
             var ang = (rnd() - 0.5) * 0.7;
             var len = s * (0.03 + rnd() * 0.09);
+            var dx = Math.cos(ang) * len, dy = Math.sin(ang) * len;
             ctx.strokeStyle = (rnd() < 0.5)
                 ? 'rgba(255,255,255,' + (force * 0.5).toFixed(3) + ')'
                 : 'rgba(0,0,0,' + (force * 0.7).toFixed(3) + ')';
-            ctx.lineWidth = Math.max(1, s / 256);
-            ctx.beginPath();
-            ctx.moveTo(x0, y0);
-            ctx.lineTo(x0 + Math.cos(ang) * len, y0 + Math.sin(ang) * len);
-            ctx.stroke();
+            [[0, 0], [-s, 0], [s, 0], [0, -s], [0, s]].forEach(function (o) {
+                ctx.beginPath();
+                ctx.moveTo(x0 + o[0], y0 + o[1]);
+                ctx.lineTo(x0 + o[0] + dx, y0 + o[1] + dy);
+                ctx.stroke();
+            });
         }
         return cv;
     }
@@ -329,12 +348,16 @@
                 'mix-blend-mode:multiply',
                 'background-image:url(' + url + ')',
                 'background-repeat:repeat',
+                'background-size:256px 256px',
                 /* 256 px pour une tuile de 128 : les aspérités font ~4 px à l'écran.
                    C'est une EXAGÉRATION ASSUMÉE : à l'échelle réelle, les fibres d'un
                    papier sont plus fines qu'un pixel — un grain exact serait un grain
-                   invisible, et la demande est qu'on le voie. */
-                'background-size:256px 256px',
-                'opacity:' + Math.min(0.8, p.grain * 1.15).toFixed(3),
+                   invisible, et la demande est qu'on le voie.
+                   ⚠️ MÊME COURBE QUE L'APERÇU 3D (`grain^0,7`, voir
+                   sp-3d-preview.js) : sans cela, l'éditeur et l'aperçu ne montreraient
+                   pas la même intensité pour le même papier — et l'aperçu cesserait
+                   d'être une prévision. */
+                'opacity:' + Math.min(0.85, Math.pow(p.grain, 0.7) * 1.35).toFixed(3),
             ].join(';') + ';';
             support.appendChild(grain);
         }
@@ -485,6 +508,7 @@
         papiersParPage['calque:' + i] = (o.calque != null) ? !!o.calque : !!p.calque;
 
         habillerPage(i);
+        if (i === pageActive()) majMarqueActive();
         prevenirLApercu(i);
         return true;
     }
@@ -495,6 +519,7 @@
         delete papiersParPage[i];
         delete papiersParPage['calque:' + i];
         habillerPage(i);
+        majMarqueActive();
         prevenirLApercu(i);
         return true;
     }
@@ -529,13 +554,26 @@
         };
     }
 
-    /* ─────────────────────────── Interface : le sous-menu de l'icône Image ──
-       AUCUN bouton n'est ajouté à la colonne : les papiers se rangent dans le
-       sous-menu que l'app possède déjà (`#importMenu`, ouvert par `#importToggle`),
-       APRÈS l'entrée « SVG ». On n'y met que nos entrées.
+    /* ═══════════════════════ INTERFACE : UNE ICÔNE, DEUX ENTRÉES ═══════════════
+       LES ASPÉRITÉS SE PRENNENT PAR DEUX CHEMINS, et les deux mènent au même
+       endroit — le même catalogue, le même dépôt, la même matière :
+
+         · l'ICÔNE ÉTOILES de la colonne de gauche. Elle OUVRE UN WIDGET — un
+           panneau flottant, au gabarit des widgets de l'app (Styles, Nuancier,
+           Filtres). On reclique dessus : le widget DISPARAÎT (`basculeWidget`).
+           Le widget est déplaçable par sa barre de titre, et sa position est
+           retenue d'une session à l'autre, comme celle des autres widgets ;
+         · le SOUS-MENU DE L'ICÔNE IMAGE, APRÈS « SVG ». Le menu et son ouverture
+           restent ceux de l'app (`setupImportDropdown`, `main.js:23163`) : on n'y
+           ajoute que nos entrées.
+
+       Les deux listes sont construites par le MÊME `creerEntreeDePapier` : il n'y a
+       donc pas deux façons de déposer un papier selon l'endroit d'où on l'a pris.
     */
 
-    var racine = null, menu = null, ancrage = null;
+    var racine = null, menu = null, ancrage = null;      // le bloc dans le menu Image
+    var bouton = null, widget = null, listeWidget = null; // l'icône et son widget
+    var widgetVisible = false;
 
     /** Le contenu d'une pastille de papier — la vignette qui porte sa matière. */
     function pastilleDe(p, tailleCss) {
@@ -543,14 +581,95 @@
         pastille.className = 'tool-icon';
         var url = p.grain ? urlGrain(p, 64) : null;
         pastille.style.cssText = 'display:inline-block;width:16px;height:16px;border-radius:3px;' +
-            'border:1px solid rgba(128,128,128,.45);flex:0 0 auto;' +
+            'border:1px solid rgba(128,128,128,.45);flex:0 0 auto;position:relative;overflow:hidden;' +
             'background-color:' + (p.teinte || 'transparent') + ';' +
             (url ? 'background-image:url(' + url + ');' : '') +
-            'background-size:' + (tailleCss || 32) + 'px ' + (tailleCss || 32) + 'px;';
+            /* 22 px pour une tuile de 64 : l'aspérité reste LISIBLE dans une vignette
+                   de 16 px — c'est ce qui permet de choisir un papier à l'œil. Le grain est
+                   plus grossier que sur la page, et c'est voulu : une vignette qui montrerait
+                   le grain à l'échelle réelle serait une vignette unie. */
+            'background-size:' + (tailleCss || 22) + 'px ' + (tailleCss || 22) + 'px;';
+        if (p.matiere === 'brillant') {
+            // Le brillant se lit à la diagonale, comme dans l'aperçu 3D.
+            var refl = document.createElement('span');
+            refl.style.cssText = 'position:absolute;inset:0;pointer-events:none;' +
+                    'background:linear-gradient(135deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.85) 50%,rgba(255,255,255,0) 62%);';
+            pastille.appendChild(refl);
+        }
         return pastille;
     }
 
-    function construireInterface() {
+    /** L'icône de la colonne : des ÉTOILES — les ASPÉRITÉS du papier. */
+    function iconeEtoiles() {
+        return '<svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+            'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<path d="M12 3l1.9 4.1L18 9l-4.1 1.9L12 15l-1.9-4.1L6 9l4.1-1.9z"/>' +
+            '<path d="M18.5 14.5l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8z"/>' +
+            '<path d="M5.5 15l.6 1.3 1.4.7-1.4.7L5.5 19l-.6-1.3L3.5 17l1.4-.7z"/>' +
+            '</svg>';
+    }
+
+    /**
+     * Une entrée de papier — la MÊME pour le widget et pour le sous-menu Image.
+     * @param {object} p      une entrée du catalogue
+     * @param {string} classe la classe de l'élément (le style diffère, pas le geste)
+     */
+    function creerEntreeDePapier(p, classe) {
+        var b = document.createElement('button');
+        b.className = classe;
+        b.setAttribute('draggable', 'true');
+        b.setAttribute('data-papier', p.id);
+        b.title = 'Papier ' + p.nom + (p.grammage ? ' — ' + p.grammage + ' g/m²' : '') +
+            ' — ' + p.matiere + (p.transparent ? ' — calque (translucide)' : '') +
+            ' — glisser sur la page, ou cliquer pour la page active';
+
+        var nom = document.createElement('span');
+        nom.textContent = p.nom + (p.matiere === 'brillant' ? ' ✦' : '') +
+            (p.transparent ? ' (calque)' : '');
+        b.appendChild(pastilleDe(p, 22));
+        b.appendChild(nom);
+
+        // ── Glisser : notre propre type MIME, pour ne rien confondre avec les
+        //    autres glissers de l'app (`trappe-pattern`, fichiers, images).
+        b.addEventListener('dragstart', function (e) {
+            glisse = { id: p.id };
+            var pose = false;
+            try { e.dataTransfer.setData('application/x-sp-papier', JSON.stringify({ id: p.id })); pose = true; } catch (_) {}
+            /* ⚠️ PAS de repli `text/plain` en temps normal, et ce n'est pas un
+                   détail : le gestionnaire GLOBAL de l'app (`main.js:80438`, capture
+                   sur `document`) accepte `text/plain` comme un MOTIF déposé et fait
+                   `JSON.parse` dessus. Notre charge « sp-papier:kraft » n'étant pas du
+                   JSON, chaque dépôt de papier levait à la console :
+
+                       Erreur lors du drop (global): SyntaxError: Unexpected token 's'
+
+                   Le repli n'est donc posé que si le type personnalisé a échoué
+                   (navigateur qui refuse un type inconnu). */
+            if (!pose) { try { e.dataTransfer.setData('text/plain', 'sp-papier:' + p.id); } catch (_) {} }
+            try { e.dataTransfer.effectAllowed = 'copy'; } catch (_) {}
+            document.body.classList.add('sp-papier-glisse');
+        });
+        b.addEventListener('dragend', function () {
+            glisse = null;
+            document.body.classList.remove('sp-papier-glisse');
+        });
+
+        // ── Clic : dépôt sur la page active (le geste de secours, sans glisser).
+        b.addEventListener('click', function (e) {
+            e.preventDefault();
+            var i = pageActive();
+            deposer(p.id, i);
+            annoncer(p.id === 'aucun' ? 'Papier retiré de la page ' + (i + 1)
+                    : p.nom + ' → page ' + (i + 1));
+            fermerMenu();
+            majMarqueActive();
+        });
+
+        return b;
+    }
+
+    /* ─────────────────────────────────────────── Le bloc du sous-menu Image ── */
+    function construireBlocImage() {
         if (racine && racine.parentNode) return true;
         menu = document.getElementById('importMenu');
         ancrage = document.getElementById('importSVG');   // on se range APRÈS « SVG »
@@ -574,60 +693,182 @@
         aide.textContent = 'Glisser sur une page';
         racine.appendChild(aide);
 
-        PAPIERS.forEach(function (p) {
-            var b = document.createElement('button');
-            b.className = 'dropdown-item sp-papier-item';
-            b.setAttribute('draggable', 'true');
-            b.setAttribute('data-papier', p.id);
-            b.title = 'Papier ' + p.nom + (p.grammage ? ' — ' + p.grammage + ' g/m²' : '') +
-                ' — ' + p.matiere + (p.transparent ? ' — calque (translucide)' : '') +
-                ' — glisser sur la page, ou cliquer pour la page active';
-            var nom = document.createElement('span');
-            nom.textContent = p.nom + (p.matiere === 'brillant' ? ' ✦' : '') +
-                (p.transparent ? ' (calque)' : '');
-            b.appendChild(pastilleDe(p, 32));
-            b.appendChild(nom);
-
-            // ── Glisser : notre propre type MIME, pour ne rien confondre avec les
-            //    autres glissers de l'app (`trappe-pattern`, fichiers, images).
-            b.addEventListener('dragstart', function (e) {
-                glisse = { id: p.id };
-                var pose = false;
-                try { e.dataTransfer.setData('application/x-sp-papier', JSON.stringify({ id: p.id })); pose = true; } catch (_) {}
-                /* ⚠️ PAS de repli `text/plain` en temps normal, et ce n'est pas un
-                   détail : le gestionnaire GLOBAL de l'app (`main.js:80438`, capture
-                   sur `document`) accepte `text/plain` comme un MOTIF déposé et fait
-                   `JSON.parse` dessus. Notre charge « sp-papier:kraft » n'étant pas du
-                   JSON, chaque dépôt de papier levait à la console :
-
-                       Erreur lors du drop (global): SyntaxError: Unexpected token 's'
-
-                   Le repli n'est donc posé que si le type personnalisé a échoué
-                   (navigateur qui refuse un type inconnu). */
-                if (!pose) { try { e.dataTransfer.setData('text/plain', 'sp-papier:' + p.id); } catch (_) {} }
-                try { e.dataTransfer.effectAllowed = 'copy'; } catch (_) {}
-                document.body.classList.add('sp-papier-glisse');
-            });
-            b.addEventListener('dragend', function () {
-                glisse = null;
-                document.body.classList.remove('sp-papier-glisse');
-            });
-
-            // ── Clic : dépôt sur la page active (le geste de secours, sans glisser).
-            b.addEventListener('click', function (e) {
-                e.preventDefault();
-                var i = pageActive();
-                deposer(p.id, i);
-                annoncer(p.id === 'aucun' ? 'Papier retiré de la page ' + (i + 1)
-                    : p.nom + ' → page ' + (i + 1));
-                fermerMenu();
-            });
-
-            racine.appendChild(b);
-        });
+        PAPIERS.forEach(function (p) { racine.appendChild(creerEntreeDePapier(p, 'dropdown-item sp-papier-item')); });
 
         ancrage.parentNode.insertBefore(racine, ancrage.nextSibling);
         return true;
+    }
+
+    /* ───────────────────────────── Le WIDGET : l'icône de la colonne ──
+       Gabarit des widgets de l'app (Styles, Nuancier, Filtres) : en-tête avec
+       pastille et titre, corps repliable, position retenue. On le pose DANS
+       `#widgetsOverlay` quand il existe — l'app y déplace ses propres widgets
+       (`moveWidgetsToOverlay`, `main.js:75592`) pour qu'ils ne défilent pas avec
+       la page — sinon on le pose dans le corps du document.
+    */
+    var CLE_POSITION = 'sp_papiers_widget_pos';
+
+    function construireWidget() {
+        if (widget && widget.parentNode) return true;
+
+        widget = document.createElement('div');
+        widget.className = 'sp-papier-widget sp-papier-widget-ferme';
+        widget.id = 'spPapierWidget';
+        widget.setAttribute('role', 'dialog');
+        widget.setAttribute('aria-label', 'Aspérités papier');
+        widget.innerHTML =
+            '<div class="sp-papier-entete" id="spPapierEntete">' +
+            '<span class="sp-papier-point"></span>' +
+            '<span class="sp-papier-nom">Aspérités papier</span>' +
+            '<span class="sp-papier-fleche">▾</span>' +
+            '</div>' +
+            '<div class="sp-papier-corps" id="spPapierCorps"></div>';
+
+        listeWidget = widget.querySelector('#spPapierCorps');
+
+        var intro = document.createElement('div');
+        intro.className = 'sp-papier-intro';
+        intro.textContent = 'Glisser une pastille sur la page visée';
+        listeWidget.appendChild(intro);
+
+        PAPIERS.forEach(function (p) { listeWidget.appendChild(creerEntreeDePapier(p, 'sp-papier-ligne')); });
+
+        // ── En-tête : replier / déplier, et DÉPLACER le widget.
+        var entete = widget.querySelector('#spPapierEntete');
+        entete.addEventListener('click', function () {
+            if (widget.dataset.deplace === '1') { widget.dataset.deplace = '0'; return; }
+            widget.classList.toggle('sp-papier-widget-ferme');
+        });
+        rendreDeplacable(entete);
+
+        // On rejoint la couche des widgets si elle est là.
+        var couche = document.getElementById('widgetsOverlay');
+        (couche || document.body).appendChild(widget);
+        poserLeWidget();
+        return true;
+    }
+
+    /** Position : celle retenue, sinon en haut à gauche de la pile des widgets. */
+    function poserLeWidget() {
+        if (!widget) return;
+        var x = 16, y = null;
+        try {
+            var sauv = JSON.parse(localStorage.getItem(CLE_POSITION) || 'null');
+            if (sauv && typeof sauv.x === 'number' && typeof sauv.y === 'number') { x = sauv.x; y = sauv.y; }
+        } catch (_) {}
+        widget.style.left = x + 'px';
+        if (y != null) {
+            widget.style.top = y + 'px';
+            widget.style.bottom = 'auto';
+        }
+        /* Sans position retenue : SOUS les autres widgets de gauche. Ils occupent
+           16 px (Filtres), 80 px (Nuancier) et 144 px (Styles) ; à 216 px on passe
+           au-dessus d'eux sans les recouvrir, ce qui laisse chacun atteignable. */
+        else {
+            widget.style.bottom = '216px';
+            widget.style.top = 'auto';
+        }
+    }
+
+    /** Déplacer le widget par son en-tête (souris), et retenir la position. */
+    function rendreDeplacable(poignee) {
+        var enCours = false, dx0 = 0, dy0 = 0, l0 = 0, t0 = 0;
+        poignee.addEventListener('mousedown', function (e) {
+            if (e.button !== 0) return;
+            enCours = true;
+            widget.dataset.deplace = '0';
+            var r = widget.getBoundingClientRect();
+            dx0 = e.clientX; dy0 = e.clientY; l0 = r.left; t0 = r.top;
+            try { document.body.style.userSelect = 'none'; } catch (_) {}
+        });
+        document.addEventListener('mousemove', function (e) {
+            if (!enCours || !widget) return;
+            var nx = l0 + (e.clientX - dx0), ny = t0 + (e.clientY - dy0);
+            if (Math.abs(e.clientX - dx0) > 3 || Math.abs(e.clientY - dy0) > 3) widget.dataset.deplace = '1';
+            nx = clamp(nx, 0, Math.max(0, window.innerWidth - 60));
+            ny = clamp(ny, 0, Math.max(0, window.innerHeight - 30));
+            widget.style.left = nx + 'px';
+            widget.style.top = ny + 'px';
+            widget.style.bottom = 'auto';
+        });
+        document.addEventListener('mouseup', function () {
+            if (!enCours || !widget) return;
+            enCours = false;
+            try { document.body.style.userSelect = ''; } catch (_) {}
+            try {
+                    localStorage.setItem(CLE_POSITION, JSON.stringify({
+                        x: Math.round(widget.getBoundingClientRect().left),
+                        y: Math.round(widget.getBoundingClientRect().top),
+                    }));
+            } catch (_) {}
+            setTimeout(function () { if (widget) widget.dataset.deplace = '0'; }, 60);
+        });
+    }
+
+    /**
+     * L'ICÔNE DE LA COLONNE — et son va-et-vient.
+     *
+     * Un clic OUVRE le widget ; un second clic le REFERME (`widgetVisible`), et
+     * l'icône reprend son état de repos. C'est la demande, et c'est aussi ce que
+     * font les autres boutons de la colonne : on ne laisse pas deux panneaux
+     * ouverts sur le même sujet.
+     */
+    function construireBouton() {
+        if (bouton && bouton.parentNode) return true;
+        var ancre = document.getElementById('importDropdown');
+        if (!ancre || !ancre.parentNode) return false;
+
+        bouton = document.createElement('button');
+        bouton.className = 'btn btn-tool';
+        bouton.id = 'spPapierIcone';
+        bouton.type = 'button';
+        bouton.setAttribute('aria-label', 'Aspérités papier');
+        bouton.setAttribute('aria-pressed', 'false');
+        bouton.title = 'Aspérités papier — ouvrir la palette (un second clic la ferme)';
+        bouton.innerHTML = iconeEtoiles();
+        bouton.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            basculeWidget();
+        });
+
+        // Juste après le groupe Import (l'icône image), comme demandé.
+        ancre.parentNode.insertBefore(bouton, ancre.nextSibling);
+        return true;
+    }
+
+    function basculeWidget() {
+        if (!construireWidget()) return false;
+        widgetVisible = !widgetVisible;
+        widget.style.display = widgetVisible ? '' : 'none';
+        /* ⚠️ ON OUVRE DÉPLIÉ. Le widget naît replié (classe `-ferme`) pour que sa
+           première apparition ne recouvre pas la page ; mais un clic sur l'icône doit
+           MONTRER la palette, pas une barre de titre qu'il faudrait encore déplier.
+           Le repli reste possible — c'est le clic sur l'en-tête. */
+        if (widgetVisible) widget.classList.remove('sp-papier-widget-ferme');
+        if (bouton) {
+            bouton.classList.toggle('active', widgetVisible);
+            bouton.setAttribute('aria-pressed', widgetVisible ? 'true' : 'false');
+        }
+        if (widgetVisible) majMarqueActive();
+        return widgetVisible;
+    }
+
+    /** Souligne, dans les deux listes, le papier de la page ACTIVE. */
+    function majMarqueActive() {
+        var p = papierDePage(pageActive());
+        var id = p ? p.id : null;
+        var toutes = document.querySelectorAll('.sp-papier-item, .sp-papier-ligne');
+        for (var i = 0; i < toutes.length; i++) {
+            var actif = id != null && toutes[i].getAttribute('data-papier') === id;
+            toutes[i].classList.toggle('sp-papier-actif', actif);
+        }
+    }
+
+    function construireInterface() {
+        var a = construireBlocImage();
+        var b = construireBouton();
+        return a || b;
     }
 
     /** Referme le menu d'import — c'est celui de l'app (classe `open`). */
@@ -755,6 +996,39 @@
             '.sp-papier-item span:last-child{white-space:nowrap;}',
             '.sp-papier-item[draggable="true"]{cursor:grab;}',
             '.sp-papier-item[draggable="true"]:active{cursor:grabbing;}',
+            '.sp-papier-actif{background:rgba(13,148,136,.16) !important;' +
+                'box-shadow:inset 0 0 0 1px rgba(13,148,136,.45);}',
+
+            /* ── LE WIDGET. Gabarit des widgets de l'app (Styles, Nuancier, Filtres) :
+                  même fond, même bord, même ombre, même repli. `position:fixed` pour
+                  qu'il reste en place qu'on le pose dans `#widgetsOverlay` ou dans le
+                  corps du document — l'app fait migrer ses widgets d'un conteneur à
+                  l'autre, et le nôtre ne doit pas en dépendre. */
+            '.sp-papier-widget{position:fixed;z-index:340;width:216px;max-height:74vh;' +
+                'display:flex;flex-direction:column;background:rgba(255,255,255,.96);color:#111;' +
+                'border:1px solid rgba(0,0,0,.12);border-radius:10px;' +
+                'box-shadow:0 8px 24px rgba(0,0,0,.18);backdrop-filter:saturate(1.2) blur(2px);' +
+                'overflow:hidden;user-select:none;-webkit-user-select:none;' +
+                'font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;}',
+            '.theme-dark .sp-papier-widget{background:rgba(24,24,24,.96);color:#e6e6e6;' +
+                'border-color:rgba(255,255,255,.1);}',
+            '.sp-papier-entete{display:flex;align-items:center;gap:8px;padding:9px 10px;' +
+                'font-size:11px;letter-spacing:.5px;border-bottom:1px solid rgba(0,0,0,.08);' +
+                'cursor:move;}',
+            '.theme-dark .sp-papier-entete{border-bottom-color:rgba(255,255,255,.08);}',
+            '.sp-papier-point{width:7px;height:7px;border-radius:50%;background:#0d9488;flex:0 0 auto;}',
+            '.sp-papier-fleche{margin-left:auto;opacity:.6;transition:transform .18s ease;}',
+            '.sp-papier-widget-ferme .sp-papier-fleche{transform:rotate(-90deg);}',
+            '.sp-papier-corps{display:flex;flex-direction:column;gap:1px;padding:6px;overflow:auto;}',
+            '.sp-papier-widget-ferme .sp-papier-corps{display:none;}',
+            '.sp-papier-intro{font-size:9px;line-height:1.4;opacity:.55;padding:1px 6px 7px;}',
+            '.sp-papier-ligne{display:flex;align-items:center;gap:8px;width:100%;padding:5px 6px;' +
+                'border:1px solid transparent;border-radius:6px;background:transparent;' +
+                'font:inherit;font-size:10.5px;letter-spacing:.3px;color:inherit;text-align:left;' +
+                'cursor:grab;}',
+            '.sp-papier-ligne:hover{background:rgba(13,148,136,.10);border-color:rgba(13,148,136,.25);}',
+            '.sp-papier-ligne:active{cursor:grabbing;}',
+            '.sp-papier-ligne span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
         ].join('\n');
         document.head.appendChild(st);
     }
@@ -767,8 +1041,9 @@
             installerLEcouteurDeDepot();
             var ok = construireInterface();
             // L'app peut ne pas encore avoir posé sa colonne : on réessaie.
-            if (!ok) setTimeout(function () { if (construireInterface()) reHabillerTout(); }, 800);
+            if (!ok) setTimeout(function () { if (construireInterface()) { reHabillerTout(); majMarqueActive(); } }, 800);
             reHabillerTout();
+            majMarqueActive();
             installerLeGardeFou();
             return ok;
         } catch (e) {
@@ -780,7 +1055,11 @@
     function desinstaller() {
         retirerHabillage();
         if (racine && racine.parentNode) racine.parentNode.removeChild(racine);
+        if (widget && widget.parentNode) widget.parentNode.removeChild(widget);
+        if (bouton && bouton.parentNode) bouton.parentNode.removeChild(bouton);
         racine = menu = ancrage = null;
+        bouton = widget = listeWidget = null;
+        widgetVisible = false;
         glisse = null;
         try { if (observateur) observateur.disconnect(); } catch (_) {}
         observateur = null;
@@ -809,12 +1088,17 @@
                 papiersParPage: JSON.parse(JSON.stringify(papiersParPage)),
                 pages: nombreDePages(),
                 interface: !!racine,
+                icone: !!bouton,
+                widget: !!widget,
+                widgetVisible: widgetVisible,
                 // Le nombre de calques RÉELLEMENT posés dans la page — c'est ce qui
                 // dit si le dépôt se voit, et non s'il a été « enregistré ».
                 calques: document.querySelectorAll(SELECTEUR_NOS_CALQUES).length,
                 marques: document.querySelectorAll('.' + CLASSE_MARQUE).length,
             };
         },
+        // Pour les bancs : ouvrir / fermer le widget sans passer par la souris.
+        basculerWidget: basculeWidget,
     };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installer, { once: true });
