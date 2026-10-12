@@ -33,7 +33,7 @@
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20spot%20inks-E1237B?style=flat-square">
   <img alt="AI" src="https://img.shields.io/badge/AI-cloud%20or%20local-F2B90B?style=flat-square">
   <img alt="UI" src="https://img.shields.io/badge/UI-FR%20%7C%20EN%20%7C%20JP-17130D?style=flat-square">
-  <img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square">
+  <img alt="License" src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square">
 </p>
 
 ---
@@ -59,18 +59,6 @@ SuperPrint is not a single tool: it is a small **family of browser-based creativ
 **Studio IA** accepts a written brief, one or more attached documents, or both. It drives a multi-page layout page by page (up to **120 pages**), places the images you attach, and honours typographic constraints: column width, hyphenation, widows and orphans, bleed. It runs on **cloud models** (DeepSeek, Groq, OpenRouter, Anthropic) **or fully locally** through **WebLLM over WebGPU** — no key, no network, nothing leaving the machine.
 
 **SuperTyPo** turns any `.ttf` / `.otf` / `.woff` / `.woff2` into an editable vector project: each character is **decomposed into contours** that you reshape with the pen tool, then **re-exported** as a modified typeface. Boolean operations (union / subtract / intersect), mirror & 90° rotation, glyph metrics (naming, LSB/RSB, bounding box, point counts) and a versioned native `.sf` (SuperFont) project format. The **« SuperTyPo »** entry of the *New project* dialog opens it directly.
-
----
-
-## ✦ Under the hood — Astro, Rust & assembly
-
-Beyond the application itself, SuperPrint is built on three modern, open-source foundations:
-
-- 🚀 **The website is built with [Astro](https://astro.build)** — the marketing site and the docs are no longer a pile of hand-written HTML pages but an Astro project (`superprint_ASTRO/`) with shared components, a single `<head>` factory and scripts extracted to files. **The published URLs do not change** (`/`, `/faq.html`, `/supertypo/index.html`…) — it is *how the site is served*, not a new app.
-- 🦀 **The computing core is written in [Rust](https://www.rust-lang.org)** (`superprint_rust/`) — pure, dependency-free and testable primitives (typographic units, RGB/CMYK colour, print geometry, **image downsampling**, and the **spot-ink / PDF separation** engine) compiled to **native and WebAssembly**, so the browser editor can call fast, deterministic, memory-safe code for the heaviest prepress work. The image path targets the measured **131 MB PDF** defect directly: pixels are **resampled to the useful resolution** and **filtered**, never written raw.
-- ⚙️ **The lowest-level kernels are hand-written in assembly** — [WebAssembly Text](https://webassembly.github.io/spec/core/text/index.html) (`superprint_asm/`), *the assembly of the web*. Small, predictable, GC-free routines for the tightest pixel loops (**greyscale luma, Rec. 709**, and **integer RGB ↔ CMYK**), **verified byte-for-byte against the Rust core** — same output, pixel by pixel.
-
-> These three folders are **not** additional applications: **Astro** is *how the site is built*, **Rust** is *how the heavy maths and PDF writing are done*, and the **assembly** is *how the tightest loops run*. The apps you open stay **SuperPrint**, **Studio IA** and **SuperTyPo**.
 
 ---
 
@@ -209,25 +197,16 @@ python -m http.server 8000 --directory superprint
 
 ## ✦ The repository
 
-The repository ships **the product only**: the application, the Astro build of its website, the Rust computing core, the hand-written assembly kernels, and the local / npm helpers. All development tooling (349 scripts, 281 logs, backups, test fixtures) lives outside the repository, in a `_dev/` folder that is git-ignored.
+The repository ships **the product only** — three folders, two build helpers and four root files. All development tooling (349 scripts, 281 logs, backups, test fixtures) lives outside the repository, in a `_dev/` folder that is git-ignored.
 
 | Path | Role | Tracked |
 |---|---|---|
-| `superprint/` | **The application** — editor, landing, Studio IA, SuperTyPo, documentation, script API (deployed as-is) | ✅ |
+| `superprint/` | The complete web application: editor, landing, Studio IA, SuperTyPo, documentation, script API | ✅ |
 | `sp213-local/` | The local distribution (Vite + WebLLM) downloaded by the npm launcher | ✅ |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) | ✅ |
-| `superprint_ASTRO/` | **The website, rebuilt with [Astro](https://astro.build)** — same published URLs, shared components, scripts extracted to files; builds to `dist/` | ✅ |
-| `superprint_rust/` | **The computing core, in [Rust](https://www.rust-lang.org)** — pure, dependency-free primitives (units, colour, print geometry, **image resampling**) plus the **spot-ink / PDF** and **image** engines, compiled to native *and* WebAssembly | ✅ |
-| `superprint_asm/` | **Hand-written assembly kernels** — [WebAssembly Text](https://webassembly.github.io/spec/core/text/index.html) modules for the tightest pixel loops (**greyscale luma**, **RGB ↔ CMYK**), verified byte-for-byte against the Rust core | ✅ |
 | `tools/` | Two dependency-free helpers: `serve.mjs` (local static server) and `make-release-zip.mjs` | ✅ |
 | `README.md` · `CHANGELOG.md` · `release.html` · `.gitignore` | Documentation and release notes | ✅ |
 | `_dev/` | Development tooling, logs, backups, fixtures | ❌ ignored |
-
-> 🧱 **Not applications.** The apps you *use* are **SuperPrint** (the editor), **Studio IA** and
-> **SuperTyPo**. `superprint_ASTRO/` is the **site** (*how it is served*), `superprint_rust/` is
-> the **engine** (*how it computes*, in WebAssembly), and `superprint_asm/` is the **bottom
-> layer** (*how the tightest loops run*). None of them is a separate application to open: the
-> Astro build publishes the very same site, and the Rust core is a library the app can call.
 
 ```bash
 node tools/serve.mjs        # serve superprint/ on http://127.0.0.1:8080
@@ -278,35 +257,26 @@ SuperPrint is designed to be **privacy-friendly**:
 
 ## ✦ License
 
-**GNU Affero General Public License v3.0 (AGPL-3.0) — free and open source.**
-SuperPrint — the page-layout editor, the SP213 AI layout studio, the SuperTyPo font editor,
-their source code, documentation and build tooling — is **free software**: you may use,
-study, modify and redistribute it under the terms of the AGPL-3.0. See the full text in
-[`superprint/LICENSE`](superprint/LICENSE).
+**Proprietary license — all rights reserved.** SuperPrint is **not** open source. It runs in a
+browser, so its code is readable, but readable is not free to reuse.
+See the full text in [LICENSE](LICENSE).
 
-Copyright (C) 2026 Simon Dupont-Gellert (Zigmoon) · 2.13.
+Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon) · 2.13. All rights reserved.
 
-**In short** — use SuperPrint for any purpose, including commercially, with no fee and no
-account; read, study and modify the source; redistribute the original or a modified version
-under the same license. If you run a **modified** version as a network service that users
-interact with remotely (for example, hosting your own fork at a public URL), **section 13**
-of the AGPL requires you to offer those users the complete corresponding source code,
-including your changes. Everything **you produce** with SuperPrint belongs to you — your
-documents, images, fonts, templates and your exported PDF / PNG / JPG files.
+You may **use** SuperPrint at [superprint.cc](https://superprint.cc) and through its local launcher
+(`npx superprint`), and **everything you produce belongs to you** — your documents, images, fonts,
+templates and your exported PDF / PNG / JPG files.
 
-**Trademarks.** The AGPL-3.0 licenses the *code*, not the *name*: "SuperPrint", "SP213" and
-"SuperTyPo", and their logos, are trademarks of Simon Dupont-Gellert (Zigmoon), governed
-separately — see [`superprint/TRADEMARKS.md`](superprint/TRADEMARKS.md). A public or commercial
-fork must not present itself under these names in a way that implies official origin or
-endorsement.
+You may **not** copy, redistribute, resell, host, mirror, modify, create derivative works from,
+remove the copyright notices, or reuse the code, the templates and the asset library — including to
+build, train or improve a competing product or an AI model — without written permission.
 
-**Third-party components** bundled with the application (Fabric.js, pdf-lib, pdf.js, JSZip,
-Mammoth, SheetJS, WebLLM, Little CMS `lcms-wasm`), the bundled fonts and the colour-library
-names (Pantone, Toyo, Focoltone, HKS, RAL, NCS, DIC) keep their own licenses and trademarks,
-which prevail over the AGPL-3.0 for the parts they cover — see
-[`superprint/NOTICE.md`](superprint/NOTICE.md). The shade values shipped with the application
-are indicative sRGB conversions, not the manufacturers' official libraries — a manufacturer's
-own `.ase` file can be imported for exact values.
-
-Commercial licensing, custom builds, white-labelling and partnerships:
+Commercial licensing, custom builds, white-labelling, self-hosting and partnerships:
 **contact@superprint.cc** · **all@2points13.fr**
+
+Third-party components bundled with the application (Fabric.js, pdf-lib, pdf.js, JSZip, Mammoth,
+SheetJS, WebLLM, Little CMS `lcms-wasm`), the bundled fonts and the colour-library names (Pantone,
+Toyo, Focoltone, HKS, RAL, NCS, DIC) keep their own licenses and trademarks, which prevail over this
+one for the parts they cover. The shade values shipped with the application are indicative sRGB
+conversions, not the manufacturers' official libraries — a manufacturer's own `.ase` file can be
+imported for exact values.
