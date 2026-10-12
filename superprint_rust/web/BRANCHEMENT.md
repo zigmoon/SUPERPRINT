@@ -246,6 +246,24 @@ donc retirer la ligne remet l'application à l'identique :
 | export PDF imposé | `app/JS/superprint-montage.js` | le **même** module que le branchement | l'export vectoriel du produit |
 | import de documents (`.odt`/`.ods`/`.odp`, `.idml`) | `app/JS/superprint-doc.js` | `superprint_doc.wasm` (290,1 Ko, **à la demande**) | `_spTexteOdf` du produit, conservée dans `window.__spTexteOdfJs` |
 | contrôle prépresse | `app/JS/superprint-prepresse.js` | le **même** module que le branchement — **aucun octet de plus** | aucun : sans noyau, la colle ne dit rien et l'export part |
+| aspérités de papier (aperçu) | `app/JS/superprint-papiers.js` | **aucun** — le fichier ne touche que le DOM | aucun : sans noyau, la palette et les aspérités fonctionnent à l'identique |
+
+⚠️ **LA DERNIÈRE LIGNE N'EST PAS UNE JOINTURE DE NOYAU, ET C'EST VOULU.** Les cinq
+premières lignes sont des coutures vers un module WebAssembly : leur source fait
+autorité dans `web/`, et `scripts/check.ps1` vérifie qu'elles sont livrées **octet
+pour octet** (`colle livree identique a celle du depot`). `superprint-papiers.js`
+n'a **pas** de noyau : c'est un module d'interface (catalogue de papiers, dépôt par
+glisser-déposer, teinte et aspérités posées dans le DOM). Il n'a donc rien à faire
+dans `web/`, et il n'est pas dans la liste des paires — le chercher là serait une
+erreur de lecture. Ce que la ligne dit, en revanche, est utile : un sixième fichier
+a été **ajouté** à `superprint/`, et comme les cinq autres, retirer sa ligne
+`<script>` remet l'application à l'identique.
+
+Ce que les aspérités ne font **jamais** : partir dans le PDF. Elles vivent dans le
+DOM, à côté des planches fabric, donc hors du pixel des planches. Mesuré sur une page
+de contrôle gris moyen, l'image que l'export et l'aperçu 3D lisent tous les deux
+(`toDataURL`) fait **18 174 caractères avec ou sans papier** — identique au caractère
+près. L'aspérité est un aperçu, pas un objet du document.
 
 `main.js` n'a **jamais** été modifié pour les trois premiers : chaque joint est une
 couture que le produit offrait déjà (`window.hyphenators`, `window._spCmykConvert`,

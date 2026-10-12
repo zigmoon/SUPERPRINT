@@ -26,6 +26,21 @@ import * as THREE from './three.module.min.js';
     var RADIUS_BASE = 4.7;     // distance caméra par défaut (recalculée selon le format)
     var PHI_MIN = 0.55, PHI_MAX = Math.PI / 2;   // 90° = caméra FACE à la page → document À PLAT
     var RADIUS_MIN = 1.8, RADIUS_MAX = 26;
+    /* ⚠️ _SP3D_ORBITE_716 — ON NE PASSE JAMAIS DERRIÈRE LE LIVRE.
+       Défaut signalé : « quand je rotate le document, il perd le recto de couverture
+       et le verso ». MESURÉ, et ce n'est pas une texture perdue : après une rotation
+       de 172°, la page montrée au centre de l'écran est le VERSO NU de la feuille —
+       relevé (218,196,161), c'est-à-dire la teinte du papier kraft, alors que la
+       couverture de l'essai est rouge (200,30,30). Les textures restent intactes
+       (`leafR` garde `texIdx: 0`), mais les feuilles sont des plans à UNE seule face
+       utile : `side: FrontSide`, l'avant porte la page, l'arrière est du papier nu.
+       C'est physiquement juste (le dos d'une couverture est vierge) mais l'aperçu
+       devient inutilisable : l'utilisateur croit avoir perdu ses pages.
+       Le remède est de BORNER l'orbite : ±62° autour de la reliure. On garde le
+       relief (le livre s'incline, les pages prennent du volume), on ne peut plus se
+       placer derrière le livre, donc plus jamais de page « disparue ». */
+    var THETA_MAX = 62 * Math.PI / 180;
+    function bornerTheta() { theta = clamp(theta, -THETA_MAX, THETA_MAX); }
 
     /* ----------------------------------------------------------------- Thèmes
        SOMBRE par défaut à l'ouverture (demande utilisateur).
@@ -777,7 +792,7 @@ import * as THREE from './three.module.min.js';
             '</div>' +
             '<div class="sp3d-panel" id="sp3dPanel">' +
                 '<h4>Caméra</h4>' +
-                '<div class="sp3d-row"><label>Rotation</label><input type="range" id="sp3dRot" min="-180" max="180" step="1"><span class="sp3d-val" id="sp3dRotV"></span></div>' +
+                '<div class="sp3d-row"><label>Rotation</label><input type="range" id="sp3dRot" min="-62" max="62" step="1"><span class="sp3d-val" id="sp3dRotV"></span></div>' +
                 '<div class="sp3d-row"><label>Plongée</label><input type="range" id="sp3dTilt" min="0" max="58" step="1"><span class="sp3d-val" id="sp3dTiltV"></span></div>' +
                 '<div class="sp3d-row"><label>Zoom</label><input type="range" id="sp3dZoom" min="60" max="220" step="1"><span class="sp3d-val" id="sp3dZoomV"></span></div>' +
                 '<div class="sp3d-row"><label>Roulis</label><input type="range" id="sp3dRoll" min="-45" max="45" step="1"><span class="sp3d-val" id="sp3dRollV"></span></div>' +
@@ -831,6 +846,7 @@ import * as THREE from './three.module.min.js';
 
         on(settingInputs.rot, function () {
             theta = deg(parseFloat(settingInputs.rot.value));
+            bornerTheta();      // _SP3D_ORBITE_716 : jamais derrière le livre
         });
         on(settingInputs.tilt, function () {
             // Plongée : de presque rasant (haut) à la verticale (bas de piste).
@@ -1782,6 +1798,12 @@ import * as THREE from './three.module.min.js';
             if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
             theta -= dx * 0.006;
             phi = clamp(phi - dy * 0.006, PHI_MIN, PHI_MAX);
+            /* ⚠️ _SP3D_ORBITE_716 — LE PLAFOND EST DANS LE GESTE, PAS SEULEMENT DANS
+               LE RÉGLAGE. Sans lui, un glissement de 300 px (theta -= 1,8 rad ≈ 103°)
+               amène la caméra derrière le livre : on ne voit plus que le verso nu des
+               feuilles, et la couverture comme le dos semblent perdus (mesuré, voir
+               `THETA_MAX`). Le plafond s'applique donc aussi ici. */
+            bornerTheta();
         });
         var endDrag = function (e) {
             if (!dragging) return;

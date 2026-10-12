@@ -3,7 +3,13 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.611-fondations-open-source';
+/* ⚠️ `CACHE_NAME` porte **la version de `version.txt`**, et c'est la règle de ce
+   projet : elle a été suivie à l'identique par les 37 versions 1.7.579 → 1.7.611.
+   Le suffixe décrit la livraison ; c'est lui qui change quand les fichiers
+   précachés changent, et c'est ce qui invalide le cache d'un utilisateur.
+   Le contrôle `_dev/scripts/_make_zip_492.cjs` exige que ce nom contienne
+   `version.txt` — ne pas repartir sur une numérotation parallèle. */
+const CACHE_NAME = 'superprint-shell-v1.7.611-rust-papiers-4';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -51,6 +57,43 @@ const APP_SHELL = [
   './JS/hyphenation-de.js',
   './JS/hyphenation-es.js',
   './JS/hyphenation-it.js',
+  // 🦀 Branchement du noyau Rust : la colle, le noyau et le branchement.
+  // Précachés parce qu'ils sont demandés au démarrage — les laisser au
+  // cache-first à la demande ne changerait rien au trafic, mais laisserait un
+  // premier lancement hors-ligne sans césure branchée.
+  './JS/superprint-core.js',
+  './JS/superprint-branchement.js',
+  './JS/superprint_core.wasm',
+  // 🦀 Import PostScript : la colle seulement.
+  // Le noyau (superprint_eps.wasm, 324,8 Ko) reste VOLONTAIREMENT hors du
+  // précache, comme lcms ci-dessus : il ne sert qu'aux imports .eps, et
+  // précaher 324,8 Ko que la plupart des utilisateurs n'ouvriront jamais serait
+  // du gaspillage. Il est récupéré à la demande via la stratégie cache-first,
+  // et mis en cache à ce moment-là : le deuxième import est donc local.
+  './JS/superprint-eps.js',
+  // 🦀 Export imposé : la colle seulement, et elle est précachée parce que
+  // `index.html` la demande au démarrage. Son noyau est celui du branchement
+  // (superprint_core.wasm, ci-dessus) : le montage vit dans le même module, donc
+  // l'export imposé n'ajoute AUCUN téléchargement.
+  './JS/superprint-montage.js',
+  // 🦀 Import de documents : la colle seulement, et elle est précachée parce que
+  // `index.html` la demande au démarrage — sans elle, la porte d'entrée du
+  // produit resterait sans enveloppe hors ligne. Le noyau
+  // (superprint_doc.wasm, 290 Ko) reste VOLONTAIREMENT hors du précache, comme
+  // l'EPS : il ne sert qu'aux imports de documents, et il est récupéré à la
+  // demande puis mis en cache — le deuxième import est donc local.
+  './JS/superprint-doc.js',
+  // 🦀 Contrôle prépresse : la colle seulement, et elle est précachée parce que
+  // `index.html` la demande au démarrage — c'est elle qui enveloppe
+  // `window.confirmExport`, et l'export doit être contrôlé même hors ligne. Elle
+  // n'ajoute AUCUN octet de noyau : le prépresse vit dans superprint_core.wasm,
+  // déjà précaché ci-dessus (`sp_preflight` est l'un de ses 49 exports).
+  './JS/superprint-prepresse.js',
+  // 📄 Papiers — catalogue, dépôt et matière. Précachée pour la même raison que
+  // les autres colles : `index.html` la demande au démarrage, et les entrées du
+  // sous-menu Image doivent être là même hors ligne. C'est de la colle pure :
+  // aucun octet de noyau.
+  './JS/superprint-papiers.js',
   './CSS/fonts.css',
   './CSS/fonts/BebasNeue-400-normal-latin.woff2',
   './CSS/fonts/BebasNeue-400-normal-latin-ext.woff2',

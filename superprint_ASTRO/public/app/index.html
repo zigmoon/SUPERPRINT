@@ -565,6 +565,71 @@
     <script src="JS/hyphenation-de.js" defer></script>
     <script src="JS/hyphenation-es.js" defer></script>
     <script src="JS/hyphenation-it.js" defer></script>
+    <!-- 🦀 Branchement du noyau Rust (WebAssembly) — AJOUT, sans modification de
+         l'existant. `superprint-core.js` est la colle ; `superprint-branchement.js`
+         installe ses moteurs dans `window.hyphenators`, que `main.js` consulte
+         déjà AVANT son propre Hypher (lignes 5201 et 11462). Si le noyau ne se
+         charge pas, la césure continue avec Hypher : aucun changement visible.
+         Retirer ces deux lignes remet l'application à l'identique. -->
+    <script src="JS/superprint-core.js?v=20261011-v615-rust-couleurs" defer></script>
+    <script src="JS/superprint-branchement.js?v=20261011-v615-rust-couleurs" defer></script>
+    <!-- 🦀 Import PostScript/EPS branché sur son PROPRE noyau Rust.
+         Deuxième module, et c'est délibéré : le noyau de césure/couleurs/montage
+         (superprint_core.wasm, 406 Ko) est téléchargé par tout le monde, alors
+         que l'interpréteur PostScript ne sert qu'à ceux qui importent un .eps.
+         Il vit donc à part (322 Ko) et n'est chargé QU'À L'INTENTION : au
+         premier survol de fichier ou contact avec le bouton d'import, jamais au
+         démarrage. `window.SPEps` n'est posé qu'une fois le noyau prêt ;
+         jusque-là, `main.js` charge `JS/sp-eps-import.js` comme avant. Si le
+         noyau ne se charge pas, rien ne change pour l'utilisateur.
+         Retirer cette ligne remet l'application à l'identique. -->
+    <script src="JS/superprint-eps.js?v=20261011-v616-rust-eps" defer></script>
+    <!-- 🦀 Export PDF IMPOSÉ branché sur le noyau Rust.
+         Le bouton de la modale d'imposition fait déjà, dans `index.html` :
+         `window._spGuardExport(this, window.exportImposedPDF || exportImposedPDF)`.
+         Cette colle **enveloppe** `window.exportImposedPDF` (posé par main.js) :
+         quand le noyau est prêt elle assemble la planche entièrement en Rust
+         (ordre, pose, rognage, repères, PDF/X), et sinon — document à tons
+         directs, masque d'image, profil ICC personnalisé, panne quelconque — elle
+         appelle l'export vectoriel du produit, qui reste en place. Aucune ligne
+         de main.js n'est touchée. Retirer cette ligne remet l'application à
+         l'identique. -->
+    <script src="JS/superprint-montage.js?v=20261012-v617-rust-montage" defer></script>
+    <!-- 🦀 Import de DOCUMENTS branché sur son PROPRE noyau Rust (le troisième).
+         406,5 Ko (césure, couleurs, montage) + 324,8 Ko (EPS) + 290,1 Ko
+         (documents) : les trois modules sont séparés pour que personne ne paie
+         pour un geste qu'il ne fera pas. Le lecteur de documents DANS le module
+         précaché l'aurait fait passer de 406,5 à 585,8 Ko (+179,3 Ko pour tout
+         le monde, à vie) ; ici il ne coûte qu'à qui ouvre un document.
+         La colle enveloppe `window._spTexteOdf` (posé par main.js) au lieu de la
+         remplacer : le noyau lit le document, et la fonction du produit reprend
+         la main dès qu'il refuse (un `.ods`, un `.odp`) ou qu'il n'est pas
+         disponible. Elle ajoute aussi la branche `.idml`, qui tombait sur un
+         décodage binaire. Retirer cette ligne remet l'application à l'identique. -->
+    <script src="JS/superprint-doc.js?v=20261013-v618-rust-doc" defer></script>
+    <!-- 🦀 CONTRÔLE PRÉPRESSE branché sur le noyau Rust, SANS rien télécharger de
+         plus : le prépresse vit dans `superprint_core.wasm`, le module déjà
+         précaché (`sp_preflight` est l'un de ses 49 exports), et l'API
+         `createDocument()`/`preflight()` de `superprint-core.js` existait déjà.
+         La colle enveloppe `window.confirmExport` — posé par main.js — au lieu de
+         le remplacer : elle décrit le document (format, fond perdu, traits de
+         coupe, images avec leurs pixels posés, rectangles, cercles, traits) et
+         montre le rapport AVANT l'envoi à l'imprimeur. Elle NOMME les contrôles
+         qu'elle ne conduit pas (polices, texte, profil en RVB) au lieu de laisser
+         croire que tout a été vu, et elle ne dit rien plutôt que de deviner
+         quand un objet ne peut pas être décrit. Aucune ligne de main.js n'est
+         touchée. Retirer cette ligne remet l'application à l'identique. -->
+    <script src="JS/superprint-prepresse.js?v=20261013-v619-rust-prepresse" defer></script>
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PAPIERS — catalogue, dépôt, matière. Les entrées se rangent dans le
+         SOUS-MENU DE L'ICÔNE IMAGE (après « SVG »), et le dépôt sur une page pose
+         sa teinte et ses aspérités SUR la page, en multiplication, plus une petite
+         marque (non exportée). Expose l'API `window.spPapiers` que lit l'aperçu 3D.
+         AUCUNE ligne de main.js n'est touchée. Retirer cette ligne remet
+         l'application à l'identique (et `window.spPapiers.desinstaller()` sur la
+         page en cours d'exécution).
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <script src="JS/superprint-papiers.js?v=20261014-v8-matieres" defer></script>
     <!-- ⚠️ pdfjsLib.GlobalWorkerOptions.workerSrc est configuré par ensurePdfImportLib()
          (main.js) juste après le chargement à la demande de JS/pdf.min.js.
          Toute ressource externe est bannie (politique 100% local). -->
@@ -6509,7 +6574,7 @@
     <!-- 🆕 Aperçu 3D (three.js) : module ES autonome, expose window.SP3DPreview.
          Si three.js n'est pas disponible (ex. ouverture via file://), le bouton
          PLAY reste inerte et n'impacte pas le reste de l'app. -->
-    <script type="module" src="JS/sp-3d-preview.js?v=20261011-v611-fondations-open-source"></script>
+    <script type="module" src="JS/sp-3d-preview.js?v=20261014-v616-orbite-bornee"></script>
 
     <!-- ── Startup session pop-in (Resume / Open / New) ───────────────────────── -->
     <div id="sp-startup-overlay" role="dialog" aria-modal="true" aria-labelledby="sp-startup-title" hidden>

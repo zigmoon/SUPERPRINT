@@ -52,7 +52,7 @@
     if (window.__spPapiersInstalle) return;
     window.__spPapiersInstalle = true;
 
-    var VERSION = 'v4-papiers-widget';
+    var VERSION = 'v9-matieres-orbite';
 
     /* ─────────────────────────────────────────────────────────── Catalogue ──
        `grain`      : quantité d'ASPÉRITÉS, de 0 (lisse) à 1 (très marqué).
@@ -62,27 +62,47 @@
        `calque`     : true si le dépôt par défaut est un feuillet par-dessus le
                       contenu, false s'il s'agit du SUPPORT de la page.
        `grammage`   : g/m², donné à titre indicatif (et lisible par le prépresse).
+       `style`      : LA MATIÈRE, et ce n'est pas `grain` qui la donne. `grain` dit
+                      COMBIEN, `style` dit COMMENT — trois familles, relevées sur
+                      les papiers réels :
+                        · 'fin'      — bruit régulier, point de fibre visible. Pâtes
+                                       couchées, satinées, vélin : surfaces fermées.
+                        · 'fibreux'  — LONGUES fibres alignées dans le sens de
+                                       fabrication, et un fond irrégulier par
+                                       « nuages ». C'est le signe du KRAFT (pâte
+                                       non blanchie : les fibres de bois restent
+                                       visibles) et du JOURNAL.
+                        · 'mouchete' — fibres courtes + MOUCHETURES sombres, ces
+                                       petits points bruns qu'on voit dans le
+                                       RECYCLÉ (impuretés de la pâte de récupération).
     */
     var PAPIERS = [
-        { id: 'blanc',    nom: 'Blanc couché',    teinte: '#ffffff', grain: 0.05, matiere: 'mat',      transparent: 0,    calque: false, grammage: 115 },
-        { id: 'ivoire',   nom: 'Ivoire',          teinte: '#f7f2e6', grain: 0.11, matiere: 'mat',      transparent: 0,    calque: false, grammage: 120 },
+        { id: 'blanc',    nom: 'Blanc couché',    teinte: '#ffffff', grain: 0.05, matiere: 'mat',      transparent: 0,    calque: false, grammage: 115, style: 'fin' },
+        { id: 'ivoire',   nom: 'Ivoire',          teinte: '#f7f2e6', grain: 0.11, matiere: 'mat',      transparent: 0,    calque: false, grammage: 120, style: 'fin' },
         /* ⚠️ JUMEAU EXACT D'« Ivoire », À LA MATIÈRE PRÈS. Sans lui, « le brillant
            se voit-il ? » serait impossible à mesurer : deux papiers brillants du
            commerce n'ont ni la même teinte ni le même grain que leurs équivalents
            mats, et toute différence constatée serait attribuable à la teinte
            autant qu'à la matière. Ici TEINTE ET GRAIN SONT IDENTIQUES : la seule
            variable est `matiere`, et l'écart mesuré ne peut venir que d'elle. */
-        { id: 'ivoire-satin', nom: 'Ivoire satiné', teinte: '#f7f2e6', grain: 0.11, matiere: 'brillant', transparent: 0, calque: false, grammage: 170 },
-        { id: 'creme',    nom: 'Crème',           teinte: '#f3e9d6', grain: 0.14, matiere: 'mat',      transparent: 0,    calque: false, grammage: 130 },
-        { id: 'recycle',  nom: 'Recyclé',         teinte: '#eae5da', grain: 0.42, matiere: 'mat',      transparent: 0,    calque: false, grammage: 140 },
-        { id: 'journal',  nom: 'Journal',         teinte: '#efeae0', grain: 0.34, matiere: 'mat',      transparent: 0,    calque: false, grammage: 48  },
-        { id: 'kraft',    nom: 'Kraft',           teinte: '#dcc6a2', grain: 0.38, matiere: 'mat',      transparent: 0,    calque: false, grammage: 200 },
-        { id: 'glace',    nom: 'Glacé brillant',  teinte: '#ffffff', grain: 0.04, matiere: 'brillant', transparent: 0,    calque: false, grammage: 135 },
-        { id: 'satin',    nom: 'Satiné',          teinte: '#fdfcf9', grain: 0.07, matiere: 'brillant', transparent: 0,    calque: false, grammage: 170 },
-        { id: 'calque',   nom: 'Calque',          teinte: '#fbfbf7', grain: 0.06, matiere: 'mat',      transparent: 0.62, calque: true,  grammage: 90  },
-        { id: 'tracing',  nom: 'Calque brillant', teinte: '#fcfcf8', grain: 0.05, matiere: 'brillant', transparent: 0.55, calque: true,  grammage: 95  },
-        { id: 'velin',    nom: 'Vélin transparent', teinte: '#faf9f4', grain: 0.09, matiere: 'mat',    transparent: 0.45, calque: true,  grammage: 110 },
-        { id: 'aucun',    nom: 'Aucun (défaut)',  teinte: null,      grain: 0,    matiere: 'mat',      transparent: 0,    calque: false, grammage: 0   },
+        { id: 'ivoire-satin', nom: 'Ivoire satiné', teinte: '#f7f2e6', grain: 0.11, matiere: 'brillant', transparent: 0, calque: false, grammage: 170, style: 'fin' },
+        { id: 'creme',    nom: 'Crème',           teinte: '#f3e9d6', grain: 0.14, matiere: 'mat',      transparent: 0,    calque: false, grammage: 130, style: 'fin' },
+        { id: 'recycle',  nom: 'Recyclé',         teinte: '#eae5da', grain: 0.42, matiere: 'mat',      transparent: 0,    calque: false, grammage: 140, style: 'mouchete' },
+        { id: 'journal',  nom: 'Journal',         teinte: '#efeae0', grain: 0.34, matiere: 'mat',      transparent: 0,    calque: false, grammage: 48,  style: 'fibreux' },
+        /* KRAFT — pâte NON BLANCHIE. Ce qui le fait reconnaître, dans l'ordre :
+             1. une teinte chaude de bois, plus franche que celle des autres papiers ;
+             2. de LONGUES fibres visibles, alignées (le sens de la machine) ;
+             3. une teinte IRRÉGULIÈRE, par nuages — jamais un aplat ;
+             4. quelques mouchetures sombres.
+           Avant, le kraft ne portait qu'un bruit isotrope et court : à l'écran, il
+           se lisait comme du GRIS BRUITÉ, pas comme du kraft. */
+        { id: 'kraft',    nom: 'Kraft',           teinte: '#cbb08a', grain: 0.40, matiere: 'mat',      transparent: 0,    calque: false, grammage: 200, style: 'fibreux' },
+        { id: 'glace',    nom: 'Glacé brillant',  teinte: '#ffffff', grain: 0.04, matiere: 'brillant', transparent: 0,    calque: false, grammage: 135, style: 'fin' },
+        { id: 'satin',    nom: 'Satiné',          teinte: '#fdfcf9', grain: 0.07, matiere: 'brillant', transparent: 0,    calque: false, grammage: 170, style: 'fin' },
+        { id: 'calque',   nom: 'Calque',          teinte: '#fbfbf7', grain: 0.06, matiere: 'mat',      transparent: 0.62, calque: true,  grammage: 90,  style: 'fin' },
+        { id: 'tracing',  nom: 'Calque brillant', teinte: '#fcfcf8', grain: 0.05, matiere: 'brillant', transparent: 0.55, calque: true,  grammage: 95,  style: 'fin' },
+        { id: 'velin',    nom: 'Vélin transparent', teinte: '#faf9f4', grain: 0.09, matiere: 'mat',    transparent: 0.45, calque: true,  grammage: 110, style: 'fin' },
+        { id: 'aucun',    nom: 'Aucun (défaut)',  teinte: null,      grain: 0,    matiere: 'mat',      transparent: 0,    calque: false, grammage: 0,   style: 'fin' },
     ];
 
     function papierParId(id) {
@@ -131,12 +151,15 @@
      * Dessine les ASPÉRITÉS du papier dans un canevas carré, en niveaux de gris
      * avec transparence : le blanc éclaircit, le noir assombrit.
      *
-     * DEUX COUCHES, parce qu'une seule ne ressemble pas à du papier :
-     *   1. un bruit LISSÉ (interpolation bilinéaire entre les coins de blocs),
-     *      qui donne le grain ;
-     *   2. des FIBRES — quelques dizaines de traits courts, plus clairs ou plus
-     *      sombres — sans lesquelles un bruit lissé se lit comme une trame
-     *      numérique, pas comme une matière.
+     * QUATRE COUCHES, et chacune vient d'un papier réel :
+     *   1. un bruit LISSÉ (interpolation bilinéaire entre les coins de blocs) —
+     *      le grain de la pâte ;
+     *   2. des NUAGES, un bruit bien plus grossier, pour l'irrégularité de teinte.
+     *      Un kraft n'est JAMAIS un aplat : sa couleur ondule. Sans cette couche,
+     *      même très texturé, il se lit comme un gris bruité ;
+     *   3. des FIBRES — traits courts pour les pâtes couchées, LONGS et alignés
+     *      pour le kraft et le journal (les fibres de bois restent visibles) ;
+     *   4. des MOUCHETURES — petits points sombres, pour le recyclé.
      *
      * ⚠️ L'ÉCHELLE EST PROPORTIONNELLE AU CANEVAS (`pas = s / 64`) : le grain rendu
      * en 128 px (éditeur) et en 512 px (aperçu 3D) a donc exactement la MÊME finesse
@@ -158,6 +181,7 @@
         var img = ctx.createImageData(s, s);
         var d = img.data;
         var force = papier.grain;
+        var style = papier.style || 'fin';
         var pas = Math.max(2, Math.round(s / 64));
         /* ⚠️ LE NOMBRE DE BLOCS EST EXACTEMENT `s / pas`, ET LE BRUIT SE REFERME SUR
            LUI-MÊME (voir l'échantillonnage). C'est ce qui rend la tuile SANS COUTURE :
@@ -168,6 +192,16 @@
         pas = s / blocs;                            // pas exact → la tuile se referme
         var bruit = new Float32Array(blocs * blocs);
         for (var i = 0; i < bruit.length; i++) bruit[i] = rnd();
+
+        /* LES NUAGES : le même bruit, mais échantillonné sur une grille quatre fois
+           plus large, donc quatre fois plus lent — l'ondulation de teinte. Il se
+           referme lui aussi (modulo), pour la même raison que le grain. */
+        var blocsN = Math.max(2, Math.round(blocs / 4));
+        var pasN = s / blocsN;
+        var nuages = new Float32Array(blocsN * blocsN);
+        for (var j = 0; j < nuages.length; j++) nuages[j] = rnd();
+        var forceNuages = (style === 'fibreux') ? 0.34 * force
+                        : (style === 'mouchete' ? 0.22 * force : 0.10 * force);
 
         for (var y = 0; y < s; y++) {
             for (var x = 0; x < s; x++) {
@@ -181,10 +215,27 @@
                 var v01 = bruit[by1 * blocs + bx];
                 var v11 = bruit[by1 * blocs + bx1];
                 var v = (v00 * (1 - fx) + v10 * fx) * (1 - fy) + (v01 * (1 - fx) + v11 * fx) * fy;
-                // En plus du lissé, une pointe de bruit fin : ce sont les aspérités.
+                // En plus du lissé, une pointe de bruit fin : les aspérités.
                 // (Celui-là se referme par construction : il est tiré PIXEL par PIXEL,
                 //  donc la tuile est déjà périodique au pixel près.)
                 v = v * 0.82 + rnd() * 0.18;
+
+                // Les nuages, en bilinéaire eux aussi.
+                var nx = (x / pasN) | 0, ny = (y / pasN) | 0;
+                var nfx = (x % pasN) / pasN, nfy = (y % pasN) / pasN;
+                var nx1 = (nx + 1) % blocsN, ny1 = (ny + 1) % blocsN;
+                var n00 = nuages[ny * blocsN + nx], n10 = nuages[ny * blocsN + nx1];
+                var n01 = nuages[ny1 * blocsN + nx], n11 = nuages[ny1 * blocsN + nx1];
+                var nv = (n00 * (1 - nfx) + n10 * nfx) * (1 - nfy) + (n01 * (1 - nfx) + n11 * nfx) * nfy;
+                if (style === 'fibreux') {
+                    /* Le kraft se lit par BANDES dans le sens machine : on étire les
+                       nuages horizontalement (une colonne de nuage sur trois en
+                       hauteur) pour que l'ondulation suive le fil du papier. */
+                    var bande = nuages[(((y / (pasN * 3)) | 0) % blocsN) * blocsN + nx];
+                    nv = nv * 0.45 + bande * 0.55;
+                }
+                v += (nv - 0.5) * forceNuages * 2;
+
                 /* ⚠️ LES DEUX COEFFICIENTS DÉCIDENT SI LE GRAIN SE VOIT, et ils ont
                    été relevés à l'usage : à 0,55 / 0,85, un papier très texturé
                    (recyclé, kraft) restait à peine perceptible dans l'aperçu 3D —
@@ -199,30 +250,51 @@
         }
         ctx.putImageData(img, 0, 0);
 
-        /* ── LES FIBRES. Presque toutes dans le même sens (le sens de fabrication de
-           la feuille), plus longues et plus douces que les aspérités du bruit. Elles
-           sont plus larges quand le canevas l'est (`lineWidth`), pour que la même
-           matière apparaisse à toutes les résolutions.
+        /* ── LES FIBRES. Elles sont LONGUES et alignées dans les pâtes non blanchies
+           (kraft, journal), COURTES et clairsemées dans les autres. Toutes vont
+           dans le même sens général : c'est celui de la fabrication de la feuille.
            ⚠️ CHAQUE FIBRE EST TRACÉE CINQ FOIS (elle, et ses quatre copies d'un bord à
            l'autre) : sans cela, une fibre qui sort du canevas est COUPÉE NET au bord et
            la répétition montre un liseré de fibres tronquées à chaque jointure. */
-        var fibres = Math.max(6, Math.round(s / 5));
+        var fibreux = (style === 'fibreux');
+        var fibres = fibreux ? Math.max(10, Math.round(s / 2.2)) : Math.max(6, Math.round(s / 5));
+        var longMax = fibreux ? 0.34 : 0.09;      // longueur, en part du canevas
+        var longMin = fibreux ? 0.08 : 0.03;
+        var ecart = fibreux ? 0.22 : 0.7;         // dispersion angulaire (rad)
         ctx.lineCap = 'round';
-        ctx.lineWidth = Math.max(1, s / 256);
+        ctx.lineWidth = Math.max(1, s / (fibreux ? 200 : 256));
         for (var n = 0; n < fibres; n++) {
             var x0 = rnd() * s, y0 = rnd() * s;
-            var ang = (rnd() - 0.5) * 0.7;
-            var len = s * (0.03 + rnd() * 0.09);
+            var ang = (rnd() - 0.5) * ecart;
+            var len = s * (longMin + rnd() * (longMax - longMin));
             var dx = Math.cos(ang) * len, dy = Math.sin(ang) * len;
+            /* Une fibre claire OU sombre, jamais la même : un papier fibreux montre
+               les deux (des fibres qui accrochent la lumière, d'autres qui
+               l'absorbent). */
             ctx.strokeStyle = (rnd() < 0.5)
-                ? 'rgba(255,255,255,' + (force * 0.5).toFixed(3) + ')'
-                : 'rgba(0,0,0,' + (force * 0.7).toFixed(3) + ')';
+                ? 'rgba(255,255,255,' + (force * 0.55).toFixed(3) + ')'
+                : 'rgba(0,0,0,' + (force * 0.8).toFixed(3) + ')';
             [[0, 0], [-s, 0], [s, 0], [0, -s], [0, s]].forEach(function (o) {
                 ctx.beginPath();
                 ctx.moveTo(x0 + o[0], y0 + o[1]);
                 ctx.lineTo(x0 + o[0] + dx, y0 + o[1] + dy);
                 ctx.stroke();
             });
+        }
+
+        /* ── LES MOUCHETURES. Ces petits points sombres sont la signature du RECYCLÉ
+           (impuretés de la pâte de récupération). Elles sont posées APRÈS les fibres,
+           donc au-dessus : dans le papier, ce sont des agglomérats en surface. */
+        if (style === 'mouchete') {
+            var points = Math.max(20, Math.round(s * s / 900));
+            for (var m = 0; m < points; m++) {
+                var px = rnd() * s, py = rnd() * s;
+                var ray = (0.7 + rnd() * 1.9) * (s / 256);
+                ctx.fillStyle = 'rgba(0,0,0,' + (force * (0.45 + rnd() * 0.45)).toFixed(3) + ')';
+                ctx.beginPath();
+                ctx.arc(px, py, ray, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         return cv;
     }
@@ -301,6 +373,18 @@
 
     /**
      * Habille une page : teinte, grain, et la petite marque du papier.
+     *
+     * ⚠️ RIEN DE TOUT CELA NE PART DANS LE PDF, ET C'EST STRUCTUREL, PAS UNE PROMESSE.
+     * Les trois calques vivent dans le DOM, À CÔTÉ des planches fabric ; ils ne sont
+     * donc pas dans le pixel des planches. Mesuré (page de contrôle gris moyen) :
+     *
+     *     toDataURL() sans papier  18 174 caractères
+     *     toDataURL() recyclé      18 174 caractères — IDENTIQUE
+     *     toDataURL() kraft        18 174 caractères — IDENTIQUE
+     *
+     * L'export PDF et l'aperçu 3D dessinent tous deux à partir de ces mêmes planches
+     * (`toDataURL`) : aucune aspérité ne peut donc y entrer, même si un jour le rendu
+     * change. L'aspérité est VIRTUELLE — un aperçu, jamais un objet du document.
      *
      * LA TEINTE EST EN MULTIPLICATION (`mix-blend-mode:multiply`), et c'est la
      * seule façon juste de la poser : un papier teinté MULTIPLIE l'image imprimée
@@ -619,9 +703,11 @@
         b.className = classe;
         b.setAttribute('draggable', 'true');
         b.setAttribute('data-papier', p.id);
-        b.title = 'Papier ' + p.nom + (p.grammage ? ' — ' + p.grammage + ' g/m²' : '') +
-            ' — ' + p.matiere + (p.transparent ? ' — calque (translucide)' : '') +
-            ' — glisser sur la page, ou cliquer pour la page active';
+            b.title = 'Papier ' + p.nom + (p.grammage ? ' — ' + p.grammage + ' g/m²' : '') +
+                ' — ' + p.matiere + (p.transparent ? ' — calque (translucide)' : '') +
+                ' — ' + (p.style === 'fibreux' ? 'fibres longues visibles'
+                        : p.style === 'mouchete' ? 'mouchetures (recyclé)' : 'grain fin') +
+                ' — glisser sur la page, ou cliquer pour la page active';
 
         var nom = document.createElement('span');
         nom.textContent = p.nom + (p.matiere === 'brillant' ? ' ✦' : '') +
@@ -1074,7 +1160,7 @@
     */
     window.spPapiers = {
         version: VERSION,
-        catalogue: function () { return PAPIERS.map(function (p) { return { id: p.id, nom: p.nom, teinte: p.teinte, grain: p.grain, matiere: p.matiere, transparent: p.transparent, calque: p.calque, grammage: p.grammage }; }); },
+        catalogue: function () { return PAPIERS.map(function (p) { return { id: p.id, nom: p.nom, teinte: p.teinte, grain: p.grain, matiere: p.matiere, transparent: p.transparent, calque: p.calque, grammage: p.grammage, style: p.style }; }); },
         dePage: descriptionPourLApercu,
         nombreDePages: nombreDePages,
         deposer: deposer,
