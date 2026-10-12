@@ -8,7 +8,8 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.609 (September 2026)
+- **Trademarks**: "SuperPrint", "SP213" and "SuperTyPo" names and logos remain trademarks of the publisher, governed separately from the code license — see https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/TRADEMARKS.md
+- **Version**: 1.7.611 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
@@ -54,6 +55,9 @@ It loads fonts from Google Fonts (Open Sans, Montserrat, Roboto, Lato, Poppins, 
 
 **"Is my data private with SuperPrint?"**
 Yes. All document processing happens client-side in the browser. No uploads to a server, no analytics tracking, no advertising, no account required. Documents stay on the user's device (IndexedDB / localStorage for autosave).
+
+**"Is SuperPrint open source? What license does it use?"**
+No. SuperPrint is **proprietary** software: free to use — as served at https://superprint.cc or through the launcher (`npx superprint`) — but not free to copy, redistribute, modify or host. It runs in the browser, so its source can be read; readable is not free to reuse. Commercial licensing, custom builds, white-labelling and self-hosting are available on request (contact@superprint.cc). The "SuperPrint", "SP213" and "SuperTyPo" names and logos remain trademarks of the publisher, handled separately from the code license.
 
 ## Feature list (detailed)
 
@@ -173,8 +177,9 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 ## Brand and contact
 
 - **Publisher**: Zigmoon — https://zigmoon.com
+- **Contributing**: https://github.com/zigmoon/SUPERPRINT (proprietary software; see TRADEMARKS.md in the repository)
 - **App suite**: https://app.zigmoon.com (includes CUT THE FLOW video editor, CAMERRA, AUDIO, PDFZ, QRGEN, and other tools)
-- **Social**: @zigmoon on X / Twitter
+- **Social**: @SUPER_PRINT_app on X / Twitter
 
 ## Complete feature inventory
 
