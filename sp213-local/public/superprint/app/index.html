@@ -620,6 +620,15 @@
          quand un objet ne peut pas être décrit. Aucune ligne de main.js n'est
          touchée. Retirer cette ligne remet l'application à l'identique. -->
     <script src="JS/superprint-prepresse.js?v=20261013-v619-rust-prepresse" defer></script>
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PAPIERS — catalogue, dépôt, matière (icône étoiles de la colonne de gauche).
+         Ajoute UNIQUEMENT : un bouton dans la colonne, un calque DOM derrière
+         chaque page concernée, et l'API `window.spPapiers` que lit l'aperçu 3D.
+         AUCUNE ligne de main.js n'est touchée. Retirer cette ligne remet
+         l'application à l'identique (et `window.spPapiers.desinstaller()` sur la
+         page en cours d'exécution).
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <script src="JS/superprint-papiers.js?v=20261014-v1-papiers" defer></script>
     <!-- ⚠️ pdfjsLib.GlobalWorkerOptions.workerSrc est configuré par ensurePdfImportLib()
          (main.js) juste après le chargement à la demande de JS/pdf.min.js.
          Toute ressource externe est bannie (politique 100% local). -->
