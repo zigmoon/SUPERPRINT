@@ -16,8 +16,8 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-11) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 17 crates, tests compris) | **41 885 lignes** |
-| dont annotations `#[test]` | 937 tests, tous verts |
+| Rust (`crates/`, 17 crates, tests compris) | **43 134 lignes** |
+| dont annotations `#[test]` | 963 tests, tous verts |
 | exports `sp_*` de la frontière C | **48** (0 import), sur **deux** modules |
 | modules livrables | 380 Ko (noyau) + **245 Ko** (import PostScript, à la demande) |
 | étapes de contrôle (`scripts/check.ps1`) | **29** |
@@ -33,7 +33,7 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
 | dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript | ce qui sert vraiment à l'utilisateur |
 | **Volume JS porté** (somme des plages citées) | **13 832 / 18 803** → **74 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 41 885 / 112 138 → **37,4 %** | ⚠️ le plus trompeur des quatre |
+| **Lignes** Rust / JS | 43 134 / 112 138 → **38,5 %** | ⚠️ le plus trompeur des quatre |
 
 La plage ajoutée par l'import PostScript est mesurée ainsi : dans
 `superprint/app/JS/sp-eps-import.js` (939 lignes), tout ce qui précède
@@ -121,7 +121,8 @@ déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
 | 23 | **Lecture de profil ICC** | `superprint-icc` | relecture indépendante des 3 profils du produit, **écart à la spécification mesuré** | 🟢 offert |
 | 24 | **PDF/X** (XMP, `OutputIntent`, revendication) | `pdf::xmp`, `pdf::document` | `pdf-lib` relit le paquet XMP et les quatre clés de conformité | 🟢 offert |
 | 25 | **Pagination et chaînage** | `superprint-flow` | invariante vérifiée (16 cas), défaut de la méthode du produit **mesuré** (18 coupures au milieu d'un mot contre 0) | 🟢 offert |
-| 26 | **Géométrie vectorielle et Pathfinder** | `superprint-path` | surface du résultat vérifiée sur **212 000 points**, 45 identités d'aires | 🟢 offert |
+| 26 | **Géométrie vectorielle et Pathfinder** | `superprint-path` | surface du résultat vérifiée sur **212 000 points**, 45 identités d'aires |
+| 31 | **Épaississement d'un trait** (jonctions, extrémités, limite d'onglet) | `path::plume` | la **définition** (distance au tracé) recalculée à part sur **1,5 million de points** : le rond est *égal*, l'onglet plus grand, le biseau plus petit | 🟢 offert | 🟢 offert |
 | 27 | **Conteneur ZIP** (lecture, DEFLATE, CRC-32) | `superprint-zip` | 10 fichiers réels relus par un lecteur écrit à part : **56 entrées, 569 826 octets identiques** | 🟢 offert |
 | 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères | 🟢 offert |
 | 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné) | `superprint-ps` | 4 témoins, **174 sommets** comparés à un interpréteur écrit à part ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
@@ -347,6 +348,7 @@ mais « est-ce que le calcul est juste, et assez gros pour un seul appel ? ».
 | **Aplatissement** de courbes à une tolérance donnée | Paper.js | ✅ `path::courbe::aplatir` — et la tolérance est **vérifiée** |
 | Règles de remplissage `nonzero` / pair-impair | Paper.js | ✅ `path::polygone::{enroulements, croisements}` |
 | Pathfinder : union, soustraction, intersection, exclusion | Paper.js (`unite`, `subtract`, `intersect`, `exclude`) | ✅ `path::booleen` |
+| **Épaississement** : transformer un trait en surface (jonctions, extrémités, limite d'onglet) | Paper.js (implicite, dans le rendu) | ✅ `path::plume` |
 | Normalisation d'anneaux (sommets confondus, alignés) | Paper.js | ✅ `Polygone::nettoyer` |
 
 La **géométrie** est portée ; la **souris** et le rendu de la plume restent au
@@ -396,11 +398,76 @@ l'avait vu ; c'est le contrôle d'écart qui l'a montré. Le critère exige main
 que les points de contrôle se **projettent** sur la corde, et la régression est
 testée.
 
-**Ce qui n'est pas fait** : l'épaississement d'un trait (transformer un contour en
-surface, avec joins et extrémités) et les décalages de courbe. Ils sont utiles mais
-ne sont pas ce que le produit demandait au Pathfinder ; ils viendraient avec le
-**rendu de plume** et un épaississement de contour — l'import SVG, lui, s'en passe :
-il lit l'épaisseur, il ne la dessine pas.
+**Ce qui n'est plus fait, et pourquoi c'est une bonne nouvelle pour la suite** :
+l'épaississement d'un trait — transformer un contour en surface, avec joins et
+extrémités — est **fait** ([`superprint_path::plume`], voir ci-dessous). Restent
+les **décalages de courbe** (une courbe parallèle à une autre à distance donnée),
+qui viendront avec le **rendu de plume**.
+
+#### B7a. L'épaississement d'un trait, et ce que la mesure a corrigé
+
+Un trait n'est pas une surface : c'est une polyligne et une épaisseur. Un
+imprimeur, lui, n'imprime que des surfaces. `path::plume` fait la conversion.
+
+**La définition est la preuve.** Le trait d'une polyligne est la **somme de
+Minkowski** de cette polyligne et d'un disque de rayon la demi-épaisseur :
+l'ensemble des points situés à une distance inférieure ou égale à `h` du tracé.
+Ce n'est pas une convention — c'est la seule définition, et le contrôle
+(`scripts/validate-path.mjs`) la **recalcule par force brute**, point par point,
+sans rien savoir de l'algorithme.
+
+**C'est cette mesure qui a corrigé trois choses, dont une que je croyais
+savoir :**
+
+1. **L'onglet n'est pas le style « exact ».** Je l'avais écrit dans la
+   documentation du module : l'onglet prolonge les bords jusqu'à leur
+   intersection, donc il « reproduit la définition ». **C'est faux.** Le style
+   exactement égal à `{distance ≤ h}` est le **rond** : les rectangles des
+   segments plus un disque à chaque sommet, c'est la somme de Minkowski, terme
+   pour terme. L'onglet **ajoute** le coin hors du trait — sa pointe est à
+   `h / sin(θ/2)` du sommet, soit `h·√2` pour un angle droit — et c'est
+   précisément pour cela qu'il existe une **limite** d'onglet. Les trois relations
+   sont mesurées séparément : le rond est **égal**, l'onglet est **plus grand**,
+   le biseau et le bout plat sont **plus petits** ;
+2. **un virage aigu n'a pas « deux côtés extérieurs ».** Je traitais tout virage
+   de plus de 90° comme un demi-tour, donc l'intérieur d'une pointe partait en
+   onglet — **dans** la surface. Seul le demi-tour exact est dans ce cas. C'est un
+   défaut de construction, trouvé par un test qui refusait de construire une
+   épingle à cheveux ;
+3. **les extrémités rondes balayaient du mauvais côté.** Le demi-disque se posait
+   devant le bout au lieu de le coiffer, et l'anneau se croisait.
+
+**Ce que le module refuse, et c'est mesuré aussi.** Quand les bords repliés se
+recoupent — une épaisseur grande devant la longueur d'un segment — l'anneau
+s'auto-intersecte et « dedans » n'a plus de sens unique :
+[`ErreurPath::TraitInsoluble`] le dit. Le contrôle a montré une chose utile au
+passage : **la limite d'onglet ne sauve pas ce cas**, parce que le défaut est à
+l'**intérieur** du virage, où l'intersection exacte n'est pas un style mais la
+géométrie.
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| la définition, sur 125 925 points (chemin ouvert, rond + rond) | **aucun désaccord** — égalité dans les deux sens |
+| la définition, sur 1 416 732 points (carré fermé, jonctions rondes) | **aucun désaccord** |
+| onglet (limite infinie) + bout rond | **0 point manquant**, 55 ajoutés — et ce sont les coins |
+| biseau + bout plat | **0 point ajouté** hors du trait |
+| aires connues par construction (6 cas) | exactes : 20 · 24 · 80 · 78 ; le rond à 1e-4 |
+| refus | 2 refus nommés (bord recoupé, épaisseur nulle) |
+
+Le carré fermé, biseaux, vaut **78,000 exactement** (un triangle de `h²/2` coupé
+par coin). J'avais d'abord écrit **77,657** — la mesure a corrigé mon attendu.
+
+> **Ce que l'épaississement débloque.** `clip` — le découpage PostScript — n'est
+> pas appliqué aujourd'hui, et la raison écrite était : « découper un trait
+> demande de le convertir en surface, et découper vraiment demande une algèbre de
+> régions ». **Les deux existent maintenant** : `path::booleen` pour l'algèbre,
+> `path::plume` pour la conversion. Ce qui reste n'est donc plus un obstacle
+> conceptuel mais un **branchement** : l'état graphique doit porter la région
+> courante (`gsave`/`grestore` la sauvent), `peindre` doit intersecter, et —
+> c'est le vrai coût — **l'interpréteur indépendant de `validate-ps.mjs` doit
+> modéliser le découpage**, sinon la preuve « dessin par dessin, sommet par
+> sommet » perdrait sa valeur au lieu d'être étendue. C'est la prochaine étape,
+> et elle mérite son propre contrôle.
 
 ### B8. Import de documents 🟠 → ✅ (fait, et mesuré)
 
@@ -785,6 +852,7 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | **PDF/X** | `pdf-lib` + contrôle d'équilibre XML + comparaison octet par octet du profil | **déclaration exacte, refus des trois mensonges, et contrôle négatif** |
 | **Pagination et chaînage** | invariante de caractères + méthode du produit rejouée en JS | **16 cas sans perte, 18 coupures au milieu d'un mot contre 0, 101 recompositions contre 1** |
 | **Géométrie vectorielle** | définition ensembliste des opérations, appliquée aux entrées en JS | **212 000 points sans désaccord, 45 identités d'aires, 0 refus injustifié** |
+| **Épaississement de trait** | la **définition** (distance au tracé) recalculée par force brute, plus les aires connues par construction | **1 542 657 points sans désaccord** pour le rond, 0 point manquant pour l'onglet, 0 point ajouté pour le biseau, 6 aires exactes |
 | **Conteneur ZIP** | lecteur ZIP écrit à part (annuaire + `inflateRawSync`), archives fabriquées à la main | **56 entrées, 569 826 octets identiques au bit près**, 14 refus nommés, saveur reconnue |
 | **Import docx / odt / idml** | analyseur XML et extracteurs écrits à part, plus une invariante de texte | **1 414 paragraphes identiques**, 328 000 caractères sans perte, 3 fautes du noyau trouvées |
 | **Import PostScript** | interpréteur PostScript écrit à part (lexeur, pile, matrice, aplatissement) | **174 sommets identiques à 1e-6**, aires connues exactes, tolérance mesurée sur la courbe vraie |

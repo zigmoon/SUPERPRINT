@@ -1,15 +1,32 @@
 //! Dump de **géométrie vectorielle**, pour comparaison avec un repli JavaScript.
 //!
-//! Deux modes, qui correspondent aux deux moitiés qu'on veut prouver :
+//! Trois modes, qui correspondent aux trois moitiés qu'on veut prouver :
 //!
 //! ```text
 //! path_dump aplatir <x0> <y0> <x1> <y1> <x2> <y2> <x3> <y3> <tolerance> <sortie>
 //! path_dump booleen <entree.txt> <sortie.tsv>
+//! path_dump epaissir <entree.txt> <sortie.tsv>
 //! ```
 //!
 //! `aplatir` écrit les sommets de la polyligne qui remplace une cubique. Le
 //! script de contrôle recalcule la courbe **de son côté** et vérifie qu'aucun
 //! point ne s'écarte de la polyligne de plus que la tolérance demandée.
+//!
+//! `epaissir` convertit un **trait** en surface. La définition est celle de la
+//! somme de Minkowski — l'ensemble des points à une distance inférieure ou égale
+//! à une demi-épaisseur du tracé — et le script la recalcule par force brute,
+//! point par point, sans rien savoir de l'algorithme. Le fichier d'entrée
+//! s'écrit :
+//!
+//! ```text
+//! souschemin ouvert 0 0 10 0 10 10
+//! souschemin ferme 0 0 10 0 10 10 0 10
+//! epaisseur 2
+//! jonction rond
+//! extremite rond
+//! miterlimite 10
+//! tolerance 0.05
+//! ```
 //!
 //! `booleen` lit des formes et une opération, et écrit le **résultat** — ses
 //! anneaux, pas un verdict. C'est le script qui décide : il applique la
@@ -40,6 +57,7 @@ use std::process::ExitCode;
 
 use superprint_path::booleen::{operer, Operation};
 use superprint_path::courbe::Courbe;
+use superprint_path::plume::{epaissir, Extremite, Jonction, Plume};
 use superprint_path::point::Point;
 use superprint_path::polygone::{Contour, Polygone, Regle};
 
@@ -51,6 +69,7 @@ fn main() -> ExitCode {
     match mode.as_str() {
         "aplatir" => aplatir(&args),
         "booleen" => booleen(&args),
+        "epaissir" => epaissir_commande(&args),
         autre => {
             eprintln!("mode inconnu : {autre}");
             usage()
@@ -60,7 +79,7 @@ fn main() -> ExitCode {
 
 fn usage() -> ExitCode {
     eprintln!(
-        "usage :\n  path_dump aplatir <x0> <y0> <x1> <y1> <x2> <y2> <x3> <y3> <tolerance> <sortie>\n  path_dump booleen <entree.txt> <sortie.tsv>"
+        "usage :\n  path_dump aplatir <x0> <y0> <x1> <y1> <x2> <y2> <x3> <y3> <tolerance> <sortie>\n  path_dump booleen <entree.txt> <sortie.tsv>\n  path_dump epaissir <entree.txt> <sortie.tsv>"
     );
     ExitCode::from(2)
 }
@@ -96,6 +115,130 @@ fn aplatir(args: &[String]) -> ExitCode {
     }
     rapport.push_str(&format!("nb\t{}\n", points.len()));
     ecrire(&args[11], &rapport)
+}
+
+/// Lit un trait et une plume, écrit la surface obtenue.
+///
+/// Le rapport porte les **anneaux**, pas un verdict : c'est le script de
+/// contrôle qui décide, en appliquant la définition (la distance au tracé) par
+/// force brute.
+fn epaissir_commande(args: &[String]) -> ExitCode {
+    if args.len() != 4 {
+        return usage();
+    }
+    let Ok(texte) = fs::read_to_string(&args[2]) else {
+        eprintln!("lecture impossible : {}", args[2]);
+        return ExitCode::from(1);
+    };
+    let (sous_chemins, fermes, plume) = match lire_trait(&texte) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let mut rapport = String::new();
+    rapport.push_str(&format!("epaisseur\t{}\n", plume.epaisseur));
+    rapport.push_str(&format!("sous_chemins\t{}\n", sous_chemins.len()));
+    match epaissir(&sous_chemins, &fermes, &plume) {
+        Ok(surface) => {
+            rapport.push_str(&format!("aire\t{}\n", surface.aire()));
+            rapport.push_str(&format!("anneaux\t{}\n", surface.anneaux.len()));
+            for anneau in &surface.anneaux {
+                rapport.push_str(&format!("anneau\t{}\t", anneau.points.len()));
+                for (i, p) in anneau.points.iter().enumerate() {
+                    if i > 0 {
+                        rapport.push(' ');
+                    }
+                    rapport.push_str(&format!("{} {}", p.x, p.y));
+                }
+                rapport.push('\n');
+            }
+        }
+        Err(e) => rapport.push_str(&format!("erreur\t{e}\n")),
+    }
+    ecrire(&args[3], &rapport)
+}
+
+/// Un trait : ses sous-chemins, leur fermeture, et sa plume.
+type Trait = (Vec<Vec<Point>>, Vec<bool>, Plume);
+
+/// Lit la description d'un trait : ses sous-chemins et sa plume.
+fn lire_trait(texte: &str) -> Result<Trait, String> {
+    let mut sous_chemins: Vec<Vec<Point>> = Vec::new();
+    let mut fermes: Vec<bool> = Vec::new();
+    let mut plume = Plume::nouvelle(1.0);
+    for (numero, brute) in texte.lines().enumerate() {
+        let ligne = brute.trim();
+        if ligne.is_empty() || ligne.starts_with('#') {
+            continue;
+        }
+        let mots: Vec<&str> = ligne.split_whitespace().collect();
+        let illisible = |quoi: &str| format!("ligne {} : {quoi}", numero + 1);
+        match mots[0] {
+            "souschemin" => {
+                let Some(genre) = mots.get(1) else {
+                    return Err(illisible("« souschemin » attend « ouvert » ou « ferme »"));
+                };
+                let ferme = match *genre {
+                    "ouvert" => false,
+                    "ferme" => true,
+                    autre => return Err(illisible(&format!("genre « {autre} » inconnu"))),
+                };
+                let mut points = Vec::new();
+                for paire in mots[2..].chunks(2) {
+                    if paire.len() != 2 {
+                        return Err(illisible("un sommet s'écrit avec deux nombres"));
+                    }
+                    let (Some(x), Some(y)) = (nombre(paire[0]), nombre(paire[1])) else {
+                        return Err(illisible("coordonnée illisible"));
+                    };
+                    points.push(Point::new(x, y));
+                }
+                sous_chemins.push(points);
+                fermes.push(ferme);
+            }
+            "epaisseur" => {
+                plume.epaisseur = nombre(mots.get(1).copied().unwrap_or(""))
+                    .ok_or_else(|| illisible("« epaisseur » attend un nombre"))?;
+            }
+            "miterlimite" => {
+                let texte = mots.get(1).copied().unwrap_or("");
+                plume.limite_miter = if texte == "infini" {
+                    f64::INFINITY
+                } else {
+                    nombre(texte).ok_or_else(|| {
+                        illisible("« miterlimite » attend un nombre ou « infini »")
+                    })?
+                };
+            }
+            "tolerance" => {
+                plume.tolerance = nombre(mots.get(1).copied().unwrap_or(""))
+                    .ok_or_else(|| illisible("« tolerance » attend un nombre"))?;
+            }
+            "jonction" => {
+                plume.jonction = match mots.get(1).copied().unwrap_or("") {
+                    "onglet" => Jonction::Miter,
+                    "biseau" => Jonction::Biseau,
+                    "rond" => Jonction::Rond,
+                    autre => return Err(illisible(&format!("jonction « {autre} » inconnue"))),
+                };
+            }
+            "extremite" => {
+                plume.extremite = match mots.get(1).copied().unwrap_or("") {
+                    "bout" => Extremite::Bout,
+                    "carre" => Extremite::Carre,
+                    "rond" => Extremite::Rond,
+                    autre => return Err(illisible(&format!("extrémité « {autre} » inconnue"))),
+                };
+            }
+            autre => return Err(illisible(&format!("mot-clé « {autre} » inconnu"))),
+        }
+    }
+    if sous_chemins.is_empty() {
+        return Err("aucun sous-chemin".to_string());
+    }
+    Ok((sous_chemins, fermes, plume))
 }
 
 fn booleen(args: &[String]) -> ExitCode {

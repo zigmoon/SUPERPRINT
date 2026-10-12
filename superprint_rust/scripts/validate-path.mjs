@@ -16,6 +16,11 @@
         produire la bonne surface, pas un dessin qui y ressemble.
      3. IDENTITÉS D'AIRES. `A∪B + A∩B = A + B`, `A\B = A − A∩B`,
         `A△B = A∪B − A∩B`. Ce sont des égalités exactes, donc des contrôles.
+     4. ÉPAISSISSEMENT. Le noyau convertit un trait en **surface**. Le script
+        applique **la définition** — l'ensemble des points à une demi-épaisseur
+        du tracé, somme de Minkowski d'une polyligne et d'un disque — recalculée
+        par force brute, et exige les trois relations de style séparément : le
+        rond est égal, l'onglet est plus grand, le biseau plus petit.
 
    Usage : node scripts/validate-path.mjs
    Retour : 0 si tout passe, 1 sinon.
@@ -576,6 +581,240 @@ function lancerBooleen(entree) {
     refuse = true;
   }
   check('un anneau à coordonnées impaires est refusé', refuse);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   L'ÉPAISSISSEMENT D'UN TRAIT : de la ligne à la surface.
+
+   Un trait n'est pas une surface : c'est une polyligne et une épaisseur. Le
+   noyau le convertit. Le script ne croit aucune de ses affirmations, et
+   applique **la définition** : le trait est l'ensemble des points situés à une
+   distance inférieure ou égale à une demi-épaisseur du tracé — la somme de
+   Minkowski d'une polyligne et d'un disque. Cette définition est recalculée ici
+   par force brute, sans rien savoir de l'algorithme.
+
+   Elle dit aussi ce que chaque style vaut, et le script exige les trois
+   relations, séparément : le rond est **égal**, l'onglet est **plus grand**
+   (il ajoute le coin), le biseau et le bout sont **plus petits**.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+titre('épaississement : la définition (distance au tracé) recalculée point par point');
+
+/** Distance d'un point au segment `[a, b]`. */
+function distanceSegment(p, a, b) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const norme = dx * dx + dy * dy;
+  if (norme === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
+  const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / norme));
+  return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
+}
+
+/** Distance d'un point à une polyligne — la définition, écrite à part. */
+function distanceAuTrace(p, sousChemins, fermes) {
+  let pire = Infinity;
+  sousChemins.forEach((chemin, rang) => {
+    const n = chemin.length;
+    const nombre = fermes[rang] ? n : n - 1;
+    for (let i = 0; i < nombre; i += 1) {
+      pire = Math.min(pire, distanceSegment(p, chemin[i], chemin[(i + 1) % n]));
+    }
+  });
+  return pire;
+}
+
+/** Lance le noyau sur un trait décrit, et lit sa surface. */
+function lancerEpaissir(description) {
+  const entree = temporaire('trait.txt');
+  writeFileSync(entree, description, 'ascii');
+  const sortie = temporaire('trait.tsv');
+  lancer('epaissir', entree, sortie);
+  const tsv = readFileSync(sortie, 'utf8');
+  const resultat = { erreur: null, aire: null, anneaux: [] };
+  for (const ligne of tsv.split('\n')) {
+    if (!ligne) continue;
+    const champs = ligne.split('\t');
+    if (champs[0] === 'erreur') resultat.erreur = champs[1];
+    if (champs[0] === 'aire') resultat.aire = Number.parseFloat(champs[1]);
+    if (champs[0] === 'anneau') {
+      const nombres = champs[2].split(' ').map(Number);
+      const anneau = [];
+      for (let i = 0; i + 1 < nombres.length; i += 2) anneau.push([nombres[i], nombres[i + 1]]);
+      resultat.anneaux.push(anneau);
+    }
+  }
+  return resultat;
+}
+
+/** Un point est-il dans la surface rendue ? (règle non nulle, comme le noyau) */
+function contient(resultat, p) {
+  if (!resultat.anneaux.length) return false;
+  return resultat.anneaux.reduce((n, anneau) => n + enroulements(anneau, p), 0) !== 0;
+}
+
+// ── 1. Les aires connues par construction ────────────────────────────────────
+
+const AIRES = [
+  {
+    nom: 'un segment, bout plat : longueur × épaisseur',
+    description: 'souschemin ouvert 0 0 10 0\nepaisseur 2\nextremite bout\n',
+    attendue: 20,
+  },
+  {
+    nom: 'un segment, bout carré : + deux demi-carrés',
+    description: 'souschemin ouvert 0 0 10 0\nepaisseur 2\nextremite carre\n',
+    attendue: 24,
+  },
+  {
+    nom: 'un segment, bout rond : + un disque',
+    description: 'souschemin ouvert 0 0 10 0\nepaisseur 2\nextremite rond\ntolerance 0.002\n',
+    attendue: 20 + Math.PI,
+    relatif: 0.002,
+  },
+  {
+    nom: 'un carré fermé, onglets : (10+2)² − (10−2)²',
+    description: 'souschemin ferme 0 0 10 0 10 10 0 10\nepaisseur 2\n',
+    attendue: 80,
+  },
+  {
+    nom: 'un carré fermé, jonctions rondes : quatre quarts de disque en moins',
+    description:
+      'souschemin ferme 0 0 10 0 10 10 0 10\nepaisseur 2\njonction rond\ntolerance 0.002\n',
+    attendue: 80 - 4 + Math.PI,
+    relatif: 0.002,
+  },
+  {
+    nom: 'un carré fermé, biseaux : un triangle de ½ coupé à chaque coin',
+    // Le biseau relie les deux points décalés directement : le coin perdu est
+    // le triangle rectangle de côtés `h`, soit `h²/2 = 0,5` par coin. La surface
+    // vaut donc 80 − 4×0,5 = 78, **exactement** — c'est un attendu que j'avais
+    // d'abord écrit faux (77,657), et la mesure l'a corrigé.
+    description:
+      'souschemin ferme 0 0 10 0 10 10 0 10\nepaisseur 2\njonction biseau\ntolerance 0.002\n',
+    attendue: 80 - 4 * 0.5,
+  },
+];
+
+for (const cas of AIRES) {
+  const resultat = lancerEpaissir(cas.description);
+  const aire = Math.abs(resultat.aire ?? NaN);
+  const relatif = cas.relatif ?? 1e-9;
+  const ecart = Math.abs(aire - cas.attendue) / cas.attendue;
+  check(
+    `${cas.nom} — ${cas.attendue.toFixed(3)}`,
+    resultat.erreur === null && ecart <= relatif,
+    resultat.erreur ?? `noyau ${aire.toFixed(3)} (écart relatif ${ecart.toExponential(2)})`,
+  );
+}
+
+// ── 2. La définition, point par point ────────────────────────────────────────
+
+const DEFINITIONS = [
+  {
+    nom: 'jonctions et extrémités RONDES : égalité stricte',
+    description:
+      'souschemin ouvert 0 0 10 0 10 10\nepaisseur 2\njonction rond\nextremite rond\ntolerance 0.002\n',
+    chemins: [[[0, 0], [10, 0], [10, 10]]],
+    fermes: [false],
+    relation: 'egal',
+  },
+  {
+    nom: 'onglet (limite infinie) et bouts ronds : rien ne manque, le coin est ajouté',
+    description:
+      'souschemin ouvert 0 0 10 0 10 10\nepaisseur 2\njonction onglet\nmiterlimite infini\nextremite rond\ntolerance 0.002\n',
+    chemins: [[[0, 0], [10, 0], [10, 10]]],
+    fermes: [false],
+    relation: 'surensemble',
+  },
+  {
+    nom: 'biseau et bouts plats : rien n’est ajouté hors du trait',
+    description:
+      'souschemin ouvert 0 0 10 0 10 10\nepaisseur 2\njonction biseau\nextremite bout\ntolerance 0.002\n',
+    chemins: [[[0, 0], [10, 0], [10, 10]]],
+    fermes: [false],
+    relation: 'sousensemble',
+  },
+  {
+    nom: 'carré fermé, jonctions rondes : égalité stricte sur une forme fermée',
+    description:
+      'souschemin ferme -30 -20 30 -20 30 20 -30 20\nepaisseur 5\njonction rond\ntolerance 0.002\n',
+    chemins: [[[-30, -20], [30, -20], [30, 20], [-30, 20]]],
+    fermes: [true],
+    relation: 'egal',
+  },
+];
+
+for (const cas of DEFINITIONS) {
+  const resultat = lancerEpaissir(cas.description);
+  if (resultat.erreur !== null) {
+    check(`${cas.nom}`, false, `refusé : ${resultat.erreur}`);
+    continue;
+  }
+  const h = 1 * Number((cas.description.match(/epaisseur (\S+)/) || [, '1'])[1]) / 2;
+  // La boîte d'échantillonnage : celle du tracé, élargie de `h` plus l'onglet.
+  const points = cas.chemins.flat();
+  const minX = Math.min(...points.map((p) => p[0])) - h - 3;
+  const maxX = Math.max(...points.map((p) => p[0])) + h + 3;
+  const minY = Math.min(...points.map((p) => p[1])) - h - 3;
+  const maxY = Math.max(...points.map((p) => p[1])) + h + 3;
+  const pas = 0.05;
+  let examines = 0;
+  let manquants = 0;
+  let ajoutes = 0;
+  let exemple = '';
+  for (let x = minX; x <= maxX; x += pas) {
+    for (let y = minY; y <= maxY; y += pas) {
+      const p = [x, y];
+      const distance = distanceAuTrace(p, cas.chemins, cas.fermes);
+      // On ne teste pas la frontière : c'est un cas de mesure, pas de géométrie.
+      if (Math.abs(distance - h) < 2 * pas) continue;
+      examines += 1;
+      const dedans = contient(resultat, p);
+      const attendu = distance < h;
+      if (attendu && !dedans) {
+        manquants += 1;
+        if (!exemple) exemple = `(${x.toFixed(2)}, ${y.toFixed(2)})`;
+      }
+      if (!attendu && dedans) {
+        ajoutes += 1;
+        if (!exemple) exemple = `(${x.toFixed(2)}, ${y.toFixed(2)})`;
+      }
+    }
+  }
+  const verdict =
+    cas.relation === 'egal'
+      ? manquants === 0 && ajoutes === 0
+      : cas.relation === 'surensemble'
+        ? manquants === 0
+        : ajoutes === 0;
+  check(
+    `${cas.nom} (${examines} points)`,
+    verdict,
+    verdict
+      ? cas.relation === 'egal'
+        ? 'aucun désaccord'
+        : `${cas.relation === 'surensemble' ? ajoutes : 0} point(s) ajouté(s), 0 manquant`
+        : `${manquants} manquant(s), ${ajoutes} ajouté(s) — premier ${exemple}`,
+  );
+}
+
+// ── 3. Ce qui ne se convertit pas est refusé en le nommant ───────────────────
+
+{
+  const impossible = lancerEpaissir(
+    'souschemin ouvert 0 0 10 0 2 0.5\nepaisseur 2\nmiterlimite infini\n',
+  );
+  check(
+    'un bord replié qui se recoupe est refusé, avec la raison',
+    impossible.erreur !== null && impossible.erreur.includes('recoupe'),
+    impossible.erreur ?? 'AUCUN REFUS',
+  );
+  const nulle = lancerEpaissir('souschemin ouvert 0 0 10 0\nepaisseur 0\n');
+  check(
+    'une épaisseur nulle est refusée plutôt que rendue plate',
+    nulle.erreur !== null && nulle.erreur.includes('épaisseur'),
+    nulle.erreur ?? 'AUCUN REFUS',
+  );
 }
 
 console.log(

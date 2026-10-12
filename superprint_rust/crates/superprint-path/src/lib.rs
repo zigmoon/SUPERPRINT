@@ -20,6 +20,7 @@
 //! | [`courbe`] | Bézier quadratique et cubique : évaluation, **aplatissement** adaptatif, boîte, subdivision, longueur | le produit n'en a pas besoin puisqu'il a Paper.js ; le nôtre si, et l'écrivain PDF en manquait |
 //! | [`polygone`] | anneau, aire signée, **règles de remplissage** (`nonzero`, pair-impair), appartenance d'un point | c'est le sens même d'une forme pleine |
 //! | [`booleen`] | union, intersection, différence, exclusion | le Pathfinder |
+//! | [`plume`] | **épaississement** d'un trait : d'une polyligne et d'une épaisseur à une surface | sans lui, ni découpage d'un trait, ni mesure de la surface encrée |
 //!
 //! ## Comment l'aplatissement est vérifié
 //!
@@ -60,12 +61,14 @@
 pub mod booleen;
 pub mod courbe;
 pub mod matrice;
+pub mod plume;
 pub mod point;
 pub mod polygone;
 
 pub use booleen::{operer, Operation};
 pub use courbe::Courbe;
 pub use matrice::Matrice;
+pub use plume::{Extremite, Jonction, Plume};
 pub use point::{Boite, Point};
 pub use polygone::{Contour, Polygone, Regle};
 
@@ -114,6 +117,23 @@ pub enum ErreurPath {
         /// Rang du morceau qui ne suit pas.
         morceau: usize,
     },
+    /// Un trait ne se convertit pas en surface exploitable.
+    ///
+    /// Trois causes, et elles se ressemblent : une épaisseur qui n'est pas un
+    /// nombre fini positif ; un sous-chemin réduit à un point ; et — la plus
+    /// intéressante — un bord replié qui **se recoupe**, parce que l'épaisseur
+    /// est trop grande devant la longueur d'un segment.
+    ///
+    /// Dans le dernier cas, l'anneau s'auto-intersecte et « dedans » n'y a plus
+    /// de sens unique : rendre une surface quand même ferait dépendre la forme
+    /// du résultat de la règle de remplissage. On refuse, et on dit laquelle des
+    /// trois causes c'est.
+    TraitInsoluble {
+        /// Rang du sous-chemin fautif.
+        sous_chemin: usize,
+        /// Ce qui l'empêche, en une phrase.
+        raison: String,
+    },
 }
 
 impl std::fmt::Display for ErreurPath {
@@ -134,6 +154,12 @@ impl std::fmt::Display for ErreurPath {
                 f,
                 "chemin discontinu : le morceau {morceau} ne commence pas où finit le précédent"
             ),
+            Self::TraitInsoluble {
+                sous_chemin,
+                raison,
+            } => {
+                write!(f, "sous-chemin {sous_chemin} : {raison}")
+            }
         }
     }
 }
