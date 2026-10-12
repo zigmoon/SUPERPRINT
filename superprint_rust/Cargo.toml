@@ -21,7 +21,15 @@ members = ["crates/*"]
 version = "0.2.0"
 edition = "2021"
 rust-version = "1.75"
-license = "AGPL-3.0-or-later"
+# Licence **propriétaire**. `LicenseRef-Proprietary` est la façon SPDX de nommer
+# une licence qui n'est pas dans la liste standard ; c'est exactement notre cas,
+# et écrire un identifiant SPDX standard ici (AGPL-3.0-or-later, par exemple)
+# serait un mensonge lisible par n'importe quel outil d'audit.
+#
+# Le texte est dans `LICENSE`, à côté de ce fichier. Les dix-huit crates en
+# héritent par `license.workspace = true` : une seule déclaration, donc aucune
+# copie ne peut diverger.
+license = "LicenseRef-Proprietary"
 authors = ["Simon Dupont-Gellert (Zigmoon)"]
 repository = "https://github.com/zigmoon/SUPERPRINT"
 
