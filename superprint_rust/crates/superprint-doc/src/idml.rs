@@ -160,6 +160,7 @@ pub fn lire(archive: &Archive) -> Result<Memoire, ErreurImport> {
             .and_then(|d| d.attribut("Name").map(str::to_string)),
         images,
         notes,
+        classeur: None,
         avertissements,
     })
 }

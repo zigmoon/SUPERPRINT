@@ -64,7 +64,7 @@ Write-Host "OK : $final ($ko Ko)" -ForegroundColor Green
 # précédent. La différence est mesurée : une fonctionnalité aurait produit un
 # second module contenant TOUT le noyau en double (406 Ko) plus l'EPS, soit
 # 570 Ko. Ce crate ne dépend que de `superprint-ps` : le module livré fait
-# 322 Ko, et il n'est JAMAIS précaché — la colle `web/superprint-eps.js` le
+# 324,8 Ko, et il n'est JAMAIS précaché — la colle `web/superprint-eps.js` le
 # demande quand l'utilisateur ouvre un `.eps`, exactement comme
 # `sp-eps-import.js` (44 Ko) l'était avant.
 #

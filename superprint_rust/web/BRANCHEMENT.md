@@ -241,8 +241,8 @@ donc retirer la ligne remet l'application à l'identique :
 
 | Ce qui est branché | Colle | Noyau | Repli |
 |---|---|---|---|
-| césure (5 langues) et conversion des couleurs | `app/JS/superprint-branchement.js` | `superprint_core.wasm` (406 Ko, précaché) | `Hypher`, `_spCmykConvert` |
-| import PostScript / EPS | `app/JS/superprint-eps.js` | `superprint_eps.wasm` (322 Ko, **à la demande**) | `sp-eps-import.js` |
+| césure (5 langues) et conversion des couleurs | `app/JS/superprint-branchement.js` | `superprint_core.wasm` (406,5 Ko, précaché) | `Hypher`, `_spCmykConvert` |
+| import PostScript / EPS | `app/JS/superprint-eps.js` | `superprint_eps.wasm` (324,8 Ko, **à la demande**) | `sp-eps-import.js` |
 | export PDF imposé | `app/JS/superprint-montage.js` | le **même** module que le branchement | l'export vectoriel du produit |
 
 `main.js` n'a **jamais** été modifié : chaque joint est une couture que le

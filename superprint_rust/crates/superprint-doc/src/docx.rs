@@ -125,6 +125,7 @@ pub fn lire(archive: &Archive) -> Result<Memoire, ErreurImport> {
         titre: None,
         images,
         notes: Vec::new(),
+        classeur: None,
         avertissements,
     })
 }

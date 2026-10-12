@@ -243,6 +243,22 @@ Step 'import : docx, odt et idml contre un extracteur independant, et invariante
   if ($LASTEXITCODE -eq 0) { node scripts/validate-doc.mjs }
 }
 
+# Validation du CLASSEUR .xlsx, confronte a SheetJS — le lecteur que le produit
+# embarque deja (`superprint/app/JS/xlsx.full.min.js`, Apache-2.0), lu SUR PLACE
+# et jamais modifie : la reference du format, pas un troisieme lecteur a
+# defendre. Cellule par cellule sur le temoin reel du depot, puis sur un second
+# temoin ENGENDRE PAR SheetJS (chaines partagees, largeurs, fusions, feuille
+# masquee, booleens, erreurs) que le premier n'exerce pas. Les largeurs, les
+# fusions et les chaines partagees sont ensuite comptees DANS LE XML extrait par
+# le noyau — SheetJS ne rend pas `!cols` a la relecture, s'y fier seul laisserait
+# passer une largeur fausse. Enfin les renommages (.rtf et .docx en .xlsx : la
+# signature decide) et les pannes (tronque, vide) doivent refuser d'inventer une
+# grille.
+Step 'classeur xlsx : parite avec SheetJS, XML relu, renommages et pannes' {
+  & $cargo build -p superprint-doc --example doc_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-xlsx.mjs }
+}
+
 # Validation de l'IMPORT SVG : un lecteur ECRIT A PART (son propre analyseur XML,
 # son propre lecteur de commandes de chemin, sa propre matrice, sa propre
 # conversion d'arc et son propre aplatissement) confronte le noyau sur les 40 SVG

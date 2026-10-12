@@ -14,11 +14,22 @@
 //! **formes** : commandes de chemin, formes élémentaires, transformations,
 //! attributs de présentation, aplatis en polylignes dans le repère du canevas.
 //!
+//! **Un format tabulaire** — il ouvre un **classeur `.xlsx`** ([`classeur`]) et en
+//! tire un **modèle de cellules** : références (`B12`), valeurs typées, largeurs de
+//! colonne, fusions, feuilles multiples et leur état. Un tableur n'est pas un texte,
+//! et le réduire à une suite de paragraphes perdrait tout ce qui en fait un tableur.
+//! Les **formats de nombre ne sont pas lus** : c'est la valeur **stockée** qui est
+//! rendue, jamais la valeur **affichée** — une date reste `46096`, un taux `0.15`.
+//! Ce n'est pas une supposition mais un écart chiffré, dans `docs/PORTAGE.md`
+//! (B8b-bis).
+//!
 //! Le produit s'appuyait pour cela sur Mammoth (621 Ko) et sur `jszip` pour
-//! `.docx`, sur `DOMParser` pour `.odt`, sur du code maison pour `.idml`, et sur
-//! **le navigateur lui-même** pour le SVG (`fabric.loadSVGFromString`). Ici,
+//! `.docx`, sur `DOMParser` pour `.odt`, sur du code maison pour `.idml`, sur
+//! **SheetJS** (952 Ko) pour `.xlsx`, et sur **le navigateur lui-même** pour le SVG
+//! (`fabric.loadSVGFromString`). Ici,
 //! tout est calculé : conteneur ([`superprint_zip`]), analyse XML ([`xml`]),
-//! lecture des trois formats de texte, et lecture du dessin vectoriel.
+//! lecture des trois formats de texte, lecture du classeur, et lecture du dessin
+//! vectoriel.
 //!
 //! ## Les trois formats de texte, et ce qui les rapproche
 //!
@@ -56,6 +67,12 @@
 //! - les **mises en forme fines** (gras, italique, couleur par morceau) sont
 //!   **comptées et signalées** dans les avertissements, pas silencieusement
 //!   perdues — c'est la limite du modèle de [`Paragraphe`], et elle est dite ;
+//! - un classeur **est lu** ([`classeur`]) **sans ses formats de nombre** : la
+//!   valeur **stockée** est rendue, jamais la valeur **affichée**. Un tableur
+//!   afficherait `15/03/2026`, `15%` et `1,450.50 €` là où le noyau rend `46096`,
+//!   `0.15` et `1450.5` — et cet écart est **chiffré** par
+//!   `scripts/validate-xlsx.mjs`, pas supposé. Le porter demanderait `numFmtId` et
+//!   ses formats intégrés, ce qui n'est pas fait ;
 //! - un `.ai` moderne est un **PDF**, pas du PostScript : ce crate ne l'ouvre
 //!   pas, et le détecteur de format le dit ([`superprint_zip::lecture::ressemble_a_une_archive`]
 //!   aidant, via `zip_dump format`) ;
@@ -69,13 +86,13 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod classeur;
 pub mod docx;
 pub mod idml;
 pub mod odt;
 pub mod rtf;
 pub mod svg;
 pub mod xml;
-
 use std::fmt;
 
 use superprint_flow::flux::{Flux, Paragraphe as ParagrapheFlux};
@@ -97,6 +114,14 @@ pub enum Format {
     /// même raison que les trois autres — c'est un document dont on tire du
     /// texte — et son lecteur est [`rtf`].
     Rtf,
+    /// Classeur Excel (Office Open XML, `.xlsx`).
+    ///
+    /// Ce format n'entre pas dans le moule des trois premiers : ce n'est pas un
+    /// document à paragraphes, c'est une **grille**. Son lecteur est
+    /// [`classeur`], et il rend un modèle de cellules — le texte n'en est qu'une
+    /// vue, pour pouvoir importer un classeur sans attendre un composeur de
+    /// tableaux.
+    Xlsx,
 }
 
 impl Format {
@@ -108,6 +133,7 @@ impl Format {
             Self::Odt => "odt",
             Self::Idml => "idml",
             Self::Rtf => "rtf",
+            Self::Xlsx => "xlsx",
         }
     }
 
@@ -119,6 +145,7 @@ impl Format {
             Self::Odt => "application/vnd.oasis.opendocument.text",
             Self::Idml => "application/vnd.adobe.indesign-idml-package",
             Self::Rtf => "application/rtf",
+            Self::Xlsx => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }
     }
 }
@@ -278,6 +305,12 @@ pub struct Memoire {
     pub notes: Vec<String>,
     /// Ce qui n'a **pas** pu être rendu fidèlement, dit explicitement.
     pub avertissements: Vec<String>,
+    /// Le **modèle de cellules**, quand le document est un classeur.
+    ///
+    /// `None` pour tous les autres formats : un `.docx` n'a pas de grille, et
+    /// inventer une grille à partir de ses tableaux donnerait une structure qui
+    /// ne serait ni l'une ni l'autre. Voir [`classeur`].
+    pub classeur: Option<classeur::Classeur>,
 }
 
 impl Memoire {
@@ -312,6 +345,15 @@ impl Memoire {
         // contient `mimetype`, un `.idml` contient `designmap.xml`.
         if archive.trouver_souple("word/document.xml").is_some() {
             return docx::lire(archive);
+        }
+        // Un classeur se reconnaît à `xl/workbook.xml`, et ce test vient AVANT
+        // ceux de l'ODF : un `.xlsx` n'a ni `content.xml` ni `designmap.xml`, et
+        // l'ordre inverse fonctionnerait — mais l'ordre explicite dit pourquoi il
+        // fonctionne.
+        if archive.trouver_souple("xl/workbook.xml").is_some()
+            && archive.trouver_souple("xl/worksheets/sheet1.xml").is_some()
+        {
+            return Ok(classeur::Classeur::lire(archive)?.en_memoire());
         }
         if archive.trouver_souple("content.xml").is_some()
             && archive.trouver_souple("mimetype").is_some()

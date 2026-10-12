@@ -12,6 +12,7 @@
 //! doc_dump paragraphes <document> <sortie.tsv>
 //! doc_dump texte       <document> <sortie.txt>
 //! doc_dump flux        <document> <retrait> <espace> <sortie.tsv>
+//! doc_dump classeur    <document> <sortie.tsv>
 //! ```
 //!
 //! Le TSV des paragraphes échappe les tabulations et les sauts de ligne
@@ -36,6 +37,7 @@ fn main() -> ExitCode {
         "paragraphes" => paragraphes(&args),
         "texte" => texte(&args),
         "flux" => flux(&args),
+        "classeur" => classeur(&args),
         "xml" => xml_brut(&args),
         autre => {
             eprintln!("mode inconnu : {autre}");
@@ -46,7 +48,7 @@ fn main() -> ExitCode {
 
 fn usage() -> ExitCode {
     eprintln!(
-        "usage :\n  doc_dump resume      <document> <sortie.tsv>\n  doc_dump paragraphes <document> <sortie.tsv>\n  doc_dump texte       <document> <sortie.txt>\n  doc_dump flux        <document> <retrait> <espace> <sortie.tsv>\n  doc_dump xml         <document> <entree> <sortie.txt>"
+        "usage :\n  doc_dump resume      <document> <sortie.tsv>\n  doc_dump paragraphes <document> <sortie.tsv>\n  doc_dump texte       <document> <sortie.txt>\n  doc_dump flux        <document> <retrait> <espace> <sortie.tsv>\n  doc_dump classeur    <document> <sortie.tsv>\n  doc_dump xml         <document> <entree> <sortie.txt>"
     );
     ExitCode::from(2)
 }
@@ -222,6 +224,86 @@ fn flux(args: &[String]) -> ExitCode {
         Err(e) => rapport.push_str(&format!("erreur\t{e}\n")),
     }
     ecrire(&args[5], &rapport)
+}
+
+/// Liste les cellules du **modèle de classeur**, pour comparaison avec un
+/// lecteur tiers (SheetJS).
+///
+/// Une ligne par fait, préfixée par son genre, pour qu'une différence se lise
+/// sans deviner : `feuille`, `plage`, `cellule`, `colonne`, `fusion`,
+/// `ligne` (le texte de la ligne), `avertissement`.
+fn classeur(args: &[String]) -> ExitCode {
+    if args.len() != 4 {
+        return usage();
+    }
+    let mut rapport = String::new();
+    match ouvrir(&args[2]) {
+        Ok(memoire) => {
+            let texte = memoire.texte();
+            let Some(classeur) = memoire.classeur else {
+                rapport.push_str("erreur\tce document n’est pas un classeur\n");
+                return ecrire(&args[3], &rapport);
+            };
+            rapport.push_str(&format!(
+                "chaines_partagees\t{}\n",
+                classeur.chaines_partagees
+            ));
+            for (rang, feuille) in classeur.feuilles.iter().enumerate() {
+                rapport.push_str(&format!(
+                    "feuille\t{rang}\t{}\t{}\t{}\n",
+                    echapper(&feuille.nom),
+                    feuille.etat.nom(),
+                    feuille.entree
+                ));
+                match feuille.plage() {
+                    Some((debut, fin)) => {
+                        rapport.push_str(&format!("plage\t{rang}\t{}\t{}\n", debut.a1(), fin.a1()))
+                    }
+                    None => rapport.push_str(&format!("plage\t{rang}\t-\n")),
+                }
+                for cellule in &feuille.cellules {
+                    rapport.push_str(&format!(
+                        "cellule\t{rang}\t{}\t{}\t{}\n",
+                        cellule.reference.a1(),
+                        cellule.valeur.genre(),
+                        echapper(&cellule.valeur.en_texte())
+                    ));
+                }
+                for colonne in &feuille.colonnes {
+                    // La largeur est écrite **exactement** (`{}` et non `{:.6}`) :
+                    // une ligne de fait doit porter le fait, et un arrondi à la
+                    // sixième décimale laisserait passer pour égale une largeur
+                    // fausse de moins d'un millionième — c'est précisément ce que
+                    // le contrôle tiers compare.
+                    rapport.push_str(&format!(
+                        "colonne\t{rang}\t{}\t{}\t{}\t{}\n",
+                        colonne.premiere,
+                        colonne.derniere,
+                        colonne.largeur,
+                        u8::from(colonne.masquee)
+                    ));
+                }
+                for fusion in &feuille.fusions {
+                    rapport.push_str(&format!(
+                        "fusion\t{rang}\t{}\t{}\n",
+                        fusion.debut.a1(),
+                        fusion.fin.a1()
+                    ));
+                }
+                for (numero, ligne) in feuille.vers_texte().split('\n').enumerate() {
+                    rapport.push_str(&format!("ligne\t{rang}\t{numero}\t{}\n", echapper(ligne)));
+                }
+            }
+            for avertissement in &classeur.avertissements {
+                rapport.push_str(&format!("avertissement\t{}\n", echapper(avertissement)));
+            }
+            for (rang, ligne) in texte.split('\n').enumerate() {
+                rapport.push_str(&format!("texte\t{rang}\t{}\n", echapper(ligne)));
+            }
+        }
+        Err(e) => rapport.push_str(&format!("erreur\t{e}\n")),
+    }
+    ecrire(&args[3], &rapport)
 }
 
 /// Extrait une entrée de l'archive et l'écrit telle quelle.

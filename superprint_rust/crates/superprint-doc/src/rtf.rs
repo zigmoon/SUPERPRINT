@@ -151,6 +151,7 @@ pub fn lire(octets: &[u8]) -> Result<Memoire, ErreurImport> {
         titre: None,
         images: Vec::new(),
         notes: Vec::new(),
+        classeur: None,
         avertissements: vec![
             "RTF : le texte et la mise en page sont lus, les **styles** ne le sont pas — \
              gras, italique, corps et couleur sont du balisage ignoré, comme dans le produit. \

@@ -16,11 +16,11 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-12) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 18 crates, tests compris) | **47 178 lignes** |
-| dont annotations `#[test]` | 1023 tests, tous verts |
+| Rust (`crates/`, 18 crates, tests compris) | **48 469 lignes** |
+| dont tests (`#[test]` + exemples de documentation) | 1043 + 7, tous verts |
 | exports `sp_*` de la frontière C | **53** (0 import), sur **deux** modules |
-| modules livrables | 406 Ko (noyau) + **322 Ko** (import PostScript, à la demande) |
-| étapes de contrôle (`scripts/check.ps1`) | **32** |
+| modules livrables | 406,5 Ko (noyau) + **324,8 Ko** (import PostScript, à la demande) |
+| étapes de contrôle (`scripts/check.ps1`) | **33** |
 | JavaScript applicatif (hors bibliothèques tierces) | **126 581 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
@@ -33,7 +33,7 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
 | dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript **+** l'export imposé | ce qui sert vraiment à l'utilisateur |
 | **Volume JS porté** (somme des plages citées) | **13 832 / 18 803** → **74 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 47 178 / 112 138 → **42,1 %** | ⚠️ le plus trompeur des quatre |
+| **Lignes** Rust / JS | 48 469 / 112 138 → **43,2 %** | ⚠️ le plus trompeur des quatre |
 
 La plage ajoutée par l'import PostScript est mesurée ainsi : dans
 `superprint/app/JS/sp-eps-import.js` (939 lignes), tout ce qui précède
@@ -61,9 +61,10 @@ offerts, et B3b dit pourquoi). **Conversion de couleurs** ✅
 **Aucun domaine n'est ouvert.** Ce qui reste ne sont plus des domaines, mais des
 **limites à l'intérieur de domaines terminés** — et elles sont toutes écrites, dans
 les sections B correspondantes, sous le titre « ce qui n'est pas fait ». Les plus
-notables : le `.doc` binaire (OLE2) et le modèle de cellules du `.xlsx` ne sont pas
-lus ; le HTML et le TXT sont **reconnus mais non analysés** ; `arct`/`arcto` sont **refusés** et
-non interprétés ; un `clip` **est appliqué** ; les `.ai`
+notables : le `.doc` binaire (OLE2) et le `.xls` binaire ne sont pas
+lus (le `.xlsx`, lui, **l'est** : voir B8b-bis) ; le HTML et le TXT sont **reconnus
+mais non analysés** ; `arct`/`arcto` sont **interprétés** (voir B8c) ; un `clip`
+**est appliqué** ; les `.ai`
 enregistrés en PDF sont **refusés** au lieu d'être lus (le noyau écrit du PDF, il
 n'en lit pas) ; et en SVG, `<image>`, `<use>`, les dégradés, les découpages et les
 feuilles de style sont **refusés en les nommant**, plutôt que rendus de travers.
@@ -129,8 +130,8 @@ facile. **Le seul chiffre à suivre est le premier : les domaines.**
 | 26 | **Géométrie vectorielle et Pathfinder** | `superprint-path` | surface du résultat vérifiée sur **224 000 points**, 45 identités d'aires, 0 refus injustifié |
 | 31 | **Épaississement d'un trait** (jonctions, extrémités, limite d'onglet) | `path::plume` | la **définition** (distance au tracé) recalculée à part sur **1,5 million de points** : le rond est *égal*, l'onglet plus grand, le biseau plus petit | 🟢 offert |
 | 27 | **Conteneur ZIP** (lecture, DEFLATE, CRC-32) | `superprint-zip` | 10 fichiers réels relus par un lecteur écrit à part : **56 entrées, 569 826 octets identiques** | 🟢 offert |
-| 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` / **RTF** | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères ; RTF : **parité caractère par caractère** avec `spRtfToText` sur 5 témoins et 10 cas piégeux | 🟢 offert |
-| 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné, découpage appliqué) | `superprint-ps` | 4 témoins, **109 sommets** comparés à un interpréteur écrit à part, et le dessin découpé vérifié sur **1 525 points** ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
+| 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` / **RTF** / **classeur `.xlsx`** | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères ; RTF : **parité caractère par caractère** avec `spRtfToText` sur 5 témoins et 10 cas piégeux ; `.xlsx` : **41 cellules** comparées cellule par cellule à **SheetJS**, largeurs, fusions et chaînes partagées relues dans le **XML brut** | 🟢 offert |
+| 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné, découpage appliqué, `arct`/`arcto`) | `superprint-ps` | 4 témoins, **109 sommets** comparés à un interpréteur écrit à part, et le dessin découpé vérifié sur **1 525 points** ; `arct` : **23 sommets**, écart maximal **3,9e-10** ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
 | 30 | **Dessin SVG** (commandes de chemin, formes, transformations) | `superprint-doc::svg` | **40 SVG réels** du dépôt, **172 formes et 10 404 sommets** comparés à un lecteur écrit à part ; tolérance mesurée sur la courbe vraie ; table des couleurs relevée du produit | 🟢 offert |
 | 32 | **Montage d'une planche imposée** (pose, rognage, repères, couleurs, PDF/X) | `superprint-montage` | planche assemblée puis **relue par `pdf-lib`** : boîtes, places et rognages exacts au dixième de micromètre, sens des lignes lu dans les pixels, PDF/X-1a avec le profil du produit | ✅ **branché** |
 
@@ -330,11 +331,11 @@ la signature/cahier et le dos carré collé. Le produit ne les a pas non plus :
 le mode actuel est un livret 2 poses. Les porter serait ajouter une fonction,
 pas en déplacer une.
 
-#### B3b. Les quatre autres imports — la mesure dit non, et voici pourquoi
+#### B3b. Les autres imports — la mesure dit non, et voici pourquoi
 
-`.docx`, `.odt`, `.idml` et SVG sont **offerts** par le noyau (`superprint-doc`),
-et le portage documentait leur branchement comme « à faire ». La mesure le
-contredit, format par format. Elle est faite par
+`.docx`, `.odt`, `.idml`, SVG et `.xlsx` sont **offerts** par le noyau
+(`superprint-doc`), et le portage documentait leur branchement comme « à faire ».
+La mesure le contredit, format par format. Elle est faite par
 `scripts/analyse-accroches.mjs`, qui lit **`main.js` et `index.html`** et dit
 quels noms l'application atteint à travers `window` — donc lesquels sont
 remplaçables — et par la lecture des fonctions concernées.
@@ -345,6 +346,7 @@ remplaçables — et par la lecture des fonctions concernées.
 | `.odt` | aucun | **non.** `_spTexteOdf` est privée, appelée par son nom depuis `_spTexteDocument`. Aucun `window.*` sur le chemin |
 | `.idml` | `window._spOpenIdmlImport` | **non, et ce n'est pas le bon joint.** La fonction est remplaçable, mais c'est **tout l'import** : lecture du ZIP, `Stories/*.xml`, placement des blocs, images. Le noyau lit les paragraphes ; la **mise en page** est la logique du produit |
 | **SVG** | `window.fabric.loadSVGFromString` | **non, et il ne faut pas.** Le joint existe (Fabric est une bibliothèque), mais le lecteur SVG du noyau est **délibérément plus strict** : il refuse `<image>`, `<use>`, un remplissage `url(#…)`, `clip-path`, `mask`, `filter` et les feuilles `<style>` — que Fabric dessine. Il **aplatit** aussi les courbes en polylignes, là où Fabric garde le Bézier exact. Brancher, ce serait dessiner moins et moins bien : ce n'est pas un portage, c'est une régression |
+| **`.xlsx`** | `window.XLSX` | **non, pas encore — et c'est pourtant le meilleur joint de tous.** SheetJS est une **bibliothèque** : la remplacer ne demande **aucune** ligne dans `main.js` (contrairement à `.docx`, `.odt` et `.idml`), et le contrat à tenir est écrit noir sur blanc — `read(octets, {type:'array'})` puis `utils.sheet_to_json(ws, {header:1, defval:'', raw:false, dateNF:'dd/mm/yyyy'})` (`main.js:41062-41077`). Mais `raw:false` veut dire « valeurs **affichées** » : une date devient `15/03/2026`, un taux `15%`, un prix `1,450.50 €`. Le noyau, qui ne lit **aucun format de nombre**, rendrait `46096`, `0.15` et `1450.5` — mesuré, voir B8b-bis. Brancher tel quel **dégraderait** ce que l'utilisateur voit, c'est-à-dire exactement ce que la v1.7.570 avait corrigé. Le portage du format de nombre est le préalable ; il est borné, et non commencé |
 | **RTF** | `window.SPDocImport.helpers` | **possible, mais sans valeur mesurable.** Le joint est réel — `main.js` lit `window.SPDocImport.helpers.spRtfToText` — et le noyau a la parité **caractère par caractère**. Mais `sp-doc-import.js` est chargé de toute façon (il porte `spBytesToLatin1` et tout le reste), donc brancher le RTF **ajoute** un téléchargement sans en retirer aucun, pour remplacer une fonction de 95 lignes déjà présente. C'est exactement le cas que ce document refuse ailleurs : du portage pour le portage |
 
 > **Ce que ce tableau corrige.** Une version antérieure de ce document donnait
@@ -353,13 +355,13 @@ remplaçables — et par la lecture des fonctions concernées.
 > **internes — non substituables**. Le vrai joint du SVG est
 > `fabric.loadSVGFromString`, et il n'est pas souhaitable (ligne ci-dessus).
 
-**Conclusion, et elle est une décision autant qu'une mesure** : ces quatre
-formats restent **offerts** — le noyau sait les lire, les contrôles le mesurent —
-et leur branchement demande soit une ligne dans `main.js` (docx, odt, idml), soit
-d'accepter une régression (SVG). Les trois premiers sont à une ligne près :
-`_spTexteDocument` pourrait lire `(window._spTexteOdf || _spTexteOdf)` comme il
-lit déjà `window.SPDocImport.helpers`. Cette ligne n'a pas été écrite, et c'est
-un choix : `main.js` n'est pas modifié.
+**Conclusion, et elle est une décision autant qu'une mesure** : ces formats
+restent **offerts** — le noyau sait les lire, les contrôles le mesurent — et leur
+branchement demande soit une ligne dans `main.js` (docx, odt, idml), soit
+d'accepter une régression (SVG, `.xlsx` en l'état). Les trois premiers sont à une
+ligne près : `_spTexteDocument` pourrait lire `(window._spTexteOdf || _spTexteOdf)`
+comme il lit déjà `window.SPDocImport.helpers`. Cette ligne n'a pas été écrite, et
+c'est un choix : `main.js` n'est pas modifié.
 
 ### B4. Contrôle prépresse (preflight) 🟡 → ✅ (fait, et mesuré)
 
@@ -700,6 +702,70 @@ texte) ; le contenu `CDATA` était résolu alors qu'il doit rester littéral ; e
 recherche d'entité était trop large, au point de lire `AT&T et R&amp;D` comme une
 entité nommée `T et R&amp`.
 
+#### B8b-bis. Le classeur `.xlsx` — lu contre SheetJS, le lecteur du produit
+
+Le noyau **ne lisait pas le `.xlsx` du tout** : son XML était atteignable par le
+lecteur ZIP, mais il n'existait aucun modèle de cellules. Et un tableur réduit à
+une suite de paragraphes perdrait tout ce qui en fait un tableur.
+
+Un classeur se lit donc avec un **modèle à lui**
+(`superprint-doc/src/classeur.rs`) : des `Reference` (`B12`, numérotation
+bijective), des `Valeur` (`Texte`, `Nombre`, `Booleen`, `Erreur`, `Vide`), des
+largeurs de colonne, des fusions, plusieurs feuilles, et l'**état** d'une feuille
+(`visible`, `hidden`, `veryHidden`) — une feuille masquée reste lisible, mais il
+faut pouvoir le dire.
+
+**La référence, ici, n'est pas un troisième lecteur.** Le produit embarque déjà
+**SheetJS** (`superprint/app/JS/xlsx.full.min.js`, Apache-2.0, 951 904 octets) :
+c'est l'implémentation de référence du format, celle qui sert en production. Elle
+est lue **sur place et jamais modifiée**, et c'est à elle que le noyau est
+confronté — pas à une réécriture maison, qui n'aurait produit qu'un troisième jeu
+de conventions à défendre.
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| le témoin réel du dépôt (`_dev/sorties/_test_excel.xlsx`), cellule par cellule | 2 feuilles, **17 cellules** : référence, genre et valeur identiques |
+| un second témoin, **engendré par SheetJS lui-même** | 3 feuilles, **24 cellules** identiques — chaînes partagées (`bookSST`), booléens et erreurs compris |
+| chaînes partagées | **14 `<si>`** dans le fichier, 14 comptées par le noyau |
+| largeurs de colonne | **7 `<col>`**, lues exactement (`22.83203125`, et non `22.83`) — comparées au **XML brut**, parce que SheetJS ne rend pas `!cols` à la relecture |
+| fusions, et état des feuilles | `A5:C6`, et la troisième feuille `hidden` |
+| ordre et état des feuilles | ceux de `xl/workbook.xml` |
+| renommages | un `.rtf` et un `.docx` renommés `.xlsx` sont lus **pour ce qu'ils sont** (la signature décide) ; le modèle de cellules refuse alors d'inventer une grille |
+| pannes | classeur tronqué et fichier vide refusés, en disant pourquoi |
+
+**Trois choses que ces contrôles ont apprises, et qui n'étaient pas devinées :**
+
+- **`workbook.xml.rels` doit être filtré sur son type.** Une archive réelle déclare
+  aussi `sharedStrings`, `theme`, `styles` et `sheetMetadata` : prendre la première
+  relation donne une « feuille » qui n'en est pas une ;
+- **une erreur se compare par son nom.** En relisant le `<v>#DIV/0!</v>` qu'il vient
+  d'écrire, SheetJS rend `{t:'e', v:7, w:'#DIV/0!'}` — le **code** dans `v`, le
+  **nom** dans `w` ;
+- **un témoin réel n'exerce pas tout.** Celui du dépôt porte ses chaînes en ligne
+  (`inlineStr`) et n'a ni largeur ni fusion : sans le second témoin, écrit par
+  SheetJS, les chemins les plus fragiles n'auraient jamais été parcourus.
+
+> ⚠️ **La limite, et elle décide du branchement.** Le noyau lit la **valeur
+> stockée** : il ne lit **aucun format de nombre**, donc il ne convertit **jamais**
+> un nombre en date. Ce n'est pas un détail, parce que le produit, lui, lit
+> `raw:false` — « valeurs AFFICHÉES » — et `main.js:41062` dit pourquoi : sans cela,
+> « une date devenait un numéro de série, un pourcentage 0,15, une devise perdait
+> son symbole ». L'écart est **chiffré**, sur trois cellules portant un format, avec
+> les options recopiées du produit :
+>
+> | Format de la cellule | Le noyau lit | Le produit affiche |
+> |---|---|---|
+> | `dd/mm/yyyy` | `46096` | **`15/03/2026`** |
+> | `0%` | `0.15` | **`15%`** |
+> | `#,##0.00 €` | `1450.5` | **`1,450.50 €`** |
+>
+> Brancher le `.xlsx` tel quel **changerait donc ce que l'utilisateur voit** —
+> c'est-à-dire déferait la correction de la v1.7.570. Le joint est pourtant le
+> meilleur de tous les imports : `window.XLSX` est une **bibliothèque**, donc
+> substituable **sans une ligne dans `main.js`** (voir B3b). Ce qu'il faudrait
+> porter avant, c'est le **format de nombre** — `numFmtId` et ses formats intégrés
+> — et c'est un travail borné, non commencé, écrit ici pour ne pas être découvert.
+
 #### B8c. PostScript, EPS et `.ai` — le morceau qu'on croyait ingrat
 
 **PostScript est un langage, pas un format.** Un `.eps` réel commence par un
@@ -724,8 +790,8 @@ s'appelle elle-même), 100 000 dessins, 10 000 objets de pile.
 
 - un opérateur **connu mais non interprété** est **refusé**, avec sa raison, parce
   que son ignorance **perd du dessin** : `show` (le texte demanderait police, corps
-  et approches), `image`, `forall`, `loop`, `arct`, `file`, l'horloge, la mémoire,
-  les paramètres d'appareil. **51 refus nommés** ;
+  et approches), `image`, `forall`, `loop`, `file`, l'horloge, la mémoire,
+  les paramètres d'appareil. **49 refus nommés** ;
 - un opérateur **inconnu** est **signalé sans arrêter la lecture**, parce qu'un EPS
   réel arrive souvent avec un prologue tronqué. `/GS0 gs` en est l'exemple le plus
   courant, et refuser tout le fichier pour un marqueur d'état sans effet
@@ -744,8 +810,29 @@ est **assumé et mesuré**, et il est le seul du domaine.
 | aires de découpage, connues par construction (8 cas unitaires) | 25 · 40 · 175 · 150 · 25 · 100 · 400 — **exactes** |
 | tolérance d'aplatissement, **par l'écart à la courbe vraie** | 0,5 → écart **0,474** ; 0,05 → **0,0366** ; 0,005 → **0,0023** |
 | un cercle de rayon 40 | aire à **0,1 %** de π r², boîte au centième |
+| `arct`/`arcto` contre une seconde écriture, indépendante | **23 sommets** comparés, écart maximal **3,9e-10** ; les 4 valeurs que `arcto` empile sont **consommées** par deux `lineto` |
+| aire d'un `arct` (quart de disque) | **19,5143** contre **19,6350** → **−0,61 %**, le résidu de l'approximation en Béziers |
 | refus nommés | **20 / 20**, chacun nomme l'opérateur *et* la raison |
 | opérateur inconnu | signalé, et le dessin est quand même lu |
+
+**`arct` et `arcto` : l'arc tangent à deux droites.** Le centre se trouve sur la
+**bissectrice**, à `rayon / sin(θ/2)` du sommet, et les points de tangence à
+`rayon / tan(θ/2)` sur chaque droite — et les **deux sont signés par le rayon**, ce
+qui fait qu'un rayon négatif place le cercle de l'autre côté **sans cas
+particulier à écrire**. Deux difficultés réelles : `arct` raisonne en **repère
+utilisateur** (le sommet et le second point y sont donnés) alors que le point
+courant est tenu en **repère appareil** — d'où une inversion de matrice, et un
+**refus nommé** quand elle n'existe pas (échelle nulle) plutôt qu'une devinette ;
+et l'arc suit le **chemin le plus court**, d'amplitude `180° − angle`, ce qui lève
+l'ambiguïté entre les deux sens sans paramètre supplémentaire. Un cas dégénéré
+(droites confondues) ne devine pas : il trace la droite jusqu'au sommet, et
+`arcto` empile le sommet deux fois.
+
+Les **−0,61 %** de l'aire sont un fait, et non un défaut : un arc est rendu par des
+Béziers, et l'approximation a un résidu. C'est exactement l'écart que le test voisin
+du cercle mesurait déjà, et la tolérance du contrôle est donc de **1 %** — ni plus
+serrée, ce qui ferait échouer un dessin juste, ni plus large, ce qui laisserait
+passer une géométrie fausse.
 
 #### B8c-bis. Le découpage, appliqué et mesuré
 
@@ -792,7 +879,6 @@ booléennes, appliquée au même objet.
 
 **Ce qui n'est pas fait, et qui est écrit ici pour ne pas être découvert :**
 
-- `arct` et `arcto` (arc tangent à deux droites) sont **refusés**, pas approximés ;
 - le découpage **est appliqué** (voir B8c-bis) ; le dessin du `clip` reste
   enregistré et non peint, comme le produit l'attend ;
 - le **texte** n'est pas interprété (donc pas de libellés) ;
@@ -801,9 +887,10 @@ booléennes, appliquée au même objet.
   cas sur deux, à changer la géométrie en silence. Le noyau le **signale** ;
 - les `.ai` **enregistrés en PDF** sont refusés, en expliquant pourquoi et en
   renvoyant à Illustrator : le noyau écrit du PDF, il n'en lit pas ;
-- le **RTF** est reconnu mais non analysé, et le `.doc` binaire (OLE2) non plus ;
-- le `.xlsx` n'est pas lu comme un classeur : son XML est atteignable, mais le
-  modèle de cellules n'est pas porté ;
+- le **RTF** est reconnu et **lu** (voir B8c-ter), mais le `.doc` binaire (OLE2) et
+  le `.xls` binaire ne le sont pas ;
+- le `.xlsx` **est lu** comme un classeur (voir B8b-bis), mais **sans les formats
+  de nombre** : une date reste le nombre de jours, une remise reste `0.15` ;
 - en **SVG**, ce dont l'ignorance perdrait du dessin est **refusé** en le nommant
   (`<image>`, `<use>`, un remplissage `url(#…)`, `clip-path`, `mask`, `filter`,
   une feuille `<style>`), et ce qui décrit sans dessiner est **compté**
@@ -813,14 +900,15 @@ booléennes, appliquée au même objet.
 
 Ces limites sont les mêmes que celles du produit, à deux exceptions près — et les
 deux vont dans le même sens : le noyau **refuse** là où le produit **ignore**
-(`show`, `arct`), et il **applique** ce que le produit **jette** (`clip`).
+(`show`), et il **applique** ce que le produit **jette** (`clip`).
 
 **Le PostScript est branché** (voir la section F, « L'import PostScript ») :
 `main.js` accepte un `window.SPEps` déjà posé, il n'y a donc eu aucune ligne à
 y ajouter. L'interpréteur vient de `crates/superprint-ps`, et le noyau est
-livré dans **son propre** module WebAssembly (**322 Ko**, chargé à la demande)
+livré dans **son propre** module WebAssembly (**324,8 Ko**, chargé à la demande)
 pour ne pas alourdir celui du démarrage — le découpage appliqué ne lui a rien
-coûté, et la mesure le vérifie à chaque contrôle. Le
+coûté, `arct`/`arcto` lui ont coûté **+2,6 Ko** (322,2 → **324,8 Ko**), et la
+mesure le vérifie à chaque contrôle. Le
 **docx, l'odt, l'idml et le SVG restent
 offerts**, et la raison est mesurée en B3b : leur point d'accroche est
 `_spImportDocxFile` pour les trois premiers, mais l'extraction et la composition
@@ -1333,7 +1421,7 @@ dans son propre module :
 |---|---|---|
 | crate | `superprint-wasm` | `superprint-eps-wasm` |
 | fichier | `superprint_core.wasm` | `superprint_eps.wasm` |
-| taille mesurée | **406 Ko** | 322 Ko |
+| taille mesurée | **406,5 Ko** | **324,8 Ko** |
 | exports `sp_*` | **49** | 4 |
 | quand | au démarrage | **à la demande** |
 | qui paie | tout le monde | ceux qui importent un `.eps` |

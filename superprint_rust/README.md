@@ -84,7 +84,12 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 - **`superprint-doc`** — **import de documents et de dessin**. Les formats
   documentaires `.docx`, `.odt` et `.idml`, analysés depuis le conteneur ZIP
   (`superprint-zip`) : paragraphes, styles, niveau de titre, listes, tableaux,
-  images et format de page, chaînables vers la pagination. Et le **RTF**, qui
+  images et format de page, chaînables vers la pagination. Le **classeur `.xlsx`**
+  aussi, mais avec un modèle **à lui** — références (`B12`), valeurs typées,
+  largeurs de colonne, fusions, feuilles multiples et leur état — confronté
+  cellule par cellule à **SheetJS**, le lecteur que le produit embarque déjà ; les
+  formats de nombre ne sont **pas** lus, et l'écart est chiffré (voir
+  `docs/PORTAGE.md`, B8b-bis). Et le **RTF**, qui
   n'est pas une archive mais un arbre d'accolades, lu d'un seul parcours — porté
   par **comparaison caractère par caractère** avec le lecteur du produit. Et le
   **dessin SVG** :
@@ -115,16 +120,16 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **1023 tests unitaires** (`superprint-compress` 36,
-> `superprint-core` 37, `superprint-doc` 137, `superprint-eps-wasm` 5,
+> wasm32-unknown-unknown`, et **1043 tests unitaires** (`superprint-compress` 36,
+> `superprint-core` 37, `superprint-doc` 149, `superprint-eps-wasm` 5,
 > `superprint-flow` 51, `superprint-font` 31, `superprint-icc` 21,
 > `superprint-image` 110, `superprint-impose` 43, `superprint-montage` 22,
 > `superprint-path` 94,
-> `superprint-pdf` 109, `superprint-preflight` 45, `superprint-ps` 93,
+> `superprint-pdf` 109, `superprint-preflight` 45, `superprint-ps` 101,
 > `superprint-swatch` 46, `superprint-text` 73, `superprint-wasm` 44,
-> `superprint-zip` 26) — tous verts.
+> `superprint-zip` 26) — plus **7 exemples de documentation**, tous verts.
 >
-> Le module livrable est construit dans **`dist/superprint_core.wasm`** (≈ 406 Ko),
+> Le module livrable est construit dans **`dist/superprint_core.wasm`** (406,5 Ko),
 > chargé **sans le moindre import**, et validé sur huit points :
 >
 > - **parité croisée** — sur 250 000 pixels, RVB→CMJN, CMJN→RVB et la luminance

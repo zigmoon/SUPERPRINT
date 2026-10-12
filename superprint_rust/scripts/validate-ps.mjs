@@ -1957,6 +1957,21 @@ titre('Structure : la liste des opérateurs et la liste des refus sont saines');
     doubles.length === 0,
     doubles.length ? `à la fois : ${doubles.join(', ')}` : `${refuses.size} refus nommés`,
   );
+
+  // Les deux listes doivent dire la MÊME chose : le contrôle indépendant refuse
+  // exactement ce que le noyau refuse. Sans cette comparaison, un opérateur
+  // retiré d'un seul côté — parce qu'il est enfin interprété, ou parce qu'il a
+  // été oublié — passerait inaperçu, et c'est précisément la dérive que ce
+  // contrôle existe pour attraper.
+  const seulementNoyau = [...refuses].filter((a) => !REFUS.has(a)).sort();
+  const seulementControle = [...REFUS].filter((a) => !refuses.has(a)).sort();
+  check(
+    'la liste de refus du noyau est celle du contrôle indépendant, opérateur pour opérateur',
+    seulementNoyau.length === 0 && seulementControle.length === 0,
+    seulementNoyau.length || seulementControle.length
+      ? `noyau seul : ${seulementNoyau.join(', ') || '—'} | contrôle seul : ${seulementControle.join(', ') || '—'}`
+      : `${refuses.size} opérateurs, des deux côtés`,
+  );
 }
 
 /* ═════════ 8. comparaison avec le produit : ce qu'il sait, et pas nous ════
