@@ -134,6 +134,17 @@ Step 'montage : la planche imposee, relue par pdf-lib' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-montage.mjs }
 }
 
+# Validation du RTF : le produit possede DEJA un lecteur RTF correct
+# (`spRtfToText`). On ne l'ecrit donc pas une troisieme fois : les fonctions sont
+# EXTRAITES de `sp-doc-import.js` et evaluees dans un bac a sable, puis le texte
+# du noyau doit etre identique CARACTERE PAR CARACTERE, sur les RTF reels du
+# depot et sur dix cas ecrits a la main. Le format de page est compare en
+# structure, et les refus sont exerces.
+Step 'RTF : parite caractere par caractere avec le lecteur du produit' {
+  & $cargo build -p superprint-doc --example doc_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-rtf.mjs }
+}
+
 # Validation de la REDUCTION D'IMAGE : exactitude au bit pres contre une moyenne
 # entiere calculee independamment, survie d'un motif fin que l'echantillonnage
 # fait disparaitre, conservation de l'energie, et invariants.

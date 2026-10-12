@@ -16,11 +16,11 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-12) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 18 crates, tests compris) | **45 187 lignes** |
-| dont annotations `#[test]` | 998 tests, tous verts |
+| Rust (`crates/`, 18 crates, tests compris) | **46 233 lignes** |
+| dont annotations `#[test]` | 1015 tests, tous verts |
 | exports `sp_*` de la frontière C | **48** (0 import), sur **deux** modules |
 | modules livrables | 380 Ko (noyau) + **322 Ko** (import PostScript, à la demande) |
-| étapes de contrôle (`scripts/check.ps1`) | **30** |
+| étapes de contrôle (`scripts/check.ps1`) | **31** |
 | JavaScript applicatif (hors bibliothèques tierces) | **126 581 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
@@ -33,7 +33,7 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
 | dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript | ce qui sert vraiment à l'utilisateur |
 | **Volume JS porté** (somme des plages citées) | **13 832 / 18 803** → **74 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 45 187 / 112 138 → **40,3 %** | ⚠️ le plus trompeur des quatre |
+| **Lignes** Rust / JS | 46 233 / 112 138 → **41,2 %** | ⚠️ le plus trompeur des quatre |
 
 La plage ajoutée par l'import PostScript est mesurée ainsi : dans
 `superprint/app/JS/sp-eps-import.js` (939 lignes), tout ce qui précède
@@ -60,8 +60,8 @@ Les 11 domaines, nommés, avec leur état : **césure** ✅ (branché) ·
 **limites à l'intérieur de domaines terminés** — et elles sont toutes écrites, dans
 les sections B correspondantes, sous le titre « ce qui n'est pas fait ». Les plus
 notables : le `.doc` binaire (OLE2) et le modèle de cellules du `.xlsx` ne sont pas
-lus ; le RTF est **reconnu mais pas analysé** ; `arct`/`arcto` sont **refusés** et
-non interprétés ; un `clip` est **enregistré mais non appliqué** ; les `.ai`
+lus ; le HTML et le TXT sont **reconnus mais non analysés** ; `arct`/`arcto` sont **refusés** et
+non interprétés ; un `clip` **est appliqué** ; les `.ai`
 enregistrés en PDF sont **refusés** au lieu d'être lus (le noyau écrit du PDF, il
 n'en lit pas) ; et en SVG, `<image>`, `<use>`, les dégradés, les découpages et les
 feuilles de style sont **refusés en les nommant**, plutôt que rendus de travers.
@@ -124,7 +124,7 @@ déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
 | 26 | **Géométrie vectorielle et Pathfinder** | `superprint-path` | surface du résultat vérifiée sur **224 000 points**, 45 identités d'aires, 0 refus injustifié |
 | 31 | **Épaississement d'un trait** (jonctions, extrémités, limite d'onglet) | `path::plume` | la **définition** (distance au tracé) recalculée à part sur **1,5 million de points** : le rond est *égal*, l'onglet plus grand, le biseau plus petit | 🟢 offert |
 | 27 | **Conteneur ZIP** (lecture, DEFLATE, CRC-32) | `superprint-zip` | 10 fichiers réels relus par un lecteur écrit à part : **56 entrées, 569 826 octets identiques** | 🟢 offert |
-| 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères | 🟢 offert |
+| 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` / **RTF** | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères ; RTF : **parité caractère par caractère** avec `spRtfToText` sur 5 témoins et 10 cas piégeux | 🟢 offert |
 | 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné, découpage appliqué) | `superprint-ps` | 4 témoins, **109 sommets** comparés à un interpréteur écrit à part, et le dessin découpé vérifié sur **1 525 points** ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
 | 30 | **Dessin SVG** (commandes de chemin, formes, transformations) | `superprint-doc::svg` | **40 SVG réels** du dépôt, **172 formes et 10 404 sommets** comparés à un lecteur écrit à part ; tolérance mesurée sur la courbe vraie ; table des couleurs relevée du produit | 🟢 offert |
 | 32 | **Montage d'une planche imposée** (pose, rognage, repères, couleurs, PDF/X) | `superprint-montage` | planche assemblée puis **relue par `pdf-lib`** : boîtes, places et rognages exacts au dixième de micromètre, sens des lignes lu dans les pixels, PDF/X-1a avec le profil du produit | 🟢 offert |
@@ -585,7 +585,7 @@ par coin). J'avais d'abord écrit **77,657** — la mesure a corrigé mon attend
 | `.odt` (OpenDocument) | `sp-doc-import.js` + `DOMParser` du navigateur | ✅ `superprint-doc::odt` |
 | `.idml` (InDesign) | `main.js` 41812-45723 (~3 900 l.) | ✅ `superprint-doc::idml` |
 | EPS / AI (PostScript) | `sp-eps-import.js` (869 l.) | ✅ `superprint-ps` |
-| RTF, HTML, TXT | `sp-doc-import.js` | ❌ **reconnus mais non analysés** (voir plus bas) |
+| RTF, HTML, TXT | `sp-doc-import.js` | 🟠 **RTF lu** (texte et mise en page) ; HTML et TXT **reconnus mais non analysés** |
 | SVG | délégué au navigateur (`fabric.loadSVGFromString`) | ✅ `superprint-doc::svg` — commandes de chemin, formes, transformations, aplatissement |
 
 Le domaine se découpe en trois, et chacun a sa preuve.
@@ -603,8 +603,9 @@ Il **reconnaît la saveur** du contenu : `%PDF-`, `%!PS`, `PK`, l'en-tête OLE2 
 
 **Deux trouvailles mesurées, et gênantes pour l'utilisateur :**
 
-- `_dev/fixtures-396/renomme.odt` **est un RTF**, pas un document OpenDocument. Le
-  lecteur le dit maintenant (`nature : rtf`) au lieu d'échouer sans expliquer ;
+- `_dev/fixtures-396/_fixtures_396/renomme.odt` **est un RTF**, pas un document OpenDocument. Le
+  noyau le **lit comme du RTF** — le format vient du contenu, pas de l'extension — là
+  où il le refusait avant que le lecteur RTF n'existe ;
 - `_dev/fixtures/Logo_licra_vecto.ai` **est un PDF 1.6**, pas du PostScript —
   Illustrator enregistre ses `.ai` en PDF dès que la compatibilité PDF est active,
   ce qui est le défaut. C'est ce fichier qui a décidé de la conception de B8c.
@@ -629,10 +630,9 @@ OpenDocument, points pour IDML.
 | paragraphes comparés à un extracteur écrit à part | 10 documents réels, **1 414 paragraphes, tous identiques** |
 | formats de page recalculés dans l'autre sens | 10 / 10 (A4 en twips → **210,0086 mm**, pas 210,06) |
 | invariante de texte (rien de perdu, rien d'inventé) | `_gros_120p.docx`, **328 000 caractères** |
-| refus nommés | RTF renommé, PDF renommé, archive sans document, XML abîmé, entité inconnue |
+| refus nommés | PDF renommé, archive sans document, XML abîmé, entité inconnue — et **un RTF renommé est maintenant LU**, le format venant du contenu |
 
-**Trois fautes trouvées dans le noyau par ces contrôles, et corrigées** : les entités
-XML n'étaient résolues que dans les **attributs** (`&amp;` restait littéral dans le
+**Trois fautes trouvées dans le noyau par ces contrôles, et corrigées** : les entitésXML n'étaient résolues que dans les **attributs** (`&amp;` restait littéral dans le
 texte) ; le contenu `CDATA` était résolu alors qu'il doit rester littéral ; et la
 recherche d'entité était trop large, au point de lire `AT&T et R&amp;D` comme une
 entité nommée `T et R&amp`.
@@ -763,6 +763,64 @@ offerts** : leur point d'accroche est `_spImportDocxFile` pour les trois premier
 et `addSvgFromContent` — appelée par `handleDroppedSvgFile`, toutes deux privées à
 l'IIFE de `main.js` — pour le SVG. L'analyse du docx est enchevêtrée avec `mammoth`
 et la génération de HTML, donc avec `flowHtmlIntoPages`, privée elle aussi.
+
+#### B8c-ter. Le RTF — porté par **comparaison**, pas par réécriture
+
+Le RTF a une chance que les autres formats d'import n'ont pas : le produit possède
+**déjà** un lecteur correct, `spRtfToText` — écrit, puis corrigé sur des
+documents réels (« l?artisan », « Riched20 10.0; » au milieu du texte). Écrire un
+troisième lecteur aurait ajouté un troisième jeu de conventions à défendre.
+
+Le portage suit donc une autre méthode, et c'est le cœur de ce qu'il faut
+retenir : les fonctions du produit sont **extraites de `sp-doc-import.js`**,
+évaluées dans un bac à sable, et le texte du noyau doit être **identique
+caractère pour caractère**. C'est la seule preuve du dépôt où le JavaScript du
+produit **est** la référence, au lieu d'être recalculé à côté.
+
+`superprint_doc::rtf` fait un **parcours unique** de l'arbre d'accolades :
+
+| Ce que le parcours fait | Pourquoi |
+|---|---|
+| sauter les groupes des destinations non textuelles (`fonttbl`, `colortbl`, `pict`, `header`, `\*`…) | sans quoi le contenu d'une table de polices entrerait dans le texte |
+| décoder `\'hh` par la table **CP1252** | les caractères accentués y sont écrits en octets, pas en Unicode |
+| décoder `\uN` (décimal, négatif → +65536) et sauter le **caractère de repli** annoncé par `\ucN` | sans ce saut, « l'artisan » devient « l?artisan » |
+| garder `\par`, `\line`, `\tab`, `\emdash`, `\ldblquote`… | les perdre collerait deux mots |
+| relever `\paperw`/`\paperh` (twips) pour le **format de page** | c'est du papier, donc une donnée de mise en page |
+
+**Quatre choses que la mesure a tranchées**, et qui sont écrites plutôt que
+supposées :
+
+1. `\u8217?` donne bien « ’ » — mais `\u8217 ?artisan` donne **« ’?artisan »** :
+   l'échappement **ne consomme pas** l'espace qui suit, et c'est donc l'espace qui
+   occupe la place de repli. Le `?` reste. Défaut réel, reproduit ;
+2. le marqueur de numéro de page `{N}` de l'en-tête ressort en **« N »** : le
+   produit remplace ensuite toutes les accolades par des espaces, y compris les
+   siennes. Défaut réel, reproduit ;
+3. `\tab` produit une tabulation, mais la **normalisation des blancs** la ramène
+   à une espace. C'est cohérent — et c'est mesuré ;
+4. la liste des destinations ignorées contient `mmathPr`, écrit en camelCase
+   alors que le mot de contrôle est mis en minuscules avant la recherche :
+   l'entrée **n'est jamais atteinte**. Un `\mmathPr` n'est donc pas sauté. Le
+   corriger rendrait le portage *meilleur* que la référence, et la comparaison
+   échouerait sur un vrai document MathML. Il est donc **reproduit**, et signalé.
+
+Une fonction du produit, `spRtfHorsFlux`, est **définie et jamais appelée** —
+le corps exclut déjà les en-têtes par la liste des destinations. Elle n'est pas
+portée : porter du code mort laisserait croire qu'il sert.
+
+**Un changement de comportement, assumé et vérifié** : un `.odt` qui contient du
+RTF est désormais **lu comme du RTF**. Il était refusé du temps où le noyau ne
+savait pas lire le RTF ; la règle du noyau — le format vient du **contenu** —
+impose de le lire. Le contrôle de `validate-doc.mjs` a été retourné en
+conséquence : il exige maintenant `format = rtf` et un texte non vide, au lieu
+d'un refus.
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| parité avec `spRtfToText`, sur les RTF **réels** du dépôt | **5 témoins, 1 959 caractères identiques** |
+| les cas qui piègent, avec des attendus **calculés à part** | **10 / 10** — accents CP1252, repli `\uN`, `\uc0`, `\*`, tirets, onglets, saut de page, en-tête |
+| le format de page contre `spRtfPageSize`, bornes comprises | **7 / 7** — dont 3 refus |
+| une source qui commence par `{\` | lue comme du RTF, jamais prise pour une archive |
 
 #### B8d. Le dessin SVG — de la géométrie, pas du texte
 
@@ -1010,6 +1068,7 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | **Conteneur ZIP** | lecteur ZIP écrit à part (annuaire + `inflateRawSync`), archives fabriquées à la main | **56 entrées, 569 826 octets identiques au bit près**, 14 refus nommés, saveur reconnue |
 | **Import docx / odt / idml** | analyseur XML et extracteurs écrits à part, plus une invariante de texte | **1 414 paragraphes identiques**, 328 000 caractères sans perte, 3 fautes du noyau trouvées |
 | **Import PostScript** | interpréteur PostScript écrit à part (lexeur, pile, matrice, aplatissement) | **109 sommets identiques à 1e-6**, le dessin découpé vérifié sur **1 525 points**, aires connues exactes, tolérance mesurée sur la courbe vraie |
+| **RTF** | `spRtfToText` et `spRtfPageSize` **extraits de `sp-doc-import.js`** et évalués dans un bac à sable | **5 témoins réels, 1 959 caractères identiques**, 10 cas piégeux, format de page 7 / 7 |
 | **Import SVG** | analyseur XML, lecteur de `d`, matrice, arcs et aplatissement écrits à part | **40 fichiers réels, 172 formes, 10 404 sommets identiques à 5e-10**, aires connues exactes, table des couleurs relevée de `jspdf.umd.min.js` (143 noms) |
 | **Branchement césure (colle)** | `hypher.js` + dictionnaires du produit | **5 langues, 2 433 mots identiques** |
 | **Branchement césure (livré)** | fichiers réels de `superprint/app/JS/` | **2 129 mots × 5 langues, réversibilité et repli** |

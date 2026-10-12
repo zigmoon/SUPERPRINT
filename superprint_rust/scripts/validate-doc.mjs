@@ -1192,10 +1192,27 @@ function refus(nom, octets, motif) {
 }
 
 {
-  // Un RTF renommé : le témoin réel `renomme.odt`.
+  // Un RTF renommé en `.odt` : le témoin réel `renomme.odt`.
+  //
+  // ⚠️ **Changement de comportement, assumé.** Ce fichier était refusé — « pas
+  // une archive » — du temps où le noyau ne lisait pas le RTF. Il l'est
+  // maintenant, et la règle du noyau est de déduire le format du **contenu** :
+  // le renommer en `.odt` ne change pas ce qu'il est. Le refus a donc été
+  // remplacé par une lecture, et un contrôle positif : le format trouvé est
+  // `rtf`, et le texte est là.
   const renomme = join(parent, '_dev/fixtures-396/_fixtures_396/renomme.odt');
   if (existsSync(renomme)) {
-    refus('renomme.odt', readFileSync(renomme), 'pas une archive');
+    const nom = 'renomme-rtf.odt';
+    writeFileSync(temporaire(nom), readFileSync(renomme));
+    const sortie = temporaire('renomme-rtf.tsv');
+    const r = lancerSouple('resume', `target/doc/${nom}`, `target/doc/renomme-rtf.tsv`);
+    const tsv = existsSync(sortie) ? readFileSync(sortie, 'utf8') : '';
+    const format = (tsv.split(/\r?\n/).find((l) => l.startsWith('format\t')) ?? '').split('\t')[1];
+    check(
+      'un RTF renommé en `.odt` est lu comme du RTF (le format vient du contenu)',
+      format === 'rtf' && r.code === 0,
+      `format : ${format ?? 'refusé'}`,
+    );
   }
   // Un PDF renommé en .docx.
   refus('faux.docx', Buffer.from('%PDF-1.6\nun pdf déguisé\n%%EOF'), 'pas une archive');

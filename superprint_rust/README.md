@@ -84,7 +84,10 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 - **`superprint-doc`** — **import de documents et de dessin**. Les formats
   documentaires `.docx`, `.odt` et `.idml`, analysés depuis le conteneur ZIP
   (`superprint-zip`) : paragraphes, styles, niveau de titre, listes, tableaux,
-  images et format de page, chaînables vers la pagination. Et le **dessin SVG** :
+  images et format de page, chaînables vers la pagination. Et le **RTF**, qui
+  n'est pas une archive mais un arbre d'accolades, lu d'un seul parcours — porté
+  par **comparaison caractère par caractère** avec le lecteur du produit. Et le
+  **dessin SVG** :
   les commandes de chemin de la spécification (`M L H V C S Q T A Z`, absolues et
   relatives), `rect` à coins arrondis, `circle`, `ellipse`, `line`, `polyline`,
   `polygon`, `transform`, unités CSS, attributs de présentation hérités — les
@@ -111,8 +114,8 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **998 tests unitaires** (`superprint-compress` 36,
-> `superprint-core` 37, `superprint-doc` 120, `superprint-eps-wasm` 5,
+> wasm32-unknown-unknown`, et **1015 tests unitaires** (`superprint-compress` 36,
+> `superprint-core` 37, `superprint-doc` 137, `superprint-eps-wasm` 5,
 > `superprint-flow` 51, `superprint-font` 31, `superprint-icc` 21,
 > `superprint-image` 110, `superprint-impose` 43, `superprint-montage` 20,
 > `superprint-path` 94,
@@ -161,7 +164,12 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 >   `pdf-lib`** : les trois boîtes de page, la place de chaque page, les
 >   rectangles de rognage, les repères, les espaces couleur et les clés PDF/X
 >   coïncident avec la règle sur **6 configurations**, au dixième de micromètre.
->   Le **sens des lignes** est lu dans les pixels du fichier — aucun retournement.
+>   Le **sens des lignes** est lu dans les pixels du fichier — aucun retournement ;
+> - **RTF** — les fonctions du produit (`spRtfToText`, `spRtfPageSize`) sont
+>   **extraites de `sp-doc-import.js`** et évaluées dans un bac à sable : le texte
+>   du noyau est identique **caractère pour caractère** sur les RTF réels du
+>   dépôt, et le format de page comme les refus sont confrontés aux mêmes
+>   fonctions.
 >
 > Un `pwsh -File scripts/check.ps1` enchaîne tout, validation comprise.
 
@@ -172,7 +180,7 @@ conversion RVB → CMJN et l'import PostScript, branchés sans modifier `main.js
 **repli JavaScript** dont la parité est mesurée octet pour octet. Voir
 `web/BRANCHEMENT.md`.
 
-Le noyau représente à ce jour **40,3 %** du JavaScript applicatif de
+Le noyau représente à ce jour **41,2 %** du JavaScript applicatif de
 SuperPrint — en lignes, c'est le plus trompeur des quatre chiffres qui mesurent
 l'avancement : `docs/PORTAGE.md` les donne tous les quatre, avec l'inventaire
 **étape par étape, fonction par fonction**, ce qui est porté, ce qui reste à

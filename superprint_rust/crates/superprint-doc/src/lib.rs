@@ -7,6 +7,9 @@
 //! **style**, leur **niveau de titre**, les **images** qu'ils appellent, et le
 //! **format de page**.
 //!
+//! **Un format balisé** — le **RTF** ([`rtf`]) : ce n'est pas une archive, c'est
+//! un arbre d'accolades, et il est lu d'un seul parcours.
+//!
 //! **Un format de dessin** — il ouvre un **SVG** ([`svg`]) et en tire les
 //! **formes** : commandes de chemin, formes élémentaires, transformations,
 //! attributs de présentation, aplatis en polylignes dans le repère du canevas.
@@ -69,6 +72,7 @@
 pub mod docx;
 pub mod idml;
 pub mod odt;
+pub mod rtf;
 pub mod svg;
 pub mod xml;
 
@@ -86,6 +90,13 @@ pub enum Format {
     Odt,
     /// InDesign Markup (`.idml`).
     Idml,
+    /// Rich Text Format (`.rtf`).
+    ///
+    /// C'est le seul format de ce crate qui **ne soit pas une archive** : le RTF
+    /// est un arbre d'accolades, lu d'un seul parcours. Il vit donc ici pour la
+    /// même raison que les trois autres — c'est un document dont on tire du
+    /// texte — et son lecteur est [`rtf`].
+    Rtf,
 }
 
 impl Format {
@@ -96,6 +107,7 @@ impl Format {
             Self::Docx => "docx",
             Self::Odt => "odt",
             Self::Idml => "idml",
+            Self::Rtf => "rtf",
         }
     }
 
@@ -106,6 +118,7 @@ impl Format {
             Self::Docx => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             Self::Odt => "application/vnd.oasis.opendocument.text",
             Self::Idml => "application/vnd.adobe.indesign-idml-package",
+            Self::Rtf => "application/rtf",
         }
     }
 }
@@ -271,12 +284,19 @@ impl Memoire {
     /// Ouvre un document à partir des octets de son fichier.
     ///
     /// Le format est **déduit du contenu**, pas du nom de fichier : un `.odt` qui
-    /// contient du RTF est refusé, pas interprété.
+    /// contient du RTF est lu **comme du RTF**, parce que c'est ce qu'il est.
     ///
     /// # Erreurs
     ///
     /// Voir [`ErreurImport`].
     pub fn depuis_octets(octets: Vec<u8>) -> Result<Self, ErreurImport> {
+        // ⚠️ Le RTF est reconnu **avant** d'essayer d'ouvrir une archive : ce
+        // n'en est pas une. Sans ce test, l'erreur dirait « ce n'est pas un
+        // document reconnu » alors que c'est un format que le noyau sait lire —
+        // et c'est exactement le défaut qui a existé jusqu'ici.
+        if rtf::ressemble_a_du_rtf(&octets) {
+            return rtf::lire(&octets);
+        }
         let archive = Archive::lire(octets)?;
         Self::importer(&archive)
     }
