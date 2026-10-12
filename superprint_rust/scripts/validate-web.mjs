@@ -113,6 +113,36 @@ check(
 titre('chargement du noyau par la colle');
 const bytes = await readFile(wasmPath);
 const api = await Core.load({ bytes });
+
+// ⚠️ Une seule instance par URL : deux modules WebAssembly dans la même page,
+// ce sont deux mémoires linéaires et deux jeux d'état qui ne se voient pas. Le
+// branchement (césure, couleurs) et la colle du montage chargent le même
+// fichier : ils doivent recevoir le même moteur.
+{
+  const premier = Core.load({ url: 'faux/noyau.wasm' });
+  const second = Core.load({ url: 'faux/noyau.wasm' });
+  check('deux load() de la même URL rendent la même instance', premier === second);
+
+  const souple = await Core.load({ url: 'faux/noyau.wasm' });
+  check('un appel souple rend le moteur de repli', souple.backend === 'js', souple.fallbackReason || '');
+  let strictEchoue = false;
+  try {
+    await Core.load({ url: 'faux/noyau.wasm', fallback: false });
+  } catch {
+    strictEchoue = true;
+  }
+  check(
+    'mais la MÊME URL en strict échoue : les deux choix ne partagent pas la promesse',
+    strictEchoue,
+    'sinon le strict recevrait un moteur JavaScript en croyant que WebAssembly a marché',
+  );
+
+  check(
+    'et un load() par octets reste indépendant',
+    Core.load({ bytes }) !== Core.load({ bytes }),
+    'c’est le chemin des contrôles, qui chargent des modules différents',
+  );
+}
 check('moteur WebAssembly actif', api.backend === 'wasm', `repli : ${api.fallbackReason ?? '—'}`);
 
 const manifeste = await readFile(join(root, 'Cargo.toml'), 'utf8');

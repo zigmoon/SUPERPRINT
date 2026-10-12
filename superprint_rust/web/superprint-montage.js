@@ -28,8 +28,14 @@
 
    Au démarrage de l'application, dans un temps mort. L'export imposé n'est pas
    un geste rare, et faire attendre l'utilisateur au premier clic pour charger
-   406 Ko serait payer deux fois : le noyau est de toute façon chargé au
-   démarrage par `superprint-branchement.js` (césure, couleurs).
+   406 Ko serait payer deux fois.
+
+   ⚠️ **Ce chargement ne coûte rien de plus** : `SuperPrintCore.load()` met en
+   cache **une seule instance par URL**, et `superprint-branchement.js` charge la
+   même URL au démarrage. La colle du montage reçoit donc le moteur qui est déjà
+   là, et le partage est mesuré (`scripts/validate-web.mjs`). Deux instances
+   auraient signifié deux mémoires linéaires et deux jeux d'état — `sp_doc_*` et
+   `sp_montage_*` — qui ne se voient pas.
 
    ## Les limites, écrites ici pour ne pas être découvertes
 

@@ -2241,14 +2241,42 @@
   /**
    * Charge le noyau.
    *
+   * ⚠️ **Une seule instance par URL** (et par choix de repli). Un module
+   * WebAssembly a sa propre mémoire linéaire : l'instancier deux fois dans la
+   * même page, c'est payer deux fois les 1 088 Ko de départ, et deux jeux d'état
+   * (`sp_doc_*`, `sp_montage_*`) qui ne se voient pas. Le branchement (césure,
+   * couleurs) et la colle du montage chargent le MÊME fichier : ils reçoivent
+   * donc le même moteur, par la même promesse.
+   *
+   * Les appels par `bytes` ne sont pas mis en cache : c'est le chemin des
+   * contrôles, qui chargent des modules différents à la suite.
+   *
    * @param {object} [options]
    * @param {string} [options.url]      URL du `.wasm` (fetched).
    * @param {ArrayBuffer|Uint8Array} [options.bytes]  octets déjà en main (évite un aller-retour réseau).
    * @param {boolean} [options.fallback=true]  retomber sur le JavaScript si le module échoue.
    * @returns {Promise<object>} moteur prêt à l'emploi ; `backend` vaut `'wasm'` ou `'js'`.
    */
-  async function load(options) {
+  var chargements = Object.create(null);
+
+  function load(options) {
     var o = options || {};
+    if (!o.url || o.bytes) return chargerNoyau(o);
+    // ⚠️ La clé porte aussi le CHOIX DE REPLI. Deux appelants qui chargent la
+    // même URL ne demandent pas forcément la même chose : l'un accepte un moteur
+    // JavaScript, l'autre (`fallback: false`) veut savoir que WebAssembly a
+    // échoué. Partager la promesse entre les deux rendrait le second menteur.
+    var cle = o.url + '|' + (o.fallback === false ? 'strict' : 'souple');
+    if (Object.prototype.hasOwnProperty.call(chargements, cle)) return chargements[cle];
+    chargements[cle] = chargerNoyau(o).catch(function (erreur) {
+      // Un échec n'est pas mis en cache : l'appel suivant a le droit de réessayer.
+      delete chargements[cle];
+      throw erreur;
+    });
+    return chargements[cle];
+  }
+
+  async function chargerNoyau(o) {
     var raison = null;
     var bytes = o.bytes;
 
