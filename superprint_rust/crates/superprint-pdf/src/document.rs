@@ -325,6 +325,33 @@ pub enum Op {
         /// Hauteur affichée.
         height: f64,
     },
+    /// **Ouvre une zone de rognage** : tout ce qui est peint ensuite est
+    /// découpé au rectangle donné, jusqu'à l'opération [`Op::EndClip`]
+    /// correspondante.
+    ///
+    /// C'est l'opérateur `W` du PDF (`q … re W n`), et il est indispensable dès
+    /// qu'on assemble une planche : la page de gauche et celle de droite se
+    /// touchent, leurs fonds perdus intérieurs se recouvrent, et sans rognage
+    /// l'une dessine par-dessus l'autre. Le produit le fait avec un `clipPath`
+    /// de Fabric par objet ; ici, c'est le PDF qui porte le découpage, ce qui
+    /// est plus simple **et** plus sûr : le découpage est dans le fichier, pas
+    /// dans la façon dont on l'a fabriqué.
+    ///
+    /// Les opérations de rognage s'**emboîtent** (comme `q`/`Q`), et le
+    /// générateur de flux refuse un `EndClip` sans `Clip` — un `Q` de trop
+    /// dépilerait l'état graphique du document entier.
+    Clip {
+        /// Abscisse du coin inférieur gauche, en millimètres du format fini.
+        x: f64,
+        /// Ordonnée du coin inférieur gauche.
+        y: f64,
+        /// Largeur du rectangle conservé.
+        width: f64,
+        /// Hauteur du rectangle conservé.
+        height: f64,
+    },
+    /// Referme la dernière zone de rognage ouverte.
+    EndClip,
     /// Pose du texte, en millimètres du format fini.
     ///
     /// Le texte part en **identifiants de glyphe**, comme l'exige une police
@@ -472,6 +499,25 @@ impl Page {
                     flux.push_str("Q\n");
                     let _ = xobject;
                 }
+                Op::Clip {
+                    x,
+                    y,
+                    width,
+                    height,
+                } => {
+                    // `q` avant le clip : sans lui, le `Q` de [`Op::EndClip`]
+                    // ne pourrait pas rendre le découpage, et le rognage
+                    // s'appliquerait à tout le reste de la page.
+                    flux.push_str("q\n");
+                    flux.push_str(&format!(
+                        "{} {} {} {} re\nW n\n",
+                        object::number(mm_to_pt(*x)),
+                        object::number(mm_to_pt(*y)),
+                        object::number(mm_to_pt(*width)),
+                        object::number(mm_to_pt(*height))
+                    ));
+                }
+                Op::EndClip => flux.push_str("Q\n"),
                 Op::Text {
                     font,
                     size_pt,

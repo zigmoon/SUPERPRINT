@@ -1,0 +1,24 @@
+# Assemblage d'une planche imposée.
+#
+# Ce crate **assemble** : il prend un plan (calculé par `superprint-impose`) et
+# les rendus des deux pages, et il en produit un PDF (écrit par
+# `superprint-pdf`). Il ne décide pas où vont les pages — c'est `impose` — et il
+# n'écrit pas de PDF à la main — c'est `pdf`. Sa seule responsabilité est la
+# couture entre les deux : poser chaque rendu à sa place, rogner ce qui dépasse,
+# tracer les repères, et convertir les couleurs selon le mode demandé.
+
+[package]
+name = "superprint-montage"
+description = "Assemblage d'une planche imposee : pose, rognage, reperes, couleurs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+superprint-core = { path = "../superprint-core" }
+superprint-image = { path = "../superprint-image" }
+superprint-impose = { path = "../superprint-impose" }
+superprint-pdf = { path = "../superprint-pdf" }

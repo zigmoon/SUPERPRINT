@@ -66,6 +66,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-montage"
+version = "0.2.0"
+dependencies = [
+ "superprint-core",
+ "superprint-image",
+ "superprint-impose",
+ "superprint-pdf",
+]
+
+[[package]]
 name = "superprint-path"
 version = "0.2.0"
 dependencies = [

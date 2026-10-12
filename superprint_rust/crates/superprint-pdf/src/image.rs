@@ -26,7 +26,7 @@
 
 use crate::object;
 use superprint_compress::compresser_zlib;
-use superprint_image::{run_length_encode, GrayImage, RgbImage};
+use superprint_image::{run_length_encode, CmjnImage, GrayImage, RgbImage};
 
 /// Espace couleur d'une image XObject.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -35,6 +35,14 @@ pub enum ImageColorSpace {
     DeviceRgb,
     /// Un octet par pixel (luminance).
     DeviceGray,
+    /// Quatre octets par pixel (cyan, magenta, jaune, noir).
+    ///
+    /// Cet espace n'est pas une commodité : c'est une **obligation** en PDF/X.
+    /// PDF/X-1a et X-3 interdisent le RVB dans le flux, et le contrôle de
+    /// [`crate::document::Document::write`] refuse d'ailleurs de revendiquer
+    /// une telle conformité en présence d'une image RVB. Une planche CMJN doit
+    /// donc voyager en `DeviceCMYK`, pas en RVB « qu'on convertit plus tard ».
+    DeviceCmyk,
 }
 
 impl ImageColorSpace {
@@ -44,6 +52,17 @@ impl ImageColorSpace {
         match self {
             Self::DeviceRgb => "DeviceRGB",
             Self::DeviceGray => "DeviceGray",
+            Self::DeviceCmyk => "DeviceCMYK",
+        }
+    }
+
+    /// Nombre de composantes par pixel.
+    #[must_use]
+    pub fn channels(self) -> usize {
+        match self {
+            Self::DeviceRgb => 3,
+            Self::DeviceGray => 1,
+            Self::DeviceCmyk => 4,
         }
     }
 }
@@ -132,6 +151,24 @@ impl ImageXObject {
             image.width(),
             image.height(),
             ImageColorSpace::DeviceGray,
+            image.data(),
+            filter,
+        )
+    }
+
+    /// Prépare une image **CMJN** (8 bits par composante).
+    ///
+    /// C'est l'espace des planches d'impression : quatre octets par pixel, et
+    /// aucune conversion implicite à l'ouverture. La conversion RVB → CMJN se
+    /// fait **avant**, par l'appelant, et c'est là qu'elle doit se faire — le
+    /// noyau en a une version vérifiée au bit près contre celle du produit
+    /// (`superprint_core::color::convertir`).
+    #[must_use]
+    pub fn from_cmyk(image: &CmjnImage, filter: ImageFilter) -> Self {
+        Self::new(
+            image.width(),
+            image.height(),
+            ImageColorSpace::DeviceCmyk,
             image.data(),
             filter,
         )

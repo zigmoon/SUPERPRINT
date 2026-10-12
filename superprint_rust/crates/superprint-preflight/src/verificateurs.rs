@@ -181,6 +181,17 @@ fn verifier_operations(
             Op::Fill { path, .. } => {
                 verifier_debordement(path, page, en_cours, sortie);
             }
+            // Le rognage ne peint rien : il n'y a donc ni épaisseur de trait, ni
+            // corps de texte, ni noir à contrôler.
+            //
+            // ⚠️ Limite assumée, et dite : un objet **rogné** est malgré tout
+            // contrôlé contre le format, alors que le rognage l'empêche
+            // justement de dépasser. Le contrôle peut donc signaler un
+            // débordement qui n'existe pas à l'impression. Aller contre ce
+            // silence demanderait de suivre la pile des zones de rognage et
+            // d'intersecter les boîtes ; c'est faisable, ce n'est pas fait, et
+            // cela ne produit jamais l'inverse — un débordement réel caché.
+            Op::Clip { .. } | Op::EndClip => {}
         }
     }
 }
@@ -367,7 +378,7 @@ fn verifier_encres(
         let peinture = match operation {
             Op::Fill { paint, .. } | Op::Stroke { paint, .. } => Some(*paint),
             Op::Text { paint, .. } => Some(*paint),
-            Op::Image { .. } => None,
+            Op::Image { .. } | Op::Clip { .. } | Op::EndClip => None,
         };
         let Some(Paint::Quadri(ColorValue::Cmyk(cmyk))) = peinture else {
             continue;
@@ -415,7 +426,7 @@ fn verifier_encres(
             let peinture = match operation {
                 Op::Fill { paint, .. } | Op::Stroke { paint, .. } => Some(*paint),
                 Op::Text { paint, .. } => Some(*paint),
-                Op::Image { .. } => None,
+                Op::Image { .. } | Op::Clip { .. } | Op::EndClip => None,
             };
             matches!(peinture, Some(Paint::Spot { index, tint }) if index == rang && tint > 0.0)
         });

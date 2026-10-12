@@ -57,6 +57,15 @@ impl Cote {
             Self::Droite => Self::Gauche,
         }
     }
+
+    /// Le nom du côté, tel qu'il apparaît dans un message.
+    #[must_use]
+    pub fn nom(self) -> &'static str {
+        match self {
+            Self::Gauche => "gauche",
+            Self::Droite => "droite",
+        }
+    }
 }
 
 /// La pose d'une page sur la planche, en millimètres, dans le repère du

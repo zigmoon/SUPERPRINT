@@ -16,11 +16,11 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-12) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 17 crates, tests compris) | **43 901 lignes** |
-| dont annotations `#[test]` | 978 tests, tous verts |
+| Rust (`crates/`, 18 crates, tests compris) | **45 187 lignes** |
+| dont annotations `#[test]` | 998 tests, tous verts |
 | exports `sp_*` de la frontière C | **48** (0 import), sur **deux** modules |
 | modules livrables | 380 Ko (noyau) + **322 Ko** (import PostScript, à la demande) |
-| étapes de contrôle (`scripts/check.ps1`) | **29** |
+| étapes de contrôle (`scripts/check.ps1`) | **30** |
 | JavaScript applicatif (hors bibliothèques tierces) | **126 581 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
@@ -33,7 +33,7 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
 | dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript | ce qui sert vraiment à l'utilisateur |
 | **Volume JS porté** (somme des plages citées) | **13 832 / 18 803** → **74 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 43 901 / 112 138 → **39,2 %** | ⚠️ le plus trompeur des quatre |
+| **Lignes** Rust / JS | 45 187 / 112 138 → **40,3 %** | ⚠️ le plus trompeur des quatre |
 
 La plage ajoutée par l'import PostScript est mesurée ainsi : dans
 `superprint/app/JS/sp-eps-import.js` (939 lignes), tout ce qui précède
@@ -122,11 +122,12 @@ déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
 | 24 | **PDF/X** (XMP, `OutputIntent`, revendication) | `pdf::xmp`, `pdf::document` | `pdf-lib` relit le paquet XMP et les quatre clés de conformité | 🟢 offert |
 | 25 | **Pagination et chaînage** | `superprint-flow` | invariante vérifiée (16 cas), défaut de la méthode du produit **mesuré** (18 coupures au milieu d'un mot contre 0) | 🟢 offert |
 | 26 | **Géométrie vectorielle et Pathfinder** | `superprint-path` | surface du résultat vérifiée sur **224 000 points**, 45 identités d'aires, 0 refus injustifié |
-| 31 | **Épaississement d'un trait** (jonctions, extrémités, limite d'onglet) | `path::plume` | la **définition** (distance au tracé) recalculée à part sur **1,5 million de points** : le rond est *égal*, l'onglet plus grand, le biseau plus petit | 🟢 offert | 🟢 offert |
+| 31 | **Épaississement d'un trait** (jonctions, extrémités, limite d'onglet) | `path::plume` | la **définition** (distance au tracé) recalculée à part sur **1,5 million de points** : le rond est *égal*, l'onglet plus grand, le biseau plus petit | 🟢 offert |
 | 27 | **Conteneur ZIP** (lecture, DEFLATE, CRC-32) | `superprint-zip` | 10 fichiers réels relus par un lecteur écrit à part : **56 entrées, 569 826 octets identiques** | 🟢 offert |
 | 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères | 🟢 offert |
 | 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné, découpage appliqué) | `superprint-ps` | 4 témoins, **109 sommets** comparés à un interpréteur écrit à part, et le dessin découpé vérifié sur **1 525 points** ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
 | 30 | **Dessin SVG** (commandes de chemin, formes, transformations) | `superprint-doc::svg` | **40 SVG réels** du dépôt, **172 formes et 10 404 sommets** comparés à un lecteur écrit à part ; tolérance mesurée sur la courbe vraie ; table des couleurs relevée du produit | 🟢 offert |
+| 32 | **Montage d'une planche imposée** (pose, rognage, repères, couleurs, PDF/X) | `superprint-montage` | planche assemblée puis **relue par `pdf-lib`** : boîtes, places et rognages exacts au dixième de micromètre, sens des lignes lu dans les pixels, PDF/X-1a avec le profil du produit | 🟢 offert |
 
 ---
 
@@ -235,6 +236,62 @@ pose, rogner chaque forme à sa zone autorisée par l'algèbre booléenne du noy
 écrire la planche avec `superprint-pdf`) et une **porte d'entrée** que
 l'application appelle. Le plan, les repères, la pose et la zone sont faits et
 mesurés ; c'est le rendu qui reste.
+
+#### B3a. L'assemblage de la planche ✅ (fait, et mesuré)
+
+Le plan **décide**, `superprint-pdf` **écrit**, et `superprint-montage`
+**assemble** : c'est le troisième crate, né de cette seule couture. Il ne calcule
+pas la géométrie (c'est `impose`) et n'écrit pas la syntaxe PDF (c'est `pdf`) —
+sans quoi l'un des deux traînerait l'autre derrière lui.
+
+| Étape de l'assemblage | Rust |
+|---|---|
+| Le format fini de la planche = zone couvrante des deux pages, gouttière comprise | `Plan::format_fini_mm` |
+| La pose de chaque page, et sa zone autorisée | `impose::Pose` |
+| Le fond blanc sur tout le média | `Op::Fill` + `Path::Rect`, débordé de `fond perdu + marge + 3` … de `fond perdu + marge` |
+| Le **rognage** de chaque page à sa zone autorisée | `Op::Clip` — l'opérateur `W` du PDF |
+| Les **repères** du plan (12, ou 16 en découpe page à page) | `reperes_de_coupe` + `Op::Stroke` |
+| Le blanc et le noir **dans la quadri de la page** | CMJN : noir à 100 % seul ; RVB : noir à 0/0/0 |
+| La conversion RVB → CMJN des pixels | `superprint_core::color::convertir`, vérifiée au bit près |
+| Le profil de sortie, la conformité, les métadonnées | `OutputIntent`, `Conformite`, `DocInfo` |
+
+**Trois décisions, et chacune a une raison :**
+
+- **le rognage est dans le fichier**, pas dans la façon dont il a été fabriqué. Le
+  produit découpe chaque objet avec un `clipPath` de Fabric juste avant de
+  rasteriser — le découpage n'existe donc que dans la mémoire du navigateur. Ici
+  c'est l'opérateur `q … re W n … Q` du flux PDF, et un lecteur peut le **voir** ;
+- **les images sont CMJN en PDF/X**, pas RVB « qu'on convertira plus tard » :
+  PDF/X-1a interdit le RVB dans le flux, et le noyau **refuse** de revendiquer une
+  conformité en présence d'une image RVB ([`DocError::PdfxRvbInterdit`]). C'est un
+  garde-fou, et il est testé ;
+- **aucun retournement de lignes**. Un flux d'image PDF commence à la ligne du
+  **haut**, comme un canevas et comme un `ImageData` : la coïncidence est une
+  propriété, donc une chose mesurée, pas supposée.
+
+**Preuve mesurée** : `scripts/validate-montage.mjs` assemble des planches réelles
+et les fait relire par **`pdf-lib`**, le lecteur du produit. La géométrie attendue
+est recalculée à partir de la **règle**, jamais recopiée du Rust.
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| les trois boîtes (média, format fini, fond perdu), 6 configurations | exactes à **0,1 µm** — le plancher d'écriture du PDF, quatre décimales en points |
+| la place de chaque page (matrice `cm`), 6 configurations × 2 places | exacte, déduite de la pose |
+| le rognage (rectangles `re W n`), 6 configurations × 2 places | exact, déduit de la zone autorisée |
+| les repères | 12 sans gouttière, 16 en découpe page à page, **0** sans marge technique |
+| le **sens des lignes**, lu dans les pixels du fichier | la moitié haute est la première : **aucun retournement** |
+| les espaces couleur | `/DeviceRGB`, `/DeviceCMYK`, `/DeviceGray` selon le mode |
+| le poids CMJN contre RVB | **5674** contre **4819** octets : quatre canaux, pas trois |
+| PDF/X-1a avec un vrai profil du produit | `/GTS_PDFXVersion`, `PDF/X-1a:2001`, `/DestOutputProfile`, `pdfaid:part` — et **aucune** image RVB |
+| les refus | spécification sans `!page`, mode inconnu, PDF/X-1a en RVB, PDF/X sans profil |
+
+> **Ce qui reste pour que le bouton de l'application s'en serve.** L'assemblage
+> est fait et mesuré ; il manque la **colle** — un `web/superprint-montage.js` qui
+> rend chaque page dans un canevas Fabric, envoie les deux rendus RVB au noyau, et
+> remplace `window.exportImposedPDF`. La porte d'entrée existe et est
+> **prioritaire** au clic (`index.html` fait `window.exportImposedPDF ||
+> exportImposedPDF`) : aucune ligne de `main.js` n'est nécessaire. Le contrat est
+> défini, et ce qui manque est le rendu, pas la décision.
 
 **Non porté, et pourquoi** : l'imposition N-up (4, 8, 16 poses), la rotation,
 la signature/cahier et le dos carré collé. Le produit ne les a pas non plus :
@@ -940,6 +997,7 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | **Césure** | `hypher.js` + règles FR de `main.js` | **2 644 mots, sept champs identiques** |
 | **Compression** | `zlib` de Node | **aller-retour croisé**, 15 jeux, 2 sens |
 | **Imposition** | `calculateImposition`, les 3 copies de la taille de feuille, les déclarations `clipX0`…`clipY1` et les `pdf.line()` **extraits de `main.js`** | **25 tailles d'ordre, 3 copies × 4 configurations, 8 poses × 2 places à 1e-9 mm, 16 traits de coupe** |
+| **Montage d'une planche** | la **règle** (format fini, marge, fond perdu imprimé), recalculée en JS ; les pixels relus dans le fichier | **6 configurations : boîtes, places et rognages exacts à 0,1 µm** ; 12 ou 16 repères ; aucun retournement de lignes ; PDF/X-1a sur un vrai profil |
 | **Réduction d'image** | moyenne arithmétique entière calculée indépendamment | **au bit près**, motif fin préservé, énergie conservée |
 | **Prépresse** | documents construits et rapport relu par les **mêmes** outils que l'application | **détection *et* silence** : 9 contrôles, chacune des deux moitiés mesurée |
 | **Nuanciers** | `swatchbooks.js`, `index.html` et le `lireAse` du produit, **extraits** | **catalogue identique octet par octet**, 7 bibliothèques, 688 teintes, divergence `.ase` exposée |

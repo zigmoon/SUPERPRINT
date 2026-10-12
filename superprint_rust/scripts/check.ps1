@@ -123,6 +123,17 @@ Step 'imposition : ordre, feuille et traits de coupe contre main.js' {
   if ($LASTEXITCODE -eq 0) { node scripts/validate-imposition.mjs }
 }
 
+# Validation du MONTAGE : la planche imposee est **assemblee** par le noyau
+# (pose des deux pages, rognage a la zone autorisee, reperes du plan, conversion
+# des couleurs), puis **relue par pdf-lib** — les trois boites de page, la place
+# de chaque image, les rectangles de rognage, le sens des lignes lu dans les
+# pixels, les espaces couleur et les cles PDF/X. Rien n'est recopie du Rust :
+# la geometrie attendue est recalculee a partir de la regle.
+Step 'montage : la planche imposee, relue par pdf-lib' {
+  & $cargo build -p superprint-montage --example montage_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-montage.mjs }
+}
+
 # Validation de la REDUCTION D'IMAGE : exactitude au bit pres contre une moyenne
 # entiere calculee independamment, survie d'un motif fin que l'echantillonnage
 # fait disparaitre, conservation de l'energie, et invariants.

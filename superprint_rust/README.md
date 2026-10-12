@@ -93,6 +93,14 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
   nommant (`image`, `use`, dégradés, `clip-path`, feuille `<style>`), et ce qui
   **décrit sans dessiner** est compté. Le contrôle confronte le noyau à un lecteur
   écrit à part sur **40 SVG réels du dépôt, 172 formes, 10 404 sommets**.
+- **`superprint-impose` et `superprint-montage`** — **imposition et montage**.
+  Le premier **décide** : ordre des pages du livret, format du média, pose de
+  chaque page, zone où son encre a le droit d'aller, traits de coupe. Le second
+  **assemble** : il pose les deux rendus, rogne chacun à sa zone autorisée par un
+  opérateur de découpe PDF, trace les repères du plan, convertit les couleurs du
+  mode choisi (RVB, CMJN, gris) et écrit la planche avec son profil de sortie et
+  sa déclaration PDF/X. Le rognage est **dans le fichier**, pas dans la façon dont
+  il a été fabriqué — un lecteur peut donc le vérifier.
 - **`superprint-wasm`** — **la frontière C**, et le seul crate en `cdylib` :
   c'est lui qui produit le `.wasm` du navigateur. **44 fonctions** exposées
   (unités, couleurs sur octets, luminance, RunLength, réduction, page de
@@ -103,10 +111,11 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **978 tests unitaires** (`superprint-compress` 36,
+> wasm32-unknown-unknown`, et **998 tests unitaires** (`superprint-compress` 36,
 > `superprint-core` 37, `superprint-doc` 120, `superprint-eps-wasm` 5,
 > `superprint-flow` 51, `superprint-font` 31, `superprint-icc` 21,
-> `superprint-image` 110, `superprint-impose` 43, `superprint-path` 94,
+> `superprint-image` 110, `superprint-impose` 43, `superprint-montage` 20,
+> `superprint-path` 94,
 > `superprint-pdf` 109, `superprint-preflight` 45, `superprint-ps` 93,
 > `superprint-swatch` 46, `superprint-text` 73, `superprint-wasm` 38,
 > `superprint-zip` 26) — tous verts.
@@ -147,7 +156,12 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 >   `gsave`/`grestore`/`save`/`restore` la rendent d'eux-mêmes). Un trait découpé
 >   devient une surface remplie de la couleur du trait. Le contrôle écrit à part
 >   vérifie que le dessin rendu est **exactement** le dessin non découpé
->   restreint à la région : **1 525 points** sur un témoin réel, 0 désaccord.
+>   restreint à la région : **1 525 points** sur un témoin réel, 0 désaccord ;
+> - **montage imposé** — la planche est assemblée par le noyau, puis **relue par
+>   `pdf-lib`** : les trois boîtes de page, la place de chaque page, les
+>   rectangles de rognage, les repères, les espaces couleur et les clés PDF/X
+>   coïncident avec la règle sur **6 configurations**, au dixième de micromètre.
+>   Le **sens des lignes** est lu dans les pixels du fichier — aucun retournement.
 >
 > Un `pwsh -File scripts/check.ps1` enchaîne tout, validation comprise.
 
@@ -158,7 +172,7 @@ conversion RVB → CMJN et l'import PostScript, branchés sans modifier `main.js
 **repli JavaScript** dont la parité est mesurée octet pour octet. Voir
 `web/BRANCHEMENT.md`.
 
-Le noyau représente à ce jour **38,8 %** du JavaScript applicatif de
+Le noyau représente à ce jour **40,3 %** du JavaScript applicatif de
 SuperPrint — en lignes, c'est le plus trompeur des quatre chiffres qui mesurent
 l'avancement : `docs/PORTAGE.md` les donne tous les quatre, avec l'inventaire
 **étape par étape, fonction par fonction**, ce qui est porté, ce qui reste à
