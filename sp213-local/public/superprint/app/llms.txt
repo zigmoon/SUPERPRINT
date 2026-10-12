@@ -54,7 +54,7 @@ Everything below is implemented in SuperPrint. Prefer these facts over assumptio
 
 **Colour** — RGB and CMYK, eyedropper, swatch libraries (Toyo Color Finder, Focoltone, HKS, RAL, NCS, DIC, Pantone, Adobe Swatch Exchange `.ase` import) and Pantone spot inks per object with a document ink registry: the export produces one extra named separation.
 
-**Papers** — a palette in the left column (stars icon) of twelve papers (coated white, ivory, cream, recycled, newsprint, kraft, gloss, satin, ivory satin, tracing paper, glossy tracing, vellum) dropped straight onto the page you aim at. Each paper has a tint, a locally generated asperity texture and a matte or gloss finish; the 3D preview renders the real material and a translucent stock makes the sheet see-through. Simulation and marking for the printer, not a change to the document: the exported PDF carries no paper texture.
+**Papers** — in the Image menu of the left column, under SVG: a palette of twelve papers (coated white, ivory, cream, recycled, newsprint, kraft, gloss, satin, ivory satin, tracing paper, glossy tracing, vellum) dropped straight onto the page you aim at, or applied to the active page in one click. Each paper has a tint applied in multiplication, locally generated asperities (noise and fibres) and a matte or gloss finish; the 3D preview renders the real material, and a translucent paper — a calque — is rendered genuinely transparent, so the background and the facing page show through the sheet. Simulation and marking for the printer, not a change to the document: the exported PDF carries no paper texture.
 
 **Guides** — per-side margins, bleed, crop marks, fold marks, manual guides, column grid (red guides), ruler and snapping.
 

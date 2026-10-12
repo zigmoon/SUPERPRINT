@@ -9,7 +9,7 @@
    précachés changent, et c'est ce qui invalide le cache d'un utilisateur.
    Le contrôle `_dev/scripts/_make_zip_492.cjs` exige que ce nom contienne
    `version.txt` — ne pas repartir sur une numérotation parallèle. */
-const CACHE_NAME = 'superprint-shell-v1.7.611-rust-papiers';
+const CACHE_NAME = 'superprint-shell-v1.7.611-rust-papiers-2';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -90,8 +90,9 @@ const APP_SHELL = [
   // déjà précaché ci-dessus (`sp_preflight` est l'un de ses 49 exports).
   './JS/superprint-prepresse.js',
   // 📄 Papiers — catalogue, dépôt et matière. Précachée pour la même raison que
-  // les autres colles : `index.html` la demande au démarrage, et l'icône doit
-  // être là même hors ligne. C'est de la colle pure : aucun octet de noyau.
+  // les autres colles : `index.html` la demande au démarrage, et les entrées du
+  // sous-menu Image doivent être là même hors ligne. C'est de la colle pure :
+  // aucun octet de noyau.
   './JS/superprint-papiers.js',
   './CSS/fonts.css',
   './CSS/fonts/BebasNeue-400-normal-latin.woff2',

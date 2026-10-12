@@ -495,6 +495,12 @@ import * as THREE from './three.module.min.js';
     //   • feuille DROITE (leafR) : reliure à gauche → darkAtLeft = true.
     // Le profil est FORT au pli, décroît vite puis garde un replat à 0 (aucune arête
     // visible en bout de plan). Petit canvas : c'est un simple dégradé 1D.
+    //
+    // ⚠️ NEUF ARRÊTS, et c'est la qualité qui l'exige : à cinq arrêts, un dégradé de
+    //    256 px sur une largeur de 0,22·pageW laissait voir des BANDES (le dégradé
+    //    était interpolé linéairement entre des points trop espacés). Le profil
+    //    couvre maintenant la décroissance en huit segments, ce qui la rend lisse —
+    //    et c'est cette ombre-là qui tombe SUR LE DOCUMENT, le long de la reliure.
     function makeFoldTexture(darkAtLeft) {
         var w = 256, h = 8;
         var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -502,7 +508,8 @@ import * as THREE from './three.module.min.js';
         var g = ctx.createLinearGradient(0, 0, w, 0);
         // [position le long de la feuille, alpha] — position 0 = côté reliure.
         var stops = [
-            [0.00, 0.66], [0.14, 0.50], [0.32, 0.22], [0.50, 0.06], [0.66, 0.00], [1.00, 0.00]
+            [0.00, 0.72], [0.06, 0.62], [0.14, 0.48], [0.24, 0.32], [0.34, 0.18],
+            [0.46, 0.08], [0.58, 0.02], [0.68, 0.00], [1.00, 0.00]
         ].map(function (s) {
             return { o: darkAtLeft ? s[0] : (1 - s[0]), a: s[1] };
         }).sort(function (x, y) { return x.o - y.o; });
@@ -607,24 +614,36 @@ import * as THREE from './three.module.min.js';
            pixels de la bande basse changeaient, écart moyen 39/765). Le rayon
            couvre maintenant TOUT le canevas (`k` de 1 à 0), le dégradé occupe
            donc toute l'étendue, et le pic est plus bas. */
-        var couches = 34;
-        var pas = 1 / couches;
-        /* 0,045 par couche : le pic accumulé au cœur vaut 1 − (1 − 0,045)^34 ≈ 0,79.
-           ⚠️ MESURÉ, pas choisi : à 0,022 (pic 0,53) l'ombre ne changeait le sol
-           que de 5,2 niveaux sur 255 en moyenne — invisible à l'œil. Le sol est vu
-           de très loin sous un angle rasant : le peu de surface qu'on en voit
-           reçoit la PARTIE FAIBLE du dégradé (le bord de l'ellipse), pas son cœur,
-           qui est caché par le livre. Il faut donc un pic franc pour que le bord
-           visible pèse encore quelque chose. */
-        var force = 0.045;
-        for (var i = couches; i >= 1; i--) {
-            var k = i * pas;                  // 1 = liseré externe, ~0 = cœur
-            ctx.globalAlpha = force;
+        /* ⚠️ DEUX COUCHES, parce qu'une ombre de contact n'est pas un dégradé
+           régulier : elle a un CŒUR dense (là où le livre touche le sol) et une
+           PÉNOMBRE large qui s'éteint loin de lui. Un seul empilement à pas constant
+           donne une tache plate — mesuré au premier jet : l'ombre ne se lisait pas
+           comme une occlusion, mais comme un aplat gris.
+             · PÉNOMBRE : 26 passes, rayon de 1,00 à 0,55 du canevas, 0,016/passe ;
+             · CŒUR     : 18 passes, rayon de 0,72 à 0,04,             0,045/passe.
+           Au centre : ≈ 0,34 (pénombre) puis ≈ 0,71 avec le cœur. Le bord visible
+           — qui est la partie faible, le cœur étant caché par le livre — reste donc
+           franchement plus dense qu'avant, ce qui est exactement le défaut corrigé
+           ci-dessus (5,2 niveaux sur 255, invisible à l'œil). */
+        ctx.globalAlpha = 1;
+        var penombre = 26, pasP = 1 / penombre;
+        for (var i = penombre; i >= 1; i--) {
+            var kp = 0.55 + 0.45 * (i * pasP);        // 1,00 → 0,55
+            ctx.globalAlpha = 0.016;
+            ctx.beginPath();
+            ctx.ellipse(s / 2, s / 2, (s / 2) * kp, (s / 2) * kp, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#000000';
+            ctx.fill();
+        }
+        var coeur = 18, pasC = 1 / coeur;
+        for (var j = coeur; j >= 1; j--) {
+            var kc = 0.72 * (j * pasC);               // 0,72 → 0,04
+            ctx.globalAlpha = 0.045;
             /* Léger décalage vers le BAS : la lumière clé vient du haut
                (`keyLight` à y = 8,5), la densité se déplace donc vers le bas. */
-            var cy = s / 2 + (1 - k) * s * 0.04;
+            var cyc = s / 2 + (1 - (j * pasC)) * s * 0.035;
             ctx.beginPath();
-            ctx.ellipse(s / 2, cy, (s / 2) * k, (s / 2) * k, 0, 0, Math.PI * 2);
+            ctx.ellipse(s / 2, cyc, (s / 2) * kc, (s / 2) * kc, 0, 0, Math.PI * 2);
             ctx.fillStyle = '#000000';
             ctx.fill();
         }
@@ -1188,6 +1207,9 @@ import * as THREE from './three.module.min.js';
 
     // Positionne les demies-feuilles de part et d'autre de la reliure (x = 0)
     // et leur donne un léger « V » (volume du pli d'un livre ouvert).
+    // ⚠️ `layoutLeaves` ne place QUE les faces avant/arrière et le pli. Le grain et
+    //    le reflet sont recalés à l'application du papier (`appliquerPapierAuFeuillet`),
+    //    parce qu'ils n'existent qu'à partir du moment où une page a un papier.
     function layoutLeaves() {
         if (!leafL || !leafR || !flipper) return;
         var hw = pageW / 2;
@@ -1302,17 +1324,25 @@ import * as THREE from './three.module.min.js';
          · TEINTE  — la couleur du papier MULTIPLIE l'image de la page. Comme les
                      pages sont rendues en clair (non éclairées, blanc pur), une
                      multiplication est exactement ce que fait un papier teinté.
-         · GRAIN   — les ASPÉRITÉS, dessinées par le module, posées en calque
-                     devant la page. Relevé : `ombre`/`papier.grain` dans `_debug`.
+         · GRAIN   — les ASPÉRITÉS, dessinées par le module (bruit + fibres),
+                     posées en calque DEVANT la page, et RECALÉES sur elle
+                     (`position.x`, _SP3D_PAPIER_714a). Relevé : le bloc `papiers`
+                     de `_debug` (grain, grainOp, grainX, matiere).
          · BRILLANT — un reflet en bande diagonale, en fondu additif.
                      ⚠️ HONNÊTETÉ : sur un papier DÉJÀ blanc pur, ce reflet n'ajoute
                      rien — on ne peut pas éclaircir du blanc, et c'est la vérité
                      physique. La différence ne se mesure donc que sur un papier
                      TEINTÉ (ivoire, crème, kraft). Le banc le vérifie sur l'ivoire
                      et le dit.
-         · CALQUE — un papier translucide rend la FEUILLE translucide : le fond
-                     (ou la page suivante) apparaît au travers. C'est ce que
-                     l'utilisateur appelle « pages papiers calques ».
+         · CALQUE — « calque » VEUT DIRE TRANSPARENT, et on va jusqu'au bout : la
+                     feuille est rendue avec `transparent:true`, une opacité
+                     inférieure à 1, et `depthWrite` COUPÉ (_SP3D_PAPIER_714b).
+                     Sans cette dernière précaution la feuille marquait la
+                     profondeur et masquait ce qui est derrière elle : on ne voyait
+                     RIEN au travers, et « calque » n'était qu'un mot. Ici on voit
+                     réellement au travers — le fond, et l'autre page de la double
+                     page. Les trois papiers concernés (calque 45 %, calque brillant
+                     55 %, vélin 62 %) sont ceux que le catalogue déclare translucides.
        ════════════════════════════════════════════════════════════════════════ */
 
     var cacheGrainTex = {}, cacheSheenTex = null;
@@ -1332,23 +1362,45 @@ import * as THREE from './three.module.min.js';
      * Le grain du papier, en texture three.js. SYNCHRONE : le module rend un
      * canevas déjà dessiné (`spPapiers.grain`), on n'attend donc aucun
      * chargement — le papier est visible dès la première image, sans clignoter.
+     *
+     * 512 px (et non 256) : la tuile est vue de près quand on zoome, et c'est la
+     * définition qui décide si les aspérités se lisent comme une matière ou comme
+     * une bouillie. Le grain est FOURNI PAR LE MÊME GÉNÉRATEUR que l'éditeur
+     * (`dessinerGrain`), à une résolution différente : la finesse relative est la
+     * même (l'échelle du bruit suit le canevas), donc les deux montrent le même
+     * papier.
      */
     function textureDeGrain(p) {
         if (!p || !p.id || !p.grain) return null;
         if (cacheGrainTex[p.id]) return cacheGrainTex[p.id];
         var cv = null;
-        try { cv = window.spPapiers.grain(p.id, 256); } catch (_) {}
+        try { cv = window.spPapiers.grain(p.id, 512); } catch (_) {}
         if (!cv) return null;
         var t = new THREE.CanvasTexture(cv);
         t.colorSpace = THREE.SRGBColorSpace;
         t.wrapS = t.wrapT = THREE.RepeatWrapping;
-        // La tuile de 256 px est répétée pour couvrir la page sans l'étirer :
-        // un grain étiré ne ressemblerait plus à du papier.
-        t.repeat.set(4, 6);
         t.anisotropy = (renderer && renderer.capabilities) ? renderer.capabilities.getMaxAnisotropy() : 1;
+        // Mipmaps conservés (qualité au loin) : le grain est dessiné assez franc
+        // pour survivre à la minification (voir `dessinerGrain`, contraste).
+        t.generateMipmaps = true;
+        t.minFilter = THREE.LinearMipmapLinearFilter;
         cacheGrainTex[p.id] = t;
         texturesDePapier.push(t);
         return t;
+    }
+
+    /**
+     * La répétition de la tuile de grain pour le format COURANT.
+     *
+     * ⚠️ Elle suit `pageW` / `PAGE_H`, et ce n'est pas un détail : un grain réglé
+     * pour l'A4 afficherait, en A3, des aspérités deux fois plus grosses — donc un
+     * AUTRE papier. Appelée à chaque application, elle suit aussi un changement de
+     * format (`appliquerTextures` reconstruit `geoPlane`).
+     */
+    function reglerRepetitionGrain(t) {
+        if (!t) return;
+        t.repeat.set(Math.max(1, Math.round(pageW / 0.34)), Math.max(1, Math.round(PAGE_H / 0.34)));
+        t.needsUpdate = true;
     }
 
     /** Le reflet « brillant » : une bande diagonale douce, en fondu ADDITIF. */
@@ -1381,11 +1433,14 @@ import * as THREE from './three.module.min.js';
         var u = group.userData;
         var p = papierDeLaPage(idx);
         u.papierIdx = idx;
-        u.papier = p ? { id: p.id } : null;
+        u.papier = p ? {
+            id: p.id, nom: p.nom, matiere: p.matiere,
+            transparent: p.transparent || 0, calque: !!p.calque,
+        } : null;
 
         var teinte = (p && p.teinte) ? new THREE.Color(p.teinte) : new THREE.Color(0xffffff);
-        var opacite = (p && p.transparent) ? clamp(1 - p.transparent, 0.05, 1) : 1;
-        var translucide = !!opacite && opacite < 1;
+        var opacite = (p && p.transparent) ? clamp(1 - p.transparent, 0.15, 1) : 1;
+        var translucide = opacite < 0.999;
 
         // ── Teinte + transparence, sur les DEUX faces de la feuille.
         [u.front, u.back].forEach(function (mesh) {
@@ -1393,6 +1448,12 @@ import * as THREE from './three.module.min.js';
             mesh.material.color.copy(teinte);
             mesh.material.transparent = translucide;
             mesh.material.opacity = opacite;
+            /* ⚠️ CALQUE = TRANSPARENT, et il faut aller jusqu'au bout : `depthWrite`
+               doit être COUPÉ sur une feuille translucide. Sinon la feuille écrit
+               dans le tampon de profondeur et MASQUE ce qui est derrière elle :
+               mesuré, la page d'en face et le fond ne se voyaient pas au travers —
+               donc « calque » ne se lisait pas comme un calque. */
+            mesh.material.depthWrite = !translucide;
             mesh.material.needsUpdate = true;
         });
 
@@ -1412,8 +1473,27 @@ import * as THREE from './three.module.min.js';
         u.grain.visible = !!texGrain;
         if (texGrain && u.grain.material) {
             u.grain.material.map = texGrain;
-            // Le grain ne doit jamais dépasser : il nuance le papier, il ne le salit pas.
-            u.grain.material.opacity = clamp((p.grain || 0) * 0.9, 0, 0.5);
+            reglerRepetitionGrain(texGrain);
+            /* La géométrie suit un changement de FORMAT : `appliquerTextures`
+               remplace `geoPlane` pour les faces avant/arrière, mais rien ne
+               rebranchait le grain ni le reflet — ils gardaient donc les dimensions
+               du format précédent (un calque de grain trop petit ou trop grand après
+               un passage A4 → A5). */
+            if (u.grain.geometry !== geoPlane) u.grain.geometry = geoPlane;
+            /* ⚠️ _SP3D_PAPIER_714a — LE GRAIN ÉTAIT À CÔTÉ DE LA PAGE.
+               `u.grain.position.x` n'était JAMAIS posé : la tuile restait centrée
+               sur la RELIURE, donc à cheval sur la page voisine et à moitié dans le
+               vide — une page sur deux sans grain, l'autre à moitié couverte. On la
+               recale sur la page, exactement comme les faces avant/arrière
+               (`layoutLeaves`, qui ne traitait que celles-ci). */
+            u.grain.position.x = u.front ? u.front.position.x : 0;
+            /* Le grain DOSE la matière. `p.grain * 1.5` porte le recyclé (0,42) à
+               0,63 — visible — et laisse le blanc couché (0,05) à 0,075, c'est-à-dire
+               lisse : un papier lisse ne doit pas être sale. Sur une feuille
+               translucide, le grain s'atténue : il est porté par la feuille, il doit
+               donc s'effacer avec elle. */
+            var facteurFeuille = translucide ? (0.45 + 0.55 * opacite) : 1;
+            u.grain.material.opacity = clamp((p.grain || 0) * 1.5 * facteurFeuille, 0, 0.8);
             u.grain.material.needsUpdate = true;
         }
 
@@ -1433,8 +1513,11 @@ import * as THREE from './three.module.min.js';
         var brillant = !!(p && p.matiere === 'brillant');
         u.reflet.visible = brillant;
         if (brillant && u.reflet.material) {
+            // Même recalage que le grain (même raison).
+            u.reflet.position.x = u.front ? u.front.position.x : 0;
+            if (u.reflet.geometry !== geoPlane) u.reflet.geometry = geoPlane;
             u.reflet.material.map = textureDeReflet();
-            u.reflet.material.opacity = 0.22;
+            u.reflet.material.opacity = 0.22 * (translucide ? opacite : 1);
             u.reflet.material.needsUpdate = true;
         }
     }
@@ -2052,11 +2135,19 @@ import * as THREE from './three.module.min.js';
                         out.push({
                             page: g.userData.papierIdx,
                             papier: g.userData.papier ? g.userData.papier.id : null,
+                            matiere: g.userData.papier ? g.userData.papier.matiere : null,
                             teinte: c ? '#' + c.getHexString() : null,
                             opacite: m ? +(m.opacity).toFixed(3) : null,
+                            depthWrite: m ? !!m.depthWrite : null,
                             grain: !!(g.userData.grain && g.userData.grain.visible),
                             grainOp: (g.userData.grain && g.userData.grain.visible && g.userData.grain.material)
                                 ? +(g.userData.grain.material.opacity).toFixed(3) : null,
+                            // _SP3D_PAPIER_714a — la position du grain DANS la feuille :
+                            // elle doit valoir celle de la face avant (± pageW/2), sinon
+                            // la tuile est à cheval sur la reliure.
+                            grainX: (g.userData.grain && g.userData.grain.visible)
+                                ? +g.userData.grain.position.x.toFixed(3) : null,
+                            faceX: +g.userData.front.position.x.toFixed(3),
                             reflet: !!(g.userData.reflet && g.userData.reflet.visible),
                         });
                     });
@@ -2157,6 +2248,6 @@ import * as THREE from './three.module.min.js';
             contactShadow.visible = !!v;
             return contactShadow.visible;
         },
-        _version: 'v17-document-stable'
+        _version: 'v18-papiers-visibles'
     };
 })();
