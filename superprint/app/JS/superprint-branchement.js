@@ -96,7 +96,7 @@
  *    concaténation redonne le mot — c'est ce que `Hypher.hyphenate` rend, et
  *    c'est ce que le noyau rend.
  *
- * Licence : AGPL-3.0-or-later — voir ../LICENSE.
+ * Licence : propriétaire, tous droits réservés — voir ../LICENSE.
  */
 
 (function (global) {

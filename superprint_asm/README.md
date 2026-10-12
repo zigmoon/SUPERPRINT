@@ -156,5 +156,5 @@ peut s'appuyer.
 
 ## Licence
 
-**AGPL-3.0-or-later** — voir [`LICENSE`](LICENSE). Composants tiers :
+**Propriétaire, tous droits réservés** — voir [`LICENSE`](LICENSE). Composants tiers :
 [`NOTICE.md`](NOTICE.md). Marques : [`TRADEMARKS.md`](TRADEMARKS.md).

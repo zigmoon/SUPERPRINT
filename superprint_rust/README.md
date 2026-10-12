@@ -373,4 +373,4 @@ Deux points à connaître :
 
 ## Licence
 
-**AGPL-3.0-or-later** — la même que le reste du produit (voir `../superprint/LICENSE`).
+**Propriétaire, tous droits réservés** — la même que le reste du produit (voir [`../LICENSE`](../LICENSE)).

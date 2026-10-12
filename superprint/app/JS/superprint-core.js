@@ -36,7 +36,7 @@
  * une vue neuve à chaque lecture ou écriture, et ne conserve jamais une vue
  * au-delà de l'appel courant.
  *
- * Licence : AGPL-3.0-or-later — voir ../LICENSE.
+ * Licence : propriétaire, tous droits réservés — voir ../LICENSE.
  */
 
 (function (global) {

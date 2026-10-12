@@ -106,7 +106,7 @@ Le serveur cible reste **Apache/PHP** : `public/.htaccess` et les proxies
 
 ## Licence
 
-Le code est distribué sous **GNU Affero General Public License v3.0** (AGPL-3.0) —
+Le code est distribué sous **licence propriétaire** (tous droits réservés) —
 voir [`LICENSE`](LICENSE). Les composants tiers embarqués restent sous leurs
 licences respectives ([`NOTICE.md`](NOTICE.md)) ; les noms et logos « SuperPrint »,
 « SP213 » et « SuperTyPo » sont des marques, régies séparément

@@ -1,7 +1,7 @@
 # Third-party notices
 
-SuperPrint's own code is licensed under the AGPL-3.0 (see [LICENSE](LICENSE)). It bundles or
-loads the following third-party components, which remain governed by their own licenses:
+SuperPrint's own code is proprietary — all rights reserved (see [LICENSE](LICENSE)). It bundles
+or loads the following third-party components, which remain governed by their own licenses:
 
 | Component | Role in SuperPrint | License |
 |---|---|---|
@@ -20,8 +20,8 @@ loads the following third-party components, which remain governed by their own l
 Each of these projects' license text is included with its own distribution (see, for
 example, [`app/JS/lcms-wasm/LICENSE.md`](app/JS/lcms-wasm/LICENSE.md) and
 [`app/JS/lcms-wasm/README-upstream.md`](app/JS/lcms-wasm/README-upstream.md)). Nothing in
-SuperPrint's AGPL-3.0 license restricts the rights granted by these upstream licenses, and
-nothing in these upstream licenses is superseded by the AGPL-3.0 for the parts they cover.
+SuperPrint's license restricts the rights granted by these upstream licenses, and nothing in
+these upstream licenses is superseded by it for the parts they cover.
 
 ## Fonts
 
@@ -36,12 +36,12 @@ The reference names and indicative values of **Pantone**, **Toyo Color Finder**,
 **Focoltone**, **HKS**, **RAL**, **NCS** and **DIC** are the property of their respective
 rights holders / trademark owners. SuperPrint ships **screen-preview sRGB approximations**
 for on-screen reference only — not the manufacturers' official, calibrated libraries. These
-names and values are not covered by SuperPrint's AGPL-3.0 license. Importing a manufacturer's
+names and values are not covered by SuperPrint's license. Importing a manufacturer's
 own `.ase` (Adobe Swatch Exchange) file gives exact, manufacturer-supplied values; that file
 and its content remain the property of its creator.
 
 ## Trademarks
 
 The names "SuperPrint", "SP213" and "SuperTyPo", and their logos, are trademarks of Simon
-Dupont-Gellert (Zigmoon) and are governed separately from the AGPL-3.0 code license — see
+Dupont-Gellert (Zigmoon) and are governed separately from the license on the code — see
 [TRADEMARKS.md](TRADEMARKS.md).
