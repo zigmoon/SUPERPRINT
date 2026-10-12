@@ -595,6 +595,18 @@
          de main.js n'est touchée. Retirer cette ligne remet l'application à
          l'identique. -->
     <script src="JS/superprint-montage.js?v=20261012-v617-rust-montage" defer></script>
+    <!-- 🦀 Import de DOCUMENTS branché sur son PROPRE noyau Rust (le troisième).
+         406,5 Ko (césure, couleurs, montage) + 324,8 Ko (EPS) + 290,1 Ko
+         (documents) : les trois modules sont séparés pour que personne ne paie
+         pour un geste qu'il ne fera pas. Le lecteur de documents DANS le module
+         précaché l'aurait fait passer de 406,5 à 585,8 Ko (+179,3 Ko pour tout
+         le monde, à vie) ; ici il ne coûte qu'à qui ouvre un document.
+         La colle enveloppe `window._spTexteOdf` (posé par main.js) au lieu de la
+         remplacer : le noyau lit le document, et la fonction du produit reprend
+         la main dès qu'il refuse (un `.ods`, un `.odp`) ou qu'il n'est pas
+         disponible. Elle ajoute aussi la branche `.idml`, qui tombait sur un
+         décodage binaire. Retirer cette ligne remet l'application à l'identique. -->
+    <script src="JS/superprint-doc.js?v=20261013-v618-rust-doc" defer></script>
     <!-- ⚠️ pdfjsLib.GlobalWorkerOptions.workerSrc est configuré par ensurePdfImportLib()
          (main.js) juste après le chargement à la demande de JS/pdf.min.js.
          Toute ressource externe est bannie (politique 100% local). -->

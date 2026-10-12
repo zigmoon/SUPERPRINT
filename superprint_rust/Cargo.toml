@@ -1,17 +1,23 @@
 # Espace de travail Rust de SuperPrint.
 #
-# Feuille de route : docs/PLAN.md. Cinq crates. Les quatre premiers sont purs
-# Rust et **sans aucune dépendance externe** ; le dernier est la frontière C.
+# Feuille de route : docs/PLAN.md. Dix-neuf crates. Les seize premiers sont purs
+# Rust et **sans aucune dépendance externe** ; les trois derniers sont les
+# frontières C, et ce sont les seuls à porter le moindre `unsafe`.
 #
 #   superprint-core   primitives pures (unités, couleurs, géométrie, color8)
 #   superprint-image  traitement d'image (réduction, DPI, RunLength) — module 4
 #   superprint-font   analyse de police TrueType (cmap, métriques)  — module 6
 #   superprint-pdf    tons directs & exporteur de PDF (texte compris) — module 3
-#   superprint-wasm   frontière C, SEUL crate en `cdylib` : il produit le
-#                     `dist/superprint_core.wasm` chargeable par un navigateur
+#   superprint-wasm   frontière C du noyau : `dist/superprint_core.wasm`, le seul
+#                     module PRÉCACHÉ — donc le seul que tout le monde télécharge
+#   superprint-eps-wasm  frontière C de l'import PostScript, à la demande
+#   superprint-doc-wasm  frontière C de l'import de documents, à la demande
 #
-# Les quatre premiers portent `#![forbid(unsafe_code)]` : tout l'`unsafe` de la
-# frontière est concentré dans `superprint-wasm`.
+# Ce qui est RARE ne va pas dans le module précaché : il en coûte la taille deux
+# fois, et chaque arbitrage est mesuré (voir `scripts/build-wasm.ps1`).
+#
+# Les crates de calcul portent `#![forbid(unsafe_code)]` : tout l'`unsafe` de la
+# frontière est concentré dans les trois crates `*-wasm`.
 
 [workspace]
 resolver = "2"
@@ -26,7 +32,7 @@ rust-version = "1.75"
 # et écrire un identifiant SPDX standard ici (AGPL-3.0-or-later, par exemple)
 # serait un mensonge lisible par n'importe quel outil d'audit.
 #
-# Le texte est dans `LICENSE`, à côté de ce fichier. Les dix-huit crates en
+# Le texte est dans `LICENSE`, à côté de ce fichier. Les dix-neuf crates en
 # héritent par `license.workspace = true` : une seule déclaration, donc aucune
 # copie ne peut diverger.
 license = "LicenseRef-Proprietary"

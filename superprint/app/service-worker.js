@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.617-rust-montage';
+const CACHE_NAME = 'superprint-shell-v1.7.618-rust-doc';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -59,9 +59,9 @@ const APP_SHELL = [
   './JS/superprint-branchement.js',
   './JS/superprint_core.wasm',
   // 🦀 Import PostScript : la colle seulement.
-  // Le noyau (superprint_eps.wasm, 245 Ko) reste VOLONTAIREMENT hors du
+  // Le noyau (superprint_eps.wasm, 324,8 Ko) reste VOLONTAIREMENT hors du
   // précache, comme lcms ci-dessus : il ne sert qu'aux imports .eps, et
-  // précaher 245 Ko que la plupart des utilisateurs n'ouvriront jamais serait
+  // précaher 324,8 Ko que la plupart des utilisateurs n'ouvriront jamais serait
   // du gaspillage. Il est récupéré à la demande via la stratégie cache-first,
   // et mis en cache à ce moment-là : le deuxième import est donc local.
   './JS/superprint-eps.js',
@@ -70,6 +70,13 @@ const APP_SHELL = [
   // (superprint_core.wasm, ci-dessus) : le montage vit dans le même module, donc
   // l'export imposé n'ajoute AUCUN téléchargement.
   './JS/superprint-montage.js',
+  // 🦀 Import de documents : la colle seulement, et elle est précachée parce que
+  // `index.html` la demande au démarrage — sans elle, la porte d'entrée du
+  // produit resterait sans enveloppe hors ligne. Le noyau
+  // (superprint_doc.wasm, 290 Ko) reste VOLONTAIREMENT hors du précache, comme
+  // l'EPS : il ne sert qu'aux imports de documents, et il est récupéré à la
+  // demande puis mis en cache — le deuxième import est donc local.
+  './JS/superprint-doc.js',
   './CSS/fonts.css',
   './CSS/fonts/BebasNeue-400-normal-latin.woff2',
   './CSS/fonts/BebasNeue-400-normal-latin-ext.woff2',

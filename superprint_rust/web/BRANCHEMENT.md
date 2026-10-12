@@ -244,11 +244,24 @@ donc retirer la ligne remet l'application à l'identique :
 | césure (5 langues) et conversion des couleurs | `app/JS/superprint-branchement.js` | `superprint_core.wasm` (406,5 Ko, précaché) | `Hypher`, `_spCmykConvert` |
 | import PostScript / EPS | `app/JS/superprint-eps.js` | `superprint_eps.wasm` (324,8 Ko, **à la demande**) | `sp-eps-import.js` |
 | export PDF imposé | `app/JS/superprint-montage.js` | le **même** module que le branchement | l'export vectoriel du produit |
+| import de documents (`.odt`/`.ods`/`.odp`, `.idml`) | `app/JS/superprint-doc.js` | `superprint_doc.wasm` (290,1 Ko, **à la demande**) | `_spTexteOdf` du produit, conservée dans `window.__spTexteOdfJs` |
 
-`main.js` n'a **jamais** été modifié : chaque joint est une couture que le
-produit offrait déjà (`window.hyphenators`, `window._spCmykConvert`,
+`main.js` n'a **jamais** été modifié pour les trois premiers : chaque joint est une
+couture que le produit offrait déjà (`window.hyphenators`, `window._spCmykConvert`,
 `if (window.SPEps)`, `window.exportImposedPDF || exportImposedPDF`).
-C'est un choix explicite — le dossier est en production.
+
+Le quatrième a demandé **trois lignes ajoutées** — c'est une première, et elle est
+écrite pour ne pas être découverte :
+
+```js
+window._spTexteOdf = _spTexteOdf;                        // AJOUT : la porte d'entrée
+var lireOdf = window._spTexteOdf || _spTexteOdf;         // AJOUT : le noyau, sinon le produit
+if (type === 'idml' || ext === 'idml') { … }             // AJOUT : gardé par window.SuperPrintDoc
+```
+
+Aucune ligne existante n'a changé de sens : sans la colle, `window._spTexteOdf`
+vaut exactement la fonction d'avant, et la branche `.idml` ne se déclenche pas.
+Retirer les trois lignes remet l'application à l'identique.
 
 ## Vérifier
 
@@ -259,6 +272,10 @@ pwsh -File scripts/check.ps1
 # l'export imposé BRANCHÉ : contrat mesuré dans main.js, refus, replis, et la
 # chaîne complète jusqu'au PDF relu par pdf-lib
 node scripts/validate-montage-branchement.mjs
+
+# l'import de documents BRANCHÉ : le texte du produit et celui du noyau sur les
+# mêmes octets, puis la chaîne complète (repli compris)
+node scripts/validate-doc-branchement.mjs
 
 # le TEXTE : police embarquée, composition, puis relecture des caractères par
 # pdf.js — c'est la table /ToUnicode qui est mise à l'épreuve

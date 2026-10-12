@@ -29,7 +29,7 @@ documente les défauts **mesurés** sur la chaîne d'export PDF (fichiers de
 
 ## État actuel
 
-**Dix-sept crates, testés et validés — dont deux modules WebAssembly réellement
+**Dix-neuf crates, testés et validés — dont trois modules WebAssembly réellement
 chargeables par un navigateur.** La liste ci-dessous n'est pas exhaustive :
 l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 
@@ -109,7 +109,8 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
   mode choisi (RVB, CMJN, gris) et écrit la planche avec son profil de sortie et
   sa déclaration PDF/X. Le rognage est **dans le fichier**, pas dans la façon dont
   il a été fabriqué — un lecteur peut donc le vérifier.
-- **`superprint-wasm`** — **la frontière C**, et le seul crate en `cdylib` :
+- **`superprint-wasm`** — **la frontière C**, et le premier des trois crates en
+  `cdylib` :
   c'est lui qui produit le `.wasm` du navigateur. **49 fonctions** exposées
   (unités, couleurs sur octets, luminance, RunLength, réduction, page de
   démonstration, document complet **et texte**, imposition, **montage d'une
@@ -120,8 +121,9 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **1043 tests unitaires** (`superprint-compress` 36,
-> `superprint-core` 37, `superprint-doc` 149, `superprint-eps-wasm` 5,
+> wasm32-unknown-unknown`, et **1048 tests unitaires** (`superprint-compress` 36,
+> `superprint-core` 37, `superprint-doc` 149, `superprint-doc-wasm` 5,
+> `superprint-eps-wasm` 5,
 > `superprint-flow` 51, `superprint-font` 31, `superprint-icc` 21,
 > `superprint-image` 110, `superprint-impose` 43, `superprint-montage` 22,
 > `superprint-path` 94,
@@ -267,7 +269,9 @@ superprint_rust/
    ├─ superprint-image/       traitement d'image (module n° 4)
    ├─ superprint-pdf/         tons directs & écriture PDF (module n° 3)
    ├─ superprint-text/        césure et composition (module n° 5)
-   └─ superprint-wasm/        frontière C → dist/superprint_core.wasm (cdylib)
+   ├─ superprint-wasm/        frontière C → dist/superprint_core.wasm (cdylib)
+   ├─ superprint-eps-wasm/    frontière C → dist/superprint_eps.wasm (cdylib)
+   └─ superprint-doc-wasm/    frontière C → dist/superprint_doc.wasm (cdylib)
 ```
 
 ## Vérifier

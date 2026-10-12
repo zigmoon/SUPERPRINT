@@ -23,6 +23,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-doc-wasm"
+version = "0.2.0"
+dependencies = [
+ "superprint-doc",
+]
+
+[[package]]
 name = "superprint-eps-wasm"
 version = "0.2.0"
 dependencies = [

@@ -1,0 +1,30 @@
+[package]
+name = "superprint-doc-wasm"
+description = "Frontière C de l'import de documents du noyau Rust de SuperPrint : un module WebAssembly à part, chargé seulement quand l'utilisateur ouvre un document."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+# ## Pourquoi un crate à part, et pas une fonctionnalité de `superprint-wasm`
+#
+# Le module principal est **précaché** par le service worker : il est donc
+# téléchargé par tout le monde, y compris par qui n'importera jamais un document.
+# C'est le même motif que `superprint-eps-wasm`, appliqué au même problème — et
+# il est **mesuré** avant d'être écrit, pas supposé (voir `docs/PORTAGE.md`).
+#
+# Ce crate ne dépend que de `superprint-doc`, et la frontière n'appelle que trois
+# choses : `depuis_octets`, `texte` et le format de page. Tout le reste du crate
+# — le lecteur SVG, l'algèbre de chemin, le modèle de classeur, `fluidifier` —
+# reste **hors** du module, parce que l'éditeur de liens ne garde que ce qui est
+# atteignable depuis les exports. La taille du module livré le dit.
+#
+# Le module est chargé à la demande par `web/superprint-doc.js`, quand
+# l'utilisateur ouvre un `.odt`, un `.ods`, un `.odp` ou un `.idml`.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+superprint-doc = { path = "../superprint-doc" }

@@ -52,9 +52,28 @@ pub fn lire(archive: &Archive) -> Result<Memoire, ErreurImport> {
     if let Ok(mimetype) = archive.extraire_texte("mimetype") {
         let mimetype = mimetype.trim();
         if !mimetype.is_empty() && mimetype != MIMETYPE_TEXTE {
+            // `trouve` doit dire ce que le fichier contient **vraiment**. Il
+            // portait ici le type MIME du *texte*, que ce fichier n'écrit nulle
+            // part : le message affirmait donc qu'un classeur `.ods` « contient
+            // » un texte ODF. Le corps de `content.xml` le dit sans ambiguïté
+            // (`spreadsheet`, `presentation`, `text`), et il n'est lu **que sur
+            // ce chemin** — jamais pour un document qu'on lit.
+            let corps = analyser_entree(archive, "content.xml", "")
+                .ok()
+                .and_then(|racine| {
+                    racine.enfant("body").and_then(|body| {
+                        body.contenu().iter().find_map(|noeud| match noeud {
+                            crate::xml::Noeud::Element(element) => {
+                                Some(element.local().to_string())
+                            }
+                            crate::xml::Noeud::Texte(_) => None,
+                        })
+                    })
+                })
+                .unwrap_or_else(|| "un autre document OpenDocument".to_string());
             return Err(ErreurImport::FormatContredit {
                 annonce: mimetype.to_string(),
-                trouve: MIMETYPE_TEXTE.to_string(),
+                trouve: corps,
             });
         }
     }

@@ -89,7 +89,10 @@ Step 'colle livree identique a celle du depot' {
     @{ Source = 'dist/superprint_eps.wasm'; Livree = '../superprint/app/JS/superprint_eps.wasm' },
     # Et pour l'export impose : sa colle, et le noyau du branchement — le montage
     # vit DANS le module principal, donc il n'y a pas de quatrieme fichier.
-    @{ Source = 'web/superprint-montage.js'; Livree = '../superprint/app/JS/superprint-montage.js' }
+    @{ Source = 'web/superprint-montage.js'; Livree = '../superprint/app/JS/superprint-montage.js' },
+    # Et pour l'import de documents : sa colle et son module, comme l'EPS.
+    @{ Source = 'web/superprint-doc.js'; Livree = '../superprint/app/JS/superprint-doc.js' },
+    @{ Source = 'dist/superprint_doc.wasm'; Livree = '../superprint/app/JS/superprint_doc.wasm' }
   )
   $identiques = $true
   foreach ($paire in $paires) {
@@ -257,6 +260,22 @@ Step 'import : docx, odt et idml contre un extracteur independant, et invariante
 Step 'classeur xlsx : parite avec SheetJS, XML relu, renommages et pannes' {
   & $cargo build -p superprint-doc --example doc_dump --target wasm32-wasip1 --release
   if ($LASTEXITCODE -eq 0) { node scripts/validate-xlsx.mjs }
+}
+
+# Validation de l'IMPORT DE DOCUMENTS BRANCHE. Le controle fait trois choses :
+# il RELIT le contrat dans main.js et index.html (les trois lignes qui font le
+# branchement, pas une copie), il EXECUTE le lecteur du produit et celui du
+# noyau sur les MEMES octets -- un ODF de synthese qui porte une balise au
+# milieu d'un mot, des entites et `text:s`, et il montre les deux textes ; puis
+# il fait tourner la colle avec le VRAI module WebAssembly : un .odt vient du
+# noyau, un .ods (que le noyau refuse, ce n'est pas un texte ODF) retombe sur la
+# fonction du produit, un module indisponible aussi, et `retirer()` rend l'etat
+# d'avant. Enfin : zero import, un seul export `sp_doc_*`, octets livres
+# identiques au depot.
+Step 'import de documents branche : contrat relu, ecart mesure, et la chaine complete' {
+  & $cargo build -p superprint-doc --example doc_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { pwsh -File scripts/build-wasm.ps1 }
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-doc-branchement.mjs }
 }
 
 # Validation de l'IMPORT SVG : un lecteur ECRIT A PART (son propre analyseur XML,

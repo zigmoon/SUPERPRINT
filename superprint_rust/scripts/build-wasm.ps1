@@ -81,8 +81,38 @@ Copy-Item $builtEps $finalEps -Force
 $koEps = [math]::Round((Get-Item $finalEps).Length / 1KB, 1)
 Write-Host "OK : $finalEps ($koEps Ko)" -ForegroundColor Green
 
-Write-Host "`nLe module principal fait $ko Ko et le module EPS $koEps Ko." -ForegroundColor Green
-Write-Host "L'EPS n'a PAS alourdi le module precache : il vit dans le second." -ForegroundColor Green
+# ── 3. Le module d'import de documents ────────────────────────────────────────
+#
+# Troisieme module, et c'est la MEME mesure qui le justifie. Les deux chiffres
+# ont ete releves en construisant les deux variantes :
+#
+#   le lecteur de documents DANS le module precache : 406,5 -> 585,8 Ko, soit
+#   +179,3 Ko payes par TOUT LE MONDE, a vie ;
+#   le lecteur de documents dans son propre module   : 406,5 Ko inchange,
+#   +290,1 Ko a la demande.
+#
+# Le module a part coute donc 110,8 Ko de PLUS en valeur absolue (290,1 - 179,3),
+# parce qu'il reembarque le lecteur ZIP que le noyau possede deja. Mais il ne les
+# fait payer qu'a qui ouvre un document. C'est l'arbitrage du service worker
+# applique au noyau, pour la troisieme fois.
+#
+# ⚠️ Ce que ce module REMPLACE, mesure aussi : rien. Le JavaScript qu'il double
+# (`_spTexteOdf`, trente lignes) a besoin de JSZip, qui reste charge pour le
+# `.docx`. Le gain n'est donc pas la taille, c'est que le texte cesse d'etre
+# approximatif (une balise au milieu d'un mot le coupait en deux) et qu'un
+# `.idml`, qui tombait sur un decodage binaire, devient lisible.
+Write-Host "-- cargo build -p superprint-doc-wasm ($profile)" -ForegroundColor Cyan
+& $cargo build -p superprint-doc-wasm --target wasm32-unknown-unknown $(if ($profile -eq 'release') { '--release' })
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw 'compilation du module de documents impossible' }
+$builtDoc = Join-Path $root "target\wasm32-unknown-unknown\$profile\superprint_doc_wasm.wasm"
+if (-not (Test-Path $builtDoc)) { Pop-Location; throw "module introuvable : $builtDoc" }
+$finalDoc = Join-Path $dist 'superprint_doc.wasm'
+Copy-Item $builtDoc $finalDoc -Force
+$koDoc = [math]::Round((Get-Item $finalDoc).Length / 1KB, 1)
+Write-Host "OK : $finalDoc ($koDoc Ko)" -ForegroundColor Green
+
+Write-Host "`nLe module principal fait $ko Ko, l'EPS $koEps Ko et les documents $koDoc Ko." -ForegroundColor Green
+Write-Host "Ni l'EPS ni les documents n'alourdissent le module precache : chacun vit dans le sien." -ForegroundColor Green
 
 Pop-Location
 exit 0
