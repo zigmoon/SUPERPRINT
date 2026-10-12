@@ -476,7 +476,7 @@ function aplatir(c, tolerance, sortie = [], profondeur = 0) {
 const REFUS = new Set([
   'show', 'ashow', 'awidthshow', 'widthshow', 'kshow', 'xshow', 'yshow', 'xyshow', 'glyphshow',
   'charpath', 'image', 'imagemask', 'colorimage', 'imagebytes', 'forall', 'loop', 'exit',
-  'stopped', 'stop', 'run', 'arct', 'arcto', 'pathforall', 'setcolor', 'setcolorspace',
+  'stopped', 'stop', 'run', 'pathforall', 'setcolor', 'setcolorspace',
   'definefont', 'selectfont', 'scalefont', 'setfont', 'findfont', 'setcachedevice',
   'setcharwidth', 'filenameforall', 'file', 'write', 'read', 'closefile', 'usertime', 'realtime',
   'date', 'time', 'vmstatus', 'setvmthreshold', 'vmreclaim', 'setpagedevice', 'nulldevice',
@@ -493,7 +493,8 @@ const CONNUS = new Set([
   'defaultmatrix', 'currentmatrix', 'setmatrix', 'translate', 'scale', 'rotate', 'concat', 'cm',
   'transform', 'setgray', 'g', 'setrgbcolor', 'rg', 'RG', 'setcmykcolor', 'k', 'K', 'currentgray',
   'newpath', 'n', 'N', 'moveto', 'm', 'rmoveto', 'lineto', 'l', 'L', 'rlineto', 'curveto', 'c',
-  'C', 'v', 'y', 'rcurveto', 'closepath', 'h', 'H', 're', 'rect', 'arc', 'arcn', 'fill', 'f',
+  'C', 'v', 'y', 'rcurveto', 'closepath', 'h', 'H', 're', 'rect', 'arc', 'arcn', 'arct', 'arcto',
+  'fill', 'f',
   'F', 'eofill', 'f*', 'stroke', 'S', 'clip', 'W', 'eoclip', 'W*', 'showpage', 'erasepage',
   'setlinewidth', 'w', 'setmiterlimit', 'M', 'setlinecap', 'J', 'setlinejoin', 'j', 'setflat',
   'setdash', 'd', 'gs', 'b', 'B', 'b*', 'B*',
@@ -502,6 +503,42 @@ const CONNUS = new Set([
 const mIdentite = () => [1, 0, 0, 1, 0, 0];
 function mPoint(m, x, y) {
   return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
+}
+
+/** L'inverse d'une matrice affine, ou `null` si elle est dégénérée. */
+function mInverse(m) {
+  const det = m[0] * m[3] - m[1] * m[2];
+  if (det === 0) return null;
+  const a = m[3] / det;
+  const b = -m[1] / det;
+  const c = -m[2] / det;
+  const d = m[0] / det;
+  return [a, b, c, d, -(a * m[4] + c * m[5]), -(b * m[4] + d * m[5])];
+}
+
+/** L'arc tangent à deux droites partant du `coin`, écrit depuis la DÉFINITION. */
+function arcTangent(depart, coin, vers, rayon) {
+  const norme = (v) => {
+    const n = Math.hypot(v[0], v[1]);
+    return n === 0 ? null : [v[0] / n, v[1] / n];
+  };
+  if (!rayon || !Number.isFinite(rayon)) return null;
+  const u = norme([depart[0] - coin[0], depart[1] - coin[1]]);
+  const v = norme([vers[0] - coin[0], vers[1] - coin[1]]);
+  if (!u || !v) return null;
+  const biss = norme([u[0] + v[0], u[1] + v[1]]);
+  if (!biss) return null;
+  const cosDemi = u[0] * biss[0] + u[1] * biss[1];
+  const sinDemi = Math.abs(u[0] * biss[1] - u[1] * biss[0]);
+  if (sinDemi < 1e-12 || Math.abs(cosDemi) < 1e-12) return null;
+  const tanDemi = sinDemi / cosDemi;
+  const long = rayon / tanDemi;
+  const haut = rayon / sinDemi;
+  return {
+    t1: [coin[0] + u[0] * long, coin[1] + u[1] * long],
+    t2: [coin[0] + v[0] * long, coin[1] + v[1] * long],
+    centre: [coin[0] + biss[0] * haut, coin[1] + biss[1] * haut],
+  };
 }
 /** `avant` s'applique AVANT `apres` (convention de `concat` en PostScript). */
 function mCompose(avant, apres) {
@@ -915,6 +952,52 @@ class Machine {
           this.pos(depart);
         } else if (dist(this.courant, depart) > 0) this.pos(depart);
         this.tracerArc([x, y], rayon, debut, fin, nom === 'arc');
+        return;
+      }
+      /* `arct` / `arcto` : l'arc tangent à deux droites — le coin arrondi.
+         Écrit ici à partir de la DÉFINITION (bissectrice à rayon / sin(θ/2),
+         tangences à rayon / tan(θ/2)), sans regarder le Rust : c'est ce qui
+         rend la comparaison utile. */
+      case 'arct':
+      case 'arcto': {
+        const rayon = this.nb(nom);
+        const vY = this.nb(nom);
+        const vX = this.nb(nom);
+        const coinY = this.nb(nom);
+        const coinX = this.nb(nom);
+        const m = etat().matrice;
+        const inverse = mInverse(m);
+        if (!inverse) throw new Error(`matrice-non-inversible:${nom}`);
+        // Le point courant est en repère d'appareil : on le ramène en repère
+        // utilisateur, comme le fait la machine Rust.
+        const courant = this.courant
+          ? mPoint(inverse, this.courant[0], this.courant[1])
+          : [coinX, coinY];
+        const geom = arcTangent(courant, [coinX, coinY], [vX, vY], rayon);
+        if (!this.courant) this.chemin.push([]);
+        if (!geom) {
+          // Droites colinéaires : PostScript trace une droite jusqu'au coin, et
+          // `arcto` empile le coin deux fois.
+          this.pos(mPoint(m, coinX, coinY));
+          if (nom === 'arcto') {
+            for (const v of [coinX, coinY, coinX, coinY]) this.pile.push({ t: 'nombre', v });
+          }
+          return;
+        }
+        this.pos(mPoint(m, geom.t1[0], geom.t1[1]));
+        const a1 =
+          (Math.atan2(geom.t1[1] - geom.centre[1], geom.t1[0] - geom.centre[0]) * 180) / Math.PI;
+        const a2 =
+          (Math.atan2(geom.t2[1] - geom.centre[1], geom.t2[0] - geom.centre[0]) * 180) / Math.PI;
+        let delta = (a2 - a1 + 180) % 360;
+        if (delta < 0) delta += 360;
+        delta -= 180;
+        this.tracerArc(geom.centre, Math.abs(rayon), a1, a2, delta >= 0);
+        if (nom === 'arcto') {
+          for (const v of [geom.t1[0], geom.t1[1], geom.t2[0], geom.t2[1]]) {
+            this.pile.push({ t: 'nombre', v });
+          }
+        }
         return;
       }
       case 'fill':
@@ -1494,6 +1577,123 @@ if (existsSync(join(dossier, 'eps-simple.eps'))) {
     `${tsv.dessins.length} dessins`,
   );
 }
+
+/* ═══════ 3b. `arct` / `arcto` : le coin arrondi, mesuré par un tiers ══════
+   `arct`/`arcto` sont écrits DEUX fois : dans le noyau, et ici — à partir de la
+   définition (bissectrice à `rayon / sin(θ/2)`, tangences à `rayon / tan(θ/2)`),
+   sans regarder le Rust. On les confronte sur le même programme, sommet par
+   sommet, puis on confronte l'aire à la géométrie vraie.
+
+   Le second dessin consomme les QUATRE valeurs qu'`arcto` empile : le chemin
+   passe par les deux points de tangence, donc une valeur fausse ou un ordre
+   inversé se verrait dans la comparaison — sans avoir à lire la pile du noyau,
+   que le TSV ne transporte pas. */
+{
+  const PROGRAMME = [
+    '%!PS-Adobe-3.0',
+    // Le coin arrondi, rempli : l'aire est celle d'un quart de disque de rayon 5.
+    'newpath',
+    '0 0 moveto',
+    '10 0 10 10 5 arct',
+    'closepath fill',
+    // Le même, avec `arcto` : la pile porte « 5 0 10 5 » (x1' y1' x2' y2'),
+    // et les deux `lineto` y passent — x2' y2', puis x1' y1'.
+    'newpath',
+    '0 0 moveto',
+    '10 0 10 10 5 arcto',
+    'lineto lineto',
+    '2 setlinewidth stroke',
+    '',
+  ].join('\n');
+
+  const { tsv } = interpreterTexte(PROGRAMME, 0.05);
+  if (tsv.erreur) {
+    check('arct : le noyau interprète le coin arrondi', false, tsv.erreur);
+  } else {
+    let controle = null;
+    try {
+      controle = interpreter(PROGRAMME, 0.05);
+    } catch (e) {
+      check('arct : l’interpréteur de contrôle suit', false, e.message);
+    }
+    if (controle) {
+      check(
+        'arct : les deux écritures produisent le même nombre de dessins',
+        controle.machine.dessins.length === tsv.dessins.length,
+        `${tsv.dessins.length} côté noyau, ${controle.machine.dessins.length} côté contrôle`,
+      );
+      let sommetsArct = 0;
+      let ecartMax = 0;
+      let meme = true;
+      for (let k = 0; k < Math.min(tsv.dessins.length, controle.machine.dessins.length); k += 1) {
+        const a = tsv.dessins[k].sousChemins;
+        const b = controle.machine.dessins[k].sousChemins;
+        if (a.length !== b.length) {
+          meme = false;
+          break;
+        }
+        for (let s = 0; s < a.length && meme; s += 1) {
+          if (a[s].length !== b[s].length) {
+            meme = false;
+            break;
+          }
+          for (let p = 0; p < a[s].length; p += 1) {
+            ecartMax = Math.max(
+              ecartMax,
+              Math.abs(a[s][p][0] - b[s][p][0]),
+              Math.abs(a[s][p][1] - b[s][p][1]),
+            );
+            sommetsArct += 1;
+          }
+        }
+      }
+      check(
+        'arct : les sommets coïncident un à un avec l’autre écriture',
+        meme && sommetsArct > 0,
+        `${sommetsArct} sommets comparés, écart maximal ${ecartMax.toExponential(2)}`,
+      );
+
+      // L'aire : un quart de disque de rayon 5, soit 6,25 π ≈ 19,635. La
+      // tolérance de 1 % est celle de l'aplatissement des arcs (le voisin
+      // `arc_remplace_par_des_beziers` emploie la même), et elle est MESURÉE :
+      // −0,61 %.
+      const aire = Math.abs(tsv.dessins[0].aire);
+      const attendu = Math.PI * 6.25;
+      check(
+        'arct : l’aire est celle du quart de disque, à 1 % près',
+        Math.abs(aire - attendu) / attendu < 0.01,
+        `aire ${aire.toFixed(4)}, attendue ${attendu.toFixed(4)} (écart ${(((aire - attendu) / attendu) * 100).toFixed(2)} %)`,
+      );
+
+      // Et le dessin passe bien par les deux points de tangence : (5,0) et
+      // (10,5) sont dans la boîte du second tracé.
+      const boite = tsv.dessins[1].boite;
+      const seconde = tsv.dessins[1];
+      check(
+        'arcto : le tracé atteint les deux points de tangence qu’il empile',
+        seconde && boite && boite[2] >= 10 - 1e-9 && boite[3] >= 5 - 1e-9,
+        boite ? `boîte ${boite.map((v) => v.toFixed(2)).join(', ')}` : 'sans boîte',
+      );
+    }
+  }
+  mesures.push(`arct : ${tsv.dessins.length} dessin(s), aire du quart de disque`);
+}
+
+/* ═════════════════════════ 3c. les matrices non inversibles ══════════════ */
+{
+  // Une échelle nulle écrase le dessin : `arct` doit REFUSER, en le disant,
+  // plutôt que de placer l'arc dans un repère qui n'existe plus.
+  const { tsv } = interpreterTexte(
+    '%!PS-Adobe-3.0\n0 1 scale newpath 0 0 moveto 10 0 10 10 5 arct\n',
+  );
+  check(
+    'arct refuse une matrice non inversible, et le dit',
+    !!tsv.erreur && /inversible/.test(tsv.erreur),
+    tsv.erreur || 'aucune erreur',
+  );
+}
+
+
 
 /* ═════════════════ 4. qualité de l'aplatissement, par la mesure ══════════
    On ne compare pas deux copies du même algorithme : on mesure l'écart réel

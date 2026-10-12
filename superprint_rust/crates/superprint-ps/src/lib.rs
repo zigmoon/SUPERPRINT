@@ -45,8 +45,16 @@
 //!   dire ;
 //! - **les images bitmap**, les polices, les entrées-sorties, l'horloge, la
 //!   gestion mémoire : hors du sujet, et refusées nommément ;
-//! - **les boucles sans compteur** (`loop`, `forall`) et `arct` : refusées avec
-//!   leur nom, jamais approximées.
+//! - **les boucles sans compteur** (`loop`, `forall`) : refusées avec leur nom,
+//!   jamais approximées.
+//!
+//! `arct` / `arcto` — l'arc tangent à deux droites, c'est-à-dire le **coin
+//! arrondi** — ont longtemps été refusés ici. Ils sont **interprétés** depuis
+//! que la géométrie a été écrite et mesurée : le centre est sur la bissectrice à
+//! `rayon / sin(θ/2)` du coin, les points de tangence à `rayon / tan(θ/2)` sur
+//! chaque droite, et un rayon négatif pose le cercle de l'autre côté sans qu'un
+//! cas particulier soit nécessaire. Les points de tangence sont vérifiés par
+//! l'aire du quart de disque et par les deux valeurs qu'`arcto` empile.
 //!
 //! Chaque refus nomme l'opérateur et **dit pourquoi** — c'est ce qui distingue
 //! un import honnête d'un import qui a l'air complet.
@@ -231,6 +239,18 @@ pub enum ErreurPs {
         /// L'opérateur.
         operateur: String,
     },
+    /// L'opérateur demande de revenir du repère d'appareil au repère
+    /// utilisateur, et la matrice courante n'est pas inversible.
+    ///
+    /// C'est le cas d'un `scale 0`, qui écrase le dessin sur une droite. La
+    /// géométrie de `arct` se lit dans le repère utilisateur (le coin et le
+    /// second point y sont donnés), et le point courant est tenu en repère
+    /// d'appareil : sans inverse, il n'y a pas de repère commun où calculer
+    /// l'arc. Refuser vaut mieux que deviner.
+    MatriceNonInversible {
+        /// L'opérateur.
+        operateur: String,
+    },
     /// Le programme a dépassé le nombre de pas autorisé.
     TropDePas {
         /// La limite.
@@ -286,6 +306,11 @@ impl fmt::Display for ErreurPs {
                     "{operateur} : valeur non finie (division, racine ou logarithme)"
                 )
             }
+            Self::MatriceNonInversible { operateur } => write!(
+                f,
+                "{operateur} : la matrice courante n'est pas inversible (échelle nulle), donc le \
+                 repère utilisateur n'existe plus pour placer l'arc"
+            ),
             Self::TropDePas { limite } => write!(
                 f,
                 "le programme dépasse {limite} pas d'exécution : boucle probable, refusée plutôt \

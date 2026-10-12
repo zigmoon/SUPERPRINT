@@ -1295,6 +1295,82 @@ impl Machine {
                 self.arc(centre, rayon, debut, fin, sens_direct);
                 Ok(())
             }
+            // `arct` (niveau 1) : l'arc de rayon r tangent aux DEUX droites qui
+            // se coupent au coin `(x1, y1)` — la première va du point courant au
+            // coin, la seconde du coin à `(x2, y2)`. C'est l'opérateur du coin
+            // arrondi, et il était refusé jusqu'ici.
+            //
+            // `arcto` fait la même chose et **empile les deux points de
+            // tangence** (x1' y1' x2' y2', dans le repère utilisateur), ce qui
+            // permet au programme de savoir où l'arc commence et finit.
+            "arct" | "arcto" => {
+                let rayon = self.nombre(nom)?;
+                let vers_y = self.nombre(nom)?;
+                let vers_x = self.nombre(nom)?;
+                let coin_y = self.nombre(nom)?;
+                let coin_x = self.nombre(nom)?;
+                let coin = Point::new(coin_x, coin_y);
+                let vers = Point::new(vers_x, vers_y);
+                let matrice = self.etat().matrice;
+                if !matrice.est_inversible() {
+                    // Sans inverse, on ne peut pas exprimer le point courant dans
+                    // le repère où vivent le coin et `vers` : refuser vaut mieux
+                    // que deviner un arc dans un repère faux.
+                    return Err(ErreurPs::MatriceNonInversible {
+                        operateur: nom.to_string(),
+                    });
+                }
+                // Le point courant est en repère d'APPAREIL (c'est ainsi que la
+                // machine le tient) ; la géométrie d'`arct` se lit dans le
+                // repère UTILISATEUR, comme celle d'`arc`.
+                let depart = match self.point_courant {
+                    Some(courant) => matrice.inverse().appliquer(courant),
+                    // Sans point courant, PostScript fait comme s'il était au
+                    // coin : la première droite est alors dégénérée, et c'est le
+                    // cas « droite » qui s'applique.
+                    None => coin,
+                };
+                let tangences = arc_tangent(depart, coin, vers, rayon);
+                match tangences {
+                    Some(arc) => {
+                        // Le segment qui mène au premier point de tangence est le
+                        // long de la PREMIÈRE droite : il est donc collinéaire, et
+                        // c'est ce qui fait le raccord du coin arrondi.
+                        self.positionner(arc.t1.x, arc.t1.y);
+                        let a1 = (arc.t1.y - arc.centre.y).atan2(arc.t1.x - arc.centre.x);
+                        let a2 = (arc.t2.y - arc.centre.y).atan2(arc.t2.x - arc.centre.x);
+                        let a1_deg = a1.to_degrees();
+                        let a2_deg = a2.to_degrees();
+                        // Le chemin le plus COURT : son amplitude est
+                        // `180° − angle entre les deux droites`, donc strictement
+                        // inférieure à 180°, ce qui lève l'ambiguïté des deux
+                        // sens possibles. `arc` veut un rayon positif et un sens.
+                        let delta = (a2_deg - a1_deg + 180.0).rem_euclid(360.0) - 180.0;
+                        self.arc(arc.centre, arc.rayon.abs(), a1_deg, a2_deg, delta >= 0.0);
+                        if nom == "arcto" {
+                            // L'ordre est celui de `currentpoint` : y avant x,
+                            // pour que le sommet de la pile soit le dernier
+                            // nombre lu — ici y2'.
+                            for valeur in [arc.t1.x, arc.t1.y, arc.t2.x, arc.t2.y] {
+                                self.empiler(Objet::Reel(valeur))?;
+                            }
+                        }
+                    }
+                    None => {
+                        // Droites colinéaires, ou coin confondu avec un des deux
+                        // points : PostScript trace une DROITE jusqu'au coin.
+                        // C'est ce que fait `arcto` aussi, en empilant le coin
+                        // deux fois — les deux points de tangence sont confondus.
+                        self.positionner(coin.x, coin.y);
+                        if nom == "arcto" {
+                            for valeur in [coin.x, coin.y, coin.x, coin.y] {
+                                self.empiler(Objet::Reel(valeur))?;
+                            }
+                        }
+                    }
+                }
+                Ok(())
+            }
             // ── peinture ────────────────────────────────────────────────
             "fill" | "f" | "F" => self.peindre(Peinture::Rempli),
             "eofill" | "f*" => self.peindre(Peinture::RempliPairImpair),
@@ -1574,6 +1650,69 @@ fn dessin_de_surface(surface: &Contour, couleur: Couleur) -> Option<Dessin> {
     })
 }
 
+/// L'arc d'un `arct` : ses deux points de tangence et son centre.
+///
+/// Tous les points sont dans le repère **utilisateur**, celui où le programme
+/// PostScript donne le coin et le second point.
+struct ArcTangent {
+    /// Le premier point de tangence — sur la droite qui va du point courant au
+    /// coin. C'est là que l'arc commence, et la droite qui y mène est
+    /// collinéaire : c'est ce qui fait le raccord d'un coin arrondi.
+    t1: Point,
+    /// Le second point de tangence — sur la droite qui va du coin à `vers`.
+    t2: Point,
+    /// Le centre du cercle.
+    centre: Point,
+    /// Le rayon, **signé** : c'est celui que le programme a demandé. Le signe
+    /// décide du côté où le cercle se pose, donc du côté du bombé.
+    rayon: f64,
+}
+
+/// La géométrie d'un `arct` : l'arc de rayon `rayon` tangent aux deux droites
+/// qui se coupent en `coin`, l'une passant par `depart`, l'autre par `vers`.
+///
+/// Rend `None` quand l'arc n'existe pas — droites colinéaires, ou coin confondu
+/// avec l'un des deux points — auquel cas PostScript trace une droite.
+///
+/// ## La construction, et pourquoi elle tient en trois lignes
+///
+/// Le centre du cercle est sur la **bissectrice intérieure** de l'angle, à la
+/// distance `rayon / sin(θ/2)` du coin ; les points de tangence sont sur chaque
+/// droite, à `rayon / tan(θ/2)`. Les deux quantités sont **signées par le
+/// rayon** : un rayon négatif pose donc le cercle de l'autre côté des droites et
+/// les points de tangence sur les demi-droites opposées, ce qui est exactement ce
+/// que dit la spécification. Aucun cas particulier n'est nécessaire.
+fn arc_tangent(depart: Point, coin: Point, vers: Point, rayon: f64) -> Option<ArcTangent> {
+    if !rayon.is_finite() || rayon == 0.0 {
+        return None;
+    }
+    let u = (depart - coin).normalise();
+    let v = (vers - coin).normalise();
+    if !u.est_fini() || !v.est_fini() {
+        // `normalise` rend `(0, 0)` quand le vecteur est nul : le coin coïncide
+        // avec un des deux points.
+        return None;
+    }
+    let bissectrice = (u + v).normalise();
+    if !bissectrice.est_fini() {
+        // `u = -v` : les deux droites sont confondues, l'angle vaut 180°.
+        return None;
+    }
+    let cos_demi = u.scalaire(bissectrice);
+    let sin_demi = u.vectoriel(bissectrice).abs();
+    if sin_demi < 1e-12 || cos_demi.abs() < 1e-12 {
+        // Colinéaire (angle nul) ou angle plat.
+        return None;
+    }
+    let tan_demi = sin_demi / cos_demi;
+    Some(ArcTangent {
+        t1: coin + u * (rayon / tan_demi),
+        t2: coin + v * (rayon / tan_demi),
+        centre: coin + bissectrice * (rayon / sin_demi),
+        rayon,
+    })
+}
+
 /// Lit six nombres dans un tableau, pour en faire une matrice.
 fn lire_matrice(valeurs: &[Objet]) -> Option<Matrice> {
     // PostScript accepte `[a b c d tx ty]` et la forme courte `[a b c d]`
@@ -1721,6 +1860,8 @@ pub const OPERATEURS_CONNUS: &[&str] = &[
     "rect",
     "arc",
     "arcn",
+    "arct",
+    "arcto",
     "fill",
     "f",
     "F",
@@ -1768,9 +1909,6 @@ pub fn refus_connu(nom: &str) -> Option<&'static str> {
         "loop" | "exit" => Some("les boucles sans compteur ne sont pas interprétées"),
         "stopped" | "stop" => Some("la gestion d'erreur du programme n'est pas interprétée"),
         "run" => Some("`run` (charger un autre fichier) n'est pas interprété"),
-        "arct" | "arcto" => {
-            Some("`arct`/`arcto` (arc tangent à deux droites) n'est pas interprété")
-        }
         "pathforall" => Some("`pathforall` n'est pas interprété"),
         "setcolor" | "setcolorspace" => {
             Some("le changement d'espace colorimétrique n'est pas interprété")
@@ -2073,6 +2211,166 @@ mod tests {
     fn arc_en_sens_inverse() {
         let valeurs = executer("newpath 50 50 40 0 90 arcn stroke").unwrap();
         assert!(valeurs.dessins[0].nombre_de_sommets() > 2);
+    }
+
+    /// Une machine après exécution, pour lire la pile et le point courant —
+    /// que `Valeurs` ne transporte pas.
+    ///
+    /// ⚠️ À appeler **sans opérateur de peinture** : `stroke` et `fill` remettent
+    /// le chemin et le point courant à zéro, et l'assertion lirait `None`. Les
+    /// dessins se lisent donc dans un second passage, avec peinture.
+    fn executer_machine(source: &str) -> Machine {
+        let objets = lexeur::analyser(source).expect("lexage");
+        let mut m = machine();
+        m.executer(&objets).expect("exécution");
+        m
+    }
+
+    /// Les nombres du haut de la pile, dans l'ordre où le programme les lirait.
+    fn nombres(m: &Machine, combien: usize) -> Vec<f64> {
+        m.pile
+            .iter()
+            .rev()
+            .take(combien)
+            .rev()
+            .map(|o| match o {
+                Objet::Reel(v) => *v,
+                autre => panic!("attendu un réel, reçu {autre:?}"),
+            })
+            .collect()
+    }
+
+    /// `arct` : le coin arrondi. Mouvement horizontal de (0,0) à (10,0), puis
+    /// vertical de (10,0) à (10,10), rayon 5. Les points de tangence sont donc
+    /// (5,0) et (10,5), et le centre (5,5) — c'est de la géométrie, pas une
+    /// convention.
+    #[test]
+    fn arct_arrondit_un_coin_droit() {
+        let m = executer_machine("newpath 0 0 moveto 10 0 10 10 5 arct");
+        assert_eq!(
+            m.point_courant,
+            Some(Point::new(10.0, 5.0)),
+            "le point courant est le second point de tangence"
+        );
+        // Fermé et rempli : la boîte est exacte, sans l'épaisseur d'un trait.
+        let valeurs = executer("newpath 0 0 moveto 10 0 10 10 5 arct closepath fill").unwrap();
+        let (min, max) = valeurs.dessins[0].boite().unwrap();
+        // La corde va de (5,0) à (10,5) : le quart de cercle bombe vers
+        // l'intérieur du coin, donc il reste dans le rectangle du coin.
+        assert!(min.x.abs() < 1e-6, "min.x {}", min.x);
+        assert!(min.y.abs() < 1e-6, "min.y {}", min.y);
+        assert!((max.x - 10.0).abs() < 1e-6, "max.x {}", max.x);
+        assert!((max.y - 5.0).abs() < 1e-6, "max.y {}", max.y);
+    }
+
+    /// Rempli, le coin arrondi a une aire **calculable à la main** : c'est le
+    /// disque de rayon 5 sur un quart de tour, soit 6,25 π ≈ 19,635. La
+    /// vérification ne compare donc pas le noyau à lui-même.
+    ///
+    /// ⚠️ La tolérance est celle du voisin (`arc_remplace_par_des_beziers`, 1 %) :
+    /// les arcs sont **approchés par des Béziers**, et le résidu est celui de
+    /// l'approximation, pas celui de la géométrie. Mesuré ici : 19,514, soit
+    /// −0,61 % — l'approximation passe *sous* le quart de disque, ce qui est le
+    /// sens attendu du résidu. La borne ne doit donc pas laisser croire qu'elle
+    /// vérifie le tracé du cercle : elle vérifie le rayon et le coin.
+    #[test]
+    fn arct_a_l_aire_du_quart_de_disque() {
+        let valeurs = executer("newpath 0 0 moveto 10 0 10 10 5 arct closepath fill").unwrap();
+        let aire = valeurs.dessins[0].aire().abs();
+        let attendu = std::f64::consts::PI * 6.25;
+        assert!(
+            (aire - attendu).abs() / attendu < 0.01,
+            "aire {aire}, attendue {attendu}"
+        );
+        // Et l'arc coupe bien le coin : sans lui, l'aire serait celle du
+        // triangle (0,0)-(10,0)-(10,5), soit 12,5.
+        assert!(aire > 12.5 + 5.0, "aire {aire} : le coin n'est pas arrondi");
+    }
+
+    /// `arcto` fait le même arc **et rend les deux points de tangence** au
+    /// programme, dans l'ordre `x1' y1' x2' y2'` — le sommet de la pile étant
+    /// `y2'`, comme pour `currentpoint`.
+    #[test]
+    fn arcto_empile_les_deux_points_de_tangence() {
+        let m = executer_machine("newpath 0 0 moveto 10 0 10 10 5 arcto");
+        assert_eq!(nombres(&m, 4), vec![5.0, 0.0, 10.0, 5.0]);
+        assert_eq!(m.point_courant, Some(Point::new(10.0, 5.0)));
+        // Le chemin est le même que celui d'`arct`.
+        let valeurs = executer("newpath 0 0 moveto 10 0 10 10 5 arcto closepath fill").unwrap();
+        let (_, max) = valeurs.dessins[0].boite().unwrap();
+        assert!((max.x - 10.0).abs() < 1e-6 && (max.y - 5.0).abs() < 1e-6);
+    }
+
+    /// Un rayon négatif pose le cercle de l'**autre côté** des droites, donc les
+    /// points de tangence sur les demi-droites opposées. C'est la règle de la
+    /// spécification, et elle sort de la même formule — aucun cas particulier.
+    #[test]
+    fn arct_a_rayon_negatif_passe_de_l_autre_cote() {
+        let m = executer_machine("newpath 0 0 moveto 10 0 10 10 -5 arcto");
+        assert_eq!(nombres(&m, 4), vec![15.0, 0.0, 10.0, -5.0]);
+    }
+
+    /// Deux droites confondues n'ont pas d'arc : PostScript trace une droite
+    /// jusqu'au coin. Sans ce cas, la bissectrice serait nulle et le centre de
+    /// l'arc partirait à l'infini.
+    #[test]
+    fn arct_colineaire_trace_une_droite() {
+        let m = executer_machine("newpath 0 0 moveto 10 0 20 0 5 arcto");
+        assert_eq!(
+            nombres(&m, 4),
+            vec![10.0, 0.0, 10.0, 0.0],
+            "le coin deux fois"
+        );
+        assert_eq!(m.point_courant, Some(Point::new(10.0, 0.0)));
+        // Le chemin ne porte que le segment du départ au coin.
+        assert_eq!(m.chemin.len(), 1);
+        assert_eq!(
+            m.chemin[0],
+            vec![Point::new(0.0, 0.0), Point::new(10.0, 0.0)]
+        );
+    }
+
+    /// Le coin confondu avec le point courant dégénère aussi en droite : il n'y
+    /// a pas deux droites, donc pas d'angle.
+    #[test]
+    fn arct_coin_confondu_avec_le_point_courant() {
+        let m = executer_machine("newpath 10 0 moveto 10 0 10 10 5 arct");
+        assert_eq!(m.point_courant, Some(Point::new(10.0, 0.0)));
+    }
+
+    /// `arct` vit dans le repère **utilisateur** : sous une transformation, le
+    /// coin et le rayon demandés sont ceux du programme, et l'arc suit.
+    #[test]
+    fn arct_suit_la_transformation() {
+        let m = executer_machine("2 2 scale newpath 0 0 moveto 10 0 10 10 5 arct");
+        // En repère d'appareil, tout est doublé — y compris le rayon.
+        assert_eq!(m.point_courant, Some(Point::new(20.0, 10.0)));
+        let valeurs =
+            executer("2 2 scale newpath 0 0 moveto 10 0 10 10 5 arct closepath fill").unwrap();
+        let (min, max) = valeurs.dessins[0].boite().unwrap();
+        assert!((max.x - 20.0).abs() < 1e-6, "max.x {}", max.x);
+        assert!((max.y - 10.0).abs() < 1e-6, "max.y {}", max.y);
+        assert!(min.x.abs() < 1e-6, "min.x {}", min.x);
+        // L'aire suit le carré de l'échelle : 4 × 6,25 π.
+        let attendu = std::f64::consts::PI * 25.0;
+        let aire = valeurs.dessins[0].aire().abs();
+        assert!(
+            (aire - attendu).abs() / attendu < 0.01,
+            "aire {aire}, attendue {attendu}"
+        );
+    }
+
+    /// Une matrice écrasante (échelle nulle) n'a pas d'inverse : `arct` refuse
+    /// en le disant, au lieu de placer l'arc dans un repère qui n'existe plus.
+    #[test]
+    fn arct_refuse_une_matrice_non_inversible() {
+        let objets = lexeur::analyser("0 1 scale newpath 0 0 moveto 10 0 10 10 5 arct").unwrap();
+        let mut m = machine();
+        let erreur = m.executer(&objets).unwrap_err();
+        assert!(
+            matches!(erreur, ErreurPs::MatriceNonInversible { .. }),
+            "{erreur}"
+        );
     }
 
     #[test]
