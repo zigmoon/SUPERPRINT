@@ -397,6 +397,188 @@ check(
   ecartsSegments ? `${ecartsSegments} écart(s)` : `${ensembleRust.size} traits identiques`,
 );
 
+// ── 5bis. La pose et la zone autorisée, extraites de buildImposedSheetCanvas ─
+titre('pose et zone autorisée : les expressions du produit, exécutées telles quelles');
+
+// La géométrie du produit est écrite en **pixels de document**, et son document
+// est à 72 dpi : un pixel y vaut exactement un point PostScript. On extrait donc
+// cette conversion de `main.js` — elle aussi — pour ramener le produit en
+// millimètres, l'unité du plan Rust.
+const ligneMmToPx = source.match(/const mmToPx = \(mm\) =>[^;]+;/);
+check(
+  'la conversion mm → pixels est trouvée, et c’est bien 72 dpi',
+  !!ligneMmToPx && /72/.test(ligneMmToPx[0]) && /25\.4/.test(ligneMmToPx[0]),
+  ligneMmToPx ? ligneMmToPx[0].trim() : 'introuvable',
+);
+const pxVersMm = (px) => (px * 25.4) / 72;
+
+/** Le début de `buildImposedSheetCanvas` : les dérivées des réglages. */
+function extraireEnteteCanvas() {
+  const debut = source.indexOf('const actualBleed = bleedValue !== null');
+  const fin = source.indexOf('const sheetHeight = pageHeightPx', debut);
+  if (debut < 0 || fin < 0) return null;
+  return source.slice(debut, source.indexOf(';', fin) + 1);
+}
+
+/** Les décalages passés à `loadOnePage`, un par place. */
+function extraireDecalages() {
+  const motif = /loadOnePage\(\s*pageNum\d\s*,\s*([^,]+?)\s*,\s*([^,]+?)\s*,\s*'([a-z]+)'\s*\)/g;
+  return [...source.matchAll(motif)].map((m) => ({
+    offsetX: m[1].trim(),
+    offsetY: m[2].trim(),
+    slot: m[3].trim(),
+  }));
+}
+
+/** La région de `buildImposedSheetCanvas`, où vivent les déclarations. */
+const debutCanvas = source.indexOf('async function buildImposedSheetCanvas');
+const finCanvas = source.indexOf('async function renderImposedSheet', debutCanvas);
+const regionCanvas = source.slice(debutCanvas, finCanvas);
+
+/** Une déclaration nommée, telle qu'elle est écrite dans le produit. */
+function declaration(nom) {
+  const motif = new RegExp(`(?:const|let|var)\\s+${nom}\\s*=\\s*[^;]+;`);
+  const trouve = regionCanvas.match(motif);
+  return trouve ? trouve[0].trim() : null;
+}
+
+/** Les deux lignes qui coupent le fond perdu intérieur, quand il y a couture. */
+function coupuresCouture() {
+  return [...regionCanvas.matchAll(/if \(innerCut && slot === '\w+'\)[^;]+;/g)].map((m) =>
+    m[0].trim(),
+  );
+}
+
+// ⚠️ On n'extrait PAS le bloc entier : entre les bornes s'intercalent les
+// instructions qui filtrent les objets hors zone, dont un `return`. On extrait
+// donc chaque déclaration qui compte, et on les **rejoue dans l'ordre du
+// produit** — ce qui est exactement la même arithmétique, sans le reste.
+const declarationsPose = [
+  'innerCut',
+  'trimLeftX',
+  'trimRightX',
+  'clipX0',
+  'clipX1',
+  'clipY0',
+  'clipY1',
+].map(declaration);
+const coutures = coupuresCouture();
+const enteteCanvas = extraireEnteteCanvas();
+const decalagesProduit = extraireDecalages();
+check(
+  'la géométrie de buildImposedSheetCanvas est extraite',
+  declarationsPose.every(Boolean) && coutures.length === 2 && !!enteteCanvas && decalagesProduit.length === 2,
+  `${declarationsPose.filter(Boolean).length} déclarations, ${coutures.length} coupures de couture, ${decalagesProduit.length} décalages`,
+);
+
+// Chaque configuration de l'interface : fond perdu imprimé ou non, découpe page
+// à page ou non, avec ou sans repères. Ce sont exactement les cases que
+// l'utilisateur peut cocher.
+let ecartsPose = 0;
+let posesComparees = 0;
+const configurations = [
+  { pageW: 210, pageH: 297, bleed: 3, includeBleed: true, cutApart: false, marge: 10 },
+  { pageW: 210, pageH: 297, bleed: 3, includeBleed: false, cutApart: false, marge: 10 },
+  { pageW: 210, pageH: 297, bleed: 3, includeBleed: true, cutApart: true, marge: 10 },
+  { pageW: 210, pageH: 297, bleed: 0, includeBleed: true, cutApart: true, marge: 10 },
+  { pageW: 148, pageH: 210, bleed: 5, includeBleed: true, cutApart: true, marge: 10 },
+  { pageW: 148, pageH: 210, bleed: 5, includeBleed: false, cutApart: false, marge: 10 },
+  { pageW: 420, pageH: 297, bleed: 3, includeBleed: true, cutApart: false, marge: 0 },
+  { pageW: 210, pageH: 297, bleed: 3, includeBleed: true, cutApart: false, marge: 0 },
+];
+
+for (const cas of configurations) {
+  const spec =
+    `!page\t${cas.pageW}\t${cas.pageH}\n` +
+    `!fond\t${cas.bleed}\t${cas.includeBleed ? 1 : 0}\n` +
+    `!decoupe\t${cas.cutApart ? 1 : 0}\n` +
+    `!reperes\t${cas.marge > 0 ? 1 : 0}\t${cas.marge}\t5\t2.5\t0.25\n` +
+    `!places\t1\t2\n`;
+  const nomSpec = `pose-${cas.pageW}x${cas.pageH}-${cas.bleed}-${cas.includeBleed ? 1 : 0}-${cas.cutApart ? 1 : 0}-${cas.marge}.txt`;
+  await writeFile(join(dossier, nomSpec), spec, 'utf8');
+  const texteRust = await lancer('plan', `target/imposition/${nomSpec}`, `pose-${nomSpec}`);
+  const posesRust = texteRust
+    .split(/\r?\n/)
+    .filter((l) => l.startsWith('pose\t'))
+    .map((l) => l.split('\t').slice(1));
+
+  if (posesRust.length !== 2) {
+    console.log(`    ${nomSpec} : ${posesRust.length} pose(s) côté Rust`);
+    ecartsPose += 1;
+    continue;
+  }
+
+  // Les décalages du produit sont exprimés dans le canevas de planche, qui ne
+  // porte PAS la marge technique : le média, lui, la porte. D'où `+ marge`.
+  for (const decalage of decalagesProduit) {
+    const rang = decalage.slot === 'left' ? 0 : 1;
+    const bac = {
+      pageFormat: { width: cas.pageW, height: cas.pageH },
+      bleedValue: cas.bleed,
+      bleed: cas.bleed,
+      includeBleed: cas.includeBleed,
+      cutApart: cas.cutApart,
+      slot: decalage.slot,
+    };
+    vm.createContext(bac);
+    let valeursProduit = null;
+    try {
+      vm.runInContext(
+        [
+          ligneMmToPx[0],
+          enteteCanvas,
+          `const offsetX = ${decalage.offsetX};`,
+          `const offsetY = ${decalage.offsetY};`,
+          ...declarationsPose,
+          ...coutures,
+          `this.valeurs = { offsetX, offsetY, zone: [clipX0, clipY0, clipX1, clipY1] };`,
+        ].join('\n'),
+        bac,
+      );
+      valeursProduit = bac.valeurs;
+    } catch (e) {
+      console.log(`    ${decalage.slot} (${cas.pageW}×${cas.pageH}) : ${e.message}`);
+      ecartsPose += 1;
+      continue;
+    }
+
+    const attendus = {
+      x: cas.marge + pxVersMm(valeursProduit.offsetX),
+      y: cas.marge + pxVersMm(valeursProduit.offsetY),
+      zone: valeursProduit.zone.map((v) => cas.marge + pxVersMm(v)),
+    };
+    const pose = posesRust[rang];
+    const recus = {
+      x: Number(pose[2]),
+      y: Number(pose[3]),
+      zone: pose.slice(4, 8).map(Number),
+    };
+    // 1e-9 mm : les deux chemins ne font que des opérations affines, et le
+    // produit calcule en points — la seule différence possible est l'arrondi du
+    // dernier bit, jamais un dixième de millimètre.
+    const proche = (a, b) => Math.abs(a - b) < 1e-9;
+    const ok =
+      proche(attendus.x, recus.x) &&
+      proche(attendus.y, recus.y) &&
+      attendus.zone.every((v, i) => proche(v, recus.zone[i]));
+    if (!ok) {
+      console.log(
+        `    ${decalage.slot} (${cas.pageW}×${cas.pageH}, fond ${cas.bleed}, ` +
+          `${cas.includeBleed ? 'avec' : 'sans'} fond perdu, ${cas.cutApart ? 'découpe page à page' : 'couture'}, marge ${cas.marge}) :\n` +
+          `      produit ${attendus.x.toFixed(6)}, ${attendus.y.toFixed(6)} zone ${attendus.zone.map((v) => v.toFixed(6)).join(' ')}\n` +
+          `      Rust    ${recus.x.toFixed(6)}, ${recus.y.toFixed(6)} zone ${recus.zone.map((v) => v.toFixed(6)).join(' ')}`,
+      );
+      ecartsPose += 1;
+    }
+    posesComparees += 1;
+  }
+}
+check(
+  `la pose et la zone autorisées coïncident sur ${posesComparees} cas`,
+  ecartsPose === 0 && posesComparees >= 16,
+  ecartsPose ? `${ecartsPose} écart(s)` : `${configurations.length} configurations × 2 places`,
+);
+
 // ── 6. Les refus ────────────────────────────────────────────────────────────
 titre('refus explicites');
 

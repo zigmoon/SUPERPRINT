@@ -16,8 +16,8 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-12) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 17 crates, tests compris) | **43 523 lignes** |
-| dont annotations `#[test]` | 970 tests, tous verts |
+| Rust (`crates/`, 17 crates, tests compris) | **43 901 lignes** |
+| dont annotations `#[test]` | 978 tests, tous verts |
 | exports `sp_*` de la frontière C | **48** (0 import), sur **deux** modules |
 | modules livrables | 380 Ko (noyau) + **322 Ko** (import PostScript, à la demande) |
 | étapes de contrôle (`scripts/check.ps1`) | **29** |
@@ -33,7 +33,7 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
 | dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript | ce qui sert vraiment à l'utilisateur |
 | **Volume JS porté** (somme des plages citées) | **13 832 / 18 803** → **74 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 43 523 / 112 138 → **38,8 %** | ⚠️ le plus trompeur des quatre |
+| **Lignes** Rust / JS | 43 901 / 112 138 → **39,2 %** | ⚠️ le plus trompeur des quatre |
 
 La plage ajoutée par l'import PostScript est mesurée ainsi : dans
 `superprint/app/JS/sp-eps-import.js` (939 lignes), tout ce qui précède
@@ -113,7 +113,7 @@ déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
 | 15 | Colle web + repli JS mesuré | `web/superprint-core.js` | parité du repli octet pour octet | — |
 | 16 | **Césure** (Liang + règles FR) | `text::motifs`, `text::francais`, `text::Cesure` | `hypher.js`, **2 644 mots, 7 champs identiques** | ✅ **branché** |
 | 17 | **Compression DEFLATE / zlib** | `compress::{deflate,inflate,zlib}` | croisé avec `zlib` de Node, 15 jeux, 2 sens | 🟢 exporteur |
-| 18 | **Imposition** (ordre, feuille, repères) | `superprint-impose` | `main.js` **extrait tel quel** : 25 tailles, 3 copies, 16 traits | 🟢 offert |
+| 18 | **Imposition** (ordre, feuille, pose, zone autorisée, repères) | `superprint-impose` | `main.js` **extrait tel quel** : 25 tailles, 3 copies, 8 poses × 2 places à 1e-9 mm, 16 traits | 🟢 offert |
 | 19 | **Réduction par moyenne de surface** | `image::resample::downscale_area` | exact **au bit près**, anti-crénelage mesuré | 🟢 offert |
 | 20 | **Prépresse** (9 contrôles) | `superprint-preflight` | détection **et** silence, 45 tests, refus des règles illisibles | 🟢 offert |
 | 21 | **Nuanciers** (7 bibliothèques, 688 teintes) | `superprint-swatch`, `core::lab` | catalogue comparé **octet par octet** à `swatchbooks.js`, lecture `.ase`, recherche | 🟢 offert |
@@ -187,6 +187,7 @@ C'était aujourd'hui `main.js` lignes 31627-31790, et trois autres endroits.
 | Ordre des pages du livret (convergence vers le centre) | `main.js` 31629 `calculateImposition` | ✅ `impose::ordre` |
 | Taille de la feuille (2 pages + fonds perdus + gouttière + marges) | `main.js` 50934, 55001, 54713 | ✅ `impose::plan::Reglages` |
 | Place de chaque page, en mm | `main.js` 50934, 55000, 54713 | ✅ `impose::plan::Place` |
+| **Pose d'une page** (où charger son rendu) et **zone autorisée** (où son encre s'arrête) | `main.js` 54773 `loadOnePage(...)`, 54900-54917 `clipX0`…`clipY1` | ✅ `impose::pose` |
 | Traits de coupe (12, et 4 intérieurs en découpe page à page) | `main.js` 55212 et 51456 | ✅ `impose::reperes` |
 | Lecture de la spécification | dispersée | ✅ `impose::Specification::lire` — **un seul lecteur** |
 
@@ -208,13 +209,32 @@ produit, que la formule unique rend impossibles.
 
 **Preuve mesurée** : `scripts/validate-imposition.mjs` extrait de `main.js`, sans
 le modifier, la fonction `calculateImposition` **telle quelle**, les trois copies
-des expressions de taille de feuille, et les arguments de chaque `pdf.line()` du
-bloc des traits de coupe. Les trois confrontations passent :
+des expressions de taille de feuille, les arguments de chaque `pdf.line()` du
+bloc des traits de coupe, et — pour la pose — les déclarations de
+`buildImposedSheetCanvas` (`clipX0`…`clipY1`, `innerCut`, les deux coupures de
+couture) **rejouées telles quelles**. Les quatre confrontations passent :
 
 - l'ordre est identique pour **25 tailles**, de 0 à 1 000 pages ;
 - la taille de feuille concorde sur les **3 copies × 4 configurations** ;
 - les **16 traits de coupe** (12 + 4 intérieurs) coïncident, position par
-  position, au centième de micromètre.
+  position, au centième de micromètre ;
+- la **pose et la zone autorisée** coïncident sur **8 configurations × 2 places**,
+  à `1e-9 mm` — parce que le document du produit est à **72 dpi**
+  (`mmToPx = mm × 72 / 25,4`, vérifié par le contrôle) : un pixel y vaut
+  exactement un point PostScript, et la comparaison est exacte, pas approchée.
+
+> **La règle de la zone autorisée, en une phrase** — puisqu'elle doit tenir lieu
+> de spécification : *le format fini, élargi du fond perdu **imprimé** sur ses
+> quatre côtés, sauf au bord de **couture** quand les deux pages ne sont pas
+> découpées séparément.* C'est cette phrase, et non une formule, que `pose.rs`
+> implémente et que le contrôle vérifie sur les 16 cas.
+
+**Ce qui reste pour que l'export imposé soit réellement Rust** — et c'est le
+chantier, pas une retouche : l'**assemblage** (charger les deux pages par leur
+pose, rogner chaque forme à sa zone autorisée par l'algèbre booléenne du noyau,
+écrire la planche avec `superprint-pdf`) et une **porte d'entrée** que
+l'application appelle. Le plan, les repères, la pose et la zone sont faits et
+mesurés ; c'est le rendu qui reste.
 
 **Non porté, et pourquoi** : l'imposition N-up (4, 8, 16 poses), la rotation,
 la signature/cahier et le dos carré collé. Le produit ne les a pas non plus :
@@ -919,7 +939,7 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | Texte | `pdf.js` (lecteur tiers) | **caractères relus en clair** |
 | **Césure** | `hypher.js` + règles FR de `main.js` | **2 644 mots, sept champs identiques** |
 | **Compression** | `zlib` de Node | **aller-retour croisé**, 15 jeux, 2 sens |
-| **Imposition** | `calculateImposition`, les 3 copies de la taille de feuille et les `pdf.line()` **extraits de `main.js`** | **25 tailles d'ordre, 3 copies × 4 configurations, 16 traits de coupe** |
+| **Imposition** | `calculateImposition`, les 3 copies de la taille de feuille, les déclarations `clipX0`…`clipY1` et les `pdf.line()` **extraits de `main.js`** | **25 tailles d'ordre, 3 copies × 4 configurations, 8 poses × 2 places à 1e-9 mm, 16 traits de coupe** |
 | **Réduction d'image** | moyenne arithmétique entière calculée indépendamment | **au bit près**, motif fin préservé, énergie conservée |
 | **Prépresse** | documents construits et rapport relu par les **mêmes** outils que l'application | **détection *et* silence** : 9 contrôles, chacune des deux moitiés mesurée |
 | **Nuanciers** | `swatchbooks.js`, `index.html` et le `lireAse` du produit, **extraits** | **catalogue identique octet par octet**, 7 bibliothèques, 688 teintes, divergence `.ase` exposée |

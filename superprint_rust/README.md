@@ -103,10 +103,10 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **970 tests unitaires** (`superprint-compress` 36,
+> wasm32-unknown-unknown`, et **978 tests unitaires** (`superprint-compress` 36,
 > `superprint-core` 37, `superprint-doc` 120, `superprint-eps-wasm` 5,
 > `superprint-flow` 51, `superprint-font` 31, `superprint-icc` 21,
-> `superprint-image` 110, `superprint-impose` 35, `superprint-path` 94,
+> `superprint-image` 110, `superprint-impose` 43, `superprint-path` 94,
 > `superprint-pdf` 109, `superprint-preflight` 45, `superprint-ps` 93,
 > `superprint-swatch` 46, `superprint-text` 73, `superprint-wasm` 38,
 > `superprint-zip` 26) — tous verts.

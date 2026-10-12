@@ -109,6 +109,28 @@ fn rendre(specification: &str) -> Option<String> {
             repere.x1, repere.y1, repere.x2, repere.y2, repere.epaisseur_mm
         ));
     }
+    // La pose de chaque place : où charger la page, et où son encre s'arrête.
+    // Les coordonnées sont en millimètres, dans le repère du média — le contrôle
+    // les ramène aux pixels du produit (72 dpi) pour les comparer à ses propres
+    // expressions.
+    for (pose, place) in plan.poses().iter().zip(plan.places.iter()) {
+        sortie.push_str(&format!(
+            "pose\t{:?}\t{:.9}\t{:.9}\t{:.9}\t{:.9}\t{:.9}\t{:.9}\t{:.9}\n",
+            pose.cote,
+            place.emplacement,
+            pose.x_mm,
+            pose.y_mm,
+            pose.zone_mm.0,
+            pose.zone_mm.1,
+            pose.zone_mm.2,
+            pose.zone_mm.3,
+        ));
+    }
+    let (gauche, haut, largeur, hauteur) = plan.format_fini_mm();
+    sortie.push_str(&format!(
+        "format\t{:.9}\t{:.9}\t{:.9}\t{:.9}\n",
+        gauche, haut, largeur, hauteur
+    ));
     sortie.push_str("ordre\n");
     for place in ordre(spec.pages.unwrap_or(0)) {
         sortie.push_str(&format!("{place}\n"));
