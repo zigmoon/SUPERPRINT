@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.614-rust-eps';
+const CACHE_NAME = 'superprint-shell-v1.7.617-rust-montage';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -65,6 +65,11 @@ const APP_SHELL = [
   // du gaspillage. Il est récupéré à la demande via la stratégie cache-first,
   // et mis en cache à ce moment-là : le deuxième import est donc local.
   './JS/superprint-eps.js',
+  // 🦀 Export imposé : la colle seulement, et elle est précachée parce que
+  // `index.html` la demande au démarrage. Son noyau est celui du branchement
+  // (superprint_core.wasm, ci-dessus) : le montage vit dans le même module, donc
+  // l'export imposé n'ajoute AUCUN téléchargement.
+  './JS/superprint-montage.js',
   './CSS/fonts.css',
   './CSS/fonts/BebasNeue-400-normal-latin.woff2',
   './CSS/fonts/BebasNeue-400-normal-latin-ext.woff2',

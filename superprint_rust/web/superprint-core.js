@@ -355,6 +355,10 @@
       // faux — exactement le contraire du but.
       preflight: indisponible('preflight', raison),
       preflightVersion: indisponible('preflightVersion', raison),
+      // L'assemblage d'une planche imposée est un **écrivain PDF** : on ne le
+      // réécrit pas en JavaScript. Le repli rend donc la main à l'exporteur
+      // vectoriel du produit, qui existe et fait le travail.
+      ouvrirPlanche: indisponible('planche', raison),
     };
   }
 
@@ -1124,10 +1128,25 @@
      * `epaisseurRepereMm`, `gauche`, `droite`.
      */
     function planDePlanche(options) {
-      var o = options || {};
+      var octets = encoder.encode(lignesPlan(options || {}).join('\n'));
+      var texte = deuxPasses('imposition.plan', function (ctx, dst, cap, lenPtr) {
+        var p = ctx.poser(octets);
+        return exports.sp_impose_plan(p, octets.length, dst, cap, lenPtr);
+      });
+      return lirePlan(decodeur.decode(texte));
+    }
+
+    /**
+     * Les cinq lignes qui décrivent un plan, dans le format lu par le noyau.
+     *
+     * Écrites **une fois**, et partagées par `planDePlanche` et l'assemblage
+     * d'une planche : deux jeux de lignes finiraient par décrire deux plans
+     * différents, et la planche imposée ne serait plus celle qu'on a annoncée.
+     */
+    function lignesPlan(o) {
       var gauche = o.gauche == null || o.gauche === '' ? 0 : Number(o.gauche) || 0;
       var droite = o.droite == null || o.droite === '' ? 0 : Number(o.droite) || 0;
-      var lignes = [
+      return [
         '!page\t' + nombre(o.largeurPageMm, 210) + '\t' + nombre(o.hauteurPageMm, 297),
         '!fond\t' + nombre(o.fondPerduMm, 3) + '\t' + (o.inclureFondPerdu === false ? 0 : 1),
         '!decoupe\t' + (o.decoupePageAPage ? 1 : 0),
@@ -1143,12 +1162,220 @@
           nombre(o.epaisseurRepereMm, 0.25),
         '!places\t' + gauche + '\t' + droite,
       ];
+    }
+
+    /**
+     * Ouvre un **montage** de planche imposée.
+     *
+     * Le noyau pose les deux pages **en image** : c'est le navigateur qui rend,
+     * parce que Rust ne peut pas posséder un canevas Fabric, une police du
+     * système ni une image en mémoire. La frontière est donc la plus pauvre
+     * possible — des octets RVB et des dimensions — et l'assemblage (rognage,
+     * repères, conversion, boîtes de page, PDF/X) est fait par le noyau.
+     *
+     * ```js
+     * var planche = noyau.ouvrirPlanche({
+     *   largeurPageMm: 210, hauteurPageMm: 297, fondPerduMm: 3, inclureFondPerdu: true,
+     *   mode: 'cmjn', icc: octetsIcc,
+     *   sortie: { identifiant: 'FOGRA39', description: 'Coated FOGRA39', conformite: 'pdfx-1a' },
+     * });
+     * planche.face({
+     *   places: [4, 1],
+     *   rendus: [canevasVersRgb(canevasA), canevasVersRgb(canevasB)],
+     * });
+     * var resultat = planche.ecrire();     // { pdf, rapport }
+     * ```
+     *
+     * Une face est posée **puis oubliée** : ses pixels sont encodés dans le
+     * document, et l'appelant peut les libérer tout de suite. C'est ce qui permet
+     * d'imposer un livret entier sans garder tous ses rendus en mémoire.
+     */
+    function ouvrirPlanche(options) {
+      var o = options || {};
+      var lignes = lignesPlan(o);
+      lignes.push('!montage\t' + nomDeMode(o.mode) + '\t' + (o.fondBlanc === false ? 0 : 1) + '\t' + nomDeFiltre(o.filtre));
+      if (o.encre) {
+        lignes.push(
+          '!encre\t' +
+            nombre(o.encre.gcr, 0) +
+            '\t' +
+            nombre(o.encre.limiteEncre, 0),
+        );
+      }
+      if (o.sortie) {
+        lignes.push(
+          '!sortie\t' +
+            nombre(o.sortie.composantes, 0) +
+            '\t' +
+            champsSurs(o.sortie.identifiant) +
+            '\t' +
+            champsSurs(o.sortie.description) +
+            '\t' +
+            champsSurs(o.sortie.conformite),
+        );
+      }
+      var info = o.info || {};
+      var cles = [
+        ['titre', info.title],
+        ['auteur', info.author],
+        ['sujet', info.subject],
+        ['mots-cles', info.keywords],
+        ['createur', info.creator],
+        ['producteur', info.producer],
+      ];
+      for (var i = 0; i < cles.length; i += 1) {
+        if (cles[i][1]) lignes.push('!info\t' + cles[i][0] + '\t' + champsSurs(cles[i][1]));
+      }
+
       var octets = encoder.encode(lignes.join('\n'));
-      var texte = deuxPasses('imposition.plan', function (ctx, dst, cap, lenPtr) {
+      var profil = o.icc ? (o.icc instanceof Uint8Array ? o.icc : new Uint8Array(o.icc)) : new Uint8Array(0);
+      portee(function (ctx) {
         var p = ctx.poser(octets);
-        return exports.sp_impose_plan(p, octets.length, dst, cap, lenPtr);
+        var pIcc = profil.length ? ctx.poser(profil) : 0;
+        verifier(exports.sp_montage_debut(p, octets.length, pIcc, profil.length), 'planche.ouvrir');
+        return 0;
       });
-      return lirePlan(decodeur.decode(texte));
+
+      return {
+        /**
+         * Pose une face : deux pages côte à côte, chacune à sa place.
+         *
+         * `places` porte les deux numéros de page (`0`, `null` ou `'Vide'` pour
+         * une place vide), `rendus` les deux images RVB — trois octets par
+         * pixel, ligne du **haut** en premier, comme un `ImageData`.
+         */
+        face: function (demande) {
+          var d = demande || {};
+          var places = d.places || [];
+          var rendus = d.rendus || [];
+          if (rendus.length !== 2) {
+            throw new CoreError('une face demande deux rendus : la page de gauche et celle de droite', {
+              code: ERR.BAD_INPUT,
+              fn: 'planche.face',
+            });
+          }
+          var gauche = controleRendu('gauche', rendus[0]);
+          var droite = controleRendu('droite', rendus[1]);
+          var ligne = [
+            '!face',
+            String(numeroDePlace(places[0])),
+            String(numeroDePlace(places[1])),
+            String(gauche.width),
+            String(gauche.height),
+            String(droite.width),
+            String(droite.height),
+          ].join('\t');
+          var octetsFace = encoder.encode(ligne);
+          portee(function (ctx) {
+            var p = ctx.poser(octetsFace);
+            var pg = ctx.poser(gauche.pixels);
+            var pd = ctx.poser(droite.pixels);
+            verifier(
+              exports.sp_montage_face(
+                p,
+                octetsFace.length,
+                pg,
+                gauche.pixels.length,
+                pd,
+                droite.pixels.length,
+              ),
+              'planche.face',
+            );
+            return 0;
+          });
+          return this;
+        },
+
+        /**
+         * Ferme le montage et rend `{ pdf, rapport }`.
+         *
+         * Le rapport dit ce qui a été écrit — nombre de faces, format fini,
+         * média, repères, zones rognées — de quoi journaliser un fait plutôt
+         * qu'une impression.
+         */
+        ecrire: function () {
+          var taille = portee(function (ctx) {
+            var p = ctx.allouer(4);
+            verifier(exports.sp_montage_ecrire(p), 'planche.ecrire');
+            return ctx.lu32(p);
+          });
+          var pdf = portee(function (ctx) {
+            var tampon = ctx.allouer(taille);
+            var p = ctx.allouer(4);
+            verifier(exports.sp_montage_lire(tampon, taille, p), 'planche.lire');
+            return ctx.lire(tampon, ctx.lu32(p));
+          });
+          return { pdf: pdf, rapport: lireRapportPlanche(decodeur.decode(rapportPlanche())) };
+        },
+      };
+    }
+
+    /** Le compte rendu du dernier montage, en texte. */
+    function rapportPlanche() {
+      return deuxPasses('planche.rapport', function (ctx, dst, cap, lenPtr) {
+        return exports.sp_montage_rapport(dst, cap, lenPtr);
+      });
+    }
+
+    /** Un rendu RVB, vérifié avant de traverser la frontière. */
+    function controleRendu(cote, rendu) {
+      if (!rendu || !(rendu.pixels instanceof Uint8Array)) {
+        throw new CoreError('le rendu de la page de ' + cote + ' se donne en Uint8Array', {
+          code: ERR.BAD_INPUT,
+          fn: 'planche.face',
+        });
+      }
+      var width = rendu.width | 0;
+      var height = rendu.height | 0;
+      if (width <= 0 || height <= 0) {
+        throw new CoreError('le rendu de la page de ' + cote + ' doit avoir des dimensions', {
+          code: ERR.BAD_INPUT,
+          fn: 'planche.face',
+        });
+      }
+      var attendu = width * height * 3;
+      if (rendu.pixels.length !== attendu) {
+        throw new CoreError(
+          'rendu de ' +
+            cote +
+            ' : ' +
+            rendu.pixels.length +
+            ' octets pour ' +
+            attendu +
+            ' attendus (' +
+            width +
+            '×' +
+            height +
+            ')',
+          { code: ERR.BAD_INPUT, fn: 'planche.face' },
+        );
+      }
+      return { pixels: rendu.pixels, width: width, height: height };
+    }
+
+    /** Un numéro de place : `0` vaut « place vide », comme la ligne `!places`. */
+    function numeroDePlace(place) {
+      if (place == null || place === '' || place === 'Vide') return 0;
+      var numero = Number(place);
+      return isFinite(numero) && numero > 0 ? Math.round(numero) : 0;
+    }
+
+    /** Le nom du mode de couleur, tel que la frontière le lit. */
+    function nomDeMode(mode) {
+      if (mode === 'cmjn' || mode === 'cmyk') return 'cmjn';
+      if (mode === 'niveaux-de-gris' || mode === 'gris' || mode === 'bw') return 'gris';
+      return 'rvb';
+    }
+
+    /** Le nom du filtre d'image, tel que la frontière le lit. */
+    function nomDeFiltre(filtre) {
+      var connus = ['auto', 'aucun', 'rle', 'flate'];
+      return connus.indexOf(filtre) >= 0 ? filtre : 'auto';
+    }
+
+    /** Un champ de texte pour la frontière : jamais de tabulation ni de saut. */
+    function champsSurs(valeur) {
+      return String(valeur == null ? '' : valeur).replace(/[\t\r\n]+/g, ' ').trim();
     }
 
     /**
@@ -1628,6 +1855,16 @@
       },
 
       /**
+       * Ouvre le **montage d'une planche imposée** : deux pages côte à côte,
+       * rognées chacune à sa zone autorisée, repères de coupe, quadri choisie,
+       * destination de sortie et conformité PDF/X.
+       *
+       * Voir `ouvrirPlanche` plus bas pour le détail des options : ce point
+       * d'entrée et cette fonction sont le même code.
+       */
+      ouvrirPlanche: ouvrirPlanche,
+
+      /**
        * Télécharge un fichier de police et rend ses octets.
        *
        * Raccourci pour `doc.addFont()` :
@@ -1764,6 +2001,66 @@
       };
     }
     return plan;
+  }
+
+  /**
+   * Lit le **compte rendu d'un montage de planche** en texte.
+   *
+   * Format (voir `superprint-wasm/src/lib.rs`, `sp_montage_ecrire`) :
+   *
+   * ```text
+   * !octets<TAB>1257
+   * !faces<TAB>2
+   * !mode<TAB>rvb|cmjn|niveaux-de-gris
+   * !conformite<TAB>PDF/X-1a:2001|aucune
+   * !face<TAB>rang<TAB>formatL<TAB>formatH<TAB>mediaL<TAB>mediaH<TAB>reperes<TAB>z0x0<TAB>z0y0<TAB>z0x1<TAB>z0y1<TAB>z1x0<TAB>z1y0<TAB>z1x1<TAB>z1y1
+   * !erreur<TAB>message          (seulement quand le montage a été refusé)
+   * ```
+   *
+   * Le message d'erreur est le **dernier** champ, et il peut contenir n'importe
+   * quoi sauf une tabulation : c'est ce qui permet de le lire sans le découper.
+   */
+  function lireRapportPlanche(texte) {
+    var rapport = {
+      octets: 0,
+      faces: 0,
+      mode: null,
+      conformite: 'aucune',
+      planches: [],
+      erreur: null,
+    };
+    var lignes = texte.split('\n');
+    for (var i = 0; i < lignes.length; i++) {
+      var ligne = lignes[i];
+      if (!ligne) continue;
+      var champs = ligne.split('\t');
+      if (champs[0] === '!octets') {
+        rapport.octets = Number(champs[1]);
+      } else if (champs[0] === '!faces') {
+        rapport.faces = Number(champs[1]);
+      } else if (champs[0] === '!mode') {
+        rapport.mode = champs[1];
+      } else if (champs[0] === '!conformite') {
+        rapport.conformite = champs[1];
+      } else if (champs[0] === '!erreur') {
+        // Le message peut contenir des tabulations : on recolle.
+        rapport.erreur = champs.slice(1).join('\t');
+      } else if (champs[0] === '!face') {
+        var nombres = [];
+        for (var k = 2; k < champs.length; k += 1) nombres.push(Number(champs[k]));
+        rapport.planches.push({
+          rang: Number(champs[1]),
+          formatFiniMm: { largeurMm: nombres[0], hauteurMm: nombres[1] },
+          mediaMm: { largeurMm: nombres[2], hauteurMm: nombres[3] },
+          reperes: nombres[4],
+          zonesMm: [
+            [nombres[5], nombres[6], nombres[7], nombres[8]],
+            [nombres[9], nombres[10], nombres[11], nombres[12]],
+          ],
+        });
+      }
+    }
+    return rapport;
   }
 
   /**

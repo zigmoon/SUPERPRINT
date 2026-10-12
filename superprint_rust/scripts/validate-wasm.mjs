@@ -132,9 +132,16 @@ const attendues = [
   'sp_run_length_encode', 'sp_run_length_decode',
   'sp_target_size_for_dpi', 'sp_downscale_bilinear_rgb', 'sp_downscale_nearest_rgb',
   'sp_write_spot_page', 'sp_write_spot_page_gray',
+  'sp_montage_debut', 'sp_montage_face', 'sp_montage_ecrire',
+  'sp_montage_lire', 'sp_montage_rapport',
 ];
 const manquantes = attendues.filter((nom) => typeof x[nom] !== 'function');
 check(`les ${attendues.length} fonctions attendues sont exportées`, manquantes.length === 0, manquantes.join(', ') || `${Object.keys(x).length} exports au total`);
+
+// Le compte des exports est une donnée de la documentation (« 49 fonctions ») :
+// il est donc vérifié ici, sinon il dériverait sans que personne ne s'en aperçoive.
+const prefixes = Object.keys(x).filter((nom) => nom.startsWith('sp_'));
+check('la frontière expose exactement 49 fonctions', prefixes.length === 49, `${prefixes.length} export(s)`);
 
 // ── 2. Version ─────────────────────────────────────────────────────────────
 titre('version');

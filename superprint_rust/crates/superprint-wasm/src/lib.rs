@@ -32,6 +32,13 @@
 //! tampon vide, la fonction remplit `out_len` avec la taille nécessaire et
 //! renvoie [`SP_ERR_TOO_SMALL`] ; on alloue, puis on rappelle.
 //!
+//! **Une exception, et elle est écrite ici : le montage d'une planche.** Le
+//! protocole en deux passes suppose un calcul bon marché. Assembler une planche
+//! ne l'est pas — cela encode les pixels des deux pages — et l'appeler deux fois
+//! doublerait le temps d'un export. [`sp_montage_planche`] assemble donc **une
+//! seule fois**, garde le PDF, et rend sa taille ; [`sp_montage_lire`] le
+//! recopie ensuite, autant de fois qu'il faut si le tampon était trop court.
+//!
 //! ## Repères d'appel (JavaScript)
 //!
 //! ```js
@@ -57,16 +64,19 @@ use core::{ptr, slice};
 use std::alloc::{alloc, dealloc, Layout};
 use std::sync::Mutex;
 
+use superprint_core::color::Reglages as ReglagesEncre;
 use superprint_core::color8;
 use superprint_core::{color, units, Cmyk, PageSize, Rgb};
 use superprint_font::FontFace;
 use superprint_image::{compress, resample, GrayImage, RgbImage};
-use superprint_impose::{Emplacement, Plan, Reglages};
+use superprint_impose::{lire_place, Emplacement, Plan, Reglages, Specification};
+use superprint_montage::{Assembleur, ErreurMontage, Face, ModeCouleur, Options, RendusPage};
 use superprint_pdf::colorspace::{ColorStack, QuadriSpace};
 use superprint_pdf::doc::{write_spot_page, write_spot_page_with_image};
 use superprint_pdf::document::{ColorValue, Document, Op, OutputIntent, Page, Paint, Path};
 use superprint_pdf::image::{ImageFilter, ImageXObject};
 use superprint_pdf::spot::{AlternateSpace, SpotInk};
+use superprint_pdf::xmp::Conformite;
 use superprint_text::{Cesure, Motifs};
 
 // ─────────────────────────── codes d'erreur ───────────────────────────
@@ -706,6 +716,510 @@ fn format_plan(plan: &Plan) -> String {
         );
     }
     sortie
+}
+
+// ─────────────────────────── montage d'une planche ───────────────────────────
+
+/// Le montage en cours : les réglages de pose, l'assembleur, et les options.
+///
+/// ⚠️ **Pourquoi le montage ne suit pas le protocole en deux passes.** Le
+/// protocole habituel — appeler une fois à vide pour connaître la taille, puis
+/// rappeler avec le tampon — suppose un calcul bon marché. Ici il ne l'est pas :
+/// assembler une planche **encode les pixels** des deux pages, conversion CMJN
+/// comprise. Le faire deux fois doublerait le temps d'un export.
+///
+/// Le montage suit donc le même dessin que le document (`sp_doc_*`) : on
+/// l'ouvre, on ajoute ses **faces** — une par page, une face à la fois, ce qui
+/// évite de garder en mémoire les pixels de tout un livret — puis on écrit.
+/// `sp_montage_lire` recopie ensuite le PDF, autant de fois qu'il faut si le
+/// tampon était trop court.
+struct MontageEnCours {
+    /// Les réglages de pose, communs aux faces : format de page, fond perdu,
+    /// repères. Le produit les tient dans un seul jeu de champs pour tout le
+    /// document, et les partager ici est exactement la même règle.
+    reglages: Reglages,
+    /// L'assembleur, qui porte le document PDF en cours.
+    assembleur: Assembleur,
+    /// Les options, gardées pour le compte rendu.
+    options: Options,
+}
+
+static MONTAGE: Mutex<Option<MontageEnCours>> = Mutex::new(None);
+
+/// La planche assemblée, en attente d'être lue par `sp_montage_lire`.
+static PLANCHE: Mutex<Option<Vec<u8>>> = Mutex::new(None);
+
+/// Le compte rendu du dernier montage — réussi ou refusé — en texte.
+///
+/// Il est tenu même quand le montage échoue : c'est là que la **raison** du
+/// refus est écrite en clair, et c'est ce que la colle journalise avant de
+/// retomber sur l'export du produit.
+static RAPPORT_PLANCHE: Mutex<Option<String>> = Mutex::new(None);
+
+/// Ouvre un **montage** : les réglages du document imposé, sa destination.
+///
+/// La spécification porte les lignes du plan ([`Specification::lire`] — un seul
+/// lecteur dans tout le dépôt) plus celles qui décident de l'écriture :
+///
+/// ```text
+/// !page<TAB>210<TAB>297                       format fini d'une page (mm) — OBLIGATOIRE
+/// !fond<TAB>3<TAB>1                           fond perdu (mm), imprimé (0 ou 1)
+/// !decoupe<TAB>0                              découpe page à page (0 ou 1)
+/// !reperes<TAB>1<TAB>10<TAB>5<TAB>2.5<TAB>0.25  actifs, marge, longueur, décalage, épaisseur
+/// !montage<TAB>rvb|cmjn|gris<TAB>fond_blanc<0|1><TAB>auto|aucun|rle|flate
+/// !encre<TAB>gcr<TAB>limite_encre            0 ou vide = étape désactivée
+/// !sortie<TAB>composantes<TAB>identifiant<TAB>description<TAB>pdfx-1a|pdfx-3|pdfx-4
+/// !info<TAB>titre|auteur|sujet|mots-cles|createur|producteur<TAB>valeur
+/// ```
+///
+/// `icc` porte le profil de sortie, ou rien. Deux règles valent d'être dites :
+///
+/// - une conformité revendiquée **sans profil** est refusée par le noyau PDF
+///   ([`DocError::PdfxSansSortie`]) : un fichier qui se dit PDF/X sans dire pour
+///   quelle condition d'impression ne veut rien dire ;
+/// - PDF/X-1a **interdit le RVB** : en mode RVB, la revendication est refusée
+///   plutôt que trahie.
+///
+/// Renvoie `0`, ou un code d'erreur.
+///
+/// # Safety
+///
+/// `spec` doit désigner `spec_len` octets lisibles ; `icc` `icc_len` octets.
+#[no_mangle]
+pub unsafe extern "C" fn sp_montage_debut(
+    spec: *const u8,
+    spec_len: usize,
+    icc: *const u8,
+    icc_len: usize,
+) -> i32 {
+    let Some(octets) = (unsafe { as_slice(spec, spec_len) }) else {
+        return mettre_au_rapport("!erreur\tspecification nulle", SP_ERR_NULL);
+    };
+    let Ok(texte) = core::str::from_utf8(octets) else {
+        return mettre_au_rapport(
+            "!erreur\tspécification illisible : elle n'est pas de l'UTF-8",
+            SP_ERR_BAD_INPUT,
+        );
+    };
+    let Some((reglages, options)) = parse_montage_spec(texte) else {
+        return mettre_au_rapport(
+            "!erreur\tspecification inutilisable : il faut !page, et un !montage valide",
+            SP_ERR_BAD_INPUT,
+        );
+    };
+    let Some(profil) = (unsafe { as_slice(icc, icc_len) }) else {
+        return mettre_au_rapport("!erreur\tprofil ICC nul", SP_ERR_NULL);
+    };
+    let mut options = options;
+    options.sortie.icc = profil.to_vec();
+
+    let mut garde = MONTAGE.lock().unwrap_or_else(|e| e.into_inner());
+    *garde = Some(MontageEnCours {
+        reglages,
+        assembleur: Assembleur::nouveau(&options),
+        options,
+    });
+    if let Ok(mut pdf) = PLANCHE.lock() {
+        *pdf = None;
+    }
+    if let Ok(mut rapport) = RAPPORT_PLANCHE.lock() {
+        *rapport = None;
+    }
+    0
+}
+
+/// Ajoute une **face** au montage en cours : deux pages côte à côte, rognées.
+///
+/// `spec` est une seule ligne, champs séparés par des tabulations :
+///
+/// ```text
+/// !face<TAB>gauche<TAB>droite<TAB>largeur_g<TAB>hauteur_g<TAB>largeur_d<TAB>hauteur_d
+/// ```
+///
+/// Les deux places se lisent comme la ligne `!places` ([`lire_place`] — le même
+/// lecteur, pas une copie) : `0`, vide ou `Vide` valent « place vide ». Les
+/// quatre derniers champs sont les dimensions des rendus, en pixels.
+///
+/// `gauche` et `droite` portent les pixels RVB — **trois octets par pixel, ligne
+/// du haut en premier**, l'ordre d'un canevas et d'un `ImageData`, qui est aussi
+/// celui d'un flux d'image PDF. Aucun retournement n'est fait, ni ici ni plus
+/// loin : c'est une propriété, et elle est mesurée.
+///
+/// Renvoie le nombre de faces posées après celle-ci, ou un code d'erreur — la
+/// face fautive n'est **pas** ajoutée.
+///
+/// # Safety
+///
+/// `spec` doit désigner `spec_len` octets lisibles ; `gauche` et `droite`
+/// respectivement `gauche_len` et `droite_len` octets lisibles.
+#[no_mangle]
+pub unsafe extern "C" fn sp_montage_face(
+    spec: *const u8,
+    spec_len: usize,
+    gauche: *const u8,
+    gauche_len: usize,
+    droite: *const u8,
+    droite_len: usize,
+) -> i32 {
+    let Some(octets) = (unsafe { as_slice(spec, spec_len) }) else {
+        return mettre_au_rapport("!erreur\tspecification de face nulle", SP_ERR_NULL);
+    };
+    let Ok(texte) = core::str::from_utf8(octets) else {
+        return mettre_au_rapport(
+            "!erreur\tspecification de face illisible : elle n'est pas de l'UTF-8",
+            SP_ERR_BAD_INPUT,
+        );
+    };
+    let Some(face) = parse_face_spec(texte) else {
+        return mettre_au_rapport(
+            "!erreur\tspecification de face inutilisable : il faut !face, deux places et les deux tailles de rendu",
+            SP_ERR_BAD_INPUT,
+        );
+    };
+
+    let mut garde = MONTAGE.lock().unwrap_or_else(|e| e.into_inner());
+    let Some(montage) = garde.as_mut() else {
+        return mettre_au_rapport(
+            "!erreur\taucun montage ouvert : sp_montage_debut doit venir d'abord",
+            SP_ERR_BAD_INPUT,
+        );
+    };
+
+    // Les pixels : une tranche par côté, à la taille annoncée par la
+    // spécification. Les longueurs sont vérifiées **ici** — avant de copier des
+    // dizaines de mégaoctets — et le sont à nouveau par `RendusPage`.
+    let mut donnees: [Vec<u8>; 2] = [Vec::new(), Vec::new()];
+    for (rangee, (pointeur, longueur)) in [(gauche, gauche_len), (droite, droite_len)]
+        .into_iter()
+        .enumerate()
+    {
+        let (largeur, hauteur) = face.rendus[rangee];
+        let attendu = largeur as usize * hauteur as usize * 3;
+        let Some(vue) = (unsafe { as_slice(pointeur, longueur) }) else {
+            return mettre_au_rapport("!erreur\ttampon de rendu nul", SP_ERR_NULL);
+        };
+        if vue.len() != attendu {
+            let raison = format!(
+                "!erreur\trendu {} ({}x{}) : {} octets recus, {} attendus — 3 octets par pixel, ligne du haut en premier",
+                if rangee == 0 { "gauche" } else { "droite" },
+                largeur,
+                hauteur,
+                vue.len(),
+                attendu,
+            );
+            return mettre_au_rapport(&raison, SP_ERR_SHORT_INPUT);
+        }
+        donnees[rangee] = vue.to_vec();
+    }
+
+    let plan = Plan::nouveau(face.gauche, face.droite, montage.reglages);
+    let rendus = [
+        match RendusPage::nouveau(
+            face.rendus[0].0,
+            face.rendus[0].1,
+            core::mem::take(&mut donnees[0]),
+        ) {
+            Ok(rendu) => rendu,
+            Err(erreur) => {
+                return mettre_au_rapport(&format!("!erreur\t{erreur}"), SP_ERR_SHORT_INPUT)
+            }
+        },
+        match RendusPage::nouveau(
+            face.rendus[1].0,
+            face.rendus[1].1,
+            core::mem::take(&mut donnees[1]),
+        ) {
+            Ok(rendu) => rendu,
+            Err(erreur) => {
+                return mettre_au_rapport(&format!("!erreur\t{erreur}"), SP_ERR_SHORT_INPUT)
+            }
+        },
+    ];
+
+    match montage.assembleur.ajouter(Face {
+        plan: &plan,
+        rendus: [&rendus[0], &rendus[1]],
+    }) {
+        Ok(()) => montage.assembleur.nombre_de_faces() as i32,
+        Err(erreur) => {
+            let code = match erreur {
+                ErreurMontage::TamponIncoherent { .. } => SP_ERR_SHORT_INPUT,
+                _ => SP_ERR_BAD_INPUT,
+            };
+            mettre_au_rapport(&format!("!erreur\t{erreur}"), code)
+        }
+    }
+}
+
+/// Ferme le montage, écrit le PDF et le garde pour [`sp_montage_lire`].
+///
+/// Renvoie le **nombre d'octets** du PDF (`>= 0`), ou un code d'erreur. Le
+/// nombre de faces écrites est dans le compte rendu ([`sp_montage_rapport`]).
+///
+/// # Safety
+///
+/// `out_len` doit être un `u32` inscriptible.
+#[no_mangle]
+pub unsafe extern "C" fn sp_montage_ecrire(out_len: *mut u32) -> i32 {
+    if out_len.is_null() {
+        return SP_ERR_NULL;
+    }
+    unsafe { *out_len = 0 };
+    let mut garde = MONTAGE.lock().unwrap_or_else(|e| e.into_inner());
+    let Some(montage) = garde.take() else {
+        return mettre_au_rapport(
+            "!erreur\taucun montage ouvert : sp_montage_debut doit venir d'abord",
+            SP_ERR_BAD_INPUT,
+        );
+    };
+    if montage.assembleur.nombre_de_faces() == 0 {
+        return mettre_au_rapport(
+            "!erreur\taucune face posée : une planche vide n'est pas un fichier à envoyer",
+            SP_ERR_BAD_INPUT,
+        );
+    }
+
+    let planches = match montage.assembleur.terminer() {
+        Ok(planches) => planches,
+        Err(erreur) => return mettre_au_rapport(&format!("!erreur\t{erreur}"), SP_ERR_BAD_INPUT),
+    };
+
+    let mut rapport = format!(
+        "!octets\t{}\n!faces\t{}\n!mode\t{}\n!conformite\t{}",
+        planches.pdf.len(),
+        planches.faces.len(),
+        montage.options.mode.nom(),
+        montage
+            .options
+            .sortie
+            .conformite
+            .map_or("aucune", |conforme| conforme.nom()),
+    );
+    for (rang, face) in planches.faces.iter().enumerate() {
+        rapport.push_str(&format!(
+            "\n!face\t{rang}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}\t{:.4}",
+            face.format_fini_mm.0,
+            face.format_fini_mm.1,
+            face.media_mm.0,
+            face.media_mm.1,
+            face.reperes,
+            face.zones_mm[0].0,
+            face.zones_mm[0].1,
+            face.zones_mm[0].2,
+            face.zones_mm[0].3,
+            face.zones_mm[1].0,
+            face.zones_mm[1].1,
+            face.zones_mm[1].2,
+            face.zones_mm[1].3,
+        ));
+    }
+
+    let taille = planches.pdf.len();
+    if let Ok(mut pdf) = PLANCHE.lock() {
+        *pdf = Some(planches.pdf);
+    }
+    if let Ok(mut compte_rendu) = RAPPORT_PLANCHE.lock() {
+        *compte_rendu = Some(rapport);
+    }
+    unsafe { *out_len = taille as u32 };
+    taille as i32
+}
+
+/// Recopie la planche assemblée dans le tampon de l'appelant, et la **libère**.
+///
+/// Un `dst_cap` trop court ne perd rien : `out_len` porte la taille nécessaire et
+/// l'appel peut être refait avec un tampon plus grand. Après une recopie
+/// réussie, la planche n'est plus gardée : les octets vivent chez l'appelant.
+///
+/// # Safety
+///
+/// `dst` doit désigner `dst_cap` octets inscriptibles ; `out_len` un `u32`.
+#[no_mangle]
+pub unsafe extern "C" fn sp_montage_lire(dst: *mut u8, dst_cap: usize, out_len: *mut u32) -> i32 {
+    if out_len.is_null() {
+        return SP_ERR_NULL;
+    }
+    let mut garde = PLANCHE.lock().unwrap_or_else(|e| e.into_inner());
+    let Some(planche) = garde.as_ref() else {
+        unsafe { *out_len = 0 };
+        return SP_ERR_BAD_INPUT;
+    };
+    unsafe { *out_len = planche.len() as u32 };
+    let code = unsafe { copy_out(planche, dst, dst_cap) };
+    if code >= 0 {
+        *garde = None;
+    }
+    code
+}
+
+/// Le compte rendu du dernier montage, en texte.
+///
+/// Même protocole que les autres sorties textuelles : appel à vide pour
+/// connaître la taille (`SP_ERR_TOO_SMALL` et `out_len` rempli), puis appel avec
+/// le tampon.
+///
+/// # Safety
+///
+/// `dst` doit désigner `dst_cap` octets inscriptibles ; `out_len` un `u32`.
+#[no_mangle]
+pub unsafe extern "C" fn sp_montage_rapport(
+    dst: *mut u8,
+    dst_cap: usize,
+    out_len: *mut u32,
+) -> i32 {
+    if out_len.is_null() {
+        return SP_ERR_NULL;
+    }
+    let garde = RAPPORT_PLANCHE.lock().unwrap_or_else(|e| e.into_inner());
+    let Some(rapport) = garde.as_ref() else {
+        unsafe { *out_len = 0 };
+        return SP_ERR_BAD_INPUT;
+    };
+    unsafe { *out_len = rapport.len() as u32 };
+    if rapport.len() > dst_cap {
+        return SP_ERR_TOO_SMALL;
+    }
+    unsafe { copy_out(rapport.as_bytes(), dst, dst_cap) }
+}
+
+/// Lit les réglages et les options d'un montage.
+///
+/// Le format du plan est lu par [`Specification::lire`] — un seul lecteur dans
+/// tout le dépôt, partagé avec l'exemple de contrôle et les tests. Les lignes
+/// propres au montage s'y ajoutent : `!montage`, `!encre`, `!sortie`, `!info`.
+///
+/// Renvoie `None` si la ligne `!page` manque, ou si une valeur est inconnue :
+/// un mode de couleur mal orthographié donnerait un PDF en quadri qu'on croit en
+/// tons directs, et cela se découvre chez l'imprimeur.
+fn parse_montage_spec(texte: &str) -> Option<(Reglages, Options)> {
+    let plan = Specification::lire(texte)?;
+    let mut options = Options::default();
+    let mut encre = ReglagesEncre::default();
+    let mut icc_composantes: Option<u8> = None;
+    let mut conforme = false;
+
+    for ligne in texte.lines() {
+        let champs: Vec<&str> = ligne.trim_end().split('\t').collect();
+        let Some(nom) = champs.first().copied() else {
+            continue;
+        };
+        let texte_de = |index: usize| -> String {
+            champs
+                .get(index)
+                .map_or(String::new(), |v| v.trim().to_string())
+        };
+        let nombre = |index: usize| -> Option<f64> {
+            champs.get(index).and_then(|v| v.trim().parse::<f64>().ok())
+        };
+        let actif = |index: usize| -> bool {
+            champs.get(index).is_some_and(|v| {
+                let v = v.trim();
+                v == "1" || v.eq_ignore_ascii_case("true")
+            })
+        };
+
+        match nom {
+            "!montage" => {
+                options.mode = match texte_de(1).as_str() {
+                    "rvb" | "rgb" => ModeCouleur::Rvb,
+                    "cmjn" | "cmyk" => ModeCouleur::Cmjn,
+                    "gris" | "niveaux-de-gris" | "gray" | "grey" => ModeCouleur::NiveauxDeGris,
+                    _ => return None,
+                };
+                options.fond_blanc = actif(2);
+                options.filtre = match texte_de(3).as_str() {
+                    "" | "auto" => ImageFilter::Auto,
+                    "aucun" | "none" => ImageFilter::None,
+                    "rle" | "runlength" => ImageFilter::RunLengthDecode,
+                    "flate" | "deflate" => ImageFilter::FlateDecode,
+                    _ => return None,
+                };
+            }
+            "!encre" => {
+                // Zéro vaut « désactivé », comme `if (opts.gcr)` en JavaScript.
+                encre.gcr = nombre(1).filter(|v| *v > 0.0);
+                encre.limite_encre = nombre(2).filter(|v| *v > 0.0);
+            }
+            "!sortie" => {
+                if let Some(valeur) = nombre(1).filter(|v| *v >= 0.0) {
+                    icc_composantes = Some(valeur as u8);
+                }
+                options.sortie.identifiant = texte_de(2);
+                options.sortie.description = texte_de(3);
+                options.sortie.conformite = match texte_de(4).as_str() {
+                    "pdfx-1a" | "PDF/X-1a:2001" => Some(Conformite::PdfX1a2001),
+                    "pdfx-3" | "PDF/X-3:2002" => Some(Conformite::PdfX3n2002),
+                    "pdfx-4" | "PDF/X-4" => Some(Conformite::PdfX4),
+                    "" | "aucune" => None,
+                    _ => return None,
+                };
+                conforme = options.sortie.conformite.is_some();
+            }
+            "!info" => {
+                let valeur = texte_de(2);
+                if valeur.is_empty() {
+                    continue;
+                }
+                match texte_de(1).as_str() {
+                    "titre" | "title" => options.info.title = Some(valeur),
+                    "auteur" | "author" => options.info.author = Some(valeur),
+                    "sujet" | "subject" => options.info.subject = Some(valeur),
+                    "mots-cles" | "keywords" => options.info.keywords = Some(valeur),
+                    "createur" | "creator" => options.info.creator = Some(valeur),
+                    "producteur" | "producer" => options.producteur = valeur,
+                    _ => continue,
+                }
+            }
+            _ => continue,
+        }
+    }
+
+    options.encre = encre;
+    // Les composantes du profil ne sont devinées que si elles manquent : un
+    // profil CMJN décrit par `4` est une donnée, pas une déduction.
+    options.sortie.composantes = icc_composantes.unwrap_or_else(|| {
+        if conforme && options.mode == ModeCouleur::Cmjn {
+            4
+        } else {
+            3
+        }
+    });
+    Some((plan.reglages, options))
+}
+
+/// Une face à poser : deux places, et de quoi lire les deux rendus.
+struct FaceSpec {
+    gauche: Emplacement,
+    droite: Emplacement,
+    rendus: [(u32, u32); 2],
+}
+
+/// Lit la ligne `!face`. Voir [`sp_montage_face`] pour le format.
+fn parse_face_spec(texte: &str) -> Option<FaceSpec> {
+    let champs: Vec<&str> = texte.trim_end().split('\t').collect();
+    if champs.first().copied() != Some("!face") {
+        return None;
+    }
+    let taille = |index: usize| -> Option<u32> {
+        let valeur = champs.get(index)?.trim().parse::<u32>().ok()?;
+        (valeur > 0).then_some(valeur)
+    };
+    Some(FaceSpec {
+        gauche: lire_place(champs.get(1).copied()),
+        droite: lire_place(champs.get(2).copied()),
+        rendus: [(taille(3)?, taille(4)?), (taille(5)?, taille(6)?)],
+    })
+}
+
+/// Écrit un compte rendu d'échec et rend le code, sans jamais le taire.
+fn mettre_au_rapport(rapport: &str, code: i32) -> i32 {
+    if let Ok(mut garde) = RAPPORT_PLANCHE.lock() {
+        *garde = Some(rapport.to_string());
+    }
+    if let Ok(mut garde) = PLANCHE.lock() {
+        *garde = None;
+    }
+    code
 }
 
 // ─────────────────────────── écriture PDF ───────────────────────────
@@ -2982,6 +3496,284 @@ mod tests {
         // identiques — le plan reste calculable.
         assert!(texte.contains("!place\t0\tVide\t10.0000"), "{texte}");
         assert!(texte.contains("!place\t1\tVide\t220.0000"), "{texte}");
+    }
+
+    // ─────────────────────────── montage ───────────────────────────
+
+    /// Un rendu RVB uni, de la taille demandée.
+    fn rendu_uni(largeur: u32, hauteur: u32, valeur: u8) -> Vec<u8> {
+        vec![valeur; largeur as usize * hauteur as usize * 3]
+    }
+
+    /// Deux pages de 100 × 100 mm, sans fond perdu ni repères : la géométrie est
+    /// nue, donc lisible dans le test. Sans fond perdu, la zone chargée est la
+    /// page elle-même — un carré — donc les rendus sont carrés aussi.
+    const SPEC_MONTAGE: &str =
+        "!page\t100\t100\n!fond\t0\t0\n!reperes\t0\t0\t0\t0\t0\n!montage\trvb\t1\trle";
+
+    /// La ligne `!face` d'une planche, ses deux rendus étant carrés.
+    fn face(gauche: u32, droite: u32, pixels: u32) -> String {
+        format!("!face\t{gauche}\t{droite}\t{pixels}\t{pixels}\t{pixels}\t{pixels}")
+    }
+
+    /// Ouvre un montage, pose des faces, écrit, et rend les octets du PDF.
+    ///
+    /// `faces` porte, pour chacune, sa ligne de spécification et ses deux
+    /// tampons.
+    fn planche(spec: &str, icc: &[u8], faces: &[(&str, &[u8], &[u8])]) -> Result<Vec<u8>, i32> {
+        // ⚠️ Une ouverture refusée **rend le code**, elle ne panique pas : c'est
+        // un cas que les tests éprouvent, et le compte rendu porte la raison
+        // (une assertion qui le lirait ici échouerait pour une autre raison).
+        let ouverture =
+            unsafe { sp_montage_debut(spec.as_ptr(), spec.len(), icc.as_ptr(), icc.len()) };
+        if ouverture != 0 {
+            return Err(ouverture);
+        }
+        for (ligne, gauche, droite) in faces {
+            let code = unsafe {
+                sp_montage_face(
+                    ligne.as_ptr(),
+                    ligne.len(),
+                    gauche.as_ptr(),
+                    gauche.len(),
+                    droite.as_ptr(),
+                    droite.len(),
+                )
+            };
+            if code < 0 {
+                return Err(code);
+            }
+        }
+        let mut taille = 0u32;
+        let code = unsafe { sp_montage_ecrire(&mut taille) };
+        if code < 0 {
+            return Err(code);
+        }
+        assert_eq!(code as u32, taille, "la taille rendue est celle annoncée");
+        let mut pdf = vec![0u8; taille as usize];
+        let mut ecrit = 0u32;
+        let lu = unsafe { sp_montage_lire(pdf.as_mut_ptr(), pdf.len(), &mut ecrit) };
+        assert_eq!(lu as u32, taille);
+        assert_eq!(ecrit, taille);
+        Ok(pdf)
+    }
+
+    /// Assemble une planche, ou échoue **en disant pourquoi**.
+    fn planche_ou_echec(spec: &str, faces: &[(&str, &[u8], &[u8])]) -> Vec<u8> {
+        match planche(spec, &[], faces) {
+            Ok(pdf) => pdf,
+            Err(code) => panic!("montage refusé (code {code}) : {}", rapport_planche()),
+        }
+    }
+
+    /// Le compte rendu du dernier montage, en texte.
+    fn rapport_planche() -> String {
+        let mut besoin = 0u32;
+        let code = unsafe { sp_montage_rapport(ptr::null_mut(), 0, &mut besoin) };
+        assert_eq!(code, SP_ERR_TOO_SMALL, "un rapport doit être annoncé");
+        assert!(besoin > 0);
+        let mut tampon = vec![0u8; besoin as usize];
+        let mut ecrit = 0u32;
+        let code = unsafe { sp_montage_rapport(tampon.as_mut_ptr(), tampon.len(), &mut ecrit) };
+        assert_eq!(code as u32, besoin);
+        String::from_utf8(tampon).expect("le rapport est de l'UTF-8")
+    }
+
+    /// La planche sort, elle est un PDF, et le compte rendu dit ce qui a été
+    /// fait — format fini, média, nombre de repères, mode.
+    #[test]
+    fn frontiere_montage_planche() {
+        let gauche = rendu_uni(20, 20, 200);
+        let droite = rendu_uni(20, 20, 40);
+        let ligne = face(2, 1, 20);
+        let pdf = planche_ou_echec(SPEC_MONTAGE, &[(&ligne, &gauche, &droite)]);
+        assert!(pdf.starts_with(b"%PDF-"), "ce n'est pas un PDF");
+
+        let rapport = rapport_planche();
+        assert!(rapport.contains("!faces\t1"), "{rapport}");
+        assert!(rapport.contains("!mode\trvb"), "{rapport}");
+        assert!(rapport.contains("!conformite\taucune"), "{rapport}");
+        // 2 pages de 100 mm côte à côte, et un média égal au format fini : ni
+        // fond perdu ni réserve de repères dans cette spécification.
+        assert!(
+            rapport.contains("!face\t0\t200.0000\t100.0000\t200.0000\t100.0000\t0"),
+            "{rapport}"
+        );
+    }
+
+    /// Une feuille d'imposition a **deux** faces — le recto et le verso. Elles
+    /// doivent tenir dans **un seul** fichier.
+    #[test]
+    fn frontiere_montage_deux_faces() {
+        let pixels = rendu_uni(20, 20, 128);
+        let recto = face(4, 1, 20);
+        let verso = face(2, 3, 20);
+        let pdf = planche_ou_echec(
+            SPEC_MONTAGE,
+            &[(&recto, &pixels, &pixels), (&verso, &pixels, &pixels)],
+        );
+        let rapport = rapport_planche();
+        assert!(rapport.contains("!faces\t2"), "{rapport}");
+        assert_eq!(
+            rapport.lines().filter(|l| l.starts_with("!face\t")).count(),
+            2,
+            "une ligne de compte rendu par face : {rapport}"
+        );
+        // Chaque face est une page, et l'arbre de pages le dit.
+        let texte = String::from_utf8_lossy(&pdf);
+        assert_eq!(texte.matches("/Type /Page /Parent").count(), 2);
+        assert!(
+            texte.contains("/Count 2"),
+            "l'arbre doit annoncer deux pages"
+        );
+    }
+
+    /// Le montage suit les réglages : le fond perdu imprimé élargit le média, la
+    /// gouttière de la découpe page à page l'élargit encore, et les repères
+    /// ajoutent leur réserve.
+    #[test]
+    fn frontiere_montage_reglages() {
+        // La zone chargée d'une page de 100 mm avec 3 mm de fond perdu imprimé
+        // fait 106 × 106 mm : le rendu doit avoir ce rapport, pas un autre.
+        let pixels = rendu_uni(30, 30, 255);
+        let ligne = face(2, 1, 30);
+        let spec = "!page\t100\t100\n!fond\t3\t1\n!decoupe\t1\n!reperes\t1\t10\t5\t2.5\t0.25\n!montage\trvb\t1\tauto";
+        let pdf = planche_ou_echec(spec, &[(&ligne, &pixels, &pixels)]);
+        assert!(pdf.starts_with(b"%PDF-"));
+
+        let rapport = rapport_planche();
+        // Format fini = 2 × 100 + gouttière 6 = 206 ; média = + 2 × (3 + 10).
+        assert!(
+            rapport.contains("!face\t0\t206.0000\t100.0000\t232.0000\t126.0000\t16"),
+            "{rapport}"
+        );
+    }
+
+    /// Un rendu dont le rapport ne correspond pas à la zone posée est **refusé** :
+    /// la page serait étirée, ce qui ne se voit pas sur un aperçu et se voit sur
+    /// le papier.
+    #[test]
+    fn frontiere_montage_rendu_etire_refuse() {
+        // Les deux longueurs annoncées sont respectées — c'est le RAPPORT qui
+        // est faux (20 × 40 au lieu de 20 × 20), donc c'est bien le contrôle de
+        // rapport qui parle, pas celui de la taille du tampon.
+        let gauche = rendu_uni(20, 40, 0);
+        let droite = rendu_uni(20, 20, 0);
+        let ligne = "!face\t2\t1\t20\t40\t20\t20";
+        assert_eq!(
+            planche(SPEC_MONTAGE, &[], &[(ligne, &gauche, &droite)]),
+            Err(SP_ERR_BAD_INPUT)
+        );
+        assert!(rapport_planche().contains("serait étirée"));
+    }
+
+    /// Ce qui empêche d'assembler est **refusé en le disant**, et la raison est
+    /// dans le compte rendu : c'est elle que la colle journalise avant de
+    /// retomber sur l'export du produit.
+    #[test]
+    fn frontiere_montage_refus() {
+        let gauche = rendu_uni(20, 20, 0);
+        let droite = rendu_uni(20, 20, 0);
+        let ligne = face(2, 1, 20);
+
+        // Un mode inconnu.
+        let mode = SPEC_MONTAGE.replace("!montage\trvb", "!montage\tcouleur");
+        assert_eq!(
+            planche(&mode, &[], &[(&ligne, &gauche, &droite)]),
+            Err(SP_ERR_BAD_INPUT)
+        );
+        assert!(
+            rapport_planche().contains("!erreur"),
+            "la raison doit être dite"
+        );
+
+        // Un tampon qui ne fait pas la taille annoncée : refusé en le disant,
+        // jamais interprété.
+        let court = &gauche[..gauche.len() - 3];
+        assert_eq!(
+            planche(SPEC_MONTAGE, &[], &[(&ligne, court, &droite)]),
+            Err(SP_ERR_SHORT_INPUT)
+        );
+        let raison = rapport_planche();
+        assert!(raison.contains("20x20"), "{raison}");
+        assert!(raison.contains("1197 octets recus"), "{raison}");
+        assert!(raison.contains("1200 attendus"), "{raison}");
+
+        // Une face sans `!face`, ou avec un rendu de taille nulle.
+        for mauvaise in ["!face\t2\t1", "!face\t2\t1\t20\t0\t20\t20", "!places\t2\t1"] {
+            assert_eq!(
+                planche(SPEC_MONTAGE, &[], &[(mauvaise, &gauche, &droite)]),
+                Err(SP_ERR_BAD_INPUT),
+                "« {mauvaise} » doit etre refuse"
+            );
+        }
+
+        // Écrire sans avoir ouvert de montage.
+        let mut taille = 0u32;
+        assert_eq!(unsafe { sp_montage_ecrire(&mut taille) }, SP_ERR_BAD_INPUT);
+
+        // Ouvrir, puis écrire **sans aucune face** : une planche vide n'est pas
+        // un fichier à envoyer.
+        assert_eq!(
+            unsafe { sp_montage_debut(SPEC_MONTAGE.as_ptr(), SPEC_MONTAGE.len(), ptr::null(), 0) },
+            0
+        );
+        assert_eq!(unsafe { sp_montage_ecrire(&mut taille) }, SP_ERR_BAD_INPUT);
+        assert!(
+            rapport_planche().contains("aucune face"),
+            "la raison doit être dite"
+        );
+    }
+
+    /// La planche est gardée **une fois**, et un tampon trop court ne la perd
+    /// pas : c'est ce qui distingue ce protocole d'un refus.
+    #[test]
+    fn frontiere_montage_lire() {
+        let pixels = rendu_uni(20, 20, 128);
+        let ligne = face(2, 1, 20);
+        assert_eq!(
+            unsafe { sp_montage_debut(SPEC_MONTAGE.as_ptr(), SPEC_MONTAGE.len(), ptr::null(), 0) },
+            0
+        );
+        assert!(
+            unsafe {
+                sp_montage_face(
+                    ligne.as_ptr(),
+                    ligne.len(),
+                    pixels.as_ptr(),
+                    pixels.len(),
+                    pixels.as_ptr(),
+                    pixels.len(),
+                )
+            } > 0
+        );
+        let mut taille = 0u32;
+        let ecrit = unsafe { sp_montage_ecrire(&mut taille) };
+        assert!(ecrit > 0 && ecrit as u32 == taille);
+
+        // Trop court : la taille nécessaire est annoncée, et la planche reste.
+        let mut petit = vec![0u8; 8];
+        let mut besoin = 0u32;
+        assert_eq!(
+            unsafe { sp_montage_lire(petit.as_mut_ptr(), petit.len(), &mut besoin) },
+            SP_ERR_TOO_SMALL
+        );
+        assert_eq!(besoin, taille);
+
+        // Le deuxième appel aboutit, et **libère** la planche.
+        let mut complet = vec![0u8; besoin as usize];
+        let mut lu = 0u32;
+        assert_eq!(
+            unsafe { sp_montage_lire(complet.as_mut_ptr(), complet.len(), &mut lu) },
+            besoin as i32
+        );
+        assert!(complet.starts_with(b"%PDF-"));
+
+        assert_eq!(
+            unsafe { sp_montage_lire(complet.as_mut_ptr(), complet.len(), &mut lu) },
+            SP_ERR_BAD_INPUT,
+            "une planche lue n'est plus gardée : les octets sont chez l'appelant"
+        );
     }
 
     // ─────────────────────────── prépresse ───────────────────────────

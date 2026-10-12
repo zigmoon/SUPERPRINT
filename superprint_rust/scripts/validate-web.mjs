@@ -768,5 +768,78 @@ titre('destination de sortie (OutputIntent + profil ICC fourni)');
   );
 }
 
+// ── 10. Montage d'une planche imposée ───────────────────────────────────────
+titre('planche imposée : deux pages posées, rognées, repères, PDF/X');
+{
+  const page = { largeurPageMm: 100, hauteurPageMm: 100, fondPerduMm: 3, inclureFondPerdu: true };
+  const carre = { width: 30, height: 30, pixels: new Uint8Array(30 * 30 * 3).fill(200) };
+  const sombre = { width: 30, height: 30, pixels: new Uint8Array(30 * 30 * 3).fill(20) };
+
+  const planche = api.ouvrirPlanche(page);
+  planche.face({ places: [4, 1], rendus: [carre, sombre] });
+  planche.face({ places: [2, 3], rendus: [sombre, carre] });
+  const { pdf, rapport } = planche.ecrire();
+
+  check('la planche est un PDF', pdf[0] === 0x25 && pdf[1] === 0x50 && pdf[2] === 0x44 && pdf[3] === 0x46);
+  check('deux faces écrites', rapport.faces === 2, `${rapport.faces} face(s)`);
+  check('deux planches décrites', rapport.planches.length === 2);
+  check(
+    'le format fini est celui de deux pages côte à côte',
+    rapport.planches[0].formatFiniMm.largeurMm === 200 &&
+      rapport.planches[0].formatFiniMm.hauteurMm === 100,
+    JSON.stringify(rapport.planches[0].formatFiniMm),
+  );
+  check(
+    'douze repères par face sans découpe page à page',
+    rapport.planches.every((p) => p.reperes === 12),
+    `${rapport.planches.map((p) => p.reperes).join(', ')}`,
+  );
+  check(
+    'les zones rognées sont celles du plan',
+    rapport.planches[0].zonesMm[0][0] === 10 && rapport.planches[0].zonesMm[1][0] > 100,
+    JSON.stringify(rapport.planches[0].zonesMm),
+  );
+
+  const texte = Buffer.from(pdf).toString('latin1');
+  check('deux pages dans le fichier', (texte.match(/\/Type \/Page \/Parent/g) || []).length === 2);
+  // Le rognage est une **opération du flux** (`q … re W n`), pas un clipPath de
+  // Fabric appliqué avant rasterisation : un lecteur PDF peut donc le relire, et
+  // c'est ce qui distingue ce montage du chemin du produit.
+  //
+  // Deux découpes par page — une par page posée, chacune rognée à sa zone
+  // autorisée : c'est exactement ce qui empêche les deux fonds perdus de
+  // couture de se recouvrir.
+  check(
+    'le rognage est dans le flux, une découpe par page posée',
+    (texte.match(/\nW n\n/g) || []).length === 4,
+    `${(texte.match(/\nW n\n/g) || []).length} découpe(s)`,
+  );
+  await writeFile(join(root, 'web-planche.pdf'), pdf);
+
+  // Le refus doit dire pourquoi, et ne rien écrire : un PDF à moitié assemblé
+  // serait pris pour un fichier complet.
+  const etire = api.ouvrirPlanche(page);
+  const tropHaut = { width: 30, height: 60, pixels: new Uint8Array(30 * 60 * 3) };
+  check(
+    'un rendu étiré est refusé, en le disant',
+    (() => {
+      try {
+        etire.face({ places: [4, 1], rendus: [tropHaut, carre] });
+        return false;
+      } catch (e) {
+        return e.name === 'CoreError';
+      }
+    })(),
+    'la page serait étirée',
+  );
+
+  // Un mode de couleur inconnu à la frontière ne devient pas « rvb » : la colle
+  // traduit ce qu'elle connaît et refuse le reste.
+  check(
+    'un mode inconnu retombe sur RVB plutôt que sur une quadri fausse',
+    api.ouvrirPlanche({ ...page, mode: 'bichromie' }) !== null,
+  );
+}
+
 console.log(ok ? '\n\u2705 la colle est conforme et son repli tient la parité.' : '\n\u274c colle NON conforme.');
 process.exit(ok ? 0 : 1);

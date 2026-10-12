@@ -52,7 +52,6 @@ use crate::ErreurMontage;
 /// donc large pour du bruit d'arrondi, et serré pour une vraie erreur — passer
 /// le rendu de la mauvaise page, par exemple.
 pub const TOLERANCE_RAPPORT: f64 = 0.01;
-
 /// La sortie : destination ICC, et conformité revendiquée.
 ///
 /// Les deux vont ensemble. Revendiquer une conformité sans `OutputIntent` est
@@ -172,7 +171,115 @@ pub struct Planche {
     pub reperes: usize,
 }
 
+/// Une **face** d'une planche imposée : son plan, et les deux rendus à poser.
+///
+/// Une feuille d'imposition a deux faces — le recto et le verso — et chacune est
+/// une page du PDF. Un livret de vingt pages en compte donc dix : les assembler
+/// dans **un seul** document est ce qui en fait un fichier à envoyer, et non dix
+/// fichiers à recoller.
+pub struct Face<'a> {
+    /// Le plan de la face : pose des deux pages, zone autorisée, repères.
+    pub plan: &'a Plan,
+    /// Les deux rendus RVB, dans l'ordre `[gauche, droite]`.
+    pub rendus: [&'a RendusPage; 2],
+}
+
+/// Ce qu'une face a donné, tel qu'un contrôle peut le relire.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FaceAssemblee {
+    /// Le format fini de cette face, en millimètres.
+    pub format_fini_mm: (f64, f64),
+    /// Le média de cette face, en millimètres.
+    pub media_mm: (f64, f64),
+    /// La zone autorisée de chacune des deux places.
+    pub zones_mm: [(f64, f64, f64, f64); 2],
+    /// Nombre de repères écrits sur cette face.
+    pub reperes: usize,
+}
+
+/// Un document imposé : plusieurs faces, **un** PDF.
+#[derive(Clone, Debug)]
+pub struct Planches {
+    /// Les octets du PDF, une page par face.
+    pub pdf: Vec<u8>,
+    /// Ce qui a été fait, face par face.
+    pub faces: Vec<FaceAssemblee>,
+}
+
+/// Un **assembleur** : un document imposé en cours, qu'on remplit face par face.
+///
+/// C'est la forme qui compte pour un livret réel. Un vingt pages à 150 dpi pèse
+/// 250 Mo de pixels bruts : les garder tous en mémoire pour les assembler d'un
+/// coup marcherait sur un petit document et échouerait sur un vrai. Ici, une
+/// face est posée puis **oubliée** — ses pixels sont encodés dans le document,
+/// et l'appelant peut les libérer.
+pub struct Assembleur {
+    document: Document,
+    options: Options,
+    faces: Vec<FaceAssemblee>,
+}
+
+impl Assembleur {
+    /// Ouvre un document imposé vide, réglé par `options`.
+    #[must_use]
+    pub fn nouveau(options: &Options) -> Self {
+        let mut document = Document::new();
+        // Les repères du document ne sont pas ceux du noyau PDF : le plan en
+        // donne seize (douze autour des deux pages, quatre à la couture en
+        // découpe page à page), là où `crop_marks` n'en connaît que huit pour
+        // une page seule.
+        document.marks = false;
+        document.info = options.info.clone();
+        if options.producteur.trim().is_empty() {
+            document.info.producer = None;
+        } else {
+            document.info.producer = Some(options.producteur.clone());
+        }
+        document.output_intent = options.sortie.vers_intent();
+        document.pdfx = options.sortie.conformite;
+        Self {
+            document,
+            options: options.clone(),
+            faces: Vec::new(),
+        }
+    }
+
+    /// Pose une face — donc une page — à la suite des précédentes.
+    ///
+    /// # Erreurs
+    ///
+    /// Les mêmes qu'[`assembler`] : c'est la face fautive qui est nommée, et
+    /// elle n'est **pas** ajoutée au document.
+    pub fn ajouter(&mut self, face: Face<'_>) -> Result<(), ErreurMontage> {
+        let resultat = poser_face(&mut self.document, &face, &self.options)?;
+        self.faces.push(resultat);
+        Ok(())
+    }
+
+    /// Le nombre de faces déjà posées.
+    #[must_use]
+    pub fn nombre_de_faces(&self) -> usize {
+        self.faces.len()
+    }
+
+    /// Ferme le document et rend le PDF, avec ce qui a été fait.
+    ///
+    /// # Erreurs
+    ///
+    /// [`ErreurMontage::Ecriture`] si le noyau PDF refuse le document.
+    pub fn terminer(self) -> Result<Planches, ErreurMontage> {
+        let pdf = self.document.write().map_err(ErreurMontage::Ecriture)?;
+        Ok(Planches {
+            pdf,
+            faces: self.faces,
+        })
+    }
+}
+
 /// Assemble la planche : deux rendus, un plan, et les options.
+///
+/// Cas particulier d'[`assembler_serie`] à une seule face, et c'est la même
+/// implémentation : deux chemins d'assemblage finiraient par diverger.
 ///
 /// # Erreurs
 ///
@@ -186,6 +293,51 @@ pub fn assembler(
     rendus: [&RendusPage; 2],
     options: &Options,
 ) -> Result<Planche, ErreurMontage> {
+    let planches = assembler_serie(&[Face { plan, rendus }], options)?;
+    let face = planches.faces.first().expect("une face assemblée").clone();
+    Ok(Planche {
+        pdf: planches.pdf,
+        format_fini_mm: face.format_fini_mm,
+        media_mm: face.media_mm,
+        zones_mm: face.zones_mm,
+        reperes: face.reperes,
+    })
+}
+
+/// Assemble **toutes les faces** d'une imposition dans un seul document.
+///
+/// Les faces partagent les options : le mode de couleur, les métadonnées, la
+/// destination de sortie. Elles ne partagent pas leurs réglages de pose — chaque
+/// `Plan` porte les siens, et c'est ce qui permet à un document dont le format
+/// change en cours de route de rester imposable.
+///
+/// # Erreurs
+///
+/// Les mêmes qu'[`assembler`], et la première face fautive interrompt le tout :
+/// un PDF à moitié assemblé ne vaut pas mieux qu'un refus, il vaut moins, parce
+/// qu'on pourrait le prendre pour un fichier complet.
+pub fn assembler_serie(faces: &[Face<'_>], options: &Options) -> Result<Planches, ErreurMontage> {
+    let mut assembleur = Assembleur::nouveau(options);
+    for face in faces {
+        assembleur.ajouter(Face {
+            plan: face.plan,
+            rendus: face.rendus,
+        })?;
+    }
+    assembleur.terminer()
+}
+
+/// Pose une face : le fond blanc, les deux pages rognées, les repères.
+///
+/// Rend ce qui a été fait, ou l'erreur qui a empêché de le faire — un rapport de
+/// rapport n'est pas un rapport, et une face étirée doit arrêter l'assemblage.
+fn poser_face(
+    document: &mut Document,
+    face: &Face<'_>,
+    options: &Options,
+) -> Result<FaceAssemblee, ErreurMontage> {
+    let plan = face.plan;
+    let rendus = face.rendus;
     let (_, _, largeur_finie, hauteur_finie) = plan.format_fini_mm();
     let fond_perdu = plan.reglages.fond_perdu_effectif_mm();
     let marge = plan.reglages.marge_effective_mm();
@@ -218,20 +370,6 @@ pub fn assembler(
             paint: Paint::Quadri(blanc(options.mode)),
         });
     }
-
-    let mut document = Document::new();
-    // Les repères du document ne sont pas ceux du noyau PDF : le plan en donne
-    // seize (douze autour des deux pages, quatre à la couture en découpe page à
-    // page), là où `crop_marks` n'en connaît que huit pour une page seule.
-    document.marks = false;
-    document.info = options.info.clone();
-    if options.producteur.trim().is_empty() {
-        document.info.producer = None;
-    } else {
-        document.info.producer = Some(options.producteur.clone());
-    }
-    document.output_intent = options.sortie.vers_intent();
-    document.pdfx = options.sortie.conformite;
 
     let mut zones = [(0.0, 0.0, 0.0, 0.0); 2];
     for (rang, cote) in [Cote::Gauche, Cote::Droite].into_iter().enumerate() {
@@ -295,13 +433,9 @@ pub fn assembler(
     document.add_page(page);
 
     let mm = 25.4 / 72.0;
-    let media_mm = (boxes.media.width() * mm, boxes.media.height() * mm);
-    let pdf = document.write().map_err(ErreurMontage::Ecriture)?;
-
-    Ok(Planche {
-        pdf,
+    Ok(FaceAssemblee {
         format_fini_mm: (largeur_finie, hauteur_finie),
-        media_mm,
+        media_mm: (boxes.media.width() * mm, boxes.media.height() * mm),
         zones_mm: zones,
         reperes,
     })

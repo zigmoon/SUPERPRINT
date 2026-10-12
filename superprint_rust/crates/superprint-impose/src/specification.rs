@@ -125,7 +125,13 @@ impl Specification {
 }
 
 /// Un numéro de page, ou une place vide. Zéro et l'absence valent « vide ».
-fn lire_place(champ: Option<&str>) -> Emplacement {
+///
+/// ⚠️ **Publique**, et volontairement : la frontière C doit lire les mêmes
+/// formes (`Vide`, vide, `0`, un entier) que la ligne `!places`. En recopier la
+/// règle ferait deux lecteurs pour un seul format, et la dérive viendrait du
+/// second.
+#[must_use]
+pub fn lire_place(champ: Option<&str>) -> Emplacement {
     match champ.and_then(|v| v.trim().parse::<u32>().ok()) {
         Some(numero) if numero > 0 => Emplacement::Page(numero),
         _ => Emplacement::Vide,

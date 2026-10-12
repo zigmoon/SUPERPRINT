@@ -133,6 +133,7 @@ dependencies = [
  "superprint-font",
  "superprint-image",
  "superprint-impose",
+ "superprint-montage",
  "superprint-pdf",
  "superprint-preflight",
  "superprint-text",

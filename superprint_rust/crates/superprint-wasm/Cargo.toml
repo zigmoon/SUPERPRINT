@@ -21,6 +21,14 @@ superprint-compress = { path = "../superprint-compress" }
 superprint-font = { path = "../superprint-font" }
 superprint-image = { path = "../superprint-image" }
 superprint-impose = { path = "../superprint-impose" }
+# L'assemblage d'une planche imposée vit ICI, et non dans un module à part comme
+# l'interpréteur PostScript (`superprint-eps-wasm`). La raison est mesurée : le
+# montage ne fait que **poser** et **rogner** ce que `superprint-pdf` et
+# `superprint-impose` savent déjà faire — deux crates que ce module embarque
+# déjà. Un module séparé aurait donc recopié tout le noyau (380 Ko) pour deux
+# fichiers de trois cents lignes. L'EPS, lui, apportait un interpréteur entier
+# (+160 Ko mesurés), ce qui justifiait de le sortir du module précaché.
+superprint-montage = { path = "../superprint-montage" }
 superprint-pdf = { path = "../superprint-pdf" }
 superprint-preflight = { path = "../superprint-preflight" }
 superprint-text = { path = "../superprint-text" }

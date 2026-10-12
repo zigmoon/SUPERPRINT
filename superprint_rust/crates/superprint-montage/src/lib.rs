@@ -81,7 +81,10 @@
 pub mod planche;
 pub mod rendu;
 
-pub use planche::{assembler, Options, Planche, Sortie, TOLERANCE_RAPPORT};
+pub use planche::{
+    assembler, assembler_serie, Assembleur, Face, FaceAssemblee, Options, Planche, Planches,
+    Sortie, TOLERANCE_RAPPORT,
+};
 pub use rendu::{ModeCouleur, RendusPage};
 
 use superprint_pdf::document::DocError;
@@ -197,6 +200,74 @@ mod tests {
             planche.media_mm
         );
         assert!(planche.pdf.starts_with(b"%PDF-"));
+    }
+
+    /// Une imposition réelle a **deux faces par feuille** — le recto et le
+    /// verso — et elles doivent tenir dans **un seul** PDF : dix fichiers à
+    /// recoller ne sont pas un fichier à envoyer.
+    ///
+    /// Le contrôle ne compte pas les pages dans le flux : il demande à un
+    /// lecteur tiers combien de pages il trouve, et où sont leurs boîtes.
+    #[test]
+    fn deux_faces_tiennent_dans_un_seul_pdf() {
+        let recto = plan_a4();
+        let verso = plan_a4();
+        let rendu = rendus_a4();
+        let planches = assembler_serie(
+            &[
+                Face {
+                    plan: &recto,
+                    rendus: [&rendu, &rendu],
+                },
+                Face {
+                    plan: &verso,
+                    rendus: [&rendu, &rendu],
+                },
+            ],
+            &Options::default(),
+        )
+        .unwrap();
+
+        assert_eq!(planches.faces.len(), 2, "une face décrite par page écrite");
+        for face in &planches.faces {
+            assert_eq!(face.format_fini_mm, (420.0, 297.0));
+            assert_eq!(face.reperes, 12);
+        }
+        let texte = String::from_utf8_lossy(&planches.pdf);
+        assert_eq!(
+            texte.matches("/Type /Page /Parent").count(),
+            2,
+            "deux pages dans le fichier"
+        );
+        assert!(
+            texte.contains("/Type /Pages /Kids") && texte.contains("/Count 2"),
+            "l'arbre de pages doit annoncer deux pages"
+        );
+    }
+
+    /// Une face fautive **arrête tout** : un PDF à moitié assemblé est plus
+    /// dangereux qu'un refus, parce qu'on pourrait le prendre pour complet.
+    #[test]
+    fn une_face_fautive_arrete_l_assemblage() {
+        let plan = plan_a4();
+        // Le rendu d'un carré ne peut pas couvrir une zone de 216 × 303.
+        let carre = RendusPage::nouveau(100, 100, vec![0; 100 * 100 * 3]).unwrap();
+        let bon = rendus_a4();
+        let erreur = assembler_serie(
+            &[
+                Face {
+                    plan: &plan,
+                    rendus: [&bon, &bon],
+                },
+                Face {
+                    plan: &plan,
+                    rendus: [&carre, &carre],
+                },
+            ],
+            &Options::default(),
+        )
+        .unwrap_err();
+        assert!(matches!(erreur, ErreurMontage::RapportIncoherent { .. }));
     }
 
     /// Les repères de la planche sont **ceux du plan**, et le plan en donne

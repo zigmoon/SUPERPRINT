@@ -105,25 +105,26 @@ l'inventaire complet, domaine par domaine, est dans `docs/PORTAGE.md`.
   sa déclaration PDF/X. Le rognage est **dans le fichier**, pas dans la façon dont
   il a été fabriqué — un lecteur peut donc le vérifier.
 - **`superprint-wasm`** — **la frontière C**, et le seul crate en `cdylib` :
-  c'est lui qui produit le `.wasm` du navigateur. **44 fonctions** exposées
+  c'est lui qui produit le `.wasm` du navigateur. **49 fonctions** exposées
   (unités, couleurs sur octets, luminance, RunLength, réduction, page de
-  démonstration, document complet **et texte**),
+  démonstration, document complet **et texte**, imposition, **montage d'une
+  planche imposée**),
   **aucun import** — donc `WebAssembly.instantiate(bytes, {})` suffit, sans
   WASI ni fonction hôte. Pas de `wasm-bindgen` : la frontière est écrite à la
   main pour tenir la règle « zéro dépendance ».
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **1015 tests unitaires** (`superprint-compress` 36,
+> wasm32-unknown-unknown`, et **1023 tests unitaires** (`superprint-compress` 36,
 > `superprint-core` 37, `superprint-doc` 137, `superprint-eps-wasm` 5,
 > `superprint-flow` 51, `superprint-font` 31, `superprint-icc` 21,
-> `superprint-image` 110, `superprint-impose` 43, `superprint-montage` 20,
+> `superprint-image` 110, `superprint-impose` 43, `superprint-montage` 22,
 > `superprint-path` 94,
 > `superprint-pdf` 109, `superprint-preflight` 45, `superprint-ps` 93,
-> `superprint-swatch` 46, `superprint-text` 73, `superprint-wasm` 38,
+> `superprint-swatch` 46, `superprint-text` 73, `superprint-wasm` 44,
 > `superprint-zip` 26) — tous verts.
 >
-> Le module livrable est construit dans **`dist/superprint_core.wasm`** (≈ 380 Ko),
+> Le module livrable est construit dans **`dist/superprint_core.wasm`** (≈ 406 Ko),
 > chargé **sans le moindre import**, et validé sur huit points :
 >
 > - **parité croisée** — sur 250 000 pixels, RVB→CMJN, CMJN→RVB et la luminance

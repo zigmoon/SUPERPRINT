@@ -58,4 +58,4 @@ pub use ordre::{ordre, planches, planches_pour, Emplacement, PAGES_PAR_FEUILLE};
 pub use plan::{Place, Plan, Reglages};
 pub use pose::{Cote, Pose};
 pub use reperes::{reperes_de_coupe, Segment};
-pub use specification::Specification;
+pub use specification::{lire_place, Specification};

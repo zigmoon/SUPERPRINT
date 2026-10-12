@@ -86,7 +86,10 @@ Step 'colle livree identique a celle du depot' {
     @{ Source = 'dist/superprint_core.wasm'; Livree = '../superprint/app/JS/superprint_core.wasm' },
     # Meme regle pour l'import PostScript : la colle ET son noyau.
     @{ Source = 'web/superprint-eps.js'; Livree = '../superprint/app/JS/superprint-eps.js' },
-    @{ Source = 'dist/superprint_eps.wasm'; Livree = '../superprint/app/JS/superprint_eps.wasm' }
+    @{ Source = 'dist/superprint_eps.wasm'; Livree = '../superprint/app/JS/superprint_eps.wasm' },
+    # Et pour l'export impose : sa colle, et le noyau du branchement — le montage
+    # vit DANS le module principal, donc il n'y a pas de quatrieme fichier.
+    @{ Source = 'web/superprint-montage.js'; Livree = '../superprint/app/JS/superprint-montage.js' }
   )
   $identiques = $true
   foreach ($paire in $paires) {
@@ -279,7 +282,8 @@ Step 'couleurs : parite bit a bit avec main.js, et le defaut du GCR mesure' {
 # Verification de la FRONTIERE EPS : le second module WebAssembly, celui qui
 # n'est PAS precache et n'est charge que si l'utilisateur ouvre un .eps. Ses deux
 # exports (detection, analyse) sont exerces sur les temoins reels, et le module
-# principal doit rester a 380 Ko — c'est la raison d'etre de la separation.
+# principal reste mesure — c'est la raison d'etre de la separation : il a grandi
+# de 25,9 Ko pour le montage, pas de 160 Ko pour l'EPS.
 Step 'module EPS : detection, analyse reelle, et zero surcout pour les autres' {
   node scripts/verifier-eps-wasm.mjs
 }
@@ -291,6 +295,15 @@ Step 'module EPS : detection, analyse reelle, et zero surcout pour les autres' {
 # temoins reels, et le repli est exerce avec un noyau absent.
 Step 'import EPS branche : contrat mesure dans main.js, repere, repli' {
   node scripts/validate-eps-branchement.mjs
+}
+
+# Validation du BRANCHEMENT de l'EXPORT IMPOSE : le contrat est mesure dans
+# `main.js` et `index.html` (identifiants du modal, table des qualites, liste de
+# ce qui n'est pas a imprimer, decalage de cellule, motif du nom de fichier), les
+# refus sont eprouves, les replis aussi — et la chaine complete tourne avec le VRAI
+# noyau, jusqu'au PDF relu par pdf-lib.
+Step 'export impose branche : contrat mesure, refus, repli, et la chaine complete' {
+  node scripts/validate-montage-branchement.mjs
 }
 
 Pop-Location

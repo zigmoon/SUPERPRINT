@@ -16,11 +16,11 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-12) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 18 crates, tests compris) | **46 233 lignes** |
-| dont annotations `#[test]` | 1015 tests, tous verts |
-| exports `sp_*` de la frontière C | **48** (0 import), sur **deux** modules |
-| modules livrables | 380 Ko (noyau) + **322 Ko** (import PostScript, à la demande) |
-| étapes de contrôle (`scripts/check.ps1`) | **31** |
+| Rust (`crates/`, 19 crates, tests compris) | **47 178 lignes** |
+| dont annotations `#[test]` | 1023 tests, tous verts |
+| exports `sp_*` de la frontière C | **53** (0 import), sur **deux** modules |
+| modules livrables | 406 Ko (noyau) + **322 Ko** (import PostScript, à la demande) |
+| étapes de contrôle (`scripts/check.ps1`) | **32** |
 | JavaScript applicatif (hors bibliothèques tierces) | **126 581 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
@@ -31,9 +31,9 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | Métrique | Mesure | Ce qu'elle dit |
 |---|---|---|
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
-| dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript | ce qui sert vraiment à l'utilisateur |
+| dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript **+** l'export imposé | ce qui sert vraiment à l'utilisateur |
 | **Volume JS porté** (somme des plages citées) | **13 832 / 18 803** → **74 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 46 233 / 112 138 → **41,2 %** | ⚠️ le plus trompeur des quatre |
+| **Lignes** Rust / JS | 47 178 / 112 138 → **42,1 %** | ⚠️ le plus trompeur des quatre |
 
 La plage ajoutée par l'import PostScript est mesurée ainsi : dans
 `superprint/app/JS/sp-eps-import.js` (939 lignes), tout ce qui précède
@@ -109,7 +109,7 @@ déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
 | 11 | Analyse de police TrueType (`cmap`, métriques) | `superprint-font` | 31 tests, police synthétique **et** vraie police | — |
 | 12 | Texte : `Type0` / `Identity-H` / `/FontFile2` | `pdf::font`, `pdf::document` | **`pdf.js` relit les caractères en clair** | — |
 | 13 | Texte extractible (`/ToUnicode`) | `pdf::font` | `pdf.js` : accents, apostrophe, tiret cadratin | — |
-| 14 | Frontière C (**44** fonctions, 0 import) | `superprint-wasm` | `WebAssembly.Module.imports` = ∅ | — |
+| 14 | Frontière C (**49** fonctions, 0 import) | `superprint-wasm` | `WebAssembly.Module.imports` = ∅ | — |
 | 15 | Colle web + repli JS mesuré | `web/superprint-core.js` | parité du repli octet pour octet | — |
 | 16 | **Césure** (Liang + règles FR) | `text::motifs`, `text::francais`, `text::Cesure` | `hypher.js`, **2 644 mots, 7 champs identiques** | ✅ **branché** |
 | 17 | **Compression DEFLATE / zlib** | `compress::{deflate,inflate,zlib}` | croisé avec `zlib` de Node, 15 jeux, 2 sens | 🟢 exporteur |
@@ -127,7 +127,7 @@ déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
 | 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` / **RTF** | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères ; RTF : **parité caractère par caractère** avec `spRtfToText` sur 5 témoins et 10 cas piégeux | 🟢 offert |
 | 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné, découpage appliqué) | `superprint-ps` | 4 témoins, **109 sommets** comparés à un interpréteur écrit à part, et le dessin découpé vérifié sur **1 525 points** ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
 | 30 | **Dessin SVG** (commandes de chemin, formes, transformations) | `superprint-doc::svg` | **40 SVG réels** du dépôt, **172 formes et 10 404 sommets** comparés à un lecteur écrit à part ; tolérance mesurée sur la courbe vraie ; table des couleurs relevée du produit | 🟢 offert |
-| 32 | **Montage d'une planche imposée** (pose, rognage, repères, couleurs, PDF/X) | `superprint-montage` | planche assemblée puis **relue par `pdf-lib`** : boîtes, places et rognages exacts au dixième de micromètre, sens des lignes lu dans les pixels, PDF/X-1a avec le profil du produit | 🟢 offert |
+| 32 | **Montage d'une planche imposée** (pose, rognage, repères, couleurs, PDF/X) | `superprint-montage` | planche assemblée puis **relue par `pdf-lib`** : boîtes, places et rognages exacts au dixième de micromètre, sens des lignes lu dans les pixels, PDF/X-1a avec le profil du produit | ✅ **branché** |
 
 ---
 
@@ -285,18 +285,76 @@ est recalculée à partir de la **règle**, jamais recopiée du Rust.
 | PDF/X-1a avec un vrai profil du produit | `/GTS_PDFXVersion`, `PDF/X-1a:2001`, `/DestOutputProfile`, `pdfaid:part` — et **aucune** image RVB |
 | les refus | spécification sans `!page`, mode inconnu, PDF/X-1a en RVB, PDF/X sans profil |
 
-> **Ce qui reste pour que le bouton de l'application s'en serve.** L'assemblage
-> est fait et mesuré ; il manque la **colle** — un `web/superprint-montage.js` qui
-> rend chaque page dans un canevas Fabric, envoie les deux rendus RVB au noyau, et
-> remplace `window.exportImposedPDF`. La porte d'entrée existe et est
-> **prioritaire** au clic (`index.html` fait `window.exportImposedPDF ||
-> exportImposedPDF`) : aucune ligne de `main.js` n'est nécessaire. Le contrat est
-> défini, et ce qui manque est le rendu, pas la décision.
+> **Le bouton de l'application s'en sert.** La colle est `web/superprint-montage.js`,
+> livrée sous `app/JS/` avec une ligne `<script>` — **aucune ligne de `main.js`
+> n'a été touchée**, et le point d'accroche est celui que le produit offrait déjà :
+> le bouton d'imposition d'`index.html` fait
+> `window.exportImposedPDF || exportImposedPDF`, et `main.js` posait cette
+> fonction sur `window`. La colle **l'enveloppe** : noyau d'abord, export
+> vectoriel du produit ensuite.
+>
+> Trois choses sont **mesurées** par `scripts/validate-montage-branchement.mjs`,
+> et la troisième est la plus importante :
+>
+> 1. le contrat est **extrait de `main.js` et `index.html`** — identifiants du
+>    modal, table des qualités, liste de ce qui n'est pas à imprimer, couleurs de
+>    trait parasite, décalage de cellule (`exportBleedPx - bleedPx`), motif du nom
+>    de fichier. Une valeur qui bouge d'un côté et pas de l'autre fait échouer le
+>    contrôle : c'est la seule protection contre la dérive d'une recopie ;
+> 2. les **refus** sont éprouvés, et ils sont délibérés : un document à tons
+>    directs (la planche du noyau ne porte pas les noms d'encre), un document à
+>    masques d'image (reposés par `main.js` au chargement, par une fonction
+>    privée), un profil ICC personnalisé (gardé dans un cache privé). Dans ces
+>    trois cas l'export du produit fait **mieux**, donc c'est lui qui doit le
+>    faire — et le repli est exercé ;
+> 3. la **chaîne complète** tourne avec le vrai noyau : ordre d'impression, huit
+>    rendus pour un livret de huit pages, quatre faces assemblées, PDF relu par
+>    `pdf-lib`. Le canevas Fabric et le contexte 2D sont simulés ; **c'est dit**
+>    dans l'en-tête du contrôle plutôt que passé sous silence.
+>
+> **Ce que le branchement coûte à l'utilisateur, et il faut le dire** : la planche
+> est **en image**, donc le texte de la planche imposée n'est plus du texte
+> sélectionnable — l'export du produit, lui, le garde vectoriel. Ce que le noyau
+> apporte en échange n'est pas rien : un **PDF/X-1a en CMJN** avec `OutputIntent`,
+> profil ICC embarqué, et un rognage porté par le flux PDF, donc relisible par un
+> contrôle. Le mode RVB ne revendique aucune conformité : le noyau refuse de
+> revendiquer ce qu'il ne peut pas tenir.
 
 **Non porté, et pourquoi** : l'imposition N-up (4, 8, 16 poses), la rotation,
 la signature/cahier et le dos carré collé. Le produit ne les a pas non plus :
 le mode actuel est un livret 2 poses. Les porter serait ajouter une fonction,
 pas en déplacer une.
+
+#### B3b. Les quatre autres imports — la mesure dit non, et voici pourquoi
+
+`.docx`, `.odt`, `.idml` et SVG sont **offerts** par le noyau (`superprint-doc`),
+et le portage documentait leur branchement comme « à faire ». La mesure le
+contredit, format par format. Elle est faite par
+`scripts/analyse-accroches.mjs`, qui lit **`main.js` et `index.html`** et dit
+quels noms l'application atteint à travers `window` — donc lesquels sont
+remplaçables — et par la lecture des fonctions concernées.
+
+| Format | Le joint | Verdict, et la raison |
+|---|---|---|
+| `.docx` | `window.mammoth` | **non.** La chaîne côté produit est `mammoth.convertToHtml` → `transformDocument` → `_spAstVersHtml` → `flowHtmlIntoPages`. Les trois derniers sont **privés** à l'IIFE de `main.js` : les atteindre demanderait d'ajouter une ligne dans `main.js`, ce que la règle du dépôt interdit. Remplacer `window.mammoth` seul obligerait à fabriquer un AST **de la forme exacte de mammoth** (`paragraph.alignment`, `run.isBold`, `run.verticalAlignment`, `run.fontSize`, `numbering`, tableaux, images) — un portage de mammoth, pas un branchement |
+| `.odt` | aucun | **non.** `_spTexteOdf` est privée, appelée par son nom depuis `_spTexteDocument`. Aucun `window.*` sur le chemin |
+| `.idml` | `window._spOpenIdmlImport` | **non, et ce n'est pas le bon joint.** La fonction est remplaçable, mais c'est **tout l'import** : lecture du ZIP, `Stories/*.xml`, placement des blocs, images. Le noyau lit les paragraphes ; la **mise en page** est la logique du produit |
+| **SVG** | `window.fabric.loadSVGFromString` | **non, et il ne faut pas.** Le joint existe (Fabric est une bibliothèque), mais le lecteur SVG du noyau est **délibérément plus strict** : il refuse `<image>`, `<use>`, un remplissage `url(#…)`, `clip-path`, `mask`, `filter` et les feuilles `<style>` — que Fabric dessine. Il **aplatit** aussi les courbes en polylignes, là où Fabric garde le Bézier exact. Brancher, ce serait dessiner moins et moins bien : ce n'est pas un portage, c'est une régression |
+| **RTF** | `window.SPDocImport.helpers` | **possible, mais sans valeur mesurable.** Le joint est réel — `main.js` lit `window.SPDocImport.helpers.spRtfToText` — et le noyau a la parité **caractère par caractère**. Mais `sp-doc-import.js` est chargé de toute façon (il porte `spBytesToLatin1` et tout le reste), donc brancher le RTF **ajoute** un téléchargement sans en retirer aucun, pour remplacer une fonction de 95 lignes déjà présente. C'est exactement le cas que ce document refuse ailleurs : du portage pour le portage |
+
+> **Ce que ce tableau corrige.** Une version antérieure de ce document donnait
+> `addSvgFromContent` comme « point d'accroche du SVG ». `analyse-accroches.mjs`
+> dit l'inverse : `addSvgFromContent` et `handleDroppedSvgFile` sont
+> **internes — non substituables**. Le vrai joint du SVG est
+> `fabric.loadSVGFromString`, et il n'est pas souhaitable (ligne ci-dessus).
+
+**Conclusion, et elle est une décision autant qu'une mesure** : ces quatre
+formats restent **offerts** — le noyau sait les lire, les contrôles le mesurent —
+et leur branchement demande soit une ligne dans `main.js` (docx, odt, idml), soit
+d'accepter une régression (SVG). Les trois premiers sont à une ligne près :
+`_spTexteDocument` pourrait lire `(window._spTexteOdf || _spTexteOdf)` comme il
+lit déjà `window.SPDocImport.helpers`. Cette ligne n'a pas été écrite, et c'est
+un choix : `main.js` n'est pas modifié.
 
 ### B4. Contrôle prépresse (preflight) 🟡 → ✅ (fait, et mesuré)
 
@@ -1257,9 +1315,10 @@ cette fois l'objet entier est remplaçable.
 #### Deux modules, et pourquoi
 
 La première tentative a été d'ajouter l'interpréteur au module existant (crate
-`superprint-wasm`, une *feature* `eps`). **Mesure : 380 Ko → 540 Ko.** Or
-`superprint_core.wasm` est **précaché** : ces 160 Ko auraient été téléchargés par
-**tout le monde**, y compris les utilisateurs qui n'ouvrent jamais un `.eps`.
+`superprint-wasm`, une *feature* `eps`). **Mesure : 380 Ko → 540 Ko**, au moment
+où le noyau faisait 380 Ko. Or `superprint_core.wasm` est **précaché** : ces
+160 Ko auraient été téléchargés par **tout le monde**, y compris les utilisateurs
+qui n'ouvrent jamais un `.eps`.
 
 Le noyau PostScript vit donc dans **son propre crate**, `superprint-eps-wasm`, et
 dans son propre module :
@@ -1268,8 +1327,8 @@ dans son propre module :
 |---|---|---|
 | crate | `superprint-wasm` | `superprint-eps-wasm` |
 | fichier | `superprint_core.wasm` | `superprint_eps.wasm` |
-| taille mesurée | 380 Ko | 245 Ko |
-| exports `sp_*` | 44 | 4 |
+| taille mesurée | **406 Ko** | 322 Ko |
+| exports `sp_*` | **49** | 4 |
 | quand | au démarrage | **à la demande** |
 | qui paie | tout le monde | ceux qui importent un `.eps` |
 

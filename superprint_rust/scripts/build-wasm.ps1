@@ -37,24 +37,34 @@ $builtEps = Join-Path $root "target\wasm32-unknown-unknown\$profile\superprint_e
 #
 # C'est celui que le service worker précache : il est donc téléchargé par TOUT
 # LE MONDE, y compris par qui n'importera jamais un fichier PostScript. Lui
-# ajouter l'interpréteur EPS le ferait passer de 380 à 540 Ko — mesuré. Il reste
-# donc à 380 Ko, et l'EPS vit dans son propre module, chargé à la demande.
+# ajouter l'interpréteur EPS le ferait passer de 380 à 540 Ko — mesuré. L'EPS
+# vit donc dans son propre module, chargé à la demande.
+#
+# L'assemblage d'une planche imposée, lui, est DANS ce module, et c'est un choix
+# mesuré aussi : il a fait passer le module de 380,6 à 406,5 Ko, soit **+25,9 Ko
+# (+6,8 %)**. Ce coût est payé parce que le montage ne fait que poser et rogner
+# ce que `superprint-pdf` et `superprint-impose` savent déjà faire — deux crates
+# que ce module embarque déjà. Un module séparé aurait recopié tout le noyau
+# (406 Ko) plus le montage, soit seize fois le prix, pour un export qu'on
+# déclenche d'un clic. Le module EPS, lui, apportait un interpréteur entier
+# (+160 Ko).
 Write-Host "-- cargo build ($profile, wasm32-unknown-unknown)" -ForegroundColor Cyan
 & $cargo @commun
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw 'compilation du module wasm impossible' }
 if (-not (Test-Path $built)) { Pop-Location; throw "module introuvable : $built" }
 $final = Join-Path $dist 'superprint_core.wasm'
 Copy-Item $built $final -Force
-$ko = [math]::Round((Get-Item $final).Length / 1KB, 1)
+$octetsCoeur = (Get-Item $final).Length
+$ko = [math]::Round($octetsCoeur / 1KB, 1)
 Write-Host "OK : $final ($ko Ko)" -ForegroundColor Green
 
 # ── 2. Le module d'import PostScript / EPS ────────────────────────────────────
 #
 # Un crate À PART (`superprint-eps-wasm`), et non une fonctionnalité du
 # précédent. La différence est mesurée : une fonctionnalité aurait produit un
-# second module contenant TOUT le noyau en double (380 Ko) plus l'EPS, soit
-# 540 Ko. Ce crate ne dépend que de `superprint-ps` : le module livré fait
-# 245 Ko, et il n'est JAMAIS précaché — la colle `web/superprint-eps.js` le
+# second module contenant TOUT le noyau en double (406 Ko) plus l'EPS, soit
+# 570 Ko. Ce crate ne dépend que de `superprint-ps` : le module livré fait
+# 322 Ko, et il n'est JAMAIS précaché — la colle `web/superprint-eps.js` le
 # demande quand l'utilisateur ouvre un `.eps`, exactement comme
 # `sp-eps-import.js` (44 Ko) l'était avant.
 #
@@ -71,7 +81,8 @@ Copy-Item $builtEps $finalEps -Force
 $koEps = [math]::Round((Get-Item $finalEps).Length / 1KB, 1)
 Write-Host "OK : $finalEps ($koEps Ko)" -ForegroundColor Green
 
-Write-Host "`nLe module principal a grandi de 0 Ko : l'EPS est dans le second." -ForegroundColor Green
+Write-Host "`nLe module principal fait $ko Ko et le module EPS $koEps Ko." -ForegroundColor Green
+Write-Host "L'EPS n'a PAS alourdi le module precache : il vit dans le second." -ForegroundColor Green
 
 Pop-Location
 exit 0

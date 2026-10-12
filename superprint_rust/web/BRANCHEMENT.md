@@ -44,7 +44,42 @@ d'étape de compilation côté JavaScript.
 `rgbToCmyk` · `cmykToRgb` · `luma` · `runLengthEncode` · `runLengthDecode` ·
 `targetSizeForDpi` · `downscaleBilinearRgb` · `downscaleNearestRgb` ·
 `mmToPt` · `ptToMm` · `mmToPx` · `pxToMm` · `writeSpotPage` ·
-`writeSpotPageGray` · `loadFont` · **`createDocument`**
+`writeSpotPageGray` · `loadFont` · **`createDocument`** · **`ouvrirPlanche`**
+
+### Écrire une planche imposée
+
+`ouvrirPlanche()` rend un objet qui **pose des faces** — une par page du PDF — et
+les oublie au fur et à mesure : c'est ce qui permet d'imposer un livret sans
+garder tous ses rendus en mémoire.
+
+```js
+const planche = noyau.ouvrirPlanche({
+  largeurPageMm: 210, hauteurPageMm: 297, fondPerduMm: 3, inclureFondPerdu: true,
+  decoupePageAPage: false, reperesDeCoupe: true,
+  mode: 'cmjn',                      // 'rvb' | 'cmjn' | 'gris'
+  fondBlanc: true,
+  filtre: 'auto',                    // 'auto' | 'aucun' | 'rle' | 'flate'
+  icc: octetsIcc,                    // facultatif
+  sortie: { composantes: 4, identifiant: 'FOGRA39', description: 'Coated FOGRA39',
+            conformite: 'pdfx-1a' },
+});
+
+// Deux pages côte à côte : le rendu de gauche et celui de droite, en RVB,
+// trois octets par pixel, ligne du HAUT en premier — l'ordre d'un ImageData.
+planche.face({
+  places: [4, 1],
+  rendus: [{ pixels: rvbGauche, width: 159, height: 215 },
+           { pixels: rvbDroite, width: 159, height: 215 }],
+});
+
+const { pdf, rapport } = planche.ecrire();
+// rapport.faces, rapport.planches[i].formatFiniMm / mediaMm / reperes / zonesMm
+```
+
+Ce que le montage **ne fait pas**, et qu'il faut savoir avant de s'en servir : il
+pose les pages **en image**, donc le texte de la planche n'est pas du texte ; il
+ne porte pas les tons directs ; et il refuse ce qu'il ne peut pas tenir (PDF/X-1a
+en RVB, conformité sans profil) plutôt que de le revendiquer.
 
 ### Écrire un document complet
 
@@ -183,13 +218,14 @@ synthétiques pour la réduction. Deux implémentations écrites indépendamment
 mêmes sorties au bit près — c'est mesuré, pas supposé.
 
 **Ce qu'il ne couvre pas : l'écriture PDF.** On ne réécrit pas un assembleur PDF
-en JavaScript par-dessus le marché. `writeSpotPage`, `writeSpotPageGray` et
-`createDocument` — donc tout le texte et les polices — **lèvent une erreur
-explicite** (`CoreError`, code `UNAVAILABLE`) au lieu de rendre un résultat
-approximatif. Dans ce cas, c'est l'exporteur JavaScript existant de SuperPrint qui
-prend le relais — c'est exactement ce que la règle « aucune bascule à l'aveugle »
-demande. `loadFont` fait exception : c'est un simple téléchargement, sans noyau,
-et il fonctionne donc aussi en repli.
+en JavaScript par-dessus le marché. `writeSpotPage`, `writeSpotPageGray`,
+`createDocument` et `ouvrirPlanche` — donc tout le texte, les polices et les
+planches imposées — **lèvent une erreur explicite** (`CoreError`, code
+`UNAVAILABLE`) au lieu de rendre un résultat approximatif. Dans ce cas, c'est
+l'exporteur JavaScript existant de SuperPrint qui prend le relais — c'est
+exactement ce que la règle « aucune bascule à l'aveugle » demande. `loadFont` fait
+exception : c'est un simple téléchargement, sans noyau, et il fonctionne donc
+aussi en repli.
 
 ```js
 if (noyau.backend === 'js') {
@@ -197,22 +233,21 @@ if (noyau.backend === 'js') {
 }
 ```
 
-## Ce qui reste à faire pour l'activer dans `superprint/`
+## Ce qui est branché dans `superprint/`, aujourd'hui
 
-Rien de technique n'est en attente : c'est une décision, pas un chantier. Il faut
+Ce document a longtemps dit « rien n'est branché ». Ce n'est plus vrai, et voici
+l'état exact — chaque ligne est un fichier **ajouté** plus une ligne `<script>`,
+donc retirer la ligne remet l'application à l'identique :
 
-1. copier `superprint_core.wasm` et `superprint-core.js` dans l'arborescence du
-   site (par exemple sous `JS/`),
-2. ajouter deux lignes à `superprint/index.html` :
+| Ce qui est branché | Colle | Noyau | Repli |
+|---|---|---|---|
+| césure (5 langues) et conversion des couleurs | `app/JS/superprint-branchement.js` | `superprint_core.wasm` (406 Ko, précaché) | `Hypher`, `_spCmykConvert` |
+| import PostScript / EPS | `app/JS/superprint-eps.js` | `superprint_eps.wasm` (322 Ko, **à la demande**) | `sp-eps-import.js` |
+| export PDF imposé | `app/JS/superprint-montage.js` | le **même** module que le branchement | l'export vectoriel du produit |
 
-   ```html
-   <script src="JS/superprint-core.js"></script>
-   ```
-
-3. au démarrage, charger le noyau et **brancher un seul module à la fois**,
-   derrière un drapeau, en gardant le repli JS actif.
-
-Aucune de ces trois étapes n'a été faite : `superprint/` n'a **pas** été modifié.
+`main.js` n'a **jamais** été modifié : chaque joint est une couture que le
+produit offrait déjà (`window.hyphenators`, `window._spCmykConvert`,
+`if (window.SPEps)`, `window.exportImposedPDF || exportImposedPDF`).
 C'est un choix explicite — le dossier est en production.
 
 ## Vérifier
@@ -220,6 +255,10 @@ C'est un choix explicite — le dossier est en production.
 ```powershell
 # module + colle + repli + PDF relus par pdf-lib
 pwsh -File scripts/check.ps1
+
+# l'export imposé BRANCHÉ : contrat mesuré dans main.js, refus, replis, et la
+# chaîne complète jusqu'au PDF relu par pdf-lib
+node scripts/validate-montage-branchement.mjs
 
 # le TEXTE : police embarquée, composition, puis relecture des caractères par
 # pdf.js — c'est la table /ToUnicode qui est mise à l'épreuve
