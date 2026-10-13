@@ -1897,6 +1897,70 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   .fondation:nth-child(n+2) { border-top: 1px solid var(--line); }
 }
 
+/* ══════════════ 🆕 v1.7.613 — LES TROIS FONDATIONS SONT UNE BARRE FIXE ══════════════
+   GitHub, npm et Rust étaient trois colonnes dans le flux du hero, sous les trois
+   entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
+   toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
+   elles se lisent sans qu'on aille les chercher.
+
+   LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
+   donc HORS FLUX : le hero se referme tout seul et l'accroche remonte sous les trois
+   entrées. Sous 901 px elle redevient exactement la grille empilée d'avant — une
+   barre fixe sur un téléphone mangerait un tiers de l'écran pour trois liens.
+
+   CE QUE LA BARRE IMPOSE, ET QUI N'EST PAS OPTIONNEL :
+     · `body { padding-bottom }` — une barre fixe RECOUVRE la fin de page. Sans ce
+       dégagement, les mentions légales du pied de page seraient inatteignables ;
+     · la bulle WhatsApp remonte d'autant : elle vit en bas à droite, exactement là
+       où la barre arrive, et elle la chevaucherait ;
+     · le fond est OPAQUE, puisque le contenu défile dessous.
+
+   ⚠️ `--barre-h` EST MESURÉ, PAS DEVINÉ. Les deux usages ci-dessus en dépendent :
+   trop court, le pied de page reste rogné ; trop long, un blanc s'ouvre sous lui. */
+@media (min-width: 901px) {
+  :root { --barre-h: 72px; }
+
+  /* ⚠️ HAUTEUR FIXE, ET C'EST LE POINT DÉLICAT DE TOUTE LA BARRE. `--barre-h` sert à
+     dégager le pied de page : réserver une valeur devinée serait toujours faux, car
+     la hauteur naturelle VARIE avec les retours à la ligne. Mesuré à 901 px de large :
+     60 px en français, 76 px en anglais, 77 px en japonais — une des trois
+     descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
+     réservée devient exacte par construction. */
+  .fondations {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    height: var(--barre-h);
+    /* `content-box` : la hauteur NE COMPREND NI le filet ni le dégagement de zone
+       sûre, qui s'y ajoutent. C'est ce qui rend le calcul du dégagement exact. */
+    box-sizing: content-box;
+    margin: 0;
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -12px 28px -22px rgba(23,19,13,.6);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Les filets du haut et du bas appartiennent à la BARRE, plus à la grille : sans
+     ce retrait, la barre porterait deux traits en haut (le sien et celui de la
+     grille) et un troisième au ras de l'écran. */
+  .fondations-grid {
+    width: 100%; height: 100%;
+    max-width: 1180px; margin: 0 auto;
+    padding: 0 clamp(18px,4vw,40px);
+    border-top: 0; border-bottom: 0;
+  }
+  /* Le rembourrage vertical part : c'est la HAUTEUR FIXE de la barre qui fait le
+     travail. Les colonnes restent étirées — sinon les filets verticaux qui les
+     séparent ne couvriraient que la hauteur du texte. Le contenu, lui, se centre. */
+  .fondation { align-items: center; padding-top: 0; padding-bottom: 0; }
+
+  /* Le dégagement vaut exactement l'emprise de la barre : sa hauteur, son filet
+     d'un pixel, et le dégagement de zone sûre qui s'y ajoute sur iPad. */
+  body { padding-bottom: calc(var(--barre-h) + env(safe-area-inset-bottom, 0px) + 1px); }
+  body:has(.fondations) .sp-wa { bottom: calc(var(--barre-h) + env(safe-area-inset-bottom, 0px) + 19px); }
+}
+/* Une barre fixe s'imprimerait sur la première page de tout document : à l'écran
+   elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
+@media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
+
 /* ——— CARROUSEL DES MODÈLES (v1.7.465) — pleine largeur, swipe natif ——— */
 #templates {
   padding: clamp(46px,5.4vw,84px) 0 clamp(34px,4vw,56px);

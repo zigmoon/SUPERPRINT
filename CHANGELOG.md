@@ -49,6 +49,23 @@ L'éditeur gardait un handle sur la fenêtre ouverte par `window.open` et lui en
 - **Le pied des trois blocs dit « Open Web App »**, sur les trois. Il annonçait l'action à sa manière — « Ouvrir l'app », « Ouvrir le studio », « Ouvrir SuperTyPo » : trois libellés pour un seul geste, et trois fois de la place pour redire ce que le titre du bloc venait de dire. ⚠️ **Le libellé n'est pas décliné en trois langues, et c'est voulu** : « Open Web App » est le *nom* de l'action, pas une phrase, donc il s'écrit pareil dans les trois. Trois `<span class="inline-xx">` identiques seraient une traduction qui n'en est pas une — le projet applique déjà ce raisonnement aux systèmes « PC · macOS · Linux » et aux étiquettes de fichiers « .exe ».
 - Corrigé au passage, dans le sous-menu, deux défauts d'héritage : `.nav-links a` impose une graisse de **600**, donc la mise en avant du premier format ne se voyait pas ; et son `::after` traçait un trait à 21 px du bas, calibré pour une entrée de barre de 66 px, qui tombait **en travers** d'une gélule de 23 px.
 
+### Changed — « Installer SuperPrint en local » rejoint la zone « Téléchargement »
+
+- Le panneau vivait dans la couverture, **entre les trois entrées et l'accroche** : il coupait la promesse en deux pour parler d'installation, à un moment où le visiteur n'a pas encore décidé d'installer. Il est désormais **après les trois logiciels**, là où la question se pose vraiment.
+- **Son nom de classe disait l'ancien emplacement** : `hero-install` devient `lg-install`. Un nom qui décrit un lieu qu'on a quitté est un nom qui ment, et il aurait fait revenir le bloc dans la couverture à la première relecture.
+- Deux règles sont devenues **mortes** et ont été retirées : `#hero .install-shell` (qui « dé-héroïsait » le panneau) et `#hero .hero-install { display: none }` dans la requête mobile — le bloc n'a plus aucune raison d'être masqué.
+- **`text-align: left` est repris** sur `.lg-install .install-shell` : la zone `#logiciels` est centrée, le panneau ne doit pas l'être — il contient une **ligne de commande**, et un terminal ne se lit pas au centre.
+- Dans l'arbre Astro, le bloc va dans **`ZoneVersions.astro`**, pas dans `index.astro` : placé après le composant, il serait sorti de la section, donc du fond de page.
+
+### Changed — les trois blocs GIT · NPM · RUST se rangent en bas d'écran
+
+- **En desktop, la bande est FIXÉE au bas de la fenêtre**, sur toute la largeur : elle reste visible quelle que soit la position de lecture. C'est la dernière bande de la page — elle parle des fondations du projet — et elle n'a rien à faire au milieu d'une autre section.
+- **En mobile le principe est écarté, et c'est voulu** : la règle ne s'applique qu'à partir de 901 px. Sous cette largeur, les trois blocs restent en cascade **après** les trois logiciels, dans le flux : sur un écran de 390 px une barre fixe mangerait un cinquième de la hauteur utile pour trois liens qu'on ne consulte pas en lisant.
+- **La hauteur de la barre est fixée à 72 px, et ce n'est pas un choix esthétique.** Mesurée, elle vaut **60 px en français, 76 px en anglais, 77 px en japonais** : les libellés ne se coupent pas au même endroit, et la barre se replie sur deux lignes ou une selon la langue. Une place réservée en bas de page aurait donc été **fausse dans deux langues sur trois** — trop courte en anglais et en japonais, la fin de la page serait passée sous la barre.
+- **`body { padding-bottom: … }` réserve exactement cette hauteur.** Sans elle, un élément `fixed` sort du flux et **recouvre la fin du document** : les mentions légales et la dernière ligne du pied de page auraient été coupées.
+- **`box-sizing: content-box` sur la barre** : la hauteur annoncée ne compte ni la bordure ni la zone sûre de l'iPhone, qui s'y ajoutent. La place réservée reste donc exacte au pixel, sur les trois systèmes.
+- ⚠️ **La gélule WhatsApp vivait à `bottom: 22px`** et se retrouvait **derrière** la barre, invisible et incliquable sur la page qui la porte. Elle est remontée de la hauteur de la barre. Le défaut est de ceux qu'on ne voit pas en lisant le code : seul le rendu le montre.
+
 ### Fixed — deux versions affichées étaient fausses (et l'une était déclarée en JSON-LD)
 
 Trouvées en relisant **ce que chaque page affiche réellement**, et non en cherchant l'ancienne version : ces deux-là n'ont jamais porté `1.7.611`, donc aucun bump ne les avait jamais vues.
