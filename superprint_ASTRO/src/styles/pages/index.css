@@ -1920,6 +1920,25 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 @media (min-width: 901px) {
   :root { --barre-h: 72px; }
 
+  /* ⚠️ SANS CE RELÈVEMENT, LA BARRE PASSE *DERRIÈRE* LA PAGE DÈS QU'ON DÉFILE.
+     Mesuré, et non supposé : au repos la barre est devant ; à 1519 px puis à 3040 px
+     de défilement, le clic atteint `article.auteur`, `summary.spf-bar` ou un `p` — la
+     barre est recouverte.
+
+     La cause n'est PAS la barre, c'est son ANCÊTRE. `.container` porte
+     `position: relative; z-index: 2`, et la page en compte SIX. Toutes valent 2, donc
+     l'égalité se tranche par l'ordre du DOM — et celui du hero est le PREMIER, donc
+     le dernier peint. Aucun `z-index` posé sur la barre ne peut la sauver : sa valeur
+     serait locale à `.container`, dont le contexte d'empilement est déjà en
+     position 2, sous celui des sections suivantes.
+
+     On relève donc le conteneur — et SEULEMENT CELUI QUI PORTE LA BARRE (`:has`),
+     pour ne rien changer aux cinq autres ni aux pages sans barre. La valeur 3 passe
+     devant les cinq conteneurs restés à 2, et reste loin SOUS tout ce qui doit
+     continuer de couvrir la barre : la barre de navigation (120), la bulle WhatsApp
+     (100), le menu mobile (118), les fenêtres légales (300). */
+  .container:has(.fondations) { z-index: 3; }
+
   /* ⚠️ HAUTEUR FIXE, ET C'EST LE POINT DÉLICAT DE TOUTE LA BARRE. `--barre-h` sert à
      dégager le pied de page : réserver une valeur devinée serait toujours faux, car
      la hauteur naturelle VARIE avec les retours à la ligne. Mesuré à 901 px de large :
