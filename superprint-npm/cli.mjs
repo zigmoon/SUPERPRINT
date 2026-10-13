@@ -25,12 +25,17 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
 //    version is invalid or older than the online version ».
 //    La version du paquet npm, elle, vit dans package.json.
-// 📌 Dernier plancher avancé : 1.7.599 (zip 1.7.599 en ligne sur app.zigmoon.com,
-//    vérifié le 05/10/2026 — 65 902 369 octets, sha256 D9506DE2…F465, identiques octet à
-//    octet au zip local régénéré par _make_zip_492.cjs ; ET `version.txt` en ligne sur
-//    superprint.cc = 1.7.599 : les deux fichiers que ce CLI lit sont donc à jour, le
-//    plancher peut les suivre).
-const MIN_APP_VERSION = '1.7.599';
+// 📌 Dernier plancher avancé : 1.7.612 (zip 1.7.612 en ligne sur app.zigmoon.com,
+//    vérifié le 13/10/2026 — 56 443 459 octets, sha256 960FC29E…DC27B, IDENTIQUES
+//    octet pour octet au zip local refabriqué par tools/make-release-zip.mjs : le
+//    fichier déployé a été retéléchargé et haché, pas seulement mesuré en taille ;
+//    ET `version.txt` en ligne sur superprint.cc = 1.7.612 : les deux fichiers que
+//    ce CLI lit sont donc à jour, le plancher peut les suivre).
+//    ⚠️ Pourquoi ce bump était nécessaire : à version ÉGALE, l'étape 1/4 ne rejoue
+//    rien (voir plus bas) — rester en 1.7.611 n'aurait servi qu'aux nouvelles
+//    installations, les autres gardant l'ancienne application sans que rien ne le
+//    signale.
+const MIN_APP_VERSION = '1.7.612';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');

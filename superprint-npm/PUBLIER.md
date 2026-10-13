@@ -54,15 +54,17 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.599`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `version.txt` | Version en ligne (`1.7.612`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 
 > 📦 Le zip est régénéré par **`node _dev/scripts/_make_zip_492.cjs`** (à la racine du repo : il crée `superprint/sp213-local.zip` puis le contrôle). Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
-> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.599**, aligné sur ce qui est EN LIGNE (zip **1.7.599**, 65 902 369 octets vérifiés le 05/10/2026 sur app.zigmoon.com — les 200 000 derniers octets sont identiques au zip local et l'EOCD est présent, donc l'archive est complète —, et `version.txt` = **1.7.599** sur superprint.cc).
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.612**, aligné sur ce qui est EN LIGNE (zip **1.7.612**, 56 443 459 octets vérifiés le 13/10/2026 sur app.zigmoon.com — le fichier a été **retéléchargé et haché**, sha256 `960FC29E…DC27B`, identique octet pour octet au zip local, donc l'archive est complète —, et `version.txt` = **1.7.612** sur superprint.cc).
 
-> 🔁 **Prochain cycle** : régénérer le zip (`node _dev/scripts/_make_zip_492.cjs`), le téléverser avec `version.txt`, **puis** avancer `MIN_APP_VERSION` d'une ligne dans `cli.mjs`, puis `npm version patch` + `npm publish`.
+> ⚠️ **Une version ÉGALE ne déclenche AUCUNE mise à jour.** L'étape 1/4 compare `version.txt` en ligne à la version installée : si elles sont égales, rien n'est rejoué. Relever le zip sans changer de version ne sert donc qu'aux nouvelles installations — les autres gardent l'ancienne application, sans que rien ne le signale. C'est la raison du passage à 1.7.612 alors que le seul contenu modifié était la page de présentation.
+
+> 🔁 **Prochain cycle** : régénérer le zip (`node tools/make-release-zip.mjs`), le téléverser avec `version.txt`, **puis** avancer `MIN_APP_VERSION` d'une ligne dans `cli.mjs`, puis `npm version patch` + `npm publish`.
 
 ## 📋 La commande à copier-coller (nouvelle)
 
