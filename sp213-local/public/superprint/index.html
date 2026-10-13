@@ -795,17 +795,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-dots .dot.k { background: var(--ink); }
 #hero .lead { margin-top: clamp(22px,3vw,34px); max-width: 640px; color: var(--ink-soft); margin-left: auto; margin-right: auto; }
 #hero .lead strong { color: var(--ink); }
-.hero-install { margin-top: clamp(20px,2.6vw,36px); max-width: 780px; width: 100%; }
 .hero-lead { margin-top: clamp(16px,2.2vw,28px) !important; }
-/* 🆕 v1.7.498 — DES FILETS, PAS DE FOND (demande : « un fond transparent, pas de fond en fait,
-   juste les filets autour »). Le panneau blanc et son ombre portée faisaient une tache claire au
-   milieu de la couverture ; il ne reste que le filet. Seul le champ de la ligne npx — la seule
-   chose qu'on vient y chercher — garde un fond, et il est blanc (voir .cmd-block). */
-#hero .install-shell {
-  background: transparent; text-align: left;
-  border-color: var(--line-strong); border-radius: 24px;
-  box-shadow: none;
-}
 .btn {
   display: inline-flex; align-items: center; gap: 12px;
   font-family: var(--f-mono); font-size: 12px; font-weight: 700;
@@ -820,7 +810,11 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
 .btn-secondary:hover { background: var(--ink); color: var(--paper); }
 
-/* ——— INSTALLER LOCAL (dans le hero — panneau transparent & arrondi) ——— */
+/* ——— INSTALLER LOCAL (dans la zone « Téléchargement », en bas de page) ———
+   Mesuré depuis le déplacement : la zone est centrée, le panneau ne l'est pas.
+   Il contient une ligne de commande — un terminal ne se lit pas au centre. */
+.lg-install { margin: clamp(34px,4.6vw,56px) auto 0; max-width: 860px; width: 100%; }
+.lg-install .install-shell { text-align: left; }
 .install-shell {
   background: transparent;
   border: 1px solid var(--line-strong);
@@ -1879,7 +1873,6 @@ av est donc son repère. Poser position: relative sur
   .brand-header img { height: clamp(44px,12vw,56px); }
   .brand-tag { display: none; }
   #hero { padding-top: 64px; }
-  #hero .hero-install { display: none; } /* boîte installeur masquée en mobile */
   #hero .hero-dots { margin-top: 18px; }
   .hero-kicker { letter-spacing: .24em; font-size: 10px; }
 }
@@ -2696,51 +2689,6 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <p class="lead hero-lead" data-lang="fr">Avec <strong>SuperPrint</strong>, la PAO professionnelle devient accessible. Découvrez <strong>Studio IA</strong> : l'outil qui démocratise la création graphique et éditez vos maquettes à l'aide d'utilisateurs avertis. Apportez une singularité à vos typographies avec <strong>SuperTypo</strong>.</p>
     <p class="lead hero-lead" data-lang="en">Professional page layout in your browser, with <strong>Studio IA</strong>, which composes a layout from a sentence. <strong>Word and IDML import</strong>, <strong>Pantone spot inks separated in the PDF</strong>, print-ready export.</p>
     <p class="lead hero-lead" data-lang="ja">ブラウザでプロの組版を。<strong>Studio IA</strong> が一文からレイアウトを組みます。<strong>Word・IDML読み込み</strong>、<strong>Pantone特色をPDFで分版</strong>、印刷対応の書き出し。</p>
-
-    <div class="hero-install">
-      <div class="install-shell">
-        <div class="install-head">
-          <div class="inst-title">
-            <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
-            <span data-lang="fr">Installer SuperPrint en local</span>
-            <span data-lang="en">Install SuperPrint locally</span>
-            <span data-lang="ja">SuperPrintをローカルにインストール</span>
-          </div>
-        </div>
-        <p class="inst-desc" data-lang="fr">Copiez cette ligne dans votre terminal : elle télécharge le paquet, installe puis lance l'application sur votre machine.</p>
-        <p class="inst-desc" data-lang="en">Copy this line into your terminal: it downloads the package, installs and launches the app on your machine.</p>
-        <p class="inst-desc" data-lang="ja">この行をターミナルにコピーしてください。パッケージをダウンロードし、インストールしてアプリを起動します。</p>
-        <div class="cmd-block">
-          <span id="osIcon" class="cmd-os-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5"/><rect x="13.5" y="0" width="10.5" height="10.5"/><rect x="0" y="13.5" width="10.5" height="10.5"/><rect x="13.5" y="13.5" width="10.5" height="10.5"/></svg>
-          </span>
-          <code id="installCmd">npx.cmd superprint</code>
-          <button type="button" class="copy-btn" data-copy="installCmd">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span data-lang="fr">Copier</span><span data-lang="en">Copy</span><span data-lang="ja">コピー</span>
-          </button>
-        </div>
-        <div class="cmd-meta">
-          <div class="cmd-tabs">
-            <button class="cmd-tab active" data-os="win" type="button">Windows</button>
-            <button class="cmd-tab" data-os="mac" type="button">macOS</button>
-            <button class="cmd-tab" data-os="linux" type="button">Linux</button>
-          </div>
-          <span class="cmd-hint" id="installHint">PowerShell · npx.cmd bypasses the script ExecutionPolicy block</span>
-        </div>
-        <div class="install-note">
-          <span class="assure inline-fr">Sans abonnement</span>
-          <span class="assure inline-en">No subscription</span>
-          <span class="assure inline-ja">サブスク不要</span>
-          <span class="assure inline-fr">Fonctionne hors-ligne</span>
-          <span class="assure inline-en">Works offline</span>
-          <span class="assure inline-ja">オフラインで動作</span>
-          <span class="assure inline-fr">Aussi en application PWA</span>
-          <span class="assure inline-en">Also a PWA app</span>
-          <span class="assure inline-ja">PWA アプリとしても</span>
-        </div>
-      </div>
-    </div>
 
     <div class="hero-dots" aria-hidden="true">
       <span class="dot c"></span><span class="dot m"></span><span class="dot y"></span><span class="dot k"></span>
@@ -4219,6 +4167,57 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <p class="lg-note" data-lang="fr">Les versions PC, macOS et Linux sont en <strong>beta</strong> : complètes et utilisables, mais encore jeunes. Elles se téléchargent librement, sans compte, depuis le bouton « Télécharger » — trois applications, trois systèmes, vingt et un fichiers. <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener">Voir toutes les versions →</a></p>
     <p class="lg-note" data-lang="en">The PC, macOS and Linux versions are in <strong>beta</strong>: complete and usable, but still young. They download freely, without an account, from the “Download” button — three applications, three systems, twenty-one files. <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener">See every version →</a></p>
     <p class="lg-note" data-lang="ja">PC・macOS・Linux 版は<strong>ベータ</strong>です。完成していて使えますが、まだ若い版です。アカウント不要で、「ダウンロード」ボタンから自由に取得できます — 3つのアプリ、3つのシステム、21のファイル。 <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener">すべてのバージョンを見る →</a></p>
+
+    <!-- 🆕 v1.7.613 — CE BLOC A QUITTÉ LA COUVERTURE POUR ICI.
+         Il installe la version LOCALE (npm, Node.js), pas la même chose que les
+         trois cartes au-dessus : la question n'est plus « qu'est-ce que
+         SuperPrint » mais « et si je veux le poste chez moi ». Les deux routes
+         menaient au même logiciel depuis deux endroits sans se parler.
+         La classe s'appelait `hero-install` : le nom disait le lieu. -->
+    <div class="lg-install">
+      <div class="install-shell">
+        <div class="install-head">
+          <div class="inst-title">
+            <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
+            <span data-lang="fr">Installer SuperPrint en local</span>
+            <span data-lang="en">Install SuperPrint locally</span>
+            <span data-lang="ja">SuperPrintをローカルにインストール</span>
+          </div>
+        </div>
+        <p class="inst-desc" data-lang="fr">Copiez cette ligne dans votre terminal : elle télécharge le paquet, installe puis lance l'application sur votre machine.</p>
+        <p class="inst-desc" data-lang="en">Copy this line into your terminal: it downloads the package, installs and launches the app on your machine.</p>
+        <p class="inst-desc" data-lang="ja">この行をターミナルにコピーしてください。パッケージをダウンロードし、インストールしてアプリを起動します。</p>
+        <div class="cmd-block">
+          <span id="osIcon" class="cmd-os-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5"/><rect x="13.5" y="0" width="10.5" height="10.5"/><rect x="0" y="13.5" width="10.5" height="10.5"/><rect x="13.5" y="13.5" width="10.5" height="10.5"/></svg>
+          </span>
+          <code id="installCmd">npx.cmd superprint</code>
+          <button type="button" class="copy-btn" data-copy="installCmd">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span data-lang="fr">Copier</span><span data-lang="en">Copy</span><span data-lang="ja">コピー</span>
+          </button>
+        </div>
+        <div class="cmd-meta">
+          <div class="cmd-tabs">
+            <button class="cmd-tab active" data-os="win" type="button">Windows</button>
+            <button class="cmd-tab" data-os="mac" type="button">macOS</button>
+            <button class="cmd-tab" data-os="linux" type="button">Linux</button>
+          </div>
+          <span class="cmd-hint" id="installHint">PowerShell · npx.cmd bypasses the script ExecutionPolicy block</span>
+        </div>
+        <div class="install-note">
+          <span class="assure inline-fr">Sans abonnement</span>
+          <span class="assure inline-en">No subscription</span>
+          <span class="assure inline-ja">サブスク不要</span>
+          <span class="assure inline-fr">Fonctionne hors-ligne</span>
+          <span class="assure inline-en">Works offline</span>
+          <span class="assure inline-ja">オフラインで動作</span>
+          <span class="assure inline-fr">Aussi en application PWA</span>
+          <span class="assure inline-en">Also a PWA app</span>
+          <span class="assure inline-ja">PWA アプリとしても</span>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
