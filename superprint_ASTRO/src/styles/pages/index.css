@@ -1678,18 +1678,21 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-.fondations-titre {
-  display: block; text-align: center; font-family: var(--f-mono);
-  font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: clamp(10px,1.3vw,16px);
-}
+/* (v1.7.613 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+   logiciels libres » / « Built with open-source software » annonçait ce que les
+   trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
    trois entrées, et chaque filet vertical tombe sous le bord gauche de la carte
    correspondante. */
 .fondations-grid {
   display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
   column-gap: clamp(12px,1.6vw,20px);
-  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  /* 🆕 v1.7.613 — LE FILET DU HAUT PASSE À 2 px, EN ENCRE PLEINE.
+     Il séparait les fondations des trois entrées d'un trait gris de 1 px
+     (--line : #DCD3C3) — assez discret pour ne plus se lire comme une
+     séparation. Le filet du bas reste tel quel : c'est celui du haut qui
+     ouvre le bloc, et c'est lui qui doit se voir. */
+  border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line);
 }
 .fondation {
   display: flex; align-items: flex-start; gap: 13px; min-width: 0;
