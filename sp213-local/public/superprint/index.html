@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.611",
+      "softwareVersion": "1.7.612",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -508,6 +508,157 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 }
 .nav-cta::after { display: none; }
 .nav-cta:hover { background: var(--ink-2); }
+
+/* 🆕 v1.7.612 — « TÉLÉCHARGER » REMPLACE « OUVRIR L'APP » DANS LA BARRE.
+   La barre servait à ENTRER dans l'application ; elle sert maintenant à
+   L'INSTALLER. L'entrée « Ouvrir en ligne » reste, un cran plus bas dans le
+   menu : rien n'est perdu.
+
+   UN INSTALLATEUR PAR SYSTÈME, PAS PAR APPLICATION. Les trois applications
+   (SuperPrint, Studio IA, SuperTyPo) sont dans le même paquet — c'est écrit une
+   fois, en tête du menu, et c'est ce qui évite de promettre neuf
+   téléchargements là où il y en a trois.
+
+   IL VIT DANS `.nav-tools`, PAS DANS `.nav-links`. Sous 1000 px, `.nav-links`
+   est masqué : un menu qui y vivrait disparaîtrait avec elle, et le
+   téléchargement serait inatteignable au doigt. `.nav-tools` reste visible à
+   toutes les largeurs.
+
+   Panneau de DIVULGATION, pas menu ARIA : des liens, un bouton, Échap pour
+   fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
+   survol se coupe entre le bouton et la carte et le menu se referme au moment
+   où l'on veut cliquer. */
+.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
+.nav-dd-btn {
+  /* `relative` : les étiquettes de langue deviennent `absolute` en mobile (voir
+     la règle sr-only plus bas). Sans un repère positionné ici, elles se
+     placeraient par rapport à la barre et non par rapport au bouton. */
+  position: relative;
+  display: inline-flex; align-items: center; gap: 9px; cursor: pointer; border: 0;
+  margin: 0; padding: 0 22px; height: 42px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  transition: background .25s var(--ease);
+}
+.nav-dd-btn:hover { background: var(--ink-2); }
+.nav-dd-chev {
+  flex: 0 0 auto; width: 12px; height: 12px;
+  fill: none; stroke: currentColor; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .25s var(--ease);
+}
+.nav-dd-btn[aria-expanded="true"] .nav-dd-chev { transform: rotate(180deg); }
+/* 🆕 v1.7.613 — FLÈCHE DE TÉLÉCHARGEMENT, POUR LE MOBILE.
+   Sous 1000 px le bouton ne garde que cette icône : « Télécharger » en toutes
+   lettres y occupait trop de place pour la valeur d'un seul mot. Elle n'est
+   jamais affichée au-dessus de 1000 px, où le libellé suffit. */
+.nav-dd-dl {
+  display: none; flex: 0 0 auto; width: 17px; height: 17px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .25s var(--ease);
+}
+/* Flèche vers le bas = « le menu s'ouvre vers le bas ». Une fois ouvert, elle
+   pointe vers le haut : c'est le geste inverse qui referme. */
+.nav-dd-btn[aria-expanded="true"] .nav-dd-dl { transform: rotate(180deg); }
+.nav-dd-panel {
+  position: absolute; top: 100%; right: 0; z-index: 3;
+  /* 400 px, ramenés à la largeur de la fenêtre sur téléphone. Le retrait de
+     84 px n'est pas arbitraire : il réserve la marge de la barre (16 px) plus
+     le burger et son intervalle (50 px), de sorte que le bord GAUCHE du
+     panneau — qui part du bord droit du bouton — ne sorte jamais de l'écran. */
+  width: min(440px, calc(100vw - 84px)); padding-top: 12px;
+  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  transition: opacity .22s var(--ease), transform .22s var(--ease), visibility 0s linear .22s;
+}
+.nav-dd[data-ouvert="true"] .nav-dd-panel {
+  opacity: 1; visibility: visible; transform: translateY(0); transition-delay: 0s;
+}
+/* Le survol n'existe que là où il y a un pointeur : au doigt, c'est le clic. */
+@media (hover: hover) and (pointer: fine) {
+  .nav-dd:hover .nav-dd-panel {
+    opacity: 1; visibility: visible; transform: translateY(0); transition-delay: 0s;
+  }
+}
+.nav-dd-boite {
+  padding: 16px; text-align: left;
+  background: var(--paper-3); border: 1px solid var(--line-strong);
+  box-shadow: 0 26px 52px rgba(23,19,13,.19);
+}
+.nav-dd-tete { margin: 0 0 12px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--ink); }
+.nav-dd-sous {
+  display: block; margin-top: 3px; font-family: var(--f-mono); font-size: 10px;
+  font-weight: 400; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+.nav-dd-liste { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.nav-dd-item {
+  position: relative; display: flex; align-items: center; gap: 12px;
+  padding: 11px 10px; margin: 0 -10px;
+  border-bottom: 1px solid var(--line);
+  transition: background .2s var(--ease);
+}
+/* Pas de surbrillance de ligne : la ligne n'est plus une cible. */
+.nav-dd-item { align-items: flex-start; padding-top: 13px; padding-bottom: 13px; }
+.nav-dd-item:has(a:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
+/* Les marques des trois systemes, et non plus trois pictogrammes au trait : ici on
+   cherche un systeme, pas un objet. La couleur est cuite dans le fichier, a l'encre
+   du site — un SVG charge par <img> n'herite pas de currentColor. */
+.nav-dd-ic { flex: 0 0 auto; width: 26px; height: 26px; }
+.nav-dd-ic img { display: block; width: 100%; height: 100%; }
+.nav-dd-txt { min-width: 0; }
+.nav-dd-os {
+  display: block; font-family: var(--f-caps); font-size: 15px; letter-spacing: .03em;
+  line-height: 1.1; color: var(--ink); margin-bottom: 5px;
+}
+.nav-dd-apps { display: flex; flex-direction: column; gap: 2px; }
+.nav-dd-app {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; min-width: 0;
+}
+.nav-dd-app-nom {
+  font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-soft);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* 🆕 v1.7.614 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+   Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
+   dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
+   peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
+   bouton, donc comme une ACTION. Le contour suffit à délimiter la cible : le
+   séparateur « · » qui les espacait n'a plus lieu d'être. */
+.nav-dd-app-fmt {
+  display: flex; align-items: center; gap: 4px; flex: 0 0 auto;
+  font-family: var(--f-mono); font-size: 9.5px; white-space: nowrap;
+}
+.nav-dd-app-fmt a {
+  display: inline-block; padding: 1px 6px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  color: var(--muted); text-decoration: none; line-height: 1.4;
+  /* Le poids est herite de « .nav-links a » (600) : sans cette remise a zero,
+     la mise en avant du premier format ne se verrait pas. */
+  font-weight: 400;
+  transition: color .18s var(--ease), background .18s var(--ease), border-color .18s var(--ease);
+}
+/* « .nav-links a::after » trace un trait de 1 px a 21 px du bas — calibre pour une
+   entree de barre de 66 px, il tomberait en travers d'une gelule de 23 px. */
+.nav-dd-app-fmt a::after { display: none; }
+.nav-dd-app-fmt a:hover, .nav-dd-app-fmt a:focus-visible {
+  color: var(--paper); background: var(--ink); border-color: var(--ink); outline: none;
+}
+/* Le premier format de chaque ligne est le téléchargement par défaut : c'est
+   celui que cherche l'immense majorité des visiteurs. Il est mis en avant —
+   et lui seul — pour que le choix ne demande pas de lire les trois. Encadré
+   plein, il se distingue au premier regard des gélules creuses. */
+.nav-dd-app-fmt a:first-child { color: var(--ink); font-weight: 600; border-color: var(--ink); }
+.nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
+  color: var(--paper); background: var(--ink);
+}
+.nav-dd-pied { display: flex; gap: 12px; margin-top: 12px; }
+.nav-dd-pied a {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent;
+}
+.nav-dd-pied a:hover { color: var(--ink); border-bottom-color: var(--ink); }
 /* 🆕 v1.7.472 — le sélecteur de langue était 0,5 px trop haut : les éléments se centrent
    dans la zone de contenu de la barre (65 px), alors que la barre en fait 66 avec son
    filet bas. Une marge haute de 1 px décale le bloc d’un demi-pixel vers le bas, sans
@@ -1054,6 +1205,89 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 .cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
 .cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
 
+/* ══════════════ 🆕 v1.7.615 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
+   DERNIÈRE ZONE AVANT LE PIED DE PAGE. Elle ne double pas les trois entrées du
+   haut de page, elle les prolonge : les entrées ouvrent l'application en ligne et
+   ne disent rien des versions ; ici on donne le numéro de version, les trois
+   systèmes et l'accès au téléchargement.
+
+   POSÉE SUR LE FOND DE PAGE, SANS PANNEAU NI FILET DE COULEUR. Les trois aplats
+   blancs et les trois filets colorés faisaient trois CARTES là où il n'y a que
+   trois LOGICIELS : l'encre encadrée attire l'œil sur le cadre, pas sur le nom. Ici
+   tout se lit directement sur le papier, séparé par l'air qui l'entoure — et le
+   seul aplat noir de la zone est celui du bouton, donc l'action.
+
+   TOUT EST CENTRÉ : la zone est une adresse, pas une page de lecture. Un titre, une
+   promesse, trois colonnes symétriques, une note. Rien à balayer du regard de
+   gauche à droite. */
+#logiciels {
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  padding: clamp(58px,7vw,96px) 24px;
+  text-align: center;
+}
+.lg-head { max-width: 720px; margin: 0 auto clamp(32px,4.6vw,56px); }
+.lg-head h2 { font-size: clamp(34px,5.2vw,66px); margin: 0 0 18px; }
+.lg-head h2 em { font-style: italic; color: var(--cyan); }
+.lg-head .lead { margin: 0 auto; color: var(--ink-soft); }
+.lg-grid {
+  display: grid; gap: clamp(34px,4.4vw,58px);
+  grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+  align-items: start;
+}
+.lg-app { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.lg-tete { display: flex; flex-direction: column; align-items: center; gap: 13px; }
+/* Les mêmes plaques que les trois entrées du haut de page : plaque d'encre pour
+   l'icône blanche de l'éditeur, plaque blanche pour les deux logotypes bicolores. */
+.lg-logo {
+  flex: 0 0 auto; width: 64px; height: 64px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; padding: 12px;
+  background: var(--ink);
+}
+.lg-logo-clair { background: var(--white); border: 1px solid var(--line-strong); }
+.lg-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.lg-id { min-width: 0; }
+.lg-nom {
+  font-family: var(--f-caps); font-size: clamp(24px,2.6vw,32px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.05; color: var(--ink); margin: 0;
+}
+.lg-role {
+  display: block; margin-top: 5px; font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--muted);
+}
+.lg-desc { font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); margin: 0; max-width: 34ch; }
+/* La version, en encre pleine : c'est la seule ligne de la colonne qui doit être
+   lue en premier, et elle ne se noie plus dans un panneau blanc. */
+.lg-ver { display: flex; align-items: baseline; justify-content: center; gap: 9px; }
+.lg-ver b { font-family: var(--f-mono); font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: .04em; }
+.lg-ver span { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+/* Les systèmes : la marque et le nom, SANS CONTOUR. Une gélule dit « cliquable » ;
+   ici rien ne se clique — ce sont les trois plateformes servies. Le contour
+   promettrait une action qui n'existe pas. */
+.lg-os { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
+.lg-os i {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-style: normal; font-family: var(--f-mono); font-size: 11px; color: var(--muted);
+}
+.lg-os i img { display: block; width: 14px; height: 14px; }
+/* Les boutons reprennent la gélule du menu de téléchargement : la même forme dit
+   la même chose d'un bout à l'autre du site — ici, on installe. */
+.lg-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 2px; }
+.lg-actions .btn { padding: 13px 24px; font-size: 11px; letter-spacing: .12em; border-radius: 999px; }
+.lg-note {
+  margin: clamp(34px,4.6vw,56px) auto 0; padding-top: 22px;
+  border-top: 1px solid var(--line); max-width: 780px;
+  font-size: 12.5px; line-height: 1.8; color: var(--muted);
+}
+.lg-note strong { color: var(--ink); }
+.lg-note a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+.lg-note a:hover { border-bottom-color: var(--ink); }
+@media (max-width: 560px) {
+  /* Deux gélules côte à côte ne tiennent pas sous 340 px : elles prennent toute la
+     largeur, l'une sous l'autre, et l'œil n'a plus à choisir une colonne. */
+  .lg-actions .btn { flex: 1 1 100%; justify-content: center; }
+}
+
 /* ══════════════ 🆕 v1.7.472 — LE MANUEL, DANS LA PAGE ══════════════
    « Manuel » quitte la barre du haut (une entrée de nav pour renvoyer vers une autre page,
    c’était un menu, pas une réponse) et il reste au pied de page. À la place, une vraie zone :
@@ -1555,7 +1789,36 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   .uc-card:nth-child(2n) { border-right: none; }
   .studio-intro { grid-template-columns: 1fr; }
   nav { justify-content: space-between; }
-  .nav-links { display: none; }
+  /* 🆕 v1.7.613 — LES CINQ ENTRÉES DE TEXTE DISPARAISSENT, PAS LE MENU.
+     `.nav-links` était masqué en BLOC : le bouton « Télécharger », qui vit
+     dedans, disparaissait donc avec lui. On ne cache plus que ses liens directs
+     — le menu reste, à sa place, entre le logotype et le burger. */
+  .nav-links { display: flex; }
+  .nav-links > a { display: none; }
+  /* 🎯 Le panneau se recadre sur la BARRE et non sur le bouton : le bouton est
+     centré en mobile, et un panneau ancré à son bord DROIT sortirait de
+     40 px par la gauche (mesuré à 360 px). `nav` est `sticky`, donc positionné :
+     il devient le repère du panneau, qui prend alors toute la largeur. */
+  .nav-dd { position: static; margin-left: 0; }
+  .nav-dd-panel { left: 16px; right: 16px; width: auto; }
+  /* 🆕 v1.7.613 — LE BOUTON DEVIENT UNE ICÔNE : FLÈCHE VERS LE BAS, PAS DE TEXTE.
+     Le libellé reste dans le document, réduit à un pixel et découpé (motif
+     « sr-only »). POURQUOI NE PAS SIMPLEMENT LE PASSER EN `display: none` :
+     un élément masqué sort de l'arbre d'accessibilité, le bouton n'aurait donc
+     plus AUCUN nom — un carré noir anonyme pour un lecteur d'écran. Ici le nom
+     est conservé, et il suit la langue : les règles `!important` de
+     `html[lang]` masquent les deux autres étiquettes, seule celle de la langue
+     active est lue. Aucun JavaScript n'est nécessaire. */
+  .nav-dd-btn { padding: 0 13px; gap: 0; }
+  .nav-dd-btn .inline-fr,
+  .nav-dd-btn .inline-en,
+  .nav-dd-btn .inline-ja {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; border: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap;
+  }
+  .nav-dd-dl { display: block; }
+  .nav-dd-chev { display: none; }
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
   .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
@@ -1585,6 +1848,25 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
+  /* 🎯 v1.7.613 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+     Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
+     ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
+     texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
+     dessous — recouvert sans que rien ne se voie, et incliquable.
+     MESURÉ à 390 px : « <a href="#hero" class="nav-logo"> intercepts pointer
+     events ». Comme ce bouton est le SEUL chemin vers les téléchargements sur
+     téléphone, il remonte d'un cran — exactement comme .nav-tools.
+
+     ⚠️ LE CRAN VA SUR LE BOUTON, PAS SUR .nav-links. Le panneau se recadre
+     sur 
+av (left: 16px; right: 16px), parce que .nav-dd est static en
+     mobile : 
+av est donc son repère. Poser position: relative sur
+     .nav-links — large de 43 px, le temps du bouton — en aurait fait le
+     nouveau repère, et le panneau s'est retrouvé large de 11 px (mesuré).
+     Le bouton, lui, est DÉJÀ en position: relative (il porte les étiquettes
+     sr-only) : un z-index y suffit, et ne déplace aucun repère. */
+  .nav-dd-btn { z-index: 2; }
   section { padding: 64px 20px; }
   .feat-grid, .studio-grid, .uc-grid { grid-template-columns: 1fr; }
   .pp-grid { grid-template-columns: 1fr; }
@@ -1817,17 +2099,18 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-.fondations-titre {
-  display: block; text-align: center; font-family: var(--f-mono);
-  font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: clamp(10px,1.3vw,16px);
-}
+/* (v1.7.613 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+   logiciels libres » / « Built with open-source software » annonçait ce que les
+   trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
    trois entrées, et chaque filet vertical tombe sous le bord gauche de la carte
    correspondante. */
 .fondations-grid {
   display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
   column-gap: clamp(12px,1.6vw,20px);
+  /* Le filet du haut reste le gris clair de 1 px (--line) : un essai à 2 px en
+     encre pleine a été fait, puis REVENU EN ARRIÈRE — trop lourd au-dessus d'un
+     bloc qui reste discret. Le filet du bas est identique. */
   border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
 .fondation {
@@ -2141,7 +2424,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.611</span>
+  <span class="brand-ver">v1.7.612</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -2160,7 +2443,105 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
-    <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+    <!-- 🆕 v1.7.613 — LE MENU RESTE DANS `.nav-links`, À LA PLACE QU'OCCUPAIT
+         « Ouvrir l'app ». La barre répartit ses trois groupes en
+         `space-between` : placé dans `.nav-tools`, le bouton glissait de 277 px
+         vers la droite (mesuré sur une fenêtre de 1400 : son bord gauche passe
+         de ~808 à 1085). Ici, il garde exactement la position de l'appel à
+         l'action qu'il remplace.
+
+         SOUS 1000 px, `.nav-links` n'est plus masqué en bloc : les cinq entrées
+         de TEXTE disparaissent, le menu reste (voir la règle mobile). -->
+    <div class="nav-dd" data-nav-dd>
+      <button type="button" class="nav-dd-btn" id="navDlBtn" aria-expanded="false" aria-controls="navDlPanel">
+        <span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span>
+        <svg class="nav-dd-dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11.5"/><path d="M7.4 10.4l4.6 4.6 4.6-4.6"/><path d="M4.5 20.5h15"/></svg>
+        <svg class="nav-dd-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="nav-dd-panel" id="navDlPanel">
+        <div class="nav-dd-boite">
+          <p class="nav-dd-tete">
+            <span data-lang="fr">Application de bureau</span><span data-lang="en">Desktop application</span><span data-lang="ja">デスクトップアプリ</span>
+            <span class="nav-dd-sous"><span class="inline-fr">Trois applications · un installeur chacune</span><span class="inline-en">Three apps · one installer each</span><span class="inline-ja">3つのアプリ · それぞれ専用インストーラー</span></span>
+          </p>
+          <!-- Les cinq fichiers sont ICI, et nulle part ailleurs dans la page.
+               Un système par ligne ; la variante (Intel, .deb) est un second lien
+               sur la même ligne. Le nom porte le lien principal, étiré sur toute
+               la ligne par `::after` : la ligne entière est cliquable SANS
+               imbriquer deux liens — ce qu'une ligne-lien aurait imposé dès
+               qu'elle en porte un second. -->
+          <div class="nav-dd-liste">
+
+          <div class="nav-dd-item">
+            <span class="nav-dd-ic" aria-hidden="true"><img src="icons/windows.svg" alt="" width="26" height="26" loading="lazy" decoding="async"></span>
+            <span class="nav-dd-txt">
+              <span class="nav-dd-os">PC — Windows</span>
+              <span class="nav-dd-apps">
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperPrint</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">Studio IA</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperTyPo</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
+            </span>
+              </span>
+            </span>
+          </div>
+
+          <div class="nav-dd-item">
+            <span class="nav-dd-ic" aria-hidden="true"><img src="icons/macos.svg" alt="" width="26" height="26" loading="lazy" decoding="async"></span>
+            <span class="nav-dd-txt">
+              <span class="nav-dd-os">MAC — macOS</span>
+              <span class="nav-dd-apps">
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperPrint</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">Studio IA</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperTyPo</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
+            </span>
+              </span>
+            </span>
+          </div>
+
+          <div class="nav-dd-item">
+            <span class="nav-dd-ic" aria-hidden="true"><img src="icons/linux.svg" alt="" width="26" height="26" loading="lazy" decoding="async"></span>
+            <span class="nav-dd-txt">
+              <span class="nav-dd-os">LINUX</span>
+              <span class="nav-dd-apps">
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperPrint</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">Studio IA</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperTyPo</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
+            </span>
+              </span>
+            </span>
+          </div>
+
+          </div>
+          <div class="nav-dd-pied">
+            <a href="app/index.html"><span class="inline-fr">Ouvrir en ligne</span><span class="inline-en">Open online</span><span class="inline-ja">オンラインで開く</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="nav-tools">
     <div class="lang-toggle">
@@ -2193,6 +2574,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
        que setLang() continue de marquer la langue choisie. -->
+  <!-- (v1.7.612 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
+       la barre a été déplacé dans .nav-tools, qui reste visible sous 1000 px :
+       il n'y a donc plus rien à dupliquer ici.) -->
   <div class="mm-lang">
     <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
       <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>
@@ -2204,7 +2588,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.611</span>
+    <span>SuperPrint v1.7.612</span>
   </div>
 </div>
 
@@ -2268,7 +2652,6 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
          les entrées du dessus, et AUCUN panneau : les trois colonnes tombent dans le
          fond de page, séparées par des filets. -->
     <div class="fondations">
-      <span class="fondations-titre"><span class="inline-fr">Construit avec des logiciels libres</span><span class="inline-en">Built with open-source software</span><span class="inline-ja">オープンソースで構築</span></span>
       <div class="fondations-grid">
 
         <a class="fondation" href="https://github.com/zigmoon/SUPERPRINT" target="_blank" rel="noopener">
@@ -3724,6 +4107,116 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   </div>
 </section>
 
+<!-- ══════════════ TÉLÉCHARGEMENT — NOS LOGICIELS, NOS VERSIONS ══════════════
+     Dernière zone avant le pied de page. Elle ne double pas les trois entrées du
+     haut de page : celles-ci ouvrent l'application en ligne et ne disent rien des
+     versions. Ici on donne la version de chacune, les trois systèmes et l'accès au
+     téléchargement.
+     ELLE EST POSÉE SUR LE FOND DE PAGE : aucun panneau blanc, aucun filet de
+     couleur. Trois aplats encadrés faisaient trois cartes là où il n'y a que trois
+     logiciels — l'œil lisait le cadre, pas le nom. -->
+<section id="logiciels">
+  <div class="container">
+    <div class="lg-head">
+      <div class="hero-kicker" data-lang="fr">Applications de bureau · PC, macOS et Linux</div>
+      <div class="hero-kicker" data-lang="en">Desktop applications · PC, macOS and Linux</div>
+      <div class="hero-kicker" data-lang="ja">デスクトップ版 · PC・macOS・Linux</div>
+      <h2 data-lang="fr">Téléchargement</h2>
+      <h2 data-lang="en">Download</h2>
+      <h2 data-lang="ja">ダウンロード</h2>
+      <p class="lead" data-lang="fr">Trois applications natives, un seul numéro de version. Elles s'installent séparément — vous ne téléchargez que ce que vous utilisez — et elles avancent ensemble : la même version les décrit toutes les trois. Gratuit, sans compte, et hors ligne une fois installé.</p>
+      <p class="lead" data-lang="en">Three native applications, one single version number. They install separately — you only download what you use — and they move together: the same version describes all three. Free, no account, and offline once installed.</p>
+      <p class="lead" data-lang="ja">3つのネイティブアプリ、バージョン番号はひとつ。別々にインストールでき — 使うものだけを取得 — 歩みは同じ。同じバージョンが3つすべてを示します。無料、アカウント不要、インストール後はオフラインで動作します。</p>
+    </div>
+
+    <div class="lg-grid">
+
+      <article class="lg-app">
+        <div class="lg-tete">
+          <span class="lg-logo"><img src="icons/icon-192x192.png" alt="" width="50" height="50" loading="lazy" decoding="async"></span>
+          <div class="lg-id">
+            <h3 class="lg-nom">SuperPrint</h3>
+            <span class="lg-role"><span class="inline-fr">Le bureau de PAO</span><span class="inline-en">The DTP desk</span><span class="inline-ja">DTPデスク</span></span>
+          </div>
+        </div>
+        <p class="lg-desc" data-lang="fr">Le bureau de PAO complet : mise en page, prépresse, export PDF. Tout le poste, hors ligne.</p>
+        <p class="lg-desc" data-lang="en">The complete DTP desk: layout, prepress, PDF export. The whole workstation, offline.</p>
+        <p class="lg-desc" data-lang="ja">DTPデスクのすべて — 組版、プリプレス、PDF書き出し。オフラインで完結。</p>
+        <div class="lg-ver">
+          <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
+          <b>v1.7.612</b>
+        </div>
+        <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
+        <div class="lg-actions">
+          <button type="button" class="btn btn-primary" data-ouvre-telechargement>
+            <span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span>
+          </button>
+          <a class="btn btn-secondary" href="app/index.html">
+            <span class="inline-fr">Ouvrir en ligne</span><span class="inline-en">Open online</span><span class="inline-ja">オンラインで開く</span>
+          </a>
+        </div>
+      </article>
+
+      <article class="lg-app">
+        <div class="lg-tete">
+          <span class="lg-logo lg-logo-clair"><img src="icons/studio_print_logo_blanc.png" alt="" width="50" height="50" loading="lazy" decoding="async"></span>
+          <div class="lg-id">
+            <h3 class="lg-nom">Studio IA</h3>
+            <span class="lg-role"><span class="inline-fr">La composition assistée</span><span class="inline-en">Assisted composition</span><span class="inline-ja">アシスト組版</span></span>
+          </div>
+        </div>
+        <p class="lg-desc" data-lang="fr">Décrivez la maquette : l’IA la compose, vous la corrigez, vous l’exportez.</p>
+        <p class="lg-desc" data-lang="en">Describe the layout: the AI composes it, you refine it, you export it.</p>
+        <p class="lg-desc" data-lang="ja">レイアウトを言葉に。AIが組み、あなたが直し、書き出す。</p>
+        <div class="lg-ver">
+          <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
+          <b>v1.7.612</b>
+        </div>
+        <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
+        <div class="lg-actions">
+          <button type="button" class="btn btn-primary" data-ouvre-telechargement>
+            <span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span>
+          </button>
+          <a class="btn btn-secondary" href="sp213-studio.html">
+            <span class="inline-fr">Ouvrir en ligne</span><span class="inline-en">Open online</span><span class="inline-ja">オンラインで開く</span>
+          </a>
+        </div>
+      </article>
+
+      <article class="lg-app">
+        <div class="lg-tete">
+          <span class="lg-logo lg-logo-clair"><img src="icons/sper_typo.png" alt="" width="50" height="50" loading="lazy" decoding="async"></span>
+          <div class="lg-id">
+            <h3 class="lg-nom">SuperTyPo</h3>
+            <span class="lg-role"><span class="inline-fr">Le moteur typographique</span><span class="inline-en">The type engine</span><span class="inline-ja">タイポグラフィ・エンジン</span></span>
+          </div>
+        </div>
+        <p class="lg-desc" data-lang="fr">Importez une police, redessinez chaque caractère en courbes, réexportez-la.</p>
+        <p class="lg-desc" data-lang="en">Import a typeface, redraw each character as curves, export it again.</p>
+        <p class="lg-desc" data-lang="ja">書体を読み込み、1文字ずつ曲線で描き直し、書き出す。</p>
+        <div class="lg-ver">
+          <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
+          <b>v1.7.612</b>
+        </div>
+        <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
+        <div class="lg-actions">
+          <button type="button" class="btn btn-primary" data-ouvre-telechargement>
+            <span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span>
+          </button>
+          <a class="btn btn-secondary" href="supertypo/index.html">
+            <span class="inline-fr">Ouvrir en ligne</span><span class="inline-en">Open online</span><span class="inline-ja">オンラインで開く</span>
+          </a>
+        </div>
+      </article>
+
+    </div>
+
+    <p class="lg-note" data-lang="fr">Les versions PC, macOS et Linux sont en <strong>beta</strong> : complètes et utilisables, mais encore jeunes. Elles se téléchargent librement, sans compte, depuis le bouton « Télécharger » — trois applications, trois systèmes, vingt et un fichiers. <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener">Voir toutes les versions →</a></p>
+    <p class="lg-note" data-lang="en">The PC, macOS and Linux versions are in <strong>beta</strong>: complete and usable, but still young. They download freely, without an account, from the “Download” button — three applications, three systems, twenty-one files. <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener">See every version →</a></p>
+    <p class="lg-note" data-lang="ja">PC・macOS・Linux 版は<strong>ベータ</strong>です。完成していて使えますが、まだ若い版です。アカウント不要で、「ダウンロード」ボタンから自由に取得できます — 3つのアプリ、3つのシステム、21のファイル。 <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener">すべてのバージョンを見る →</a></p>
+  </div>
+</section>
+
 <!-- ══════════════ FOOTER — COLOPHON ══════════════ -->
 <footer>
   <div class="container">
@@ -3781,7 +4274,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.611</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.612</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -3907,6 +4400,58 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     }
   });
 });
+
+// ── Menu « Télécharger » de la barre ──
+(function () {
+  var dd = document.querySelector('[data-nav-dd]');
+  if (!dd) return;
+  var btn = dd.querySelector('.nav-dd-btn');
+  var panel = dd.querySelector('.nav-dd-panel');
+  if (!btn || !panel) return;
+  function poser(ouvert) {
+    dd.setAttribute('data-ouvert', ouvert ? 'true' : 'false');
+    btn.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+  }
+  poser(false);
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    poser(dd.getAttribute('data-ouvert') !== 'true');
+  });
+  /* Un clic ailleurs, ou Échap, referme : un menu ouvert qui ne se referme pas
+     est pire qu'un menu qui ne s'ouvre pas. */
+  document.addEventListener('click', function (e) {
+    if (!dd.contains(e.target)) poser(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.keyCode === 27) poser(false);
+  });
+})();
+
+// ── Zone « Nos logiciels · Nos versions » : le bouton ouvre le menu de la barre ──
+/* 🆕 v1.7.614 — Le bouton de la zone du bas ne recopie pas les sept adresses de
+   fichiers : il ouvre le menu de la barre, qui reste la seule liste du site.
+   Deux pièges, tous les deux traités ici :
+   1. Le menu se referme au moindre clic hors de lui (écouteur sur `document`).
+      Un clic sur NOTRE bouton est hors de lui : sans `stopPropagation`, le menu
+      s'ouvrait puis se refermait dans le même clic.
+   2. La barre est collante, mais un parent qui défile la décroche. On la ramène
+      donc à l'écran avant d'ouvrir : si elle y est déjà, l'appel ne fait rien. */
+(function () {
+  var boutons = document.querySelectorAll('[data-ouvre-telechargement]');
+  if (!boutons.length) return;
+  var dd = document.querySelector('[data-nav-dd]');
+  if (!dd) return;
+  var btn = dd.querySelector('.nav-dd-btn');
+  if (!btn) return;
+  Array.prototype.forEach.call(boutons, function (b) {
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var barre = document.querySelector('nav');
+      if (barre) barre.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (dd.getAttribute('data-ouvert') !== 'true') btn.click();
+    });
+  });
+})();
 
 // ── Menu mobile (burger) ──
 (function () {

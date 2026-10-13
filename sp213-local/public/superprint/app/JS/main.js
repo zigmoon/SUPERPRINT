@@ -63595,6 +63595,99 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             return null;
         }
 
+        /* ══════════════ 🆕 v1.7.615 — OUVRIR UNE APPLICATION SŒUR, ET LUI PARLER ══════════════
+
+           DANS L'APPLICATION DE BUREAU, `window.open` N'OUVRE RIEN. La coquille
+           refuse par défaut toute création de fenêtre demandée par la page : les
+           deux boutons qui mènent au Studio IA et à SuperTyPo restaient donc sans
+           effet, alors qu'ils fonctionnent sur le site.
+
+           On demande la fenêtre à la coquille, qui sait la créer. Mais cela casse
+           au passage le canal de communication : le transfert de la police vers
+           SuperTyPo passait par `postMessage` sur le handle renvoyé par
+           `window.open`, et une fenêtre Tauri n'est pas un WindowProxy — pas
+           d'`opener`, pas de `postMessage`. On double donc le canal d'un PONT PAR
+           LE STOCKAGE LOCAL : les fenêtres d'une même application partagent leur
+           origine, donc leur stockage. Aucune des deux applications n'a de serveur
+           pour arbitrer un échange.
+
+           LE PONT EST LU PAR SONDAGE, PAS PAR ÉVÉNEMENT. `storage` se déclenche
+           dans les autres fenêtres d'après la spécification, mais rien ne garantit
+           qu'un hôte d'application de bureau le relaie. La boucle de relance qui
+           existait déjà pour `postMessage` (25 essais, 600 ms) lit maintenant le
+           pont à chaque tour : même cadence, même durée, aucune dépendance à un
+           événement qu'on ne peut pas vérifier ici.
+
+           LE PONT NE SERT QUE SUR LE BUREAU, et c'est délibéré : sur le site le
+           `postMessage` marche depuis toujours, et deux onglets du même domaine se
+           verraient mutuellement — un SuperTyPo ouvert à la main recevrait la
+           police de l'éditeur resté ouvert dans un autre onglet. La condition
+           `window.__TAURI__` sépare proprement les deux mondes.
+           ══════════════════════════════════════════════════════════════════════════ */
+        const SP_BUREAU = !!(window.__TAURI__ && window.__TAURI__.webviewWindow);
+        const SP_PONT_CLE = 'sp_pont_app';
+
+        function spPontLire() {
+            try {
+                const v = localStorage.getItem(SP_PONT_CLE);
+                return v ? JSON.parse(v) : null;
+            } catch (_) { return null; }
+        }
+
+        function spPontEcrire(objet) {
+            try {
+                objet.t = Date.now();   // un horodatage : deux messages identiques restent deux messages
+                localStorage.setItem(SP_PONT_CLE, JSON.stringify(objet));
+                return true;
+            } catch (_) { return false; }
+        }
+
+        function spPoliceEnBase64(buf) {
+            const u = new Uint8Array(buf);
+            let s = '';
+            const BLOC = 0x8000;   // par tranches : un seul apply sur 400 000 octets dépasse la pile
+            for (let i = 0; i < u.length; i += BLOC) s += String.fromCharCode.apply(null, u.subarray(i, i + BLOC));
+            return btoa(s);
+        }
+
+        /* Ouvre une application sœur : une fenêtre de la coquille sur le bureau, un
+           onglet du navigateur sur le site. Renvoie le handle du navigateur, ou
+           `null` — l'appelant sait alors qu'il doit passer par le pont. */
+        function spOuvrirApplication(libelle, url, titre) {
+            if (SP_BUREAU) {
+                (async () => {
+                    try {
+                        const F = window.__TAURI__.webviewWindow.WebviewWindow;
+                        /* Une seule fenêtre, réutilisée : deux clics ne doivent pas échouer
+                           sur un libellé déjà pris. `getByLabel` renvoie une promesse. */
+                        const ouverte = F.getByLabel ? await F.getByLabel(libelle) : null;
+                        if (ouverte) {
+                            try { await ouverte.setFocus(); } catch (_) {}
+                            return;
+                        }
+                        new F(libelle, {
+                            url: url,
+                            title: titre || libelle,
+                            width: 1400, height: 900,
+                            minWidth: 900, minHeight: 600,
+                            center: true,
+                            /* La fenêtre créée N'HÉRITE PAS des réglages de la principale :
+                               sans cette ligne, le glisser-déposer depuis le bureau serait
+                               cassé dans l'application ouverte par celle-ci. */
+                            dragDropEnabled: false
+                        });
+                    } catch (_) { /* on retombe sur le navigateur */ }
+                })();
+                return null;
+            }
+            const win = window.open(url, '_blank');
+            if (win) return win;
+            const a = document.createElement('a');
+            a.href = url; a.target = '_blank'; a.rel = 'noopener';
+            document.body.appendChild(a); a.click(); a.remove();
+            return null;
+        }
+
         // Envoie la fonte à SuperTyPo dès qu'il est prêt (handshake « sp213-ready »).
         function spTransmetPolice(win, police, texte) {
             let pret = false, buf = null, fait = false, essais = 0;
@@ -63602,7 +63695,17 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             const poids = (police && police.weight) || 400;
             const style = (police && police.style) || 'normal';
             function envoie() {
-                if (fait || !pret || !buf || !win || win.closed) return;
+                if (fait || !pret || !buf) return;
+                if (SP_BUREAU) {
+                    fait = true;
+                    if (!spPontEcrire({ type: 'sp213-font', name: famille, text: texte || '', b64: spPoliceEnBase64(buf) })) {
+                        /* Stockage plein : on le dit plutôt que de laisser le bouton
+                           sembler avoir marché. */
+                        if (typeof logAI === 'function') logAI('⚠️ SuperTyPo : police trop lourde pour être transmise. Utilisez l’export .ttf.');
+                    }
+                    return;
+                }
+                if (!win || win.closed) return;
                 fait = true;
                 try { win.postMessage({ type: 'sp213-font', name: famille, text: texte || '', buffer: buf }, window.location.origin, [buf]); } catch (_) {}
             }
@@ -63612,9 +63715,16 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 pret = true; envoie();
             });
             // Relances : si SuperTyPo a envoyé son « ready » avant que le buffer soit prêt.
+            // Sur le bureau, c'est aussi la lecture du pont — voir le commentaire plus haut.
             const tic = setInterval(function () {
                 essais++;
                 if (fait || essais > 25) { clearInterval(tic); return; }
+                if (SP_BUREAU) {
+                    const m = spPontLire();
+                    if (m && m.type === 'sp213-ready') { pret = true; envoie(); }
+                    if (!fait) spPontEcrire({ type: 'sp213-ping' });
+                    return;
+                }
                 try { win.postMessage({ type: 'sp213-ping' }, window.location.origin); } catch (_) {}
             }, 600);
             (async () => {
@@ -63643,17 +63753,8 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             //   donc un HANDLE sur la fenêtre (pas de 'noopener') pour pouvoir lui envoyer
             //   le fichier de fonte en postMessage (même origine → le buffer est transféré,
             //   donc aucune limite de longueur d'URL et aucune requête réseau).
-            const win = window.open(url, '_blank');
-            if (win && opts && opts.police) spTransmetPolice(win, opts.police, opts.text);
-            if (!win) {
-                const a = document.createElement('a');
-                a.href = url;
-                a.target = '_blank';
-                a.rel = 'noopener';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            }
+            const win = spOuvrirApplication('supertypo', url, 'SuperTyPo');
+            if (opts && opts.police) spTransmetPolice(win, opts.police, opts.text);
         }
         window.openSupertypo = openSupertypo;
 
@@ -63671,12 +63772,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
                 // Le studio est à la racine, l'app dans /app/ → remonter d'un niveau
                 const url = base + '../sp213-studio.html?from=sp&v=457-chat-en';
-                const win = window.open(url, '_blank', 'noopener');
-                if (!win) {
-                    const a = document.createElement('a');
-                    a.href = url; a.target = '_blank'; a.rel = 'noopener';
-                    document.body.appendChild(a); a.click(); a.remove();
-                }
+                spOuvrirApplication('studio-sp213', url, 'Studio IA');
                 logAI('Maquette actuelle envoyée au studio SP213 (' + (spFile.pages || []).length + ' page(s))');
             } catch(e) {
                 logAI('⚠️ Erreur envoi au studio: ' + (e && e.message ? e.message : e));

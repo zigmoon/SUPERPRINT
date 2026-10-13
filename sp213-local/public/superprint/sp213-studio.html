@@ -29329,6 +29329,56 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     }
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     OUVRIR SUPERPRINT — UN ONGLET SUR LE WEB, UNE FENÊTRE DANS L'APPLICATION.
+
+     POURQUOI PAS UN SIMPLE window.open. Dans l'application de bureau, window.open
+     N'OUVRE RIEN : la coquille refuse par défaut toute création de fenêtre
+     demandée par la page, et le bouton ÉDITER restait sans effet — alors qu'il
+     fonctionnait sur le site. Constaté sur l'application installée.
+
+     On demande donc la fenêtre à la coquille, qui sait la créer. Deux détails qui
+     comptent, tous les deux vérifiés :
+
+     · dragDropEnabled: false sur la fenêtre créée. Elle N'HÉRITE PAS des réglages
+       de la fenêtre principale : sans cette ligne, le glisser-déposer depuis le
+       bureau serait cassé dans l'éditeur ouvert par le studio, alors qu'on vient
+       de le réparer pour la fenêtre principale.
+
+     · Une seule fenêtre, réutilisée. Deux clics sur ÉDITER ne doivent pas échouer
+       sur un libellé déjà pris : on ramène au premier plan celle qui existe.
+
+     Le repli est window.open, c'est-à-dire le comportement du site : si l'API de
+     la coquille n'est pas là, on ne casse rien.
+     ══════════════════════════════════════════════════════════════════════════ */
+  function ouvrirSuperPrint(spUrl) {
+    try {
+      const api = window.__TAURI__;
+      const Fenetre = api && api.webviewWindow && api.webviewWindow.WebviewWindow;
+      if (Fenetre) {
+        const dejaOuverte = Fenetre.getByLabel && Fenetre.getByLabel('superprint');
+        if (dejaOuverte) {
+          if (dejaOuverte.setFocus) { try { dejaOuverte.setFocus(); } catch (_) {} }
+          return;
+        }
+        new Fenetre('superprint', {
+          url: spUrl,
+          title: 'SuperPrint',
+          width: 1400,
+          height: 900,
+          minWidth: 900,
+          minHeight: 600,
+          center: true,
+          dragDropEnabled: false
+        });
+        return;
+      }
+    } catch (_) {
+      /* On retombe sur le navigateur : mieux vaut un onglet qu'aucun bouton. */
+    }
+    window.open(spUrl, '_blank', 'noopener');
+  }
+
   // ↗ Ouvre une maquette brute (JSON de l'IA) dans SuperPrint
   function openJSONInApp(jsonStr) {
     try {
@@ -29338,7 +29388,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         return;
       }
       const spUrl = 'app/index.html?from=sp213';
-      window.open(spUrl, '_blank', 'noopener');
+      ouvrirSuperPrint(spUrl);
     } catch (err) {
       appendChat('assistant', 'Impossible d\'ouvrir dans l\'app : ' + (err && err.message ? err.message : err));
     }
@@ -29604,10 +29654,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       appendChat('assistant', "Erreur : la maquette est trop lourde pour être transmise à SuperPrint (limite localStorage). Utilisez Exporter .sp.");
       return;
     }
-    // Ouvrir SuperPrint (app/index.html) dans un nouvel onglet, avec le marqueur from=sp213
+    // Ouvrir SuperPrint (app/index.html) avec le marqueur from=sp213 : un onglet
+    // sur le web, une fenêtre dans l'application de bureau (voir ouvrirSuperPrint).
     const spUrl = 'app/index.html?from=sp213';
-    window.open(spUrl, '_blank', 'noopener');
-    appendChat('assistant', 'SuperPrint s\'ouvre dans un nouvel onglet avec votre maquette chargée (' + state.pages.length + ' page(s)).');
+    ouvrirSuperPrint(spUrl);
+    appendChat('assistant', 'SuperPrint s\'ouvre avec votre maquette chargée (' + state.pages.length + ' page(s)).');
   }
 
   // ── Prompt système SP213 ────────────────────────────────────

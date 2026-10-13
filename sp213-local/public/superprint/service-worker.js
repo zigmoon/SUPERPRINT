@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.611-fondations-open-source';
+const CACHE_NAME = 'superprint-shell-v1.7.612-bureau-et-telechargement';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

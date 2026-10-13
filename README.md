@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.611-000000?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.612-000000?style=flat-square">
   <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.110-CB3837?style=flat-square">
   <img alt="Desktop beta" src="https://img.shields.io/badge/desktop-Windows%20%7C%20macOS%20%7C%20Linux-F2B90B?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
