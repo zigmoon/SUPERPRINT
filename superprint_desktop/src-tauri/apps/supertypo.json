@@ -1,6 +1,7 @@
 {
   "productName": "SuperTyPo",
   "identifier": "cc.superprint.supertypo",
+  "mainBinaryName": "supertypo",
   "build": {
     "beforeBuildCommand": "node scripts/prepare-bundle.mjs supertypo",
     "frontendDist": "../frontend/supertypo"
@@ -40,8 +41,8 @@
     "linux": {
       "deb": {
         "files": {
-          "/usr/share/doc/super-ty-po/copyright": "copyright",
-          "/usr/share/doc/super-ty-po/changelog.gz": "debian-changelog.gz",
+          "/usr/share/doc/super-ty-po/copyright": "copyright-supertypo",
+          "/usr/share/doc/super-ty-po/changelog.gz": "changelog-supertypo.gz",
           "/usr/share/doc/super-ty-po/NOTICE.md": "../NOTICE.md",
           "/usr/share/doc/super-ty-po/TRADEMARKS.md": "../TRADEMARKS.md"
         }

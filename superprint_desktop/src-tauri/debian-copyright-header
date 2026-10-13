@@ -1,25 +1,23 @@
 SuperPrint — copyright and distribution licence
 ===============================================
 
-Ce fichier accompagne le paquet Debian `super-print`. Il est exigé par la
+Ce fichier accompagne le paquet Debian `{{PAQUET}}`. Il est exigé par la
 politique Debian (§12.5 : « chaque paquet doit être accompagné d'un fichier
 copyright ») et doit rester NON COMPRESSÉ et UTF-8.
 
-Le texte intégral de la licence de SuperPrint suit la section « LICENCE »
-ci-dessous. Il est repris mot pour mot du fichier LICENSE du dépôt, au moment
-de la construction du paquet — il ne peut donc pas diverger.
+Le texte intégral de la licence suit la section « LICENCE » ci-dessous. Il est
+repris mot pour mot du fichier LICENSE du dépôt, au moment de la construction du
+paquet — il ne peut donc pas diverger.
 
-Upstream-Name     SuperPrint
+Upstream-Name     {{NOM}}
 Upstream-Contact  Simon Dupont-Gellert (Zigmoon) <contact@superprint.cc>
 Source            https://github.com/zigmoon/SUPERPRINT
 Packaged-By       2.13 — https://2points13.fr <all@2points13.fr>
 
 Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon). Published by 2.13.
 
-Périmètre : l'application de bureau `super-print` contient et distribue
-SuperPrint (éditeur de mise en page), le Studio IA SP213 et SuperTyPo, ainsi
-que leurs ressources. L'ensemble est régi par la licence propriétaire dont le
-texte suit.
+Périmètre : le paquet `{{PAQUET}}` contient et distribue {{PERIMETRE}}. Il est
+régi par la licence propriétaire dont le texte suit.
 
 ------------------------------------------------------------------------------
 COMPOSANTS TIERS EMBARQUÉS
@@ -27,19 +25,19 @@ COMPOSANTS TIERS EMBARQUÉS
 
 Le paquet redistribue des composants tiers (Fabric.js, pdf.js, pdf-lib,
 jsPDF, JSZip, Paper.js, Mammoth.js, Hypher, WebLLM, Little CMS, polices de
-caractères, bibliothèques de couleurs nommées), ainsi que des polices sous
-SIL Open Font License ou Apache-2.0. Tous autorisent la redistribution.
+caractères, bibliothèques de couleurs nommées). Tous autorisent la
+redistribution.
 
 La liste exhaustive, composant par composant, avec sa licence et sa
 provenance, se trouve dans le fichier NOTICE.md livré à côté de celui-ci
-(`/usr/share/doc/super-print/NOTICE.md`). Elle n'est PAS recopiée ici : elle
+(`/usr/share/doc/{{PAQUET}}/NOTICE.md`). Elle n'est PAS recopiée ici : elle
 existe déjà là-bas, et la dupliquer garantirait qu'une mise à jour n'atteigne
 qu'une des deux copies.
 
 Les marques et logos de tiers éventuellement cités demeurent la propriété de
 leurs détenteurs respectifs. Les marques « SuperPrint », « SP213 » et
 « SuperTyPo » sont régies à part de la licence du code — voir
-`/usr/share/doc/super-print/TRADEMARKS.md`.
+`/usr/share/doc/{{PAQUET}}/TRADEMARKS.md`.
 
 ------------------------------------------------------------------------------
 LICENCE

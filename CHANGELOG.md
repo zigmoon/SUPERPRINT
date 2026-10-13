@@ -102,6 +102,35 @@ Résultat : `CSS/main.css` et `CSS/mobile-widgets.css` chargeaient **0 règle**,
 - ⚠️ **Le libellé n'est PAS en `display: none`.** Un élément masqué sort de l'arbre d'accessibilité : le bouton n'aurait plus **aucun nom** — un carré noir anonyme pour un lecteur d'écran. Il est réduit à un pixel et découpé (motif « sr-only »), et **suit la langue** : les règles `!important` de `html[lang]` masquent les deux autres étiquettes, seule celle de la langue active est lue. Vérifié : le nom accessible reste **`button "Télécharger"`**. Aucun JavaScript n'est nécessaire.
 
 
+### Fixed — les trois paquets installaient le MÊME binaire (audit des 21 paquets)
+
+**Audit complet des 21 fichiers publiés** : les 21 adresses répondent en **HTTP 200**, et chaque paquet a été téléchargé et ouvert — `.deb` décompressé membre à membre, `.rpm` analysé par son en-tête binaire, `.msi` par sa base de données Windows Installer, `.dmg` par son trailer UDIF, `.exe` par ses ressources. Deux défauts réels en sont sortis.
+
+**1 · Les trois paquets installaient le même exécutable.** Sans `mainBinaryName`, Tauri nomme le binaire d'après le projet Cargo — `superprint-desktop` — et les trois paquets livraient donc **le même chemin** :
+
+| Paquet | Binaire installé (avant) | Icônes | `Exec=` |
+|---|---|---|---|
+| `super-print` | `usr/bin/superprint-desktop` | `superprint-desktop.png` | `superprint-desktop` |
+| `studio-ia` | `usr/bin/superprint-desktop` | `superprint-desktop.png` | `superprint-desktop` |
+| `super-ty-po` | `usr/bin/superprint-desktop` | `superprint-desktop.png` | `superprint-desktop` |
+
+Sur Debian comme sur Fedora, **installer le Studio IA écrasait le binaire de SuperPrint** : les deux entrées de menu lançaient la même application. Les icônes et les entrées de bureau se recouvraient de la même façon, `StartupWMClass` compris — les trois applications se seraient regroupées sous une seule icône dans la barre des tâches. Sur Windows, l'exécutable s'appelait `superprint-desktop.exe` dans les trois, sans collision de chemin (les dossiers diffèrent) mais avec un nom faux partout.
+
+`mainBinaryName` est désormais posé dans chacune des trois surcouches : `superprint`, `studio-ia`, `supertypo`. Vérifié à la compilation : `Built application at: …\superprint.exe`. Et le script **refuse de compiler** si un des trois manque, s'il ne correspond pas à l'application, ou si deux se ressemblent — c'est la seule protection qui tienne, puisque le défaut était invisible dans le fichier de configuration.
+
+**2 · Le `copyright` et le journal du `.deb` nommaient le mauvais paquet.** Un fichier commun aux trois s'annonçait comme accompagnant « `super-print` », et son préambule présentait le paquet comme réunissant les trois applications — vrai avant la séparation, faux depuis. Un lecteur du paquet `studio-ia` y aurait cherché la licence du mauvais paquet. Les deux fichiers sont désormais **fabriqués par application** (`copyright-<app>`, `changelog-<app>.gz`), avec le nom du paquet, son périmètre et son contenu. Le script vérifie que chaque surcouche déclare bien les siens.
+
+**Ce qui a été vérifié, et qui est conforme :**
+- **`.deb`** — `Package` (`super-print`, `studio-ia`, `super-ty-po`), `Maintainer` **avec adresse électronique**, `Section: graphics`, `Homepage`, `Depends: libwebkit2gtk-4.1-0, libgtk-3-0` (injecté par Tauri, absent du fichier de configuration), et une description propre à chaque application.
+- **`/usr/share/doc/<paquet>/`** — `copyright` (en-tête de provenance + le `LICENSE` du dépôt **mot pour mot**, vérifié sur les 252 lignes), `changelog.gz` (en-tête gzip `1F 8B`, gzip-9, se décompresse proprement), `NOTICE.md` et `TRADEMARKS.md`. **Et aucun dossier `SuperPrint/` parasite** : le contournement de l'option `changelog` de Tauri fonctionne.
+- **Entrées de bureau** — `Categories=Graphics`, `Type=Application`, `Terminal=false`, plus `Name`, `Comment` et `Icon` propres à chaque application.
+- **`.rpm`** — en-tête binaire analysé : `NAME`, `VERSION`, `RELEASE`, `SUMMARY`, `DESCRIPTION`, `LICENSE`, `URL`, `ARCH` tous corrects et distincts.
+- **`.msi`** — `ProductCode` **distincts** (aucun conflit d'installation), `Manufacturer: Zigmoon`, `ProductName` et `ProductVersion` corrects.
+- **`.dmg`** — trailer UDIF `koly` valide, payload zlib, segment 1/1. Tauri monte l'image pendant sa construction : un `.dmg` illisible aurait fait échouer la tâche macOS, qui est passée.
+- **Toutes les adresses** — 21 fichiers publiés, **21 réponses HTTP 200**, de 1,57 Mo (`.exe` SuperTyPo) à 106,46 Mo (AppImage SuperPrint).
+
+> ⚠️ **Le fichier `.desktop` du Studio s'appelle `Studio IA.desktop`**, avec un espace. Le nom vient du `productName` (`freedesktop.rs` : `format!("{product_name}.desktop")`), et la spécification Desktop Entry ne l'interdit pas : le fichier est indexé, l'entrée de menu affiche `Name=Studio IA`, et `Icon=` / `Exec=` / `StartupWMClass=` suivent désormais le nom du binaire, donc rien ne dépend de l'espace. Le corriger demanderait de renommer le produit en `StudioIA`, ce qui changerait aussi le nom affiché dans le menu — un moindre mal.
+
 ### Added — workflow (`.github/workflows/build-desktop.yml`)
 - **Matrice 3 applications × 4 tâches système = 12 tâches**, en parallèle. Compile Windows, macOS `aarch64` **et** `x86_64`, Linux — et **rien n'est jeté** : `bundle.targets` vaut « all », donc Windows livre son `.msi` **et** son `.exe`, Linux son `.deb`, son `.rpm` **et** son `.AppImage`, macOS un `.dmg` par architecture. L'`.msi` sert le déploiement en parc (GPO, SCCM) ; le `.rpm` les systèmes Fedora, RHEL et openSUSE, auxquels l'AppImage n'offre aucune intégration avec le gestionnaire de paquets.
 - Publie les paquets dans la version **`desktop-latest`** sous des **noms fixes, sans numéro de version** — un lien de page ne peut pas suivre un nom qui change à chaque livraison. Le job de publication **échoue bruyamment** si un paquet manque : un lien mort serait pire que pas de lien. **21 fichiers** attendus.

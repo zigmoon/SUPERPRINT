@@ -1,6 +1,7 @@
 {
   "productName": "Studio IA",
   "identifier": "cc.superprint.studio",
+  "mainBinaryName": "studio-ia",
   "build": {
     "beforeBuildCommand": "node scripts/prepare-bundle.mjs studio",
     "frontendDist": "../frontend/studio"
@@ -40,8 +41,8 @@
     "linux": {
       "deb": {
         "files": {
-          "/usr/share/doc/studio-ia/copyright": "copyright",
-          "/usr/share/doc/studio-ia/changelog.gz": "debian-changelog.gz",
+          "/usr/share/doc/studio-ia/copyright": "copyright-studio",
+          "/usr/share/doc/studio-ia/changelog.gz": "changelog-studio.gz",
           "/usr/share/doc/studio-ia/NOTICE.md": "../NOTICE.md",
           "/usr/share/doc/studio-ia/TRADEMARKS.md": "../TRADEMARKS.md"
         }

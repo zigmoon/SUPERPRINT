@@ -9,12 +9,11 @@ frontend/
 src-tauri/target/
 src-tauri/gen/
 
-# Journal du .deb compressé — FABRIQUÉ par `scripts/prepare-bundle.mjs`.
-src-tauri/debian-changelog.gz
-
-# Copyright du .deb — FABRIQUÉ par `scripts/prepare-bundle.mjs` (en-tête +
-# LICENSE intégral), pour que le texte de la licence ne puisse pas diverger.
-src-tauri/copyright
+# Journal et copyright du .deb — FABRIQUÉS par `scripts/prepare-bundle.mjs`, un
+# par application. Le copyright est assemblé depuis le `LICENSE` du dépôt,
+# précisément pour que le texte de la licence ne puisse pas diverger du vrai.
+src-tauri/changelog-*.gz
+src-tauri/copyright-*
 
 # Artefacts de distribution
 dist/

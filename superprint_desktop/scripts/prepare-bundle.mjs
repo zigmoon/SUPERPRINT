@@ -155,11 +155,21 @@ async function copierFeuilleDePolices(racine, chezApp) {
  *
  * `pages` liste les pages dont les références sont vérifiées. `chezApp` est le
  * dossier de polices déjà présent dans le paquet, ou `null`.
+ *
+ * `binaire` est le nom de l'exécutable — celui de `/usr/bin/`, des icônes et des
+ * entrées de bureau. Il est **propre à chaque application** : sans cela Tauri
+ * nomme le binaire d'après le projet Cargo (« superprint-desktop ») et les trois
+ * paquets installent le même fichier (voir `verifierSurcouches`).
+ *
+ * `perimetre` et `contenu` alimentent le `copyright` et le journal du `.deb`.
  */
 const APPLICATIONS = {
   superprint: {
     nom: 'SuperPrint',
+    binaire: 'superprint',
     pages: ['app/index.html'],
+    perimetre: "l'éditeur SuperPrint et ses ressources",
+    contenu: "l'éditeur SuperPrint, embarqué hors-ligne",
     assembler: async (racine) => {
       await copier(path.join(product, 'app'), path.join(racine, 'app'));
       await copier(path.join(product, 'icons'), path.join(racine, 'icons'));
@@ -167,7 +177,10 @@ const APPLICATIONS = {
   },
   studio: {
     nom: 'Studio IA',
+    binaire: 'studio-ia',
     pages: ['index.html'],
+    perimetre: 'le Studio IA SP213 et ses ressources',
+    contenu: 'le Studio IA SP213, embarqué hors-ligne',
     assembler: async (racine) => {
       await fs.copyFile(path.join(product, 'sp213-studio.html'), path.join(racine, 'index.html'));
       await copier(path.join(product, 'JS'), path.join(racine, 'JS'));
@@ -178,7 +191,10 @@ const APPLICATIONS = {
   },
   supertypo: {
     nom: 'SuperTyPo',
+    binaire: 'supertypo',
     pages: ['supertypo/index.html'],
+    perimetre: 'SuperTyPo et ses ressources',
+    contenu: 'SuperTyPo, embarqué hors-ligne',
     assembler: async (racine) => {
       await copier(path.join(product, 'supertypo'), path.join(racine, 'supertypo'));
       await copier(path.join(product, 'icons'), path.join(racine, 'icons'));
@@ -381,7 +397,8 @@ async function verifierReferences(racine, pages) {
 }
 
 /**
- * Compresse le journal des modifications du `.deb` en `changelog.gz` (niveau 9).
+ * Compresse le journal des modifications du `.deb` en `changelog.gz` (niveau 9),
+ * un par application.
  *
  * POURQUOI ICI, ET PAS AVEC L'OPTION `changelog` DE TAURI. Tauri écrit son
  * journal dans `/usr/share/doc/<productName>/changelog.gz` — soit `SuperPrint/`,
@@ -391,14 +408,34 @@ async function verifierReferences(racine, pages) {
  * `/usr/share/doc/<paquet>/` — ce que fait `deb.files`, qui RECOPIE sans
  * compresser : d'où cette compression en amont.
  *
+ * ⚠️ UN JOURNAL PAR PAQUET, ET PAS UN JOURNAL COMMUN. Le premier jet écrivait le
+ * même fichier pour les trois paquets, et ce fichier annonçait « super-print »
+ * puis décrivait un paquet qui réunissait les trois applications — ce qui était
+ * vrai avant, et faux depuis la séparation. Un journal de paquet qui nomme un
+ * autre paquet vaut moins que pas de journal du tout.
+ *
  * La politique Debian (§12.7) demande le journal « compressé en gzip-9 ».
  */
-async function compresserJournalDebian() {
-  const source = path.join(srcTauri, 'debian-changelog');
-  const cible = path.join(srcTauri, 'debian-changelog.gz');
-  const texte = await fs.readFile(source);
-  await fs.writeFile(cible, gzipSync(texte, { level: zlibConstants.Z_BEST_COMPRESSION }));
-  log(`journal Debian compressé : ${texte.length} → ${(await fs.stat(cible)).size} octets`);
+async function compresserJournauxDebian(versionDuProduit) {
+  const gabarit = await fs.readFile(path.join(srcTauri, 'debian-changelog'), 'utf8');
+
+  // `rfc-2822` : « Tue, 13 Oct 2026 18:00:00 +0200 ». Le journal doit porter une
+  // date ; celle du jour est la seule qui ne mente pas.
+  const date = new Date().toUTCString().replace(/^(\w{3}), (\d{2}) (\w{3}) (\d{4}) (\d{2}:\d{2}:\d{2}) GMT$/, '$1, $2 $3 $4 $5 +0000');
+
+  for (const [cle, app] of Object.entries(APPLICATIONS)) {
+    const paquet = nomDePaquet(app.nom);
+    const texte = gabarit
+      .replaceAll('{{PAQUET}}', paquet)
+      .replaceAll('{{NOM}}', app.nom)
+      .replaceAll('{{VERSION}}', versionDuProduit)
+      .replaceAll('{{CONTENU}}', app.contenu)
+      .replaceAll('{{DATE}}', date);
+
+    const cible = path.join(srcTauri, `changelog-${cle}.gz`);
+    await fs.writeFile(cible, gzipSync(Buffer.from(texte, 'utf8'), { level: zlibConstants.Z_BEST_COMPRESSION }));
+    log(`journal ${paquet} : ${texte.length} → ${(await fs.stat(cible)).size} octets`);
+  }
 }
 
 /**
@@ -410,14 +447,28 @@ async function compresserJournalDebian() {
  * recopier à la main dans un second fichier garantirait qu'il finisse par
  * diverger du vrai. Ici la divergence est structurellement impossible.
  *
+ * ⚠️ UN FICHIER PAR PAQUET. Le premier jet en écrivait un seul, qui s'annonçait
+ * comme accompagnant `super-print` — y compris dans les paquets `studio-ia` et
+ * `super-ty-po`. Un lecteur y aurait cherché la licence du mauvais paquet.
+ *
  * Le fichier produit reste NON COMPRESSÉ, comme l'exige la politique.
  */
-async function ecrireCopyrightDebian() {
-  const enTete = await fs.readFile(path.join(srcTauri, 'debian-copyright-header'), 'utf8');
+async function ecrireCopyrightsDebian() {
+  const gabarit = await fs.readFile(path.join(srcTauri, 'debian-copyright-header'), 'utf8');
   const licence = await fs.readFile(path.join(desktop, '..', 'LICENSE'), 'utf8');
-  const cible = path.join(srcTauri, 'copyright');
-  await fs.writeFile(cible, `${enTete}${licence.trimEnd()}\n`, 'utf8');
-  log(`copyright Debian écrit (${(await fs.stat(cible)).size} octets : en-tête + LICENSE intégral)`);
+
+  for (const [cle, app] of Object.entries(APPLICATIONS)) {
+    const paquet = nomDePaquet(app.nom);
+    const texte = `${gabarit
+      .replaceAll('{{PAQUET}}', paquet)
+      .replaceAll('{{NOM}}', app.nom)
+      .replaceAll('{{PERIMETRE}}', app.perimetre)
+      .trimEnd()}\n\n${licence.trimEnd()}\n`;
+
+    const cible = path.join(srcTauri, `copyright-${cle}`);
+    await fs.writeFile(cible, texte, 'utf8');
+    log(`copyright ${paquet} : ${(await fs.stat(cible)).size} octets (en-tête + LICENSE intégral)`);
+  }
 }
 
 async function mesurer(dossier) {
@@ -508,6 +559,7 @@ async function verifierSurcouches() {
 
   const identifiants = new Map();
   const nomsDePaquets = new Map();
+  const nomsDeBinaires = new Map();
 
   for (const cle of Object.keys(APPLICATIONS)) {
     const fichier = `apps/${cle}.json`;
@@ -517,6 +569,39 @@ async function verifierSurcouches() {
     } catch {
       throw new Error(`surcouche introuvable : src-tauri/${fichier}`);
     }
+
+    // ⚠️ LE NOM DU BINAIRE, SANS QUOI LES TROIS PAQUETS SE MARCHENT DESSUS.
+    //
+    // Sans `mainBinaryName`, Tauri nomme le binaire d'après le projet Cargo —
+    // « superprint-desktop » — et les TROIS paquets installent alors le MÊME
+    // fichier. Mesuré le 2026-10-13 sur les paquets publiés :
+    //   usr/bin/superprint-desktop  dans super-print, studio-ia ET super-ty-po.
+    // Sur Debian, le second paquet installé écrase le binaire du premier, et
+    // les deux applications deviennent la même. Les icônes
+    // (`/usr/share/icons/…/superprint-desktop.png`) et les entrées de bureau
+    // (`Exec=`, `Icon=`, `StartupWMClass=`) se marchaient dessus de la même
+    // façon. Sur Windows, l'exécutable s'appelait `superprint-desktop.exe` dans
+    // les trois, sans collision de chemin mais avec un nom faux partout.
+    const binaire = sur.mainBinaryName;
+    if (!binaire) {
+      throw new Error(
+        `${fichier} : mainBinaryName manquant.\n` +
+        `      Sans lui, le binaire s'appelle « superprint-desktop » dans les trois\n` +
+        `      paquets, et /usr/bin/superprint-desktop devient commun aux trois :\n` +
+        `      installer l'un écrase le binaire de l'autre.`
+      );
+    }
+    if (binaire !== APPLICATIONS[cle].binaire) {
+      throw new Error(
+        `${fichier} : mainBinaryName vaut « ${binaire} », attendu « ${APPLICATIONS[cle].binaire} ».\n` +
+        `      Le nom du binaire doit suivre celui de l'application : c'est lui qui\n` +
+        `      distingue /usr/bin/<nom>, les icônes et les entrées de bureau.`
+      );
+    }
+    if (nomsDeBinaires.has(binaire)) {
+      throw new Error(`${fichier} : binaire « ${binaire} » déjà pris par ${nomsDeBinaires.get(binaire)}`);
+    }
+    nomsDeBinaires.set(binaire, fichier);
 
     const attendu = `../frontend/${cle}`;
     if (sur.build?.frontendDist !== attendu) {
@@ -573,6 +658,24 @@ async function verifierSurcouches() {
       }
     }
 
+    // ⚠️ LE COPYRIGHT ET LE JOURNAL DOIVENT ÊTRE CEUX DE CE PAQUET.
+    // Ils sont fabriqués un par application (voir `ecrireCopyrightsDebian`).
+    // Un fichier commun annoncerait « super-print » dans les trois — un lecteur
+    // y chercherait la licence du mauvais paquet.
+    for (const [champ, suffixe] of [['copyright', `copyright-${cle}`], ['changelog.gz', `changelog-${cle}.gz`]]) {
+      const cle2 = `/usr/share/doc/${paquet}/${champ}`;
+      if (!cles.includes(cle2)) {
+        throw new Error(`${fichier} : bundle.linux.deb.files ne déclare pas « ${cle2} »`);
+      }
+      if (sur.bundle.linux.deb.files[cle2] !== suffixe) {
+        throw new Error(
+          `${fichier} : ${cle2} vient de « ${sur.bundle.linux.deb.files[cle2]} »,\n` +
+          `      attendu « ${suffixe} ». Un fichier commun aux trois paquets\n` +
+          `      annoncerait le nom d'un autre paquet.`
+        );
+      }
+    }
+
     // Les icônes, qui doivent exister pour de bon.
     for (const champ of ['icon', 'windows.nsis.installerIcon']) {
       const valeurs = champ === 'icon'
@@ -625,11 +728,12 @@ async function main() {
   await verifierSurcouches();
   for (const cle of cles) await construireApplication(cle);
 
-  // Les deux fichiers du `.deb` qui ne peuvent pas être recopiés tels quels :
-  // le journal (à compresser) et le copyright (à assembler).
+  // Les fichiers du `.deb` qui ne peuvent pas être recopiés tels quels : les
+  // journaux (à compresser) et les copyrights (à assembler). Un par paquet.
   console.log('\nFichiers communs aux paquets');
-  await compresserJournalDebian();
-  await ecrireCopyrightDebian();
+  const versionDuProduit = (await fs.readFile(path.join(product, 'version.txt'), 'utf8')).trim();
+  await compresserJournauxDebian(versionDuProduit);
+  await ecrireCopyrightsDebian();
 }
 
 await main();

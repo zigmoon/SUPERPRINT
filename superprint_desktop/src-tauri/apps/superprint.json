@@ -1,6 +1,7 @@
 {
   "productName": "SuperPrint",
   "identifier": "cc.superprint.desktop",
+  "mainBinaryName": "superprint",
   "build": {
     "beforeBuildCommand": "node scripts/prepare-bundle.mjs superprint",
     "frontendDist": "../frontend/superprint"
@@ -40,8 +41,8 @@
     "linux": {
       "deb": {
         "files": {
-          "/usr/share/doc/super-print/copyright": "copyright",
-          "/usr/share/doc/super-print/changelog.gz": "debian-changelog.gz",
+          "/usr/share/doc/super-print/copyright": "copyright-superprint",
+          "/usr/share/doc/super-print/changelog.gz": "changelog-superprint.gz",
           "/usr/share/doc/super-print/NOTICE.md": "../NOTICE.md",
           "/usr/share/doc/super-print/TRADEMARKS.md": "../TRADEMARKS.md"
         }

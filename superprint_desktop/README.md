@@ -41,9 +41,11 @@ superprint_desktop/
     ├── Cargo.toml               dépendances Rust (tauri 2)
     ├── build.rs                 appelé par tauri-build
     ├── tauri.conf.json          ce qui est COMMUN aux trois
-    ├── apps/superprint.json     surcouches : identité, icônes, dossier, page
+    ├── apps/superprint.json     surcouches : identité, binaire, icônes, dossier, page
     ├── apps/studio.json
     ├── apps/supertypo.json
+    ├── debian-copyright-header  gabarits des fichiers de documentation du .deb
+    ├── debian-changelog         (`{{PAQUET}}`, `{{NOM}}`, `{{PERIMETRE}}`, …)
     ├── capabilities/            autorisations de la fenêtre
     ├── icons/{superprint,studio,supertypo}/   trois jeux, engendrés
     └── src/main.rs              ouverture de la fenêtre — et rien d'autre
@@ -70,6 +72,32 @@ résolvant ses propres `src=` / `href=` — ce n'est pas une liste devinée.
 > ⚠️ **Le Studio garde toutes les polices.** Il laisse choisir la police du
 > texte : un sous-ensemble donnerait un rendu de repli silencieux, la pire des
 > pannes — celle qu'on ne voit pas.
+
+### Chaque paquet a son propre nom de binaire — sinon les trois s'écrasent
+
+`mainBinaryName` est **obligatoire dans chaque surcouche** : `superprint`,
+`studio-ia`, `supertypo`.
+
+Sans lui, Tauri nomme le binaire d'après le projet Cargo — `superprint-desktop` —
+et les trois paquets livrent **le même chemin**. Mesuré le 2026-10-13 sur les
+paquets publiés :
+
+| Paquet | Binaire installé (avant) | Icônes | `Exec=` |
+|---|---|---|---|
+| `super-print` | `usr/bin/superprint-desktop` | `superprint-desktop.png` | `superprint-desktop` |
+| `studio-ia` | `usr/bin/superprint-desktop` | `superprint-desktop.png` | `superprint-desktop` |
+| `super-ty-po` | `usr/bin/superprint-desktop` | `superprint-desktop.png` | `superprint-desktop` |
+
+Sur Debian comme sur Fedora, **installer le Studio IA écrasait le binaire de
+SuperPrint** : les deux entrées de menu lançaient la même application. Les icônes
+et les entrées de bureau se recouvraient de la même façon, `StartupWMClass`
+compris — les trois applications se seraient regroupées sous une seule icône dans
+la barre des tâches.
+
+C'est `main_binary_name` que `freedesktop.rs` utilise pour `Exec=`, `Icon=` et le
+nom des fichiers d'icônes — d'où l'importance de le poser. Le script **refuse de
+compiler** s'il manque, s'il ne correspond pas à l'application, ou si deux se
+ressemblent.
 
 ### Les polices ne sont copiées qu'une fois
 
@@ -127,6 +155,9 @@ met à diverger sans que personne ne s'en aperçoive.
 Le script refuse donc de compiler si :
 
 - les trois fenêtres ne sont pas identiques hors `title` et `url` ;
+- `mainBinaryName` manque, ne correspond pas à l'application, ou est partagé
+  entre deux surcouches — sans lui les trois paquets installent le **même**
+  binaire (voir plus haut) ;
 - deux surcouches partagent un `identifier` (elles écraseraient les données de
   l'une et de l'autre) ;
 - `beforeBuildCommand` ne désigne pas la **même** application que `frontendDist`
@@ -138,6 +169,11 @@ Le script refuse donc de compiler si :
   qu'une adresse écrite à la main corresponde, et `copy_custom_files` crée le
   dossier demandé sans broncher — une adresse fausse déposerait la documentation
   dans un dossier que personne ne lit ;
+- le `copyright` ou le journal d'un paquet vient du fichier d'une **autre**
+  application. Les deux sont fabriqués un par paquet (`copyright-<app>`,
+  `changelog-<app>.gz`) : un fichier commun annoncerait « `super-print` » dans
+  les trois, et un lecteur du paquet `studio-ia` y chercherait la licence du
+  mauvais paquet ;
 - une icône annoncée n'existe pas sur le disque.
 
 ### Chaque référence est résolue après l'assemblage
@@ -200,9 +236,7 @@ npx tauri build --config src-tauri/apps/superprint.json
 
 Les icônes des trois systèmes sont **engendrées**, jamais dessinées à la main.
 Chaque application a la sienne, tirée du **pack de marque**
-(`superprint/logos_superprint.zip`).
-
-| Application | Source |
+(`superprint/logos_superprint.zip`).| Application | Source |
 |---|---|
 | SuperPrint | `icons/sources/superprint-1024.png` |
 | Studio IA | `icons/sources/studio-1024.png` |
@@ -246,7 +280,7 @@ Pour chaque application `<app>` ∈ { `superprint`, `studio`, `supertypo` } :
 
 | Fichier | Système |
 |---|---|
-| `src-tauri/target/release/superprint-desktop.exe` | Windows — exécutable nu |
+| `src-tauri/target/release/<binaire>.exe` | Windows — exécutable nu (`superprint`, `studio-ia`, `supertypo`) |
 | `bundle/nsis/SuperPrint_<version>_x64-setup.exe` | Windows — installeur |
 | `bundle/msi/SuperPrint_<version>_x64_en-US.msi` | Windows — paquet MSI |
 | `bundle/dmg/….dmg` | macOS — une par architecture |
@@ -255,16 +289,25 @@ Pour chaque application `<app>` ∈ { `superprint`, `studio`, `supertypo` } :
 | `bundle/rpm/….rpm` | Linux (Fedora/RHEL/openSUSE) |
 
 Le nom du fichier est celui du `productName` de la surcouche : `SuperPrint`,
-`Studio IA`, `SuperTyPo`. Le nom du **paquet** `.deb` est son kebab-case :
-`super-print`, `studio-ia`, `super-ty-po`.
+`Studio IA`, `SuperTyPo`. Le nom du **binaire** est son `mainBinaryName` :
+`superprint`, `studio-ia`, `supertypo`. Le nom du **paquet** `.deb` et `.rpm` est
+le kebab-case du `productName` : `super-print`, `studio-ia`, `super-ty-po`.
 
-Ordre de grandeur mesuré le 2026-10-13 (Windows, NSIS) :
+Ordre de grandeur mesuré le 2026-10-13 (Windows) :
 
-| Application | Dossier embarqué | Binaire | Installeur |
-|---|---|---|---|
-| SuperPrint | 57,9 Mo | 33,2 Mo | 31,5 Mo |
-| Studio IA | 9,8 Mo | — | 8,3 Mo |
-| SuperTyPo | 1,0 Mo | — | 1,7 Mo |
+| Application | Dossier embarqué | Binaire | Installeur NSIS | `.msi` |
+|---|---|---|---|---|
+| SuperPrint | 57,9 Mo | 33,24 Mo | 31,49 Mio | 31,64 Mo |
+| Studio IA | 9,8 Mo | 10,13 Mo | 8,30 Mio | 8,58 Mo |
+| SuperTyPo | 1,0 Mo | 3,59 Mo | 1,67 Mio | 2,02 Mo |
+
+> ⚠️ **Le fichier `.desktop` du Studio s'appelle `Studio IA.desktop`**, avec un
+> espace. Le nom vient du `productName` (`freedesktop.rs` :
+> `format!("{product_name}.desktop")`), et la spécification Desktop Entry ne
+> l'interdit pas : le fichier est indexé, l'entrée affiche `Name=Studio IA`, et
+> `Icon=` / `Exec=` / `StartupWMClass=` suivent le nom du **binaire**, donc rien
+> ne dépend de l'espace. Le corriger demanderait de renommer le produit en
+> `StudioIA`, ce qui changerait aussi le nom affiché dans le menu.
 
 ## Téléchargement publié
 
