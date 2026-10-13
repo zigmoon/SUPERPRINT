@@ -1,18 +1,19 @@
 ---
 /**
- * « Nos logiciels · Nos versions » — la dernière zone avant le pied de page.
+ * « Téléchargement » — la dernière zone avant le pied de page.
  *
- * ELLE NE DOUBLE PAS LES TROIS ENTRÉES DE L'ACCUEIL, elle les prolonge. Les
+ * ELLE NE DOUBLE PAS LES TROIS ENTRÉES DE L'ACCUEIL, elle les prolonge : les
  * entrées, en haut de page, ouvrent l'application en ligne et ne disent rien des
  * versions. Ici on donne le numéro de version, les trois systèmes et l'accès au
  * téléchargement — ce que le visiteur venu en bas de page est venu chercher.
  *
- * ELLE SÉPARE AUSSI DEUX BANDES SOMBRES, le CTA final et le colophon : enchaînés,
- * ils se lisaient comme un seul bloc et ne laissaient aucun temps d'arrêt.
+ * ELLE EST POSÉE SUR LE FOND DE PAGE : aucun panneau blanc, aucun filet de
+ * couleur. Trois aplats encadrés faisaient trois cartes là où il n'y a que trois
+ * logiciels — l'œil lisait le cadre, pas le nom.
  *
  * LE BOUTON N'ÉNUMÈRE PAS LES FICHIERS. Il ouvre le menu « Télécharger » de la
- * barre, qui reste la seule liste d'adresses du site — donc la seule à corriger
- * le jour où un nom de paquet change. `assets/js/zone-versions.js` s'en charge.
+ * barre, qui reste la seule liste d'adresses du site — donc la seule à corriger le
+ * jour où un nom de paquet change. Le script est dans `JS/marketing/lang-switcher.js`.
  */
 import {
   APPLICATIONS_BUREAU,
@@ -30,15 +31,9 @@ import {
       <div class="hero-kicker" data-lang="fr">{VERSIONS_LABELS.kicker.fr}</div>
       <div class="hero-kicker" data-lang="en">{VERSIONS_LABELS.kicker.en}</div>
       <div class="hero-kicker" data-lang="ja">{VERSIONS_LABELS.kicker.ja}</div>
-      <h2 id="lg-titre" data-lang="fr">
-        {VERSIONS_LABELS.titre.fr.avant}<em>{VERSIONS_LABELS.titre.fr.em}</em>{VERSIONS_LABELS.titre.fr.apres}
-      </h2>
-      <h2 data-lang="en">
-        {VERSIONS_LABELS.titre.en.avant}<em>{VERSIONS_LABELS.titre.en.em}</em>{VERSIONS_LABELS.titre.en.apres}
-      </h2>
-      <h2 data-lang="ja">
-        {VERSIONS_LABELS.titre.ja.avant}<em>{VERSIONS_LABELS.titre.ja.em}</em>{VERSIONS_LABELS.titre.ja.apres}
-      </h2>
+      <h2 id="lg-titre" data-lang="fr">{VERSIONS_LABELS.titre.fr}</h2>
+      <h2 data-lang="en">{VERSIONS_LABELS.titre.en}</h2>
+      <h2 data-lang="ja">{VERSIONS_LABELS.titre.ja}</h2>
       <p class="lead" data-lang="fr">{VERSIONS_LABELS.chapeau.fr}</p>
       <p class="lead" data-lang="en">{VERSIONS_LABELS.chapeau.en}</p>
       <p class="lead" data-lang="ja">{VERSIONS_LABELS.chapeau.ja}</p>
@@ -47,19 +42,19 @@ import {
     <div class="lg-grid">
       {
         APPLICATIONS_BUREAU.map((app) => (
-          <article class="lg-app" style={`--lg-accent:${app.accent}`}>
+          <article class="lg-app">
             <div class="lg-tete">
               <span class={app.plaqueClaire ? 'lg-logo lg-logo-clair' : 'lg-logo'}>
                 <img src={app.logo} alt="" width="50" height="50" loading="lazy" decoding="async" />
               </span>
-              <span class="lg-id">
+              <div class="lg-id">
                 <h3 class="lg-nom">{app.nom}</h3>
                 <span class="lg-role">
                   <span class="inline-fr">{app.role.fr}</span>
                   <span class="inline-en">{app.role.en}</span>
                   <span class="inline-ja">{app.role.ja}</span>
                 </span>
-              </span>
+              </div>
             </div>
             <p class="lg-desc" data-lang="fr">{app.resume.fr}</p>
             <p class="lg-desc" data-lang="en">{app.resume.en}</p>

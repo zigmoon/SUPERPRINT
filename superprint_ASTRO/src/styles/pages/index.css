@@ -362,7 +362,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 /* Pas de surbrillance de ligne : la ligne n'est plus une cible. */
 .nav-dd-item { align-items: flex-start; padding-top: 13px; padding-bottom: 13px; }
 .nav-dd-item:has(a:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
-.nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; }
+.nav-dd-ic { flex: 0 0 auto; width: 26px; height: 26px; }
 .nav-dd-ic img { display: block; width: 100%; height: 100%; }
 .nav-dd-txt { min-width: 0; }
 .nav-dd-os {
@@ -385,11 +385,11 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    bouton, donc comme une ACTION. Le contour suffit à délimiter la cible : le
    séparateur « · » qui les espacait n'a plus lieu d'être. */
 .nav-dd-app-fmt {
-  display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
-  font-family: var(--f-mono); font-size: 10.5px; white-space: nowrap;
+  display: flex; align-items: center; gap: 4px; flex: 0 0 auto;
+  font-family: var(--f-mono); font-size: 9.5px; white-space: nowrap;
 }
 .nav-dd-app-fmt a {
-  display: inline-block; padding: 3px 10px;
+  display: inline-block; padding: 1px 6px;
   border: 1px solid var(--line-strong); border-radius: 999px;
   color: var(--muted); text-decoration: none; line-height: 1.4;
   /* Le poids est herite de « .nav-links a » (600) : sans cette remise a zero,
@@ -963,93 +963,86 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 .cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
 .cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
 
-/* ══════════════ 🆕 v1.7.614 — NOS LOGICIELS · NOS VERSIONS ══════════════
-   DERNIÈRE ZONE AVANT LE PIED DE PAGE, ET LA SEULE CLAIRE DU BAS DE PAGE : elle
-   sépare deux bandes sombres — le CTA final et le colophon — qui, enchaînées,
-   se lisaient comme un seul bloc et ne laissaient aucun temps d'arrêt.
+/* ══════════════ 🆕 v1.7.615 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
+   DERNIÈRE ZONE AVANT LE PIED DE PAGE. Elle ne double pas les trois entrées du
+   haut de page, elle les prolonge : les entrées ouvrent l'application en ligne et
+   ne disent rien des versions ; ici on donne le numéro de version, les trois
+   systèmes et l'accès au téléchargement.
 
-   ELLE NE DOUBLE PAS LES TROIS ENTRÉES DU HAUT DE PAGE, elle les prolonge : les
-   entrées ouvrent l'application en ligne et ne disent rien des versions ; ici on
-   donne le numéro de version, les trois systèmes, et l'accès au téléchargement.
-   Le visiteur qui arrive en bas de page a déjà vu ce que fait le logiciel — ce
-   qu'il cherche à ce moment-là, c'est ce qu'il installe et quelle version.
+   POSÉE SUR LE FOND DE PAGE, SANS PANNEAU NI FILET DE COULEUR. Les trois aplats
+   blancs et les trois filets colorés faisaient trois CARTES là où il n'y a que
+   trois LOGICIELS : l'encre encadrée attire l'œil sur le cadre, pas sur le nom. Ici
+   tout se lit directement sur le papier, séparé par l'air qui l'entoure — et le
+   seul aplat noir de la zone est celui du bouton, donc l'action.
 
-   LE BOUTON OUVRE LE MENU DE LA BARRE au lieu de recopier sept adresses par
-   application : le menu reste la seule liste de fichiers du site, donc la seule
-   à corriger le jour où un nom de paquet change. */
+   TOUT EST CENTRÉ : la zone est une adresse, pas une page de lecture. Un titre, une
+   promesse, trois colonnes symétriques, une note. Rien à balayer du regard de
+   gauche à droite. */
 #logiciels {
-  background: var(--paper-2);
+  background: var(--paper);
   border-top: 1px solid var(--line);
-  padding: clamp(58px,7vw,92px) 24px;
+  padding: clamp(58px,7vw,96px) 24px;
+  text-align: center;
 }
-.lg-head { max-width: 760px; margin-bottom: clamp(28px,4vw,48px); }
-.lg-head h2 { font-size: clamp(30px,4.2vw,54px); margin: 0 0 16px; }
+.lg-head { max-width: 720px; margin: 0 auto clamp(32px,4.6vw,56px); }
+.lg-head h2 { font-size: clamp(34px,5.2vw,66px); margin: 0 0 18px; }
 .lg-head h2 em { font-style: italic; color: var(--cyan); }
-.lg-head .lead { color: var(--ink-soft); }
+.lg-head .lead { margin: 0 auto; color: var(--ink-soft); }
 .lg-grid {
-  display: grid; gap: clamp(14px,1.6vw,20px);
-  grid-template-columns: repeat(auto-fit, minmax(286px, 1fr));
+  display: grid; gap: clamp(34px,4.4vw,58px);
+  grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+  align-items: start;
 }
-.lg-app {
-  display: flex; flex-direction: column; gap: 13px;
-  padding: clamp(18px,2vw,24px);
-  background: var(--paper-3); border: 1px solid var(--line);
-  position: relative; overflow: hidden;
-  transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
-}
-.lg-app::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: var(--lg-accent, var(--cyan));
-}
-.lg-app:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: 0 16px 34px rgba(23,19,13,.13); }
-.lg-tete { display: flex; align-items: center; gap: 13px; }
+.lg-app { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.lg-tete { display: flex; flex-direction: column; align-items: center; gap: 13px; }
 /* Les mêmes plaques que les trois entrées du haut de page : plaque d'encre pour
    l'icône blanche de l'éditeur, plaque blanche pour les deux logotypes bicolores. */
 .lg-logo {
-  flex: 0 0 auto; width: 60px; height: 60px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center; padding: 11px;
+  flex: 0 0 auto; width: 64px; height: 64px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; padding: 12px;
   background: var(--ink);
 }
 .lg-logo-clair { background: var(--white); border: 1px solid var(--line-strong); }
 .lg-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .lg-id { min-width: 0; }
 .lg-nom {
-  font-family: var(--f-caps); font-size: clamp(21px,2.2vw,26px); font-weight: 400;
-  letter-spacing: .02em; line-height: 1.02; color: var(--ink); margin: 0;
+  font-family: var(--f-caps); font-size: clamp(24px,2.6vw,32px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.05; color: var(--ink); margin: 0;
 }
 .lg-role {
-  display: block; margin-top: 4px; font-family: var(--f-mono); font-size: 9.5px;
-  letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+  display: block; margin-top: 5px; font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--muted);
 }
-.lg-desc { font-size: 13px; line-height: 1.6; color: var(--ink-soft); margin: 0; }
-.lg-ver {
-  display: flex; align-items: baseline; gap: 9px;
-  margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line);
-}
-.lg-ver b { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--ink); letter-spacing: .04em; }
+.lg-desc { font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); margin: 0; max-width: 34ch; }
+/* La version, en encre pleine : c'est la seule ligne de la colonne qui doit être
+   lue en premier, et elle ne se noie plus dans un panneau blanc. */
+.lg-ver { display: flex; align-items: baseline; justify-content: center; gap: 9px; }
+.lg-ver b { font-family: var(--f-mono); font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: .04em; }
 .lg-ver span { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
-/* Les gélules des systèmes : le nom que le visiteur reconnaît — PC, macOS,
-   Linux —, et devant lui la marque du système, qui le rend lisible sans lire. */
-.lg-os { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Les systèmes : la marque et le nom, SANS CONTOUR. Une gélule dit « cliquable » ;
+   ici rien ne se clique — ce sont les trois plateformes servies. Le contour
+   promettrait une action qui n'existe pas. */
+.lg-os { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
 .lg-os i {
   display: inline-flex; align-items: center; gap: 6px;
-  font-style: normal; font-family: var(--f-mono); font-size: 10px;
-  padding: 3px 10px 3px 8px; border: 1px solid var(--line-strong); border-radius: 999px;
-  color: var(--muted);
+  font-style: normal; font-family: var(--f-mono); font-size: 11px; color: var(--muted);
 }
-.lg-os i img { display: block; width: 13px; height: 13px; }
-.lg-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.lg-actions .btn { padding: 12px 17px; font-size: 11px; letter-spacing: .1em; }
+.lg-os i img { display: block; width: 14px; height: 14px; }
+/* Les boutons reprennent la gélule du menu de téléchargement : la même forme dit
+   la même chose d'un bout à l'autre du site — ici, on installe. */
+.lg-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 2px; }
+.lg-actions .btn { padding: 13px 24px; font-size: 11px; letter-spacing: .12em; border-radius: 999px; }
 .lg-note {
-  margin-top: clamp(22px,3vw,34px); padding-top: 20px; border-top: 1px solid var(--line);
-  font-size: 12.5px; line-height: 1.75; color: var(--muted); max-width: 880px;
+  margin: clamp(34px,4.6vw,56px) auto 0; padding-top: 22px;
+  border-top: 1px solid var(--line); max-width: 780px;
+  font-size: 12.5px; line-height: 1.8; color: var(--muted);
 }
 .lg-note strong { color: var(--ink); }
 .lg-note a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
 .lg-note a:hover { border-bottom-color: var(--ink); }
-@media (max-width: 640px) {
-  /* Deux boutons côte à côte ne tiennent pas sous 340 px : ils prennent toute la
-     largeur, l'un sous l'autre, et l'œil n'a plus à choisir une colonne. */
+@media (max-width: 560px) {
+  /* Deux gélules côte à côte ne tiennent pas sous 340 px : elles prennent toute la
+     largeur, l'une sous l'autre, et l'œil n'a plus à choisir une colonne. */
   .lg-actions .btn { flex: 1 1 100%; justify-content: center; }
 }
 

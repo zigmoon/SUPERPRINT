@@ -167,26 +167,63 @@ const APPLICATIONS = {
   superprint: {
     nom: 'SuperPrint',
     binaire: 'superprint',
-    pages: ['app/index.html'],
+    /*
+     * L'ÉDITEUR EMBARQUE LES DEUX AUTRES, ET POUR LA MÊME RAISON QUE LE STUDIO.
+     * Ses deux boutons — « envoyé au studio SP213 » et l'onglet SuperTyPo du
+     * Nouveau Projet — ouvrent des fenêtres sur les deux autres applications. Sans
+     * elles dans le paquet, les boutons ouvriraient une page absente.
+     *
+     * C'est le prix de trois applications qui se parlent. La note
+     * `memoire_version.sd`, à la racine du dépôt, décrit la suite : un lanceur dans
+     * chaque paquet, et le contenu commun posé une fois.
+     */
+    pages: ['app/index.html', 'sp213-studio.html'],
     perimetre: "l'éditeur SuperPrint et ses ressources",
     contenu: "l'éditeur SuperPrint, embarqué hors-ligne",
     assembler: async (racine) => {
       await copier(path.join(product, 'app'), path.join(racine, 'app'));
+      await copier(path.join(product, 'supertypo'), path.join(racine, 'supertypo'));
       await copier(path.join(product, 'icons'), path.join(racine, 'icons'));
+      // Le studio vient à la racine : c'est l'adresse que l'éditeur ouvre depuis
+      // `app/index.html` (« ../sp213-studio.html »).
+      await fs.copyFile(path.join(product, 'sp213-studio.html'), path.join(racine, 'sp213-studio.html'));
+      await fs.copyFile(path.join(product, 'favicon.png'), path.join(racine, 'favicon.png'));
+      await copier(path.join(product, 'JS'), path.join(racine, 'JS'));
+      // Les polices du studio sont celles de l'éditeur, déjà là : on les réutilise
+      // par un chemin relatif au lieu de les recopier une troisième fois (19 Mo).
+      await copierFeuilleDePolices(racine, 'app/CSS/fonts');
     }
   },
   studio: {
     nom: 'Studio IA',
     binaire: 'studio-ia',
-    pages: ['index.html'],
-    perimetre: 'le Studio IA SP213 et ses ressources',
-    contenu: 'le Studio IA SP213, embarqué hors-ligne',
+    /*
+     * LE STUDIO EMBARQUE L'ÉDITEUR, ET C'EST UNE EXCEPTION ASSUMÉE.
+     *
+     * Les trois paquets sont séparés pour qu'aucun ne porte ce dont il n'a pas
+     * besoin. Mais le studio a un bouton ÉDITER qui TRANSFÈRE la maquette à
+     * l'éditeur : il dépose le document dans le stockage local, puis ouvre
+     * `app/index.html?from=sp213`. Sans l'éditeur dans le paquet, ce bouton n'ouvre
+     * rien — le fichier n'existe pas, et le stockage local n'est de toute façon
+     * pas partagé entre deux applications distinctes (deux dossiers de profil,
+     * donc deux stockages).
+     *
+     * Deux pages d'entrée, donc : `index.html` (le studio) et `app/index.html`
+     * (l'éditeur, ouvert dans une seconde fenêtre par ÉDITER). Les deux reçoivent
+     * la purge du service worker.
+     */
+    pages: ['index.html', 'app/index.html'],
+    perimetre: "le studio SP213, l'éditeur SuperPrint et leurs ressources",
+    contenu: "le studio SP213 et l'éditeur SuperPrint, embarqués hors-ligne",
     assembler: async (racine) => {
       await fs.copyFile(path.join(product, 'sp213-studio.html'), path.join(racine, 'index.html'));
       await copier(path.join(product, 'JS'), path.join(racine, 'JS'));
       await copier(path.join(product, 'icons'), path.join(racine, 'icons'));
+      await copier(path.join(product, 'app'), path.join(racine, 'app'));
       await fs.copyFile(path.join(product, 'favicon.png'), path.join(racine, 'favicon.png'));
-      await copierFeuilleDePolices(racine, null);
+      // 176 des 185 polices de la racine sont déjà dans `app/CSS/fonts/` : on
+      // les réutilise par un chemin relatif au lieu de les recopier (19 Mo).
+      await copierFeuilleDePolices(racine, 'app/CSS/fonts');
     }
   },
   supertypo: {
@@ -265,7 +302,7 @@ const PURGE = `(function () {
   });
 })();`;
 
-async function retirerServiceWorker(racine, entree) {
+async function retirerServiceWorker(racine, entrees) {
   const desinstalleur = `/* SuperPrint — application de bureau : ce service worker se désenregistre.
    Le service worker n'apporte rien dans une application de bureau et peut servir
    des fichiers périmés. Ce fichier existe pour REPRENDRE l'enregistrement laissé
@@ -306,19 +343,28 @@ self.addEventListener('activate', (e) => {
   }
   await fs.writeFile(path.join(racine, 'service-worker.js'), desinstalleur, 'utf8');
 
-  // La purge, dans la page que la fenêtre ouvre réellement. Insérée juste après
-  // l'ouverture de `<head>` : avant tout ce qui peut charger.
-  const fichierEntree = path.join(racine, entree);
-  const html = await fs.readFile(fichierEntree, 'utf8');
-  if (!/<head[^>]*>/i.test(html)) {
-    throw new Error(`pas de <head> dans ${entree} : impossible d'y placer la purge`);
-  }
+  // La purge, dans CHAQUE page qu'une fenêtre ouvre réellement. Insérée juste
+  // après l'ouverture de `<head>` : avant tout ce qui peut charger.
+  //
+  // POURQUOI PLUSIEURS PAGES. Le studio en ouvre une seconde — `app/index.html`,
+  // par son bouton ÉDITER. Or le service worker fautif vit dans le profil, pas
+  // dans le binaire : une page qui ne purge pas peut le réinstaller, et l'écran
+  // suivant s'ouvrirait à son tour sans CSS. On purge là où l'on ARRIVE, pas
+  // seulement là où l'on démarre.
   const marqueur = `<!-- Purge d'un service worker hérité — voir scripts/prepare-bundle.mjs.
      Doit rester INLINE et AVANT tout le reste : placée dans un fichier séparé,
      elle serait elle-même servie par le cache qu'elle doit supprimer. -->
 <script>${PURGE}</script>`;
-  await fs.writeFile(fichierEntree, html.replace(/<head[^>]*>/i, (m) => `${m}\n${marqueur}`), 'utf8');
-  log(`purge du service worker posée dans ${entree}`);
+
+  for (const entree of entrees) {
+    const fichierEntree = path.join(racine, entree);
+    const html = await fs.readFile(fichierEntree, 'utf8');
+    if (!/<head[^>]*>/i.test(html)) {
+      throw new Error(`pas de <head> dans ${entree} : impossible d'y placer la purge`);
+    }
+    await fs.writeFile(fichierEntree, html.replace(/<head[^>]*>/i, (m) => `${m}\n${marqueur}`), 'utf8');
+    log(`purge du service worker posée dans ${entree}`);
+  }
 }
 
 /**
@@ -494,7 +540,7 @@ async function construireApplication(cle) {
   await fs.mkdir(racine, { recursive: true });
 
   await app.assembler(racine);
-  await retirerServiceWorker(racine, app.pages[0]);
+  await retirerServiceWorker(racine, app.pages);
   await verifierAucunEnregistrement(racine);
 
   const manquants = await verifierReferences(racine, app.pages);

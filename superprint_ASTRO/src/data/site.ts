@@ -196,9 +196,9 @@ export const APPLICATIONS_BUREAU: ApplicationBureau[] = [
     nom: 'SuperPrint',
     role: { fr: 'Le bureau de PAO', en: 'The DTP desk', ja: 'DTPデスク' },
     resume: {
-      fr: 'Mise en page, prépresse, export. Le poste complet, hors ligne.',
-      en: 'Layout, prepress, export. The complete desk, offline.',
-      ja: '組版、プリプレス、書き出し。オフラインで完結する制作環境。',
+      fr: 'Le bureau de PAO complet : mise en page, prépresse, export PDF. Tout le poste, hors ligne.',
+      en: 'The complete DTP desk: layout, prepress, PDF export. The whole workstation, offline.',
+      ja: 'DTPデスクのすべて — 組版、プリプレス、PDF書き出し。オフラインで完結。',
     },
     logo: 'icons/icon-192x192.png',
     plaqueClaire: false,
@@ -209,9 +209,9 @@ export const APPLICATIONS_BUREAU: ApplicationBureau[] = [
     nom: 'Studio IA',
     role: { fr: 'La composition assistée', en: 'Assisted composition', ja: 'アシスト組版' },
     resume: {
-      fr: 'Décrivez la maquette : l’IA la compose, vous l’éditez.',
-      en: 'Describe the layout: the AI composes it, you sign it off.',
-      ja: 'レイアウトを言葉に。AIが組み、あなたが仕上げる。',
+      fr: 'Décrivez la maquette : l’IA la compose, vous la corrigez, vous l’exportez.',
+      en: 'Describe the layout: the AI composes it, you refine it, you export it.',
+      ja: 'レイアウトを言葉に。AIが組み、あなたが直し、書き出す。',
     },
     logo: 'icons/studio_print_logo_blanc.png',
     plaqueClaire: true,
@@ -222,9 +222,9 @@ export const APPLICATIONS_BUREAU: ApplicationBureau[] = [
     nom: 'SuperTyPo',
     role: { fr: 'Le moteur typographique', en: 'The type engine', ja: 'タイポグラフィ・エンジン' },
     resume: {
-      fr: 'Les caractères décomposés, redessinés en courbes.',
-      en: 'Letterforms decomposed, redrawn as curves.',
-      ja: '書体を分解し、曲線で描き直す。',
+      fr: 'Importez une police, redessinez chaque caractère en courbes, réexportez-la.',
+      en: 'Import a typeface, redraw each character as curves, export it again.',
+      ja: '書体を読み込み、1文字ずつ曲線で描き直し、書き出す。',
     },
     logo: 'icons/sper_typo.png',
     plaqueClaire: true,
@@ -242,19 +242,22 @@ export const APPLICATIONS_BUREAU: ApplicationBureau[] = [
  */
 export const VERSIONS_LABELS = {
   kicker: {
-    fr: 'Nos logiciels · Nos versions',
-    en: 'Our software · Our versions',
-    ja: '私たちのソフトウェア · バージョン',
+    fr: 'Applications de bureau · PC, macOS et Linux',
+    en: 'Desktop applications · PC, macOS and Linux',
+    ja: 'デスクトップ版 · PC・macOS・Linux',
   },
+  /* Le titre est celui que la zone annonce, et rien d'autre : « Téléchargement ».
+     Une phrase d'accroche n'a pas besoin d'être le titre — elle est juste en
+     dessous, et c'est elle qui vend. */
   titre: {
-    fr: { avant: 'Trois applications, ', em: 'une même version', apres: '.' },
-    en: { avant: 'Three applications, ', em: 'one same version', apres: '.' },
-    ja: { avant: '3つのアプリ、', em: 'ひとつのバージョン', apres: '。' },
+    fr: 'Téléchargement',
+    en: 'Download',
+    ja: 'ダウンロード',
   },
   chapeau: {
-    fr: 'Elles s’installent séparément — chacune ne pèse que ce qu’elle embarque — mais elles avancent ensemble : un seul numéro de version les décrit toutes les trois.',
-    en: 'They install separately — each one only carries what it needs — yet they move together: a single version number describes all three.',
-    ja: '別々にインストールできます — それぞれ必要な分だけを抱えています — それでも歩みは同じ。ひとつのバージョン番号が3つすべてを示します。',
+    fr: 'Trois applications natives, un seul numéro de version. Elles s’installent séparément — vous ne téléchargez que ce que vous utilisez — et elles avancent ensemble : la même version les décrit toutes les trois. Gratuit, sans compte, et hors ligne une fois installé.',
+    en: 'Three native applications, one single version number. They install separately — you only download what you use — and they move together: the same version describes all three. Free, no account, and offline once installed.',
+    ja: '3つのネイティブアプリ、バージョン番号はひとつ。別々にインストールでき — 使うものだけを取得 — 歩みは同じ。同じバージョンが3つすべてを示します。無料、アカウント不要、インストール後はオフラインで動作します。',
   },
   version: { fr: 'Version', en: 'Version', ja: 'バージョン' },
   note: {
