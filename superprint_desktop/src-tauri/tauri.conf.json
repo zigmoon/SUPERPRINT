@@ -33,6 +33,10 @@
     "category": "GraphicsAndDesign",
     "shortDescription": "PAO professionnelle dans le navigateur.",
     "longDescription": "SuperPrint — logiciel de publication assistée par ordinateur (PAO) avec Studio IA SP213 et SuperTyPo. Application de bureau autonome, fonctionne hors-ligne.",
+    "copyright": "© Zigmoon — Simon Dupont-Gellert & Clémence Brunet",
+    "publisher": "Zigmoon",
+    "homepage": "https://superprint.cc",
+    "licenseFile": "../LICENSE",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -40,10 +44,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "copyright": "© Zigmoon — Simon Dupont-Gellert & Clémence Brunet",
+    "windows": {
+      "nsis": {
+        "languages": ["French", "English", "Japanese"],
+        "installerIcon": "icons/icon.ico"
+      }
+    },
     "linux": {
       "deb": {
-        "depends": []
+        "depends": [],
+        "section": "graphics"
       }
     },
     "macOS": {

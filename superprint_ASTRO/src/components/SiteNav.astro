@@ -68,11 +68,17 @@ const ICONES: Record<string, string> = {
         ))}
       </a>
     ))}
-  </div>
-  <div class="nav-tools">
-    <!-- ══════════ TÉLÉCHARGER — LES INSTALLEURS DE BUREAU ══════════
-         Dans `.nav-tools` : sous 1000 px `.nav-links` est masqué, un menu qui y
-         vivrait disparaîtrait avec elle.
+
+    <!-- 🆕 v1.7.613 — LE MENU RESTE DANS `.nav-links`, À LA PLACE QU'OCCUPAIT
+         « Ouvrir l'app ». La barre répartit ses trois groupes en
+         `space-between` : placé dans `.nav-tools`, le bouton glissait de 277 px
+         vers la droite (mesuré sur une fenêtre de 1400 : son bord gauche passe
+         de ~808 à 1085). Ici, il garde exactement la position de l'appel à
+         l'action qu'il remplace.
+
+         SOUS 1000 px, `.nav-links` n'est plus masqué en bloc : les cinq entrées
+         de TEXTE disparaissent, le menu reste (voir la règle mobile, dans les
+         feuilles de page).
 
          Panneau de DIVULGATION, pas menu ARIA : des liens, un bouton, Échap pour
          fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
@@ -139,6 +145,8 @@ const ICONES: Record<string, string> = {
         </div>
       </div>
     </div>
+  </div>
+  <div class="nav-tools">
     <div class="lang-toggle">
       <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
       <button id="btn-fr" onclick="setLang('fr')">FR</button>

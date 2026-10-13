@@ -18,7 +18,28 @@ _Une application de bureau : le `.exe` Windows est construit ici, et le `.dmg` /
 - **LES TROIS APPLICATIONS SONT DANS LE MÊME PAQUET** — l'éditeur **SuperPrint**, le **Studio IA** et **SuperTyPo** — et se choisissent sur une **page de lancement**. Un seul installeur par système, donc, et non trois. Vérifié : le Studio IA **appelle les API directement avec la clé de l'utilisateur** (localStorage), **aucun `ai-proxy.php` n'est requis**, et SuperTyPo ne dépend que de son propre dossier.
 - `scripts/stage-frontend.mjs` (Node, multiplateforme — le workflow l'appelle aussi depuis macOS et Linux) assemble `frontend/` depuis `../superprint/`, puis **vérifie son propre résultat** : chaque `src=`/`href=` local des quatre pages est résolu sur le disque, commentaires HTML et corps de `<script>` retirés. Un fichier manquant fait **échouer le build**.
 - **Les polices ne sont copiées qu'une fois.** `superprint/CSS/fonts/` pèse 19,8 Mo, dont **19,6 Mo sont octet pour octet déjà présents** dans `app/CSS/fonts/` (176 fichiers sur 185). La feuille copiée est réécrite vers la copie existante ; **9 fichiers seulement** sont réellement copiés. **Mesuré : 61,3 Mo de front-end → installeur 32,24 Mio**, soit à peine **0,8 Mio de plus** que la version qui ne contenait que l'éditeur.
-- **Windows** : `SuperPrint_1.7.611_x64-setup.exe` (**32,24 Mio**, NSIS) et `superprint-desktop.exe` (**33 Mo**). Le lanceur affiche **v1.7.611**, injecté depuis `superprint/version.txt` au staging.
+- **Windows** : `SuperPrint_1.7.611_x64-setup.exe` (NSIS) et `superprint-desktop.exe`. Le lanceur affiche **v1.7.611**, injecté depuis `superprint/version.txt` au staging.
+
+### Fixed — les icônes venaient d'une source 512 px, donc agrandies
+- Les icônes des trois systèmes étaient engendrées depuis `icon-512x512.png`. `tauri icon` **agrandissait** donc pour remplir les planches Retina du `.icns` : la planche **1024×1024** (`ic10`) existait bien, mais **floue**.
+- La source est désormais le **`logo_superprint_1024px.png`** du pack de marque (`superprint/logos_superprint.zip`), recopié en `src-tauri/app-icon.png` pour que la recette soit complète. Mesuré au **Laplacien**, sur la planche `ic10` extraite des deux `.icns` : **1,99 avant → 4,44 après**, soit **2,2× plus nette**.
+- Contenu vérifié après régénération : `.ico` = **6 tailles** (16, 24, 32, 48, 64, **256**) ; `.icns` = **12 planches** (`is32`, `s8mk`, `ic11`, `ic12`, `ic07`, `il32`, `l8mk`, `ic13`, `ic08`, `ic09`, `ic14`, et **`ic10` = 1024**). Les variantes Android et iOS, engendrées elles aussi, sont **supprimées** : une application de bureau n'en a que faire.
+- ⚠️ La source de remplacement n'est pas le même tirage que l'icône PWA du site : elle est **plus serrée** (marge de 4 % contre 8 %) et d'un **trait plus gras**. C'est le fichier de marque officiel ; l'ancien tirage reste dans `superprint/icons/icon-512x512.png` si l'on préfère y revenir.
+
+### Fixed — l'installeur Windows n'avait PAS l'icône de SuperPrint
+- Le `.exe` qu'on télécharge est un fichier de l'installeur NSIS, et son icône n'était **pas** celle de l'application : mesuré, **70,8** d'écart moyen par canal avec l'icône du binaire — c'est-à-dire **une autre image** (et 70 à 150 contre *toutes* les autres sources essayées : icône du binaire, `icon.png`, icône PWA 512 et 192, favicon).
+- `bundle.windows.nsis.installerIcon` est désormais **explicite** (`icons/icon.ico`). Mesuré après : **17,8**, la même valeur que le binaire → **même icône**. C'est ce fichier-là que l'on voit dans son dossier de téléchargements, donc celui qui compte le plus.
+
+### Added — identité des paquets (les trois systèmes)
+- `bundle.publisher` = **Zigmoon** (le nom de société était « superprint »), `bundle.homepage` = **superprint.cc**, `bundle.licenseFile` = **`../LICENSE`**.
+- `bundle.windows.nsis.languages` = **français, anglais, japonais** : l'installeur parle les trois langues du produit.
+- `bundle.linux.deb.section` = **graphics** : sans cela, l'entrée de menu du `.deb` tombait dans « Utilitaires ».
+
+### Fixed — « Télécharger » avait glissé de 277 px vers la droite
+- En déplaçant le menu dans `.nav-tools` (voir plus haut), le bouton avait **quitté la place qu'occupait « Ouvrir l'app »** : la barre répartit ses trois groupes en `space-between`, et son bord gauche est passé de **~808 à 1085** sur une fenêtre de 1400 px. **Mesuré : 277 px de décalage.**
+- Le menu est **revenu dans `.nav-links`**, en dernière position — **exactement** là où était l'appel à l'action. Mesuré après, sur une fenêtre de 1400 : bouton à **820 px** (HTML) et **794 px** (Astro), contre **1085** avant correction.
+- Pour que le téléchargement reste atteignable au doigt, **`.nav-links` n'est plus masqué en bloc sous 1000 px** : seuls ses **liens directs** disparaissent (`> a`), le menu reste. Mesuré à 360 px : **0** entrée de texte visible, bouton **visible**, panneau de 16 à 334 px — **aucun débordement**.
+- Le panneau se **recadre sur la barre** et non sur le bouton (`position: static` sur `.nav-dd`, qui laisse `nav` — `sticky`, donc positionné — servir de repère) : le bouton étant centré en mobile, un panneau ancré à son bord droit sortait de **40 px** par la gauche à 360 px.
 
 ### Changed — l'ouverture du bloc des fondations (les deux arborescences)
 - Le filet qui sépare les trois entrées du bloc GitHub / npm / Rust passe de **1 px gris** (`--line` : #DCD3C3) à **2 px en encre pleine** (`--ink` : #17130D). Mesuré après : `border-top: 2px solid rgb(23,19,13)`, contre `1px solid rgb(220,211,195)` avant. Le filet du **bas** du bloc ne change pas : c'est celui du haut qui l'ouvre, et c'est lui qui doit se voir.

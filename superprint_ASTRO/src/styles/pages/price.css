@@ -288,7 +288,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
    survol se coupe entre le bouton et la carte et le menu se referme au moment
    où l'on veut cliquer. */
-.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; }
+.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
 .nav-dd-btn {
   display: inline-flex; align-items: center; gap: 9px; cursor: pointer; border: 0;
   margin: 0; padding: 0 22px; height: 42px;
@@ -1102,7 +1102,18 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
   .uc-card:nth-child(2n) { border-right: none; }
   .studio-intro { grid-template-columns: 1fr; }
   nav { justify-content: space-between; }
-  .nav-links { display: none; }
+  /* 🆕 v1.7.613 — LES CINQ ENTRÉES DE TEXTE DISPARAISSENT, PAS LE MENU.
+     `.nav-links` était masqué en BLOC : le bouton « Télécharger », qui vit
+     dedans, disparaissait donc avec lui. On ne cache plus que ses liens directs
+     — le menu reste, à sa place, entre le logotype et le burger. */
+  .nav-links { display: flex; }
+  .nav-links > a { display: none; }
+  /* 🎯 Le panneau se recadre sur la BARRE et non sur le bouton : le bouton est
+     centré en mobile, et un panneau ancré à son bord DROIT sortirait de
+     40 px par la gauche (mesuré à 360 px). `nav` est `sticky`, donc positionné :
+     il devient le repère du panneau, qui prend alors toute la largeur. */
+  .nav-dd { position: static; margin-left: 0; }
+  .nav-dd-panel { left: 16px; right: 16px; width: auto; }
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
   .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */

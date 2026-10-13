@@ -74,6 +74,40 @@ téléchargement paierait deux fois les mêmes polices.
 | macOS | Rust, Node ≥ 20, Xcode Command Line Tools |
 | Linux | Rust, Node ≥ 20, `libwebkit2gtk-4.1-dev`, `libappindicator3-dev`, `librsvg2-dev`, `patchelf` |
 
+### Les icônes
+
+Les icônes des trois systèmes sont **engendrées**, jamais dessinées à la main.
+La source est `src-tauri/app-icon.png` — le **`logo_superprint_1024px.png`** du
+pack de marque (`superprint/logos_superprint.zip`), recopié ici pour que la
+recette soit complète.
+
+```bash
+npx tauri icon src-tauri/app-icon.png
+rm -rf src-tauri/icons/android src-tauri/icons/ios   # une app de bureau n'en a pas besoin
+```
+
+> ⚠️ **LA SOURCE DOIT FAIRE 1024 px.** Avec une source de 512, `tauri icon`
+> **agrandit** pour remplir les planches Retina du `.icns` : la planche
+> 1024×1024 (`ic10`) existe dans les deux cas, mais elle est floue. Mesuré au
+> Laplacien : **1,99** depuis une source 512, **4,44** depuis la source native
+> 1024 — **2,2× plus nette**.
+
+Ce que produit `tauri icon` :
+
+| Fichier | Pour |
+|---|---|
+| `icons/icon.ico` | Windows — **6 tailles** : 16, 24, 32, 48, 64, **256** |
+| `icons/icon.icns` | macOS — **12 planches**, dont `ic10` (**1024×1024**, Retina) |
+| `icons/icon.png`, `32x32`, `128x128`, `128x128@2x` | Linux — et fenêtre |
+| `icons/Square*.png`, `StoreLogo.png` | Windows Store (inutilisés ici) |
+
+> ⚠️ **L'ICÔNE DE L'INSTALLEUR DOIT ÊTRE NOMMÉE.** `bundle.windows.nsis.installerIcon`
+> est écrit **explicitement** dans `tauri.conf.json`. Sans lui, le `SuperPrint_…_setup.exe`
+> — le fichier qu'on voit dans son dossier de téléchargements — portait **une autre
+> image** que l'application : mesuré **70,8** d'écart moyen par canal avec l'icône du
+> binaire, contre **17,8** une fois la clé posée (même valeur que le binaire, donc même
+> icône).
+
 ### Windows
 
 ```powershell

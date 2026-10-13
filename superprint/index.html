@@ -528,7 +528,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
    survol se coupe entre le bouton et la carte et le menu se referme au moment
    où l'on veut cliquer. */
-.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; }
+.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
 .nav-dd-btn {
   display: inline-flex; align-items: center; gap: 9px; cursor: pointer; border: 0;
   margin: 0; padding: 0 22px; height: 42px;
@@ -1655,7 +1655,18 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   .uc-card:nth-child(2n) { border-right: none; }
   .studio-intro { grid-template-columns: 1fr; }
   nav { justify-content: space-between; }
-  .nav-links { display: none; }
+  /* 🆕 v1.7.613 — LES CINQ ENTRÉES DE TEXTE DISPARAISSENT, PAS LE MENU.
+     `.nav-links` était masqué en BLOC : le bouton « Télécharger », qui vit
+     dedans, disparaissait donc avec lui. On ne cache plus que ses liens directs
+     — le menu reste, à sa place, entre le logotype et le burger. */
+  .nav-links { display: flex; }
+  .nav-links > a { display: none; }
+  /* 🎯 Le panneau se recadre sur la BARRE et non sur le bouton : le bouton est
+     centré en mobile, et un panneau ancré à son bord DROIT sortirait de
+     40 px par la gauche (mesuré à 360 px). `nav` est `sticky`, donc positionné :
+     il devient le repère du panneau, qui prend alors toute la largeur. */
+  .nav-dd { position: static; margin-left: 0; }
+  .nav-dd-panel { left: 16px; right: 16px; width: auto; }
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
   .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
@@ -2263,14 +2274,15 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
-  </div>
-  <div class="nav-tools">
-    <!-- 🆕 v1.7.612 — LE MENU VIT DANS .nav-tools, ET NON DANS .nav-links.
-         Sous 1000 px, `.nav-links` est masqué : un menu qui y vivrait
-         disparaîtrait avec elle, et le téléchargement serait inatteignable au
-         doigt. `.nav-tools` reste visible à toutes les largeurs — le bouton
-         tient donc sa place sur téléphone sans qu'on ait à dupliquer les cinq
-         liens dans le menu burger. -->
+    <!-- 🆕 v1.7.613 — LE MENU RESTE DANS `.nav-links`, À LA PLACE QU'OCCUPAIT
+         « Ouvrir l'app ». La barre répartit ses trois groupes en
+         `space-between` : placé dans `.nav-tools`, le bouton glissait de 277 px
+         vers la droite (mesuré sur une fenêtre de 1400 : son bord gauche passe
+         de ~808 à 1085). Ici, il garde exactement la position de l'appel à
+         l'action qu'il remplace.
+
+         SOUS 1000 px, `.nav-links` n'est plus masqué en bloc : les cinq entrées
+         de TEXTE disparaissent, le menu reste (voir la règle mobile). -->
     <div class="nav-dd" data-nav-dd>
       <button type="button" class="nav-dd-btn" id="navDlBtn" aria-expanded="false" aria-controls="navDlPanel">
         <span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span>
@@ -2323,6 +2335,8 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         </div>
       </div>
     </div>
+  </div>
+  <div class="nav-tools">
     <div class="lang-toggle">
       <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
       <button id="btn-fr" onclick="setLang('fr')">FR</button>
