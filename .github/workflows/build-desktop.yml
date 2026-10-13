@@ -52,25 +52,40 @@ jobs:
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
+      # ⚠️ LES DOUZE COMBINAISONS SONT ÉCRITES EN CLAIR, ET CE N'EST PAS DU VERBE.
+      #
+      # Le premier jet croisait `app: [superprint, studio, supertypo]` avec une
+      # liste `include` de quatre systèmes. GitHub a produit **trois tâches, toutes
+      # Linux** : quand plusieurs entrées d'`include` ne partagent AUCUNE clé avec
+      # la matrice de base, elles sont fusionnées en un seul objet — et seul le
+      # dernier survit (`systeme: Linux`, `platform: ubuntu-22.04`, `target: ''`).
+      # L'intention « 3 × 4 = 12 » n'était donc pas celle du moteur.
+      #
+      # Mesuré sur le run #3 : `total_count: 3`, trois tâches `ubuntu-22.04`. Le
+      # job de publication a ensuite échoué, comme il doit le faire quand un
+      # paquet manque — mais c'est une heure de calcul perdue, et cela ne se voit
+      # qu'en lisant les tâches créées.
+      #
+      # Écrit ainsi, il n'y a plus d'interprétation possible.
+      #
+      # Le nom d'artefact ne doit pas contenir d'espace : « macOS-ARM » et non
+      # « macOS Apple Silicon ».
       matrix:
-        app: [superprint, studio, supertypo]
-        # Les quatre systèmes, écrits en clair : la liste `include` est AJOUTÉE
-        # à chacune des trois applications, ce qui donne bien douze tâches.
-        # Le nom d'artefact ne doit pas contenir d'espace : « macOS-ARM » et non
-        # « macOS Apple Silicon ».
         include:
-          - systeme: Windows
-            platform: windows-latest
-            target: ''
-          - systeme: macOS-ARM
-            platform: macos-latest
-            target: aarch64-apple-darwin
-          - systeme: macOS-Intel
-            platform: macos-latest
-            target: x86_64-apple-darwin
-          - systeme: Linux
-            platform: ubuntu-22.04
-            target: ''
+          - { app: superprint, systeme: Windows,     platform: windows-latest, target: '' }
+          - { app: superprint, systeme: macOS-ARM,   platform: macos-latest,   target: aarch64-apple-darwin }
+          - { app: superprint, systeme: macOS-Intel, platform: macos-latest,   target: x86_64-apple-darwin }
+          - { app: superprint, systeme: Linux,       platform: ubuntu-22.04,   target: '' }
+
+          - { app: studio,     systeme: Windows,     platform: windows-latest, target: '' }
+          - { app: studio,     systeme: macOS-ARM,   platform: macos-latest,   target: aarch64-apple-darwin }
+          - { app: studio,     systeme: macOS-Intel, platform: macos-latest,   target: x86_64-apple-darwin }
+          - { app: studio,     systeme: Linux,       platform: ubuntu-22.04,   target: '' }
+
+          - { app: supertypo,  systeme: Windows,     platform: windows-latest, target: '' }
+          - { app: supertypo,  systeme: macOS-ARM,   platform: macos-latest,   target: aarch64-apple-darwin }
+          - { app: supertypo,  systeme: macOS-Intel, platform: macos-latest,   target: x86_64-apple-darwin }
+          - { app: supertypo,  systeme: Linux,       platform: ubuntu-22.04,   target: '' }
 
     steps:
       - uses: actions/checkout@v5
