@@ -1,0 +1,8 @@
+<!-- Windows
+     Marque officielle de Windows, monochrome, trace d'apres le jeu Simple Icons
+     (dedie au domaine public, CC0 1.0). La couleur est cuite a l'encre du site :
+     ces icones vivent toutes sur fond de papier, et un SVG charge par <img> ne
+     peut pas heriter de currentColor. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Windows">
+  <path fill="#17130D" d="M0 0h11.4v11.4H0zm12.6 0H24v11.4H12.6zM0 12.6h11.4V24H0zm12.6 0H24V24H12.6z"/>
+</svg>
