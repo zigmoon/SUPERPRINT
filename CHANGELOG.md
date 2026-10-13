@@ -9,45 +9,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
-## [1.7.612] — 2026-10-13
+## [1.7.613] — 2026-10-14
 
-_Les applications de bureau se parlent, le glisser-déposer revient, et la page de présentation dit « Téléchargement »_
+_Une barre qui reste devant, trois icônes qui manquaient, et trois polices qui n'existaient qu'en une graisse_
 
-> **Pourquoi une version pour ces seuls correctifs.** Le lanceur npm compare `version.txt` en ligne à la version installée : **à version égale, il ne met rien à jour** (`cli.mjs`, étape 1/4). Relever le zip sur le serveur sans changer de version n'aurait donc servi qu'aux nouvelles installations — les autres auraient gardé l'ancienne page et l'ancienne application, sans que rien ne le signale.
+> **Pourquoi une version, encore.** Ces correctifs ne touchent pas le dépôt : ils touchent **ce que les gens ont sous les yeux**. Une barre recouverte dès qu'on défile, des marques de systèmes cassées, des titres du Studio qui tombent sur une police système. Trois symptômes **sans message d'erreur**, donc trois défauts que rien ne signalait. Le lanceur npm ne rejoue rien à version égale : sans bump, ils n'auraient été reçus que par les nouvelles installations.
 
-### Fixed — les boutons qui mènent d'une application à l'autre ne faisaient RIEN
-
-**`window.open` n'ouvre rien dans une application de bureau.** La coquille refuse par défaut toute création de fenêtre demandée par la page. Les **trois** boutons qui mènent d'une application à l'autre — **ÉDITER** du Studio, « envoyer au studio » et l'onglet **SuperTyPo** de l'éditeur — restaient donc sans effet, alors qu'ils fonctionnent sur le site. Constaté sur l'application installée.
-
-- **Chaque paquet contient désormais TOUT CE QU'UN DE SES BOUTONS PEUT OUVRIR.** L'éditeur **62,5 Mo** (lui + le studio + SuperTyPo), le Studio **61,7 Mo** (lui + l'éditeur), SuperTyPo **1,0 Mo** (il n'ouvre rien d'autre). Le poids est le prix de la règle, et il est assumé : le bouton marche, hors ligne, sans se demander ce qui est installé à côté. **Les polices ne sont pas recopiées pour autant** — celles de `app/` sont réutilisées par un chemin relatif, ce qui économise 19 Mo par paquet.
-- **Une seule fonction d'ouverture** par application (`spOuvrirApplication` côté éditeur, `ouvrirSuperPrint` côté studio) : elle demande la fenêtre à la coquille sur le bureau et retombe sur `window.open` sur le web. `WebviewWindow.getByLabel` renvoie une **promesse** et sert à réutiliser la fenêtre — deux clics sur ÉDITER ne doivent pas échouer sur un libellé déjà pris.
-- **Permissions ajoutées** : `core:webview:allow-create-webview-window`, `core:webview:allow-get-all-webviews`, `core:window:allow-set-focus`, plus `"withGlobalTauri": true` pour que `window.__TAURI__` existe côté page.
-- ⚠️ **La fenêtre créée n'hérite PAS des réglages de la principale** : `dragDropEnabled: false` doit y être répété, sinon le glisser-déposer resterait cassé dans l'éditeur ouvert par le studio.
-
-### Fixed — le glisser-déposer depuis le bureau ne marchait plus
-
-**Constaté dans l'application installée, alors qu'il fonctionne sur le site.** La cause est dans le source de Tauri : *« Disabling it is required to use HTML5 drag and drop on the frontend on Windows since we replace the drag drop handler of WebView2. »* Or `dragDropEnabled` vaut **`true` par défaut** : la coquille **remplace** le gestionnaire du navigateur, et le glisser-déposer HTML5 cesse de fonctionner.
-
-- Corrigé sur les **quatre** configurations de fenêtre (`tauri.conf.json` et les trois surcouches), **et** sur les fenêtres créées à la volée.
-
-### Fixed — le transfert de la police vers SuperTyPo passait par un canal mort
-
-L'éditeur gardait un handle sur la fenêtre ouverte par `window.open` et lui envoyait la fonte par `postMessage`. **Une fenêtre Tauri n'est pas un WindowProxy** : ni `opener`, ni `postMessage`. SuperTyPo s'ouvrait donc **vide** sur le bureau, alors que le transfert marchait sur le site.
-
-- **Un pont par le stockage local** le remplace. Les fenêtres d'une même application partagent leur origine, donc leur stockage : on y dépose un message JSON **horodaté** (deux messages identiques restent deux messages), l'autre côté le lit.
-- **Lu par SONDAGE, et non par événement.** `storage` se déclenche dans les autres fenêtres d'après la spécification, mais rien ne garantit qu'un hôte d'application de bureau le relaie — et un événement qu'on ne peut pas vérifier n'est pas une fondation. La boucle de relance qui existait déjà (25 essais, 600 ms) lit le pont à chaque tour.
-- ⚠️ **Le pont ne sert QUE sur le bureau** (`window.__TAURI__`). Sur le site, deux onglets du même domaine se verraient mutuellement : un SuperTyPo ouvert à la main recevrait la police de l'éditeur resté ouvert dans un autre onglet. La condition sépare proprement les deux mondes.
-
-### Changed — la page de présentation : la zone finale devient « Téléchargement »
-
-- **Le titre est le mot que le visiteur cherche**, et la promesse est juste en dessous, en chapeau : *« Trois applications natives, un seul numéro de version. »*
-- **Posée sur le fond de page** — plus de panneau blanc, plus de filet de couleur. Trois aplats encadrés faisaient trois **cartes** là où il n'y a que trois **logiciels** : l'œil lisait le cadre plutôt que le nom. Tout est centré, et la version passe en encre pleine.
-- **Les trois systèmes perdent leur contour** et gardent leur marque : une gélule dit « cliquable », or rien ne s'y clique — le contour promettrait une action qui n'existe pas.
-- **Les boutons reprennent la gélule** du menu de téléchargement : la même forme dit la même chose d'un bout à l'autre du site.
-- **Les vraies marques des trois systèmes** remplacent les trois pictogrammes au trait (moniteur, portable, terminal), qui disaient « écran », pas « Windows ». Ce sont des **fichiers SVG**, pas des tracés en ligne : le Tux officiel pèse cinq mille caractères de courbes et serait recopié trois fois par page. Le tracé de Windows se **déduit** de deux nombres — carreaux de 47,5 %, écart de 5 % — au lieu d'être approché à l'œil.
-- **Gélules du sous-menu : 19 px de haut** (21 avant), et les marques des systèmes **26 px** (22 avant).
-- **Le pied des trois blocs dit « Open Web App »**, sur les trois. Il annonçait l'action à sa manière — « Ouvrir l'app », « Ouvrir le studio », « Ouvrir SuperTyPo » : trois libellés pour un seul geste, et trois fois de la place pour redire ce que le titre du bloc venait de dire. ⚠️ **Le libellé n'est pas décliné en trois langues, et c'est voulu** : « Open Web App » est le *nom* de l'action, pas une phrase, donc il s'écrit pareil dans les trois. Trois `<span class="inline-xx">` identiques seraient une traduction qui n'en est pas une — le projet applique déjà ce raisonnement aux systèmes « PC · macOS · Linux » et aux étiquettes de fichiers « .exe ».
-- Corrigé au passage, dans le sous-menu, deux défauts d'héritage : `.nav-links a` impose une graisse de **600**, donc la mise en avant du premier format ne se voyait pas ; et son `::after` traçait un trait à 21 px du bas, calibré pour une entrée de barre de 66 px, qui tombait **en travers** d'une gélule de 23 px.
+> ⚠️ **Restent ouverts, inchangés depuis 1.7.612** — `release.html` annonce toujours `v1.7.603` (les notes 604 à 613 sont à **écrire** en trois langues) ; `rock.html` n'applique pas `?lang=xx` à son lien « Ouvrir en ligne », faute d'y avoir `appliquerLangueAuxLiens()` ; et `superprint_ASTRO/_legacy/index.html` est en retard sur `src/pages/index.astro` alors qu'il est toujours listé pour conversion — lancer `npm run convert` **écraserait** la zone « Téléchargement », les marques des systèmes et le panneau d'installation.
 
 ### Fixed — trois icônes manquaient dans le sous-ensemble `sp213-local`
 
@@ -93,6 +61,12 @@ L'éditeur gardait un handle sur la fenêtre ouverte par `window.open` et lui en
 - La correction reprend **les deux gardes déjà présentes** dans le fichier, sans en inventer un troisième style. Appliquée aux **huit copies** : les deux pages servies, le miroir, les deux sources `_legacy`, la sortie de build, et `JS/marketing/anchor-open.js` — dont l'arbre Astro se sert, l'oublier aurait laissé la correction mourir à la prochaine compilation.
 - **Vérifié dans les deux sens**, car un garde peut aussi trop garder : plus aucune erreur au chargement, au clic légal ni au clic d'ancre sur `index`, `faq`, `price` et `rock` ; et l'ouverture de chapitre **fonctionne toujours** — sur `index`, `cmpTable` passe de fermé à ouvert par un clic d'ancre.
 
+## [1.7.612] — 2026-10-13
+
+_Les applications de bureau se parlent, le glisser-déposer revient, et la page de présentation dit « Téléchargement »_
+
+> **Pourquoi une version pour ces seuls correctifs.** Le lanceur npm compare `version.txt` en ligne à la version installée : **à version égale, il ne met rien à jour** (`cli.mjs`, étape 1/4). Relever le zip sur le serveur sans changer de version n'aurait donc servi qu'aux nouvelles installations — les autres auraient gardé l'ancienne page et l'ancienne application, sans que rien ne le signale.
+
 ### Fixed — deux versions affichées étaient fausses (et l'une était déclarée en JSON-LD)
 
 Trouvées en relisant **ce que chaque page affiche réellement**, et non en cherchant l'ancienne version : ces deux-là n'ont jamais porté `1.7.611`, donc aucun bump ne les avait jamais vues.
@@ -101,11 +75,45 @@ Trouvées en relisant **ce que chaque page affiche réellement**, et non en cher
 - **`rock.astro` le déclarait aussi en JSON-LD**, deux blocs. Ce n'est pas cosmétique : c'est une **donnée structurée lue par les moteurs de recherche**, qui annonçait une version vieille de 21 livraisons. La page ne reprend pas `VERSION` comme les autres — elle reçoit la version en prop explicite, extraite du HTML d'origine, d'où l'angle mort.
 - **`app/index.html` annonçait `v1.7.421 — 15 septembre 2026`** au bas de son panneau Préférences, soit **191 versions de retard**. `VERSIONING.md` liste pourtant explicitement « Préférences (bas de page) » parmi les endroits qui portent la version : le tableau promettait une mise à jour que le script de bump ne faisait pas — son motif `SuperPrint v1.7.611</span>` ne correspondait pas à cette ligne, qui n'a pas de `</span>`. Le tableau porte désormais la bonne date, **13 octobre 2026**.
 
-> ⚠️ **Non corrigé, et c'est délibéré** : `release.html` annonce encore `v1.7.603` comme dernière note de version. Le remettre à jour ne se fait pas par un remplacement — il faut **écrire** les entrées des versions 604 à 612 en trois langues. C'est un travail de contenu, pas de version.
+> ⚠️ **Non corrigé, et c'est délibéré** : `release.html` annonce encore `v1.7.603` comme dernière note de version. Le remettre à jour ne se fait pas par un remplacement — il faut **écrire** les entrées des versions 604 à 613 en trois langues. C'est un travail de contenu, pas de version.
 
 ### Added — `memoire_version.sd`, la mémoire de chantier
 
 Note tenue à la racine du dépôt (**ignorée par git** : la règle `/*` ne garde que le produit). Elle consigne les **six pièges** rencontrés et comment ils se ferment, la décision d'embarquer tout dans chaque application, et les **dix points à reprendre** pour les deux prochains logiciels — à commencer par **le lanceur**, dans chaque paquet.
+
+### Fixed — les boutons qui mènent d'une application à l'autre ne faisaient RIEN
+
+**`window.open` n'ouvre rien dans une application de bureau.** La coquille refuse par défaut toute création de fenêtre demandée par la page. Les **trois** boutons qui mènent d'une application à l'autre — **ÉDITER** du Studio, « envoyer au studio » et l'onglet **SuperTyPo** de l'éditeur — restaient donc sans effet, alors qu'ils fonctionnent sur le site. Constaté sur l'application installée.
+
+- **Chaque paquet contient désormais TOUT CE QU'UN DE SES BOUTONS PEUT OUVRIR.** L'éditeur **62,5 Mo** (lui + le studio + SuperTyPo), le Studio **61,7 Mo** (lui + l'éditeur), SuperTyPo **1,0 Mo** (il n'ouvre rien d'autre). Le poids est le prix de la règle, et il est assumé : le bouton marche, hors ligne, sans se demander ce qui est installé à côté. **Les polices ne sont pas recopiées pour autant** — celles de `app/` sont réutilisées par un chemin relatif, ce qui économise 19 Mo par paquet.
+- **Une seule fonction d'ouverture** par application (`spOuvrirApplication` côté éditeur, `ouvrirSuperPrint` côté studio) : elle demande la fenêtre à la coquille sur le bureau et retombe sur `window.open` sur le web. `WebviewWindow.getByLabel` renvoie une **promesse** et sert à réutiliser la fenêtre — deux clics sur ÉDITER ne doivent pas échouer sur un libellé déjà pris.
+- **Permissions ajoutées** : `core:webview:allow-create-webview-window`, `core:webview:allow-get-all-webviews`, `core:window:allow-set-focus`, plus `"withGlobalTauri": true` pour que `window.__TAURI__` existe côté page.
+- ⚠️ **La fenêtre créée n'hérite PAS des réglages de la principale** : `dragDropEnabled: false` doit y être répété, sinon le glisser-déposer resterait cassé dans l'éditeur ouvert par le studio.
+
+### Fixed — le glisser-déposer depuis le bureau ne marchait plus
+
+**Constaté dans l'application installée, alors qu'il fonctionne sur le site.** La cause est dans le source de Tauri : *« Disabling it is required to use HTML5 drag and drop on the frontend on Windows since we replace the drag drop handler of WebView2. »* Or `dragDropEnabled` vaut **`true` par défaut** : la coquille **remplace** le gestionnaire du navigateur, et le glisser-déposer HTML5 cesse de fonctionner.
+
+- Corrigé sur les **quatre** configurations de fenêtre (`tauri.conf.json` et les trois surcouches), **et** sur les fenêtres créées à la volée.
+
+### Fixed — le transfert de la police vers SuperTyPo passait par un canal mort
+
+L'éditeur gardait un handle sur la fenêtre ouverte par `window.open` et lui envoyait la fonte par `postMessage`. **Une fenêtre Tauri n'est pas un WindowProxy** : ni `opener`, ni `postMessage`. SuperTyPo s'ouvrait donc **vide** sur le bureau, alors que le transfert marchait sur le site.
+
+- **Un pont par le stockage local** le remplace. Les fenêtres d'une même application partagent leur origine, donc leur stockage : on y dépose un message JSON **horodaté** (deux messages identiques restent deux messages), l'autre côté le lit.
+- **Lu par SONDAGE, et non par événement.** `storage` se déclenche dans les autres fenêtres d'après la spécification, mais rien ne garantit qu'un hôte d'application de bureau le relaie — et un événement qu'on ne peut pas vérifier n'est pas une fondation. La boucle de relance qui existait déjà (25 essais, 600 ms) lit le pont à chaque tour.
+- ⚠️ **Le pont ne sert QUE sur le bureau** (`window.__TAURI__`). Sur le site, deux onglets du même domaine se verraient mutuellement : un SuperTyPo ouvert à la main recevrait la police de l'éditeur resté ouvert dans un autre onglet. La condition sépare proprement les deux mondes.
+
+### Changed — la page de présentation : la zone finale devient « Téléchargement »
+
+- **Le titre est le mot que le visiteur cherche**, et la promesse est juste en dessous, en chapeau : *« Trois applications natives, un seul numéro de version. »*
+- **Posée sur le fond de page** — plus de panneau blanc, plus de filet de couleur. Trois aplats encadrés faisaient trois **cartes** là où il n'y a que trois **logiciels** : l'œil lisait le cadre plutôt que le nom. Tout est centré, et la version passe en encre pleine.
+- **Les trois systèmes perdent leur contour** et gardent leur marque : une gélule dit « cliquable », or rien ne s'y clique — le contour promettrait une action qui n'existe pas.
+- **Les boutons reprennent la gélule** du menu de téléchargement : la même forme dit la même chose d'un bout à l'autre du site.
+- **Les vraies marques des trois systèmes** remplacent les trois pictogrammes au trait (moniteur, portable, terminal), qui disaient « écran », pas « Windows ». Ce sont des **fichiers SVG**, pas des tracés en ligne : le Tux officiel pèse cinq mille caractères de courbes et serait recopié trois fois par page. Le tracé de Windows se **déduit** de deux nombres — carreaux de 47,5 %, écart de 5 % — au lieu d'être approché à l'œil.
+- **Gélules du sous-menu : 19 px de haut** (21 avant), et les marques des systèmes **26 px** (22 avant).
+- **Le pied des trois blocs dit « Open Web App »**, sur les trois. Il annonçait l'action à sa manière — « Ouvrir l'app », « Ouvrir le studio », « Ouvrir SuperTyPo » : trois libellés pour un seul geste, et trois fois de la place pour redire ce que le titre du bloc venait de dire. ⚠️ **Le libellé n'est pas décliné en trois langues, et c'est voulu** : « Open Web App » est le *nom* de l'action, pas une phrase, donc il s'écrit pareil dans les trois. Trois `<span class="inline-xx">` identiques seraient une traduction qui n'en est pas une — le projet applique déjà ce raisonnement aux systèmes « PC · macOS · Linux » et aux étiquettes de fichiers « .exe ».
+- Corrigé au passage, dans le sous-menu, deux défauts d'héritage : `.nav-links a` impose une graisse de **600**, donc la mise en avant du premier format ne se voyait pas ; et son `::after` traçait un trait à 21 px du bas, calibré pour une entrée de barre de 66 px, qui tombait **en travers** d'une gélule de 23 px.
 
 ## [Bureau 1.7.611] — 2026-10-13
 

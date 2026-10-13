@@ -36,7 +36,7 @@
 #  Fedora / RHEL / openSUSE, auxquels l'AppImage n'offre aucune intégration.
 #
 #  POURQUOI DES NOMS FIXES. Les fichiers produits par Tauri portent la version
-#  (« SuperPrint_1.7.612_x64-setup.exe »). Un lien de la page de présentation ne
+#  (« SuperPrint_1.7.613_x64-setup.exe »). Un lien de la page de présentation ne
 #  peut pas suivre un nom qui change à chaque livraison : on renomme donc les
 #  artefacts avant publication, et les adresses restent stables.
 #
