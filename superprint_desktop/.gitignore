@@ -1,0 +1,9 @@
+# Dépendances Node (CLI Tauri)
+node_modules/
+
+# Sortie de compilation Rust
+src-tauri/target/
+src-tauri/gen/
+
+# Artefacts de distribution
+dist/

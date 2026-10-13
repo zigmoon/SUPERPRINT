@@ -187,6 +187,58 @@ const navNotes = "<!-- _NAV_HERO_590 -->\n<!-- _NAV_AUTEURS_591 : entree Auteurs
 
     </div>
 
+    <!-- ══════════════ TÉLÉCHARGEMENTS — APPLICATION DE BUREAU ══════════════
+         Placés SOUS les trois entrées : on a choisi son outil, on décide
+         maintenant de l'installer sur sa machine. TROIS colonnes, comme les
+         entrées du dessus et comme les fondations du dessous — la trame du hero
+         reste la même de haut en bas.
+
+         ⚠️ LES TROIS ADRESSES SONT STABLES PAR CONSTRUCTION. Elles ne portent
+         aucune version : le workflow `.github/workflows/build-desktop.yml`
+         renomme les paquets avant de les publier dans la version
+         « desktop-latest ». Un lien de page n'a donc jamais à être retouché à
+         chaque livraison — mais il ne répond qu'APRÈS le premier passage du
+         workflow. -->
+    <div class="telechargements">
+      <span class="telechargements-titre"><span class="inline-fr">Télécharger l'application de bureau</span><span class="inline-en">Download the desktop app</span><span class="inline-ja">デスクトップアプリをダウンロード</span></span>
+      <div class="telechargements-grid">
+
+        <div class="telechargement">
+          <span class="telechargement-logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 20h8M12 17v3"/></svg>
+          </span>
+          <span class="telechargement-txt">
+            <a class="telechargement-nom" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">PC — Windows</a>
+            <span class="telechargement-format">Installateur <b>.exe</b> · 64 bits</span>
+            <span class="telechargement-note"><span class="inline-fr">Windows 10 et 11</span><span class="inline-en">Windows 10 and 11</span><span class="inline-ja">Windows 10 / 11</span></span>
+          </span>
+        </div>
+
+        <div class="telechargement">
+          <span class="telechargement-logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M1 18h22l-1.6 2.4H2.6z"/></svg>
+          </span>
+          <span class="telechargement-txt">
+            <a class="telechargement-nom" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">MAC — macOS</a>
+            <span class="telechargement-format">Image-disque <b>.dmg</b></span>
+            <span class="telechargement-note"><span class="inline-fr">Puce Apple · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">version Intel</a></span><span class="inline-en">Apple silicon · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel build</a></span><span class="inline-ja">Appleシリコン · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel版</a></span></span>
+          </span>
+        </div>
+
+        <div class="telechargement">
+          <span class="telechargement-logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="1.5"/><path d="M6 9l3 3-3 3M12 15h5"/></svg>
+          </span>
+          <span class="telechargement-txt">
+            <a class="telechargement-nom" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">LINUX</a>
+            <span class="telechargement-format">Exécutable <b>.AppImage</b></span>
+            <span class="telechargement-note"><span class="inline-fr">x86-64 · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">paquet .deb</a></span><span class="inline-en">x86-64 · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb package</a></span><span class="inline-ja">x86-64 · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb パッケージ</a></span></span>
+          </span>
+        </div>
+
+      </div>
+    </div>
+
     <!-- ══════════════ FONDATIONS OPEN SOURCE — GitHub, npm, Rust ══════════════
          Placées SOUS les trois entrées, et volontairement plus discrètes : ce sont
          les briques techniques, pas des applications à ouvrir. TROIS colonnes, comme

@@ -1,0 +1,18 @@
+{
+  "name": "superprint-desktop",
+  "version": "1.7.611",
+  "private": true,
+  "type": "module",
+  "description": "SuperPrint — application de bureau (Tauri) autour de la PAO SuperPrint",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.2"
+  }
+}

@@ -13,13 +13,22 @@
 !/LICENSE
 # Outils de build / de service du depot (2 scripts + leur notice)
 !/tools/
-# Les 6 dossiers produit
+# Integration continue : c'est elle qui produit le .dmg (macOS) et les binaires
+# Linux, que Windows ne peut pas fabriquer. Sans ce dossier dans le depot, il n'y
+# a pas de paquet macOS ni Linux a telecharger.
+!/.github/
+# Les 7 dossiers produit
 !/superprint/
 !/sp213-local/
 !/superprint-npm/
 !/superprint_ASTRO/
 !/superprint_rust/
 !/superprint_asm/
+# L'application de bureau (coquille Tauri). Elle ne contient PAS de copie du
+# front-end : `src-tauri/tauri.conf.json` pointe sur `superprint/app`. Les
+# binaires et installeurs produits (`src-tauri/target/`) restent dehors — ils
+# sont livres par la version « desktop-latest » du depot, pas par git.
+!/superprint_desktop/
 
 **/node_modules/
 **/dist/

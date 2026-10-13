@@ -9,6 +9,31 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [Bureau 1.7.611] — 2026-10-13
+
+_Une application de bureau : le `.exe` Windows est construit ici, et le `.dmg` / les binaires Linux par le workflow_
+
+### Added — application de bureau (`superprint_desktop/`)
+- Une coquille **Tauri 2** ouvre `superprint/app` dans la **webview du système** (WebView2, WKWebView, WebKitGTK). Le front-end n'est **pas copié** : `tauri.conf.json` pointe sur `../../superprint/app`, embarqué au build. Une correction de l'application web se retrouve donc dans le bureau **sans second dépôt à tenir** — et l'application fonctionne **hors-ligne**, sans serveur ni compte.
+- **Windows** : `SuperPrint_1.7.611_x64-setup.exe` (**31,46 Mio**, NSIS) et `superprint-desktop.exe` (**33,21 Mio**, titre de fenêtre « SuperPrint », version `1.7.611`). Les deux ont été **lancés** pour vérification.
+- `scripts/build-windows.ps1` choisit seul son éditeur de liens : **MSVC** s'il est présent, sinon **MinGW-w64 GCC** (bascule sur la cible `stable-x86_64-pc-windows-gnu`). ⚠️ **LLVM-MinGW ne suffit pas** : il ne fournit pas `libgcc`, que la cible GNU réclame — mesuré, la compilation échoue à l'édition de liens. C'est **GCC** qu'il faut, pas clang.
+
+### Added — workflow (`.github/workflows/build-desktop.yml`)
+- Compile les trois systèmes en parallèle (Windows, macOS `aarch64` **et** `x86_64`, Linux) et publie les paquets dans la version **`desktop-latest`** sous des **noms fixes, sans numéro de version** — un lien de page ne peut pas suivre un nom qui change à chaque livraison. Le job de publication **échoue bruyamment** si un paquet manque : un lien mort serait pire que pas de lien.
+- Un `.dmg` exige macOS et un `.AppImage` exige Linux : **aucun** des deux ne peut être produit depuis Windows, c'est la raison d'être du workflow.
+
+### Added — page de présentation (les deux arborescences)
+- Sous les **trois entrées** (APP, STUDIO, SUPERTYPO) et au-dessus des fondations open source, un bloc **« Télécharger l'application de bureau »** de trois cartes : **PC — Windows**, **MAC — macOS**, **LINUX**, chacune avec son format (`.exe`, `.dmg`, `.AppImage`) et un second lien (version **Intel**, paquet **`.deb`**). Les trois versions linguistiques suivent.
+- Le nom porte le lien principal, **étiré sur toute la carte** par `::after` : la carte entière est cliquable **sans imbriquer deux liens** — ce qu'une carte-lien aurait imposé dès qu'elle en porte un second. Les liens secondaires repassent au-dessus par `z-index`. Vérifié au navigateur : clic sur le coin de carte → `SuperPrint-Windows-x64-setup.exe`, clic sur « version Intel » → `SuperPrint-macOS-Intel.dmg`, trois cartes de **380 px**, empilées sous **900 px**.
+- `.gitignore` : `!/.github/` et `!/superprint_desktop/` (la règle `/*` ignore tout à la racine). Les binaires produits (`src-tauri/target/`) restent **dehors** : ils sont livrés par la version `desktop-latest`, pas par git.
+
+### À faire
+- Les adresses de téléchargement ne répondent qu'après le **premier passage** du workflow (`Actions → Application de bureau → Run workflow`).
+- Les paquets publiés ne sont **pas signés** : macOS et Windows afficheront un avertissement au premier lancement (voir le README du dossier).
+
+---
+
+
 ## [1.7.603] — 2026-10-05
 
 _Triangles dans le prompt, règle de couleur écrite ET appliquée, composition qui varie sur les pièces d’une page_

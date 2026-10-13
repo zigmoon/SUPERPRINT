@@ -1,0 +1,151 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  APPLICATION DE BUREAU SUPERPRINT — Windows, macOS, Linux
+#
+#  Construit la coquille Tauri (`superprint_desktop/`) sur les trois systèmes —
+#  chaque système ne peut produire que SES paquets — puis publie les trois
+#  installeurs dans une version « desktop-latest ».
+#
+#  POURQUOI UNE VERSION AU NOM FIXE. Les fichiers produits par Tauri portent la
+#  version (« SuperPrint_1.7.611_x64-setup.exe »). Un lien de la page de
+#  présentation ne peut pas suivre un nom qui change à chaque livraison. On
+#  renomme donc les artefacts avant publication, et l'adresse reste stable :
+#
+#    https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe
+#    https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg
+#    https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage
+#
+#  ⚠️ Ces adresses ne repondent qu'APRES le premier passage de ce workflow.
+# ══════════════════════════════════════════════════════════════════════════════
+name: Application de bureau
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'desktop-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Compiler (${{ matrix.name }})
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            platform: windows-latest
+            target: ''
+          - name: macOS Apple Silicon
+            platform: macos-latest
+            target: aarch64-apple-darwin
+          - name: macOS Intel
+            platform: macos-latest
+            target: x86_64-apple-darwin
+          - name: Linux
+            platform: ubuntu-22.04
+            target: ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # WebKitGTK : la webview du système sous Linux. Rien de tel n'existe sous
+      # Windows (WebView2) ni sous macOS (WKWebView), où le système fournit tout.
+      - name: Dépendances système (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: superprint_desktop/src-tauri -> target
+
+      - name: CLI Tauri
+        working-directory: superprint_desktop
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+
+      # `tauri-action` sans tagName ni releaseName : il compile et s'arrête là.
+      # La publication est le travail du job « publier », plus bas.
+      - name: Compiler l'application
+        uses: tauri-apps/tauri-action@v1
+        with:
+          projectPath: superprint_desktop
+          args: ${{ matrix.target != '' && format('--target {0}', matrix.target) || '' }}
+
+      - name: Téléverser les paquets
+        uses: actions/upload-artifact@v4
+        with:
+          name: paquets-${{ matrix.name }}
+          path: superprint_desktop/src-tauri/target/**/bundle/**
+          if-no-files-found: error
+
+  publier:
+    name: Publier (noms stables)
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Récupérer tous les paquets
+        uses: actions/download-artifact@v4
+        with:
+          path: paquets
+          merge-multiple: true
+
+      # Le renommage est la raison d'être de ce job : il transforme des noms
+      # versionnés en adresses stables, et échoue BRUYAMMENT si un paquet
+      # manque — un lien mort sur la page de présentation serait pire que
+      # pas de lien du tout.
+      - name: Normaliser les noms
+        run: |
+          set -eu
+          out=livraison
+          mkdir -p "$out"
+
+          copier() {  # motif_source  nom_stable
+            trouve=$(find paquets -iname "$1" -type f | head -n 1 || true)
+            if [ -z "$trouve" ]; then
+              echo "MANQUANT : $1" >&2
+              exit 1
+            fi
+            cp "$trouve" "$out/$2"
+            echo "$1  ->  $2"
+          }
+
+          copier '*_x64-setup.exe'      'SuperPrint-Windows-x64-setup.exe'
+          copier '*_aarch64.dmg'        'SuperPrint-macOS-AppleSilicon.dmg'
+          copier '*_x64.dmg'            'SuperPrint-macOS-Intel.dmg'
+          copier '*_amd64.AppImage'     'SuperPrint-Linux-x86_64.AppImage'
+          copier '*_amd64.deb'          'SuperPrint-Linux-x86_64.deb'
+
+          ls -lh "$out"
+
+      - name: Publier la version « desktop-latest »
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          gh release view desktop-latest >/dev/null 2>&1 || \
+            gh release create desktop-latest \
+              --title "SuperPrint — application de bureau" \
+              --notes "Installeurs de l'application de bureau SuperPrint, pour Windows, macOS et Linux. Les noms de fichiers sont fixes : les liens de telechargement du site pointent toujours sur la version la plus recente." \
+              --latest=false
+          gh release upload desktop-latest livraison/* --clobber
