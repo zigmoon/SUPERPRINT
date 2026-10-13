@@ -12,15 +12,22 @@
 #  webview — et seule change la page qu'elle ouvre. Trois projets séparés
 #  auraient triplé le code à maintenir sans rien apporter.
 #
-#  CE QUE CHAQUE APPLICATION EMBARQUE, ET RIEN DE PLUS.
+#  CE QUE CHAQUE APPLICATION EMBARQUE : TOUT CE QU'UN DE SES BOUTONS OUVRE.
 #  `scripts/prepare-bundle.mjs` fabrique trois dossiers distincts :
-#    · SuperPrint — 57,9 Mo, l'éditeur complet ;
-#    · Studio IA   —  9,8 Mo, la page du studio, son moteur de toile, ses polices ;
-#    · SuperTyPo   —  1,0 Mo, entièrement autonome.
-#  Séparer les paquets n'est donc pas qu'une commodité : 68,7 Mo livrés au lieu
-#  de 183,6 Mo si les trois embarquaient tout. Chaque paquet a été vérifié page
-#  par page : aucune des trois applications ne renvoie vers une des deux autres,
-#  il n'y a donc aucun lien mort une fois les trois séparées.
+#    · SuperPrint — 62,5 Mo : l'éditeur, plus le Studio IA et SuperTyPo ;
+#    · Studio IA   — 61,7 Mo : le studio, plus l'éditeur ;
+#    · SuperTyPo   —  1,0 Mo : entièrement autonome, il n'ouvre rien d'autre.
+#
+#  LES TROIS APPLICATIONS SE PARLENT, et le paquet doit suivre : le Studio a un
+#  bouton ÉDITER qui ouvre l'éditeur, l'éditeur a deux portes vers le studio et
+#  vers SuperTyPo. Un paquet qui ne contiendrait qu'une application n'est pas plus
+#  léger, il est cassé — le bouton ouvre une page absente. La règle est donc : on
+#  liste les liens sortants AVANT de composer, et chaque cible entre dans le
+#  paquet.
+#
+#  LE POIDS EST LE PRIX DE CETTE RÈGLE, et il est assumé. Les polices ne sont pas
+#  recopiées pour autant : celles de `app/` sont réutilisées par un chemin relatif,
+#  ce qui économise 19 Mo par paquet.
 #
 #  RIEN N'EST JETÉ. `bundle.targets` vaut « all », donc Tauri livre, pour chaque
 #  système, tous les formats qu'il sait faire : Windows → NSIS **et** MSI,

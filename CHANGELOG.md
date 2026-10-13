@@ -15,11 +15,11 @@ _Trois applications de bureau — l'éditeur, le Studio IA, SuperTyPo — en tro
 
 ### Added — trois applications de bureau (`superprint_desktop/`)
 
-**TROIS PAQUETS SÉPARÉS, ET NON UN SEUL QUI CONTIENT TOUT.** Le choix précédent — un installeur par système embarquant les trois applications, avec une page de lancement — livrait **68,7 Mo d'un bloc**, et **183,6 Mo** si les trois avaient chacune tout embarqué. Les trois paquets séparés pèsent **31,5** / **8,3** / **1,7 Mio** : on ne télécharge que ce dont on a besoin. Mesuré, dossier embarqué : éditeur **57,9 Mo**, Studio IA **9,8 Mo**, SuperTyPo **1,0 Mo**.
+**TROIS PAQUETS SÉPARÉS, ET NON UN SEUL QUI CONTIENT TOUT.** Le choix précédent — un installeur par système embarquant les trois applications, avec une page de lancement — livrait **68,7 Mo d'un bloc**, et **183,6 Mo** si les trois avaient chacune tout embarqué. Les trois paquets séparés pèsent **31,5** / **8,3** / **1,7 Mio** : on ne télécharge que ce dont on a besoin. Mesuré, dossier embarqué le 2026-10-13 : éditeur **62,5 Mo**, Studio IA **61,7 Mo**, SuperTyPo **1,0 Mo** — voir plus bas « les paquets contiennent tout ce qu'un bouton ouvre », qui a remplacé le premier découpage.
 
 - Une coquille **Tauri 2** ouvre les applications web dans la **webview du système** (WebView2, WKWebView, WebKitGTK) et les **embarque au build** : chaque application fonctionne **hors-ligne**, sans serveur ni compte.
 - **Un seul projet Rust, compilé trois fois.** La coquille native est identique — une fenêtre, une webview — et seule change la page qu'elle ouvre. Trois projets séparés auraient triplé le code à maintenir sans rien apporter. L'identité de chaque paquet vit dans une **surcouche de configuration** : `src-tauri/apps/{superprint,studio,supertypo}.json`, passée en `--config`.
-- **Aucun lien entre les trois.** Vérifié : ni `app/index.html`, ni `sp213-studio.html`, ni `supertypo/index.html` ne pointent vers une des deux autres applications. Chaque paquet est donc complet et indépendant — aucun lien mort une fois les trois séparées.
+- **LES TROIS APPLICATIONS SE PARLENT, ET LE PAQUET SUIT.** Le Studio a un bouton **ÉDITER** qui transfère la maquette à l'éditeur ; l'éditeur a deux portes, l'une vers le studio, l'autre vers SuperTyPo. ⚠️ **Un paquet ne contenant qu'une application n'est pas plus léger, il est CASSÉ** — le bouton ouvre une page absente. La règle est donc : on liste les liens sortants **avant** de composer, et chaque cible entre dans le paquet. `pages` liste d'ailleurs **toutes** les pages qu'une fenêtre ouvre (le studio en a deux) : chacune reçoit la purge du service worker et voit ses références vérifiées.
 - `scripts/prepare-bundle.mjs` (Node, multiplateforme — le workflow l'appelle aussi depuis macOS et Linux) assemble `frontend/<app>/` depuis `../superprint/`, puis **vérifie son propre résultat** : chaque `src=`/`href=` local des pages embarquées est résolu sur le disque, commentaires HTML et corps de `<script>` retirés. Un fichier manquant fait **échouer la compilation**.
 - **`app/` n'est PAS aplati à la racine.** Ses pages remontent à `../icons/` pour les logotypes du Studio et de SuperTyPo : aplati, ce chemin sortirait du dossier embarqué et **les deux logotypes disparaîtraient sans bruit**.
 - **Les polices ne sont copiées qu'une fois.** Dans le paquet de l'éditeur, `CSS/fonts.css` pointerait vers des fichiers déjà présents dans `app/CSS/fonts/` : **19,6 Mo sur 19,8 Mo** y sont octet pour octet identiques (176 fichiers sur 185). La feuille est réécrite vers la copie existante ; **9 fichiers seulement** sont réellement copiés.
@@ -130,6 +130,43 @@ Sur Debian comme sur Fedora, **installer le Studio IA écrasait le binaire de Su
 - **Toutes les adresses** — 21 fichiers publiés, **21 réponses HTTP 200**, de 1,57 Mo (`.exe` SuperTyPo) à 106,46 Mo (AppImage SuperPrint).
 
 > ⚠️ **Le fichier `.desktop` du Studio s'appelle `Studio IA.desktop`**, avec un espace. Le nom vient du `productName` (`freedesktop.rs` : `format!("{product_name}.desktop")`), et la spécification Desktop Entry ne l'interdit pas : le fichier est indexé, l'entrée de menu affiche `Name=Studio IA`, et `Icon=` / `Exec=` / `StartupWMClass=` suivent désormais le nom du binaire, donc rien ne dépend de l'espace. Le corriger demanderait de renommer le produit en `StudioIA`, ce qui changerait aussi le nom affiché dans le menu — un moindre mal.
+
+### Fixed — les boutons qui mènent d'une application à l'autre ne faisaient RIEN
+
+**`window.open` n'ouvre rien dans une application de bureau.** La coquille refuse par défaut toute création de fenêtre demandée par la page. Les **trois** boutons qui mènent d'une application à l'autre — **ÉDITER** du Studio, « envoyer au studio » et l'onglet **SuperTyPo** de l'éditeur — restaient donc sans effet, alors qu'ils fonctionnent sur le site. Constaté sur l'application installée.
+
+- **Chaque paquet contient désormais TOUT CE QU'UN DE SES BOUTONS PEUT OUVRIR.** L'éditeur **62,5 Mo** (lui + le studio + SuperTyPo), le Studio **61,7 Mo** (lui + l'éditeur), SuperTyPo **1,0 Mo** (il n'ouvre rien d'autre). Le poids est le prix de la règle, et il est assumé : le bouton marche, hors ligne, sans se demander ce qui est installé à côté. **Les polices ne sont pas recopiées pour autant** — celles de `app/` sont réutilisées par un chemin relatif, ce qui économise 19 Mo par paquet.
+- **Une seule fonction d'ouverture** par application (`spOuvrirApplication` côté éditeur, `ouvrirSuperPrint` côté studio) : elle demande la fenêtre à la coquille sur le bureau et retombe sur `window.open` sur le web. `WebviewWindow.getByLabel` renvoie une **promesse** et sert à réutiliser la fenêtre — deux clics sur ÉDITER ne doivent pas échouer sur un libellé déjà pris.
+- **Permissions ajoutées** : `core:webview:allow-create-webview-window`, `core:webview:allow-get-all-webviews`, `core:window:allow-set-focus`, plus `"withGlobalTauri": true` pour que `window.__TAURI__` existe côté page.
+- ⚠️ **La fenêtre créée n'hérite PAS des réglages de la principale** : `dragDropEnabled: false` doit y être répété, sinon le glisser-déposer resterait cassé dans l'éditeur ouvert par le studio.
+
+### Fixed — le glisser-déposer depuis le bureau ne marchait plus
+
+**Constaté dans l'application installée, alors qu'il fonctionne sur le site.** La cause est dans le source de Tauri : *« Disabling it is required to use HTML5 drag and drop on the frontend on Windows since we replace the drag drop handler of WebView2. »* Or `dragDropEnabled` vaut **`true` par défaut** : la coquille **remplace** le gestionnaire du navigateur, et le glisser-déposer HTML5 cesse de fonctionner.
+
+- Corrigé sur les **quatre** configurations de fenêtre (`tauri.conf.json` et les trois surcouches), **et** sur les fenêtres créées à la volée.
+
+### Fixed — le transfert de la police vers SuperTyPo passait par un canal mort
+
+L'éditeur gardait un handle sur la fenêtre ouverte par `window.open` et lui envoyait la fonte par `postMessage`. **Une fenêtre Tauri n'est pas un WindowProxy** : ni `opener`, ni `postMessage`. SuperTyPo s'ouvrait donc **vide** sur le bureau, alors que le transfert marchait sur le site.
+
+- **Un pont par le stockage local** le remplace. Les fenêtres d'une même application partagent leur origine, donc leur stockage : on y dépose un message JSON **horodaté** (deux messages identiques restent deux messages), l'autre côté le lit.
+- **Lu par SONDAGE, et non par événement.** `storage` se déclenche dans les autres fenêtres d'après la spécification, mais rien ne garantit qu'un hôte d'application de bureau le relaie — et un événement qu'on ne peut pas vérifier n'est pas une fondation. La boucle de relance qui existait déjà (25 essais, 600 ms) lit le pont à chaque tour.
+- ⚠️ **Le pont ne sert QUE sur le bureau** (`window.__TAURI__`). Sur le site, deux onglets du même domaine se verraient mutuellement : un SuperTyPo ouvert à la main recevrait la police de l'éditeur resté ouvert dans un autre onglet. La condition sépare proprement les deux mondes.
+
+### Changed — la page de présentation : la zone finale devient « Téléchargement »
+
+- **Le titre est le mot que le visiteur cherche**, et la promesse est juste en dessous, en chapeau : *« Trois applications natives, un seul numéro de version. »*
+- **Posée sur le fond de page** — plus de panneau blanc, plus de filet de couleur. Trois aplats encadrés faisaient trois **cartes** là où il n'y a que trois **logiciels** : l'œil lisait le cadre plutôt que le nom. Tout est centré, et la version passe en encre pleine.
+- **Les trois systèmes perdent leur contour** et gardent leur marque : une gélule dit « cliquable », or rien ne s'y clique — le contour promettrait une action qui n'existe pas.
+- **Les boutons reprennent la gélule** du menu de téléchargement : la même forme dit la même chose d'un bout à l'autre du site.
+- **Les vraies marques des trois systèmes** remplacent les trois pictogrammes au trait (moniteur, portable, terminal), qui disaient « écran », pas « Windows ». Ce sont des **fichiers SVG**, pas des tracés en ligne : le Tux officiel pèse cinq mille caractères de courbes et serait recopié trois fois par page. Le tracé de Windows se **déduit** de deux nombres — carreaux de 47,5 %, écart de 5 % — au lieu d'être approché à l'œil.
+- **Gélules du sous-menu : 19 px de haut** (21 avant), et les marques des systèmes **26 px** (22 avant).
+- Corrigé au passage, dans le sous-menu, deux défauts d'héritage : `.nav-links a` impose une graisse de **600**, donc la mise en avant du premier format ne se voyait pas ; et son `::after` traçait un trait à 21 px du bas, calibré pour une entrée de barre de 66 px, qui tombait **en travers** d'une gélule de 23 px.
+
+### Added — `memoire_version.sd`, la mémoire de chantier
+
+Note tenue à la racine du dépôt (**ignorée par git** : la règle `/*` ne garde que le produit). Elle consigne les **six pièges** rencontrés et comment ils se ferment, la décision d'embarquer tout dans chaque application, et les **dix points à reprendre** pour les deux prochains logiciels — à commencer par **le lanceur**, dans chaque paquet.
 
 ### Added — workflow (`.github/workflows/build-desktop.yml`)
 - **Matrice 3 applications × 4 tâches système = 12 tâches**, en parallèle. Compile Windows, macOS `aarch64` **et** `x86_64`, Linux — et **rien n'est jeté** : `bundle.targets` vaut « all », donc Windows livre son `.msi` **et** son `.exe`, Linux son `.deb`, son `.rpm` **et** son `.AppImage`, macOS un `.dmg` par architecture. L'`.msi` sert le déploiement en parc (GPO, SCCM) ; le `.rpm` les systèmes Fedora, RHEL et openSUSE, auxquels l'AppImage n'offre aucune intégration avec le gestionnaire de paquets.

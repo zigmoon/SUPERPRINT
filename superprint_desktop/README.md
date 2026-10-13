@@ -8,15 +8,24 @@ hors-ligne, sans serveur et sans compte.
 
 | Application | Embarque | Installeur Windows |
 |---|---|---|
-| **SuperPrint** | l'éditeur de PAO complet | 31,5 Mo |
-| **Studio IA** | la mise en page assistée par IA | 8,3 Mo |
+| **SuperPrint** | l'éditeur de PAO complet, plus le Studio IA et SuperTyPo | 31,5 Mo |
+| **Studio IA** | la mise en page assistée par IA, plus l'éditeur | 8,3 Mo |
 | **SuperTyPo** | la décomposition de caractères | 1,7 Mo |
 
-**Trois paquets séparés, et non un paquet qui contient tout.** Ce n'est pas une
-commodité : l'éditeur pèse 57,9 Mo, le Studio 9,8 Mo et SuperTyPo 1,0 Mo. Un
-paquet unique en aurait livré 68,7 Mo d'un bloc — et 183,6 Mo si les trois
-avaient chacun tout embarqué. Aucune des trois applications ne renvoie vers une
-des deux autres (vérifié) : chacune est complète et indépendante.
+**Chaque paquet contient TOUT CE QU'UN DE SES BOUTONS PEUT OUVRIR**, et c'est la
+seule règle qui compte. Les trois applications se parlent : le Studio a un bouton
+ÉDITER qui ouvre l'éditeur, l'éditeur a deux portes vers le studio et vers
+SuperTyPo. Un paquet qui ne contiendrait qu'une application n'est pas plus léger,
+il est **cassé** — le bouton ouvre une page absente.
+
+Mesuré le 2026-10-13 : l'éditeur 62,5 Mo, le Studio 61,7 Mo, SuperTyPo 1,0 Mo. Le
+poids est le prix de la règle, et il est assumé : le bouton marche, hors ligne, sans
+se demander ce qui est installé à côté. Les polices ne sont pas recopiées pour
+autant — celles de `app/` sont réutilisées par un chemin relatif, ce qui économise
+19 Mo par paquet.
+
+`memoire_version.sd`, à la racine du dépôt, décrit la suite : un lanceur dans chaque
+paquet, et le contenu commun posé une fois.
 
 Les trois applications sont **le même code Rust**, compilé trois fois avec trois
 surcouches de configuration. Un correctif dans la coquille profite donc aux
@@ -34,8 +43,8 @@ superprint_desktop/
 │   ├── prepare-bundle.mjs       assemble frontend/<app>/ depuis ../superprint/
 │   └── build-windows.ps1        recette de compilation Windows
 ├── frontend/                    FABRIQUÉ, jamais versionné
-│   ├── superprint/               57,9 Mo — l'éditeur
-│   ├── studio/                    9,8 Mo — le Studio IA
+│   ├── superprint/               62,5 Mo — l'éditeur + le studio + SuperTyPo
+│   ├── studio/                   61,7 Mo — le studio + l'éditeur
 │   └── supertypo/                 1,0 Mo — SuperTyPo
 └── src-tauri/
     ├── Cargo.toml               dépendances Rust (tauri 2)
@@ -59,8 +68,8 @@ résolvant ses propres `src=` / `href=` — ce n'est pas une liste devinée.
 
 | Paquet | Contenu | Poids |
 |---|---|---|
-| `superprint` | `app/` **entier**, plus `superprint/icons/` (ses pages remontent à `../icons/`), plus `icons/` | 57,9 Mo |
-| `studio` | `sp213-studio.html` en `index.html`, `JS/fabric.min.js`, `icons/`, `favicon.png`, la feuille de polices du site **avec toutes ses polices** | 9,8 Mo |
+| `superprint` | `app/` **entier**, `supertypo/`, `sp213-studio.html`, `JS/`, `favicon.png`, plus `icons/` — l'éditeur, et les deux applications que ses boutons ouvrent | 62,5 Mo |
+| `studio` | `sp213-studio.html` en `index.html`, `app/` **entier** (deuxième fenêtre du bouton ÉDITER), `JS/`, `icons/`, `favicon.png`, la feuille de polices avec **toutes** ses polices | 61,7 Mo |
 | `supertypo` | `supertypo/`, plus `icons/` — entièrement autonome | 1,0 Mo |
 
 > ⚠️ **`app/` N'EST PAS APLATI À LA RACINE.** Ses pages référencent
@@ -72,6 +81,17 @@ résolvant ses propres `src=` / `href=` — ce n'est pas une liste devinée.
 > ⚠️ **Le Studio garde toutes les polices.** Il laisse choisir la police du
 > texte : un sous-ensemble donnerait un rendu de repli silencieux, la pire des
 > pannes — celle qu'on ne voit pas.
+
+> ⚠️ **Les polices de la racine ne sont PAS recopiées quand `app/` est déjà là.**
+> 176 des 185 y sont octet pour octet identiques : la feuille de style les
+> référence par `../app/CSS/fonts/<nom>`, et les 9 restantes sont copiées. Sans
+> cela, chaque paquet en porterait 19 Mo de plus.
+
+> ⚠️ **`pages` LISTE TOUTES LES PAGES QU'UNE FENÊTRE OUVRE.** Le studio en ouvre
+> deux (`index.html` et `app/index.html`) : les deux reçoivent la purge du service
+> worker, et les deux voient leurs références vérifiées. Une page oubliée dans
+> cette liste serait livrée sans purge — donc exposée au cache périmé qui a déjà
+> produit un écran sans CSS.
 
 ### Chaque paquet a son propre nom de binaire — sinon les trois s'écrasent
 
@@ -293,12 +313,15 @@ Le nom du fichier est celui du `productName` de la surcouche : `SuperPrint`,
 `superprint`, `studio-ia`, `supertypo`. Le nom du **paquet** `.deb` et `.rpm` est
 le kebab-case du `productName` : `super-print`, `studio-ia`, `super-ty-po`.
 
-Ordre de grandeur mesuré le 2026-10-13 (Windows) :
+Ordre de grandeur mesuré le 2026-10-13 (Windows). **La colonne « dossier
+embarqué » va changer au prochain build** : elle reflète le contenu d'avant la
+règle du § « Ce que chaque paquet contient », où chaque paquet ne portait que sa
+propre application. Les binaires et les installeurs suivront.
 
 | Application | Dossier embarqué | Binaire | Installeur NSIS | `.msi` |
 |---|---|---|---|---|
-| SuperPrint | 57,9 Mo | 33,24 Mo | 31,49 Mio | 31,64 Mo |
-| Studio IA | 9,8 Mo | 10,13 Mo | 8,30 Mio | 8,58 Mo |
+| SuperPrint | 62,5 Mo | 33,24 Mo | 31,49 Mio | 31,64 Mo |
+| Studio IA | 61,7 Mo | 10,13 Mo | 8,30 Mio | 8,58 Mo |
 | SuperTyPo | 1,0 Mo | 3,59 Mo | 1,67 Mio | 2,02 Mo |
 
 > ⚠️ **Le fichier `.desktop` du Studio s'appelle `Studio IA.desktop`**, avec un
