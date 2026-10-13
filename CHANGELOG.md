@@ -48,6 +48,16 @@ L'éditeur gardait un handle sur la fenêtre ouverte par `window.open` et lui en
 - **Gélules du sous-menu : 19 px de haut** (21 avant), et les marques des systèmes **26 px** (22 avant).
 - Corrigé au passage, dans le sous-menu, deux défauts d'héritage : `.nav-links a` impose une graisse de **600**, donc la mise en avant du premier format ne se voyait pas ; et son `::after` traçait un trait à 21 px du bas, calibré pour une entrée de barre de 66 px, qui tombait **en travers** d'une gélule de 23 px.
 
+### Fixed — deux versions affichées étaient fausses (et l'une était déclarée en JSON-LD)
+
+Trouvées en relisant **ce que chaque page affiche réellement**, et non en cherchant l'ancienne version : ces deux-là n'ont jamais porté `1.7.611`, donc aucun bump ne les avait jamais vues.
+
+- **`rock.html` annonçait `v1.7.591`** — sa pastille de marque, son pied de page et son copyright, soit **21 versions de retard**, sur quatre copies (source web, miroir local, source `_legacy` du site Astro, page `.astro`).
+- **`rock.astro` le déclarait aussi en JSON-LD**, deux blocs. Ce n'est pas cosmétique : c'est une **donnée structurée lue par les moteurs de recherche**, qui annonçait une version vieille de 21 livraisons. La page ne reprend pas `VERSION` comme les autres — elle reçoit la version en prop explicite, extraite du HTML d'origine, d'où l'angle mort.
+- **`app/index.html` annonçait `v1.7.421 — 15 septembre 2026`** au bas de son panneau Préférences, soit **191 versions de retard**. `VERSIONING.md` liste pourtant explicitement « Préférences (bas de page) » parmi les endroits qui portent la version : le tableau promettait une mise à jour que le script de bump ne faisait pas — son motif `SuperPrint v1.7.611</span>` ne correspondait pas à cette ligne, qui n'a pas de `</span>`. Le tableau porte désormais la bonne date, **13 octobre 2026**.
+
+> ⚠️ **Non corrigé, et c'est délibéré** : `release.html` annonce encore `v1.7.603` comme dernière note de version. Le remettre à jour ne se fait pas par un remplacement — il faut **écrire** les entrées des versions 604 à 612 en trois langues. C'est un travail de contenu, pas de version.
+
 ### Added — `memoire_version.sd`, la mémoire de chantier
 
 Note tenue à la racine du dépôt (**ignorée par git** : la règle `/*` ne garde que le produit). Elle consigne les **six pièges** rencontrés et comment ils se ferment, la décision d'embarquer tout dans chaque application, et les **dix points à reprendre** pour les deux prochains logiciels — à commencer par **le lanceur**, dans chaque paquet.
