@@ -4,7 +4,8 @@
   "version": "1.7.611",
   "identifier": "cc.superprint.desktop",
   "build": {
-    "frontendDist": "../../superprint/app"
+    "beforeBuildCommand": "node scripts/stage-frontend.mjs",
+    "frontendDist": "../frontend"
   },
   "app": {
     "withGlobalTauri": false,

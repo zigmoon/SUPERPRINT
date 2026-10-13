@@ -269,6 +269,87 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 }
 .nav-cta::after { display: none; }
 .nav-cta:hover { background: var(--ink-2); }
+
+/* 🆕 v1.7.612 — « TÉLÉCHARGER » REMPLACE « OUVRIR L'APP » DANS LA BARRE.
+   La barre servait à ENTRER dans l'application ; elle sert maintenant à
+   L'INSTALLER. L'entrée « Ouvrir en ligne » reste, un cran plus bas dans le
+   menu : rien n'est perdu.
+
+   UN INSTALLATEUR PAR SYSTÈME, PAS PAR APPLICATION. Les trois applications
+   (SuperPrint, Studio IA, SuperTyPo) sont dans le même paquet — c'est écrit une
+   fois, en tête du menu, et c'est ce qui évite de promettre trois
+   téléchargements là où il y en a trois par système.
+
+   Panneau de DIVULGATION, pas menu ARIA : des liens, un bouton, Échap pour
+   fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
+   survol se coupe entre le bouton et la carte et le menu se referme au moment
+   où l'on veut cliquer. */
+.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
+.nav-dd-btn {
+  display: inline-flex; align-items: center; gap: 9px; cursor: pointer; border: 0;
+  margin: 0; padding: 0 22px; height: 42px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  transition: background .25s var(--ease);
+}
+.nav-dd-btn:hover { background: var(--ink-2); }
+.nav-dd-chev {
+  flex: 0 0 auto; width: 12px; height: 12px;
+  fill: none; stroke: currentColor; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .25s var(--ease);
+}
+.nav-dd-btn[aria-expanded="true"] .nav-dd-chev { transform: rotate(180deg); }
+.nav-dd-panel {
+  position: absolute; top: 100%; right: 0; z-index: 3;
+  width: min(400px, calc(100vw - 36px)); padding-top: 12px;
+  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  transition: opacity .22s var(--ease), transform .22s var(--ease), visibility 0s linear .22s;
+}
+.nav-dd[data-ouvert="true"] .nav-dd-panel {
+  opacity: 1; visibility: visible; transform: translateY(0); transition-delay: 0s;
+}
+/* Le survol n'existe que là où il y a un pointeur : au doigt, c'est le clic. */
+@media (hover: hover) and (pointer: fine) {
+  .nav-dd:hover .nav-dd-panel {
+    opacity: 1; visibility: visible; transform: translateY(0); transition-delay: 0s;
+  }
+}
+.nav-dd-boite {
+  padding: 16px; text-align: left;
+  background: var(--paper-3); border: 1px solid var(--line-strong);
+  box-shadow: 0 26px 52px rgba(23,19,13,.19);
+}
+.nav-dd-tete { margin: 0 0 12px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--ink); }
+.nav-dd-sous {
+  display: block; margin-top: 3px; font-family: var(--f-mono); font-size: 10px;
+  font-weight: 400; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+.nav-dd-liste { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.nav-dd-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 10px; margin: 0 -10px;
+  text-decoration: none; color: inherit; border-bottom: 1px solid var(--line);
+  transition: background .2s var(--ease);
+}
+.nav-dd-item:hover { background: var(--paper-2); }
+.nav-dd-item:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; color: var(--ink); }
+.nav-dd-ic svg {
+  display: block; width: 100%; height: 100%;
+  fill: none; stroke: currentColor; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.nav-dd-txt { min-width: 0; }
+.nav-dd-os { display: block; font-family: var(--f-caps); font-size: 16px; letter-spacing: .03em; line-height: 1.1; color: var(--ink); }
+.nav-dd-fmt { display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .04em; color: var(--muted); }
+.nav-dd-pied { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.nav-dd-pied a {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent;
+}
+.nav-dd-pied a:hover { color: var(--ink); border-bottom-color: var(--ink); }
 /* 🆕 v1.7.472 — le sélecteur de langue était 0,5 px trop haut : les éléments se centrent
    dans la zone de contenu de la barre (65 px), alors que la barre en fait 66 avec son
    filet bas. Une marge haute de 1 px décale le bloc d’un demi-pixel vers le bas, sans

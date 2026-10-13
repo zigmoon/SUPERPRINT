@@ -1,11 +1,20 @@
 ---
 /**
- * Barre de navigation principale : logo, six entrées et outils de langue.
+ * Barre de navigation principale : logo, cinq entrées, le menu « Télécharger »
+ * et les outils de langue.
  *
  * Les entrées viennent de `src/data/site.ts` ; seules varient selon la page
  * l'ancre du logo (`#hero` sur l'accueil) et l'entrée marquée « page courante ».
+ *
+ * 🆕 v1.7.612 — « TÉLÉCHARGER » A REMPLACÉ « OUVRIR L'APP ». La barre servait à
+ * ENTRER dans l'application ; elle sert maintenant à L'INSTALLER. L'entrée
+ * « Ouvrir en ligne » reste, un cran plus bas dans le menu : rien n'est perdu.
+ *
+ * UN INSTALLATEUR PAR SYSTÈME, PAS PAR APPLICATION : les trois applications sont
+ * dans le même paquet, et c'est écrit en tête du menu — ce qui évite de promettre
+ * neuf téléchargements là où il y en a trois.
  */
-import { MARKUP_LANG_ORDER, NAV_ITEMS } from '../data/site';
+import { DESKTOP_DOWNLOADS, DOWNLOAD_LABELS, MARKUP_LANG_ORDER, NAV_ITEMS } from '../data/site';
 
 interface Props {
   /** `href` de l'entrée à marquer active, ou `null`. */
@@ -14,18 +23,29 @@ interface Props {
   logoHref?: string;
   /** Ancre de la première entrée : `#features` sur l'accueil. */
   featuresHref?: string;
+  /** Ancre du bloc de téléchargements : `#telechargements` sur l'accueil. */
+  downloadsHref?: string;
 }
 
 const {
   active = null,
   logoHref = 'index.html',
   featuresHref = 'index.html#features',
+  downloadsHref = 'index.html#telechargements',
 } = Astro.props;
 
 const items = NAV_ITEMS.map((item, i) => ({
   ...item,
   href: i === 0 ? featuresHref : item.href,
 }));
+
+/** Les trois pictogrammes — moniteur, portable, terminal — au trait, sans remplissage. */
+const ICONES: Record<string, string> = {
+  win: '<rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 20h8M12 17v3"/>',
+  mac: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M1 18h22l-1.6 2.4H2.6z"/>',
+  linux: '<rect x="2" y="4" width="20" height="16" rx="1.5"/><path d="M6 9l3 3-3 3M12 15h5"/>',
+};
+
 ---
 
 <!-- ══════════════ NAVIGATION ══════════════ -->
@@ -37,7 +57,7 @@ const items = NAV_ITEMS.map((item, i) => ({
     {items.map((item) => (
       <a
         href={item.href}
-        class:list={[item.cta ? 'nav-cta' : null, item.href === active ? 'active' : null]}
+        class:list={[item.href === active ? 'active' : null]}
         aria-current={item.href === active ? 'page' : undefined}
       >
         {MARKUP_LANG_ORDER.map((lang) => (
@@ -45,6 +65,60 @@ const items = NAV_ITEMS.map((item, i) => ({
         ))}
       </a>
     ))}
+
+    <!-- ══════════ TÉLÉCHARGER — LES INSTALLEURS DE BUREAU ══════════
+         Panneau de DIVULGATION, pas menu ARIA : des liens, un bouton, Échap pour
+         fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
+         survol se coupe entre le bouton et la carte et le menu se referme au moment
+         où l'on veut cliquer. La bascule est dans le script de la page
+         (`JS/marketing/lang-switcher.js`, ou son équivalent par page). -->
+    <div class="nav-dd" data-nav-dd>
+      <button type="button" class="nav-dd-btn" id="navDlBtn" aria-expanded="false" aria-controls="navDlPanel">
+        {MARKUP_LANG_ORDER.map((lang) => (
+          <span class={`inline-${lang}`}>{DOWNLOAD_LABELS.bouton[lang]}</span>
+        ))}
+        <svg class="nav-dd-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="nav-dd-panel" id="navDlPanel">
+        <div class="nav-dd-boite">
+          <p class="nav-dd-tete">
+            {MARKUP_LANG_ORDER.map((lang) => (
+              <span data-lang={lang}>{DOWNLOAD_LABELS.titre[lang]}</span>
+            ))}
+            <span class="nav-dd-sous">
+              {MARKUP_LANG_ORDER.map((lang) => (
+                <span class={`inline-${lang}`}>{DOWNLOAD_LABELS.sous[lang]}</span>
+              ))}
+            </span>
+          </p>
+          <div class="nav-dd-liste">
+            {DESKTOP_DOWNLOADS.map((item) => (
+              <a class="nav-dd-item" href={item.href} rel="noopener">
+                <span class="nav-dd-ic" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" set:html={ICONES[item.os]} />
+                </span>
+                <span class="nav-dd-txt">
+                  <span class="nav-dd-os">{item.nom}</span>
+                  <span class="nav-dd-fmt">{item.format}</span>
+                </span>
+              </a>
+            ))}
+          </div>
+          <div class="nav-dd-pied">
+            <a href={downloadsHref}>
+              {MARKUP_LANG_ORDER.map((lang) => (
+                <span class={`inline-${lang}`}>{DOWNLOAD_LABELS.formats[lang]}</span>
+              ))}
+            </a>
+            <a href="app/index.html">
+              {MARKUP_LANG_ORDER.map((lang) => (
+                <span class={`inline-${lang}`}>{DOWNLOAD_LABELS.enLigne[lang]}</span>
+              ))}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="nav-tools">
     <div class="lang-toggle">

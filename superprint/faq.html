@@ -511,6 +511,87 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 }
 .nav-cta::after { display: none; }
 .nav-cta:hover { background: var(--ink-2); }
+
+/* 🆕 v1.7.612 — « TÉLÉCHARGER » REMPLACE « OUVRIR L'APP » DANS LA BARRE.
+   La barre servait à ENTRER dans l'application ; elle sert maintenant à
+   L'INSTALLER. L'entrée « Ouvrir en ligne » reste, un cran plus bas dans le
+   menu : rien n'est perdu.
+
+   UN INSTALLATEUR PAR SYSTÈME, PAS PAR APPLICATION. Les trois applications
+   (SuperPrint, Studio IA, SuperTyPo) sont dans le même paquet — c'est écrit une
+   fois, en tête du menu, et c'est ce qui évite de promettre trois
+   téléchargements là où il y en a trois par système.
+
+   Panneau de DIVULGATION, pas menu ARIA : des liens, un bouton, Échap pour
+   fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
+   survol se coupe entre le bouton et la carte et le menu se referme au moment
+   où l'on veut cliquer. */
+.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
+.nav-dd-btn {
+  display: inline-flex; align-items: center; gap: 9px; cursor: pointer; border: 0;
+  margin: 0; padding: 0 22px; height: 42px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  transition: background .25s var(--ease);
+}
+.nav-dd-btn:hover { background: var(--ink-2); }
+.nav-dd-chev {
+  flex: 0 0 auto; width: 12px; height: 12px;
+  fill: none; stroke: currentColor; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .25s var(--ease);
+}
+.nav-dd-btn[aria-expanded="true"] .nav-dd-chev { transform: rotate(180deg); }
+.nav-dd-panel {
+  position: absolute; top: 100%; right: 0; z-index: 3;
+  width: min(400px, calc(100vw - 36px)); padding-top: 12px;
+  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  transition: opacity .22s var(--ease), transform .22s var(--ease), visibility 0s linear .22s;
+}
+.nav-dd[data-ouvert="true"] .nav-dd-panel {
+  opacity: 1; visibility: visible; transform: translateY(0); transition-delay: 0s;
+}
+/* Le survol n'existe que là où il y a un pointeur : au doigt, c'est le clic. */
+@media (hover: hover) and (pointer: fine) {
+  .nav-dd:hover .nav-dd-panel {
+    opacity: 1; visibility: visible; transform: translateY(0); transition-delay: 0s;
+  }
+}
+.nav-dd-boite {
+  padding: 16px; text-align: left;
+  background: var(--paper-3); border: 1px solid var(--line-strong);
+  box-shadow: 0 26px 52px rgba(23,19,13,.19);
+}
+.nav-dd-tete { margin: 0 0 12px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--ink); }
+.nav-dd-sous {
+  display: block; margin-top: 3px; font-family: var(--f-mono); font-size: 10px;
+  font-weight: 400; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+.nav-dd-liste { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.nav-dd-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 10px; margin: 0 -10px;
+  text-decoration: none; color: inherit; border-bottom: 1px solid var(--line);
+  transition: background .2s var(--ease);
+}
+.nav-dd-item:hover { background: var(--paper-2); }
+.nav-dd-item:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; color: var(--ink); }
+.nav-dd-ic svg {
+  display: block; width: 100%; height: 100%;
+  fill: none; stroke: currentColor; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.nav-dd-txt { min-width: 0; }
+.nav-dd-os { display: block; font-family: var(--f-caps); font-size: 16px; letter-spacing: .03em; line-height: 1.1; color: var(--ink); }
+.nav-dd-fmt { display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .04em; color: var(--muted); }
+.nav-dd-pied { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.nav-dd-pied a {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent;
+}
+.nav-dd-pied a:hover { color: var(--ink); border-bottom-color: var(--ink); }
 /* 🆕 v1.7.472 — le sélecteur de langue était 0,5 px trop haut : les éléments se centrent
    dans la zone de contenu de la barre (65 px), alors que la barre en fait 66 avec son
    filet bas. Une marge haute de 1 px décale le bloc d’un demi-pixel vers le bas, sans
@@ -2183,7 +2264,51 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <a href="faq.html" class="active" aria-current="page"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
-    <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+    <div class="nav-dd" data-nav-dd>
+      <button type="button" class="nav-dd-btn" id="navDlBtn" aria-expanded="false" aria-controls="navDlPanel">
+        <span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span>
+        <svg class="nav-dd-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="nav-dd-panel" id="navDlPanel">
+        <div class="nav-dd-boite">
+          <p class="nav-dd-tete">
+            <span data-lang="fr">Application de bureau</span><span data-lang="en">Desktop application</span><span data-lang="ja">デスクトップアプリ</span>
+            <span class="nav-dd-sous"><span class="inline-fr">Les trois applications incluses</span><span class="inline-en">All three apps included</span><span class="inline-ja">3つのアプリを同梱</span></span>
+          </p>
+          <div class="nav-dd-liste">
+
+            <a class="nav-dd-item" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">
+              <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 20h8M12 17v3"/></svg></span>
+              <span class="nav-dd-txt">
+                <span class="nav-dd-os">PC — Windows</span>
+                <span class="nav-dd-fmt">Installateur .exe · 64 bits</span>
+              </span>
+            </a>
+
+            <a class="nav-dd-item" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">
+              <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M1 18h22l-1.6 2.4H2.6z"/></svg></span>
+              <span class="nav-dd-txt">
+                <span class="nav-dd-os">MAC — macOS</span>
+                <span class="nav-dd-fmt">Image-disque .dmg · puce Apple</span>
+              </span>
+            </a>
+
+            <a class="nav-dd-item" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">
+              <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="1.5"/><path d="M6 9l3 3-3 3M12 15h5"/></svg></span>
+              <span class="nav-dd-txt">
+                <span class="nav-dd-os">LINUX</span>
+                <span class="nav-dd-fmt">Exécutable .AppImage · x86-64</span>
+              </span>
+            </a>
+
+          </div>
+          <div class="nav-dd-pied">
+            <a href="index.html#telechargements"><span class="inline-fr">Tous les formats</span><span class="inline-en">All formats</span><span class="inline-ja">すべての形式</span></a>
+            <a href="app/index.html"><span class="inline-fr">Ouvrir en ligne</span><span class="inline-en">Open online</span><span class="inline-ja">オンラインで開く</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="nav-tools">
     <div class="lang-toggle">
@@ -2216,6 +2341,11 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
        que setLang() continue de marquer la langue choisie. -->
+  <!-- 🆕 v1.7.612 — LE TÉLÉCHARGEMENT DANS LE MENU BURGER.
+       Sous 1000 px la barre est masquée (.nav-links), donc le menu
+       « Télécharger » de la barre n'existe plus : sans cette entrée, le
+       téléchargement serait INATTEIGNABLE au doigt sur cette page. -->
+  <a href="index.html#telechargements" class="mm-cta"><span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span></a>
   <div class="mm-lang">
     <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
       <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>
@@ -2729,6 +2859,32 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     }
   });
 });
+
+// ── Menu « Télécharger » de la barre ──
+(function () {
+  var dd = document.querySelector('[data-nav-dd]');
+  if (!dd) return;
+  var btn = dd.querySelector('.nav-dd-btn');
+  var panel = dd.querySelector('.nav-dd-panel');
+  if (!btn || !panel) return;
+  function poser(ouvert) {
+    dd.setAttribute('data-ouvert', ouvert ? 'true' : 'false');
+    btn.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+  }
+  poser(false);
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    poser(dd.getAttribute('data-ouvert') !== 'true');
+  });
+  /* Un clic ailleurs, ou Échap, referme : un menu ouvert qui ne se referme pas
+     est pire qu'un menu qui ne s'ouvre pas. */
+  document.addEventListener('click', function (e) {
+    if (!dd.contains(e.target)) poser(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.keyCode === 27) poser(false);
+  });
+})();
 
 // ── Menu mobile (burger) ──
 (function () {

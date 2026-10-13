@@ -94,6 +94,32 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   });
 });
 
+// ── Menu « Télécharger » de la barre ──
+(function () {
+  var dd = document.querySelector('[data-nav-dd]');
+  if (!dd) return;
+  var btn = dd.querySelector('.nav-dd-btn');
+  var panel = dd.querySelector('.nav-dd-panel');
+  if (!btn || !panel) return;
+  function poser(ouvert) {
+    dd.setAttribute('data-ouvert', ouvert ? 'true' : 'false');
+    btn.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+  }
+  poser(false);
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    poser(dd.getAttribute('data-ouvert') !== 'true');
+  });
+  /* Un clic ailleurs, ou Échap, referme : un menu ouvert qui ne se referme pas
+     est pire qu'un menu qui ne s'ouvre pas. */
+  document.addEventListener('click', function (e) {
+    if (!dd.contains(e.target)) poser(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.keyCode === 27) poser(false);
+  });
+})();
+
 // ── Menu mobile (burger) ──
 (function () {
   var burger = document.getElementById('navBurger');

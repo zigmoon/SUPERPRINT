@@ -99,6 +99,7 @@ const navNotes = "<!-- _NAV_HERO_590 -->\n<!-- _NAV_AUTEURS_591 : entree Auteurs
   active={null}
   logoHref="#hero"
   featuresHref="#features"
+  downloadsHref="#telechargements"
   footer={footer}
   navNotes={navNotes}
   headExtra={headExtra}
@@ -123,6 +124,11 @@ const navNotes = "<!-- _NAV_HERO_590 -->\n<!-- _NAV_AUTEURS_591 : entree Auteurs
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
        que setLang() continue de marquer la langue choisie. -->
+  <!-- 🆕 v1.7.612 — LE TÉLÉCHARGEMENT DANS LE MENU BURGER.
+       Sous 1000 px la barre est masquée (.nav-links), donc le menu
+       « Télécharger » de la barre n'existe plus : sans cette entrée, le
+       téléchargement serait INATTEIGNABLE au doigt sur cette page. -->
+  <a href="#telechargements" class="mm-cta"><span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span></a>
   <div class="mm-lang">
     <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
       <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>
@@ -199,7 +205,7 @@ const navNotes = "<!-- _NAV_HERO_590 -->\n<!-- _NAV_AUTEURS_591 : entree Auteurs
          « desktop-latest ». Un lien de page n'a donc jamais à être retouché à
          chaque livraison — mais il ne répond qu'APRÈS le premier passage du
          workflow. -->
-    <div class="telechargements">
+    <div class="telechargements" id="telechargements">
       <span class="telechargements-titre"><span class="inline-fr">Télécharger l'application de bureau</span><span class="inline-en">Download the desktop app</span><span class="inline-ja">デスクトップアプリをダウンロード</span></span>
       <div class="telechargements-grid">
 

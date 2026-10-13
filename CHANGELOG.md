@@ -14,22 +14,36 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 _Une application de bureau : le `.exe` Windows est construit ici, et le `.dmg` / les binaires Linux par le workflow_
 
 ### Added — application de bureau (`superprint_desktop/`)
-- Une coquille **Tauri 2** ouvre `superprint/app` dans la **webview du système** (WebView2, WKWebView, WebKitGTK). Le front-end n'est **pas copié** : `tauri.conf.json` pointe sur `../../superprint/app`, embarqué au build. Une correction de l'application web se retrouve donc dans le bureau **sans second dépôt à tenir** — et l'application fonctionne **hors-ligne**, sans serveur ni compte.
-- **Windows** : `SuperPrint_1.7.611_x64-setup.exe` (**31,46 Mio**, NSIS) et `superprint-desktop.exe` (**33,21 Mio**, titre de fenêtre « SuperPrint », version `1.7.611`). Les deux ont été **lancés** pour vérification.
+- Une coquille **Tauri 2** ouvre les applications web dans la **webview du système** (WebView2, WKWebView, WebKitGTK) et les **embarque au build** : l'application fonctionne **hors-ligne**, sans serveur ni compte.
+- **LES TROIS APPLICATIONS SONT DANS LE MÊME PAQUET** — l'éditeur **SuperPrint**, le **Studio IA** et **SuperTyPo** — et se choisissent sur une **page de lancement**. Un seul installeur par système, donc, et non trois. Vérifié : le Studio IA **appelle les API directement avec la clé de l'utilisateur** (localStorage), **aucun `ai-proxy.php` n'est requis**, et SuperTyPo ne dépend que de son propre dossier.
+- `scripts/stage-frontend.mjs` (Node, multiplateforme — le workflow l'appelle aussi depuis macOS et Linux) assemble `frontend/` depuis `../superprint/`, puis **vérifie son propre résultat** : chaque `src=`/`href=` local des quatre pages est résolu sur le disque, commentaires HTML et corps de `<script>` retirés. Un fichier manquant fait **échouer le build**.
+- **Les polices ne sont copiées qu'une fois.** `superprint/CSS/fonts/` pèse 19,8 Mo, dont **19,6 Mo sont octet pour octet déjà présents** dans `app/CSS/fonts/` (176 fichiers sur 185). La feuille copiée est réécrite vers la copie existante ; **9 fichiers seulement** sont réellement copiés. **Mesuré : 61,3 Mo de front-end → installeur 32,24 Mio**, soit à peine **0,8 Mio de plus** que la version qui ne contenait que l'éditeur.
+- **Windows** : `SuperPrint_1.7.611_x64-setup.exe` (**32,24 Mio**, NSIS) et `superprint-desktop.exe` (**33 Mo**). Le lanceur affiche **v1.7.611**, injecté depuis `superprint/version.txt` au staging.
 - `scripts/build-windows.ps1` choisit seul son éditeur de liens : **MSVC** s'il est présent, sinon **MinGW-w64 GCC** (bascule sur la cible `stable-x86_64-pc-windows-gnu`). ⚠️ **LLVM-MinGW ne suffit pas** : il ne fournit pas `libgcc`, que la cible GNU réclame — mesuré, la compilation échoue à l'édition de liens. C'est **GCC** qu'il faut, pas clang.
+
+### Added — le sous-menu « Télécharger » dans la barre (les deux arborescences)
+- Dans la **barre de navigation**, **« Télécharger » remplace « Ouvrir l'app »** — la barre servait à *entrer* dans l'application, elle sert maintenant à *l'installer*. L'entrée **« Ouvrir en ligne »** reste, un cran plus bas dans le menu : rien n'est perdu.
+- Un menu déroulant, ancré sous le bouton. Le menu est un **panneau de divulgation** — trois lignes (PC / MAC / LINUX), chacune avec son format (`.exe`, `.dmg`, `.AppImage`) et un pied vers « Tous les formats » (le bloc de la page) et « Ouvrir en ligne ». Il annonce une fois **en tête** que les trois applications sont incluses, ce qui évite de promettre neuf téléchargements là où il y en a trois.
+- Le `padding-top` du panneau est un **pont transparent** : sans lui, le survol se coupe entre le bouton et la carte et le menu se referme au moment où l'on veut cliquer. Ouverture **au survol** (pointeurs fins seulement) **ou au clic** ; fermeture par **clic ailleurs** ou **Échap**.
+- **Quatre pages HTML** (`index`, `faq`, `price`, `rock`) et, côté Astro, le composant **`SiteNav.astro`** via `site.ts` — les données vivent dans `DESKTOP_DOWNLOADS`, les libellés dans `DOWNLOAD_LABELS` (trois langues).
+- Vérifié au navigateur : ouverture, `aria-expanded`, **400 px de large**, **aucun débordement**, trois items, Échap referme, et les libellés suivent la langue — `DOWNLOAD` / `TÉLÉCHARGER` / `ダウンロード`.
+- **ET DANS LE MENU BURGER.** Sous **1000 px** la barre est masquée (`.nav-links`) : le menu de la barre n'existe donc plus. Sans une entrée équivalente dans le burger, le téléchargement aurait été **inatteignable au doigt** sur `faq`, `price` et `rock`. Le burger reçoit donc un appel à l'action **« Télécharger »** vers le bloc de la page d'accueil. Sur `price`, l'entrée existante « Ouvrir l'app » **reste** (cette page n'a jamais eu les trois liens d'applications dans son burger) en lien simple, et le téléchargement prend la place de l'appel à l'action. Vérifié en 420 px sur les huit pages.
 
 ### Added — workflow (`.github/workflows/build-desktop.yml`)
 - Compile les trois systèmes en parallèle (Windows, macOS `aarch64` **et** `x86_64`, Linux) et publie les paquets dans la version **`desktop-latest`** sous des **noms fixes, sans numéro de version** — un lien de page ne peut pas suivre un nom qui change à chaque livraison. Le job de publication **échoue bruyamment** si un paquet manque : un lien mort serait pire que pas de lien.
 - Un `.dmg` exige macOS et un `.AppImage` exige Linux : **aucun** des deux ne peut être produit depuis Windows, c'est la raison d'être du workflow.
 
-### Added — page de présentation (les deux arborescences)
+### Added — les trois téléchargements sur la page de présentation (les deux arborescences)
 - Sous les **trois entrées** (APP, STUDIO, SUPERTYPO) et au-dessus des fondations open source, un bloc **« Télécharger l'application de bureau »** de trois cartes : **PC — Windows**, **MAC — macOS**, **LINUX**, chacune avec son format (`.exe`, `.dmg`, `.AppImage`) et un second lien (version **Intel**, paquet **`.deb`**). Les trois versions linguistiques suivent.
 - Le nom porte le lien principal, **étiré sur toute la carte** par `::after` : la carte entière est cliquable **sans imbriquer deux liens** — ce qu'une carte-lien aurait imposé dès qu'elle en porte un second. Les liens secondaires repassent au-dessus par `z-index`. Vérifié au navigateur : clic sur le coin de carte → `SuperPrint-Windows-x64-setup.exe`, clic sur « version Intel » → `SuperPrint-macOS-Intel.dmg`, trois cartes de **380 px**, empilées sous **900 px**.
-- `.gitignore` : `!/.github/` et `!/superprint_desktop/` (la règle `/*` ignore tout à la racine). Les binaires produits (`src-tauri/target/`) restent **dehors** : ils sont livrés par la version `desktop-latest`, pas par git.
+- `.gitignore` : `!/.github/` et `!/superprint_desktop/` (la règle `/*` ignore tout à la racine). Les binaires produits (`src-tauri/target/`) et `frontend/` restent **dehors** : ils sont livrés par la version `desktop-latest`, pas par git.
 
 ### À faire
 - Les adresses de téléchargement ne répondent qu'après le **premier passage** du workflow (`Actions → Application de bureau → Run workflow`).
 - Les paquets publiés ne sont **pas signés** : macOS et Windows afficheront un avertissement au premier lancement (voir le README du dossier).
+
+### Constat — non corrigé
+- **27 des 117 polices demandées par `superprint/CSS/fonts.css` n'existent pas** (`bricolage-4..12`, `newsreader-4..12`, `spacegrotesk-4..12` — seuls les rangs 1 à 3 sont livrés). Défaut **préexistant du site** : le staging le **signale à chaque build** sans le transformer en échec, pour ne pas confondre un défaut du site avec une régression de l'application de bureau.
 
 ---
 

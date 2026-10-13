@@ -30,6 +30,8 @@ interface Props {
   active?: string | null;
   logoHref?: string;
   featuresHref?: string;
+  /** Ancre du bloc de téléchargements : `#telechargements` sur l'accueil. */
+  downloadsHref?: string;
   bodyClass?: string;
   headTop?: string;
   headExtra?: string;
@@ -43,6 +45,7 @@ const {
   active = null,
   logoHref = 'index.html',
   featuresHref = 'index.html#features',
+  downloadsHref = 'index.html#telechargements',
   bodyClass,
   headTop,
   headExtra,
@@ -53,7 +56,7 @@ const {
   <QuadriBar />
   <BrandHeader {...brand} />
   {navNotes && <Fragment set:html={navNotes} />}
-  <SiteNav active={active} logoHref={logoHref} featuresHref={featuresHref} />
+  <SiteNav active={active} logoHref={logoHref} featuresHref={featuresHref} downloadsHref={downloadsHref} />
   <slot />
   <SiteFooter {...footer} />
   <slot name="after" />

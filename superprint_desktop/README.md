@@ -1,27 +1,68 @@
 # SuperPrint — application de bureau
 
 Coquille [Tauri](https://tauri.app) autour de la PAO SuperPrint. Elle n'ajoute
-aucune fonction : elle ouvre l'application web existante dans la **webview du
+aucune fonction : elle ouvre les applications web existantes dans la **webview du
 système** (WebView2 sous Windows, WKWebView sous macOS, WebKitGTK sous Linux) et
-l'**embarque dans le binaire**, de sorte que l'application fonctionne hors-ligne,
-sans serveur et sans compte.
+les **embarque dans le binaire**, de sorte que l'application fonctionne
+hors-ligne, sans serveur et sans compte.
 
-Le front-end n'est **pas copié** ici : `src-tauri/tauri.conf.json` pointe sur
-`../../superprint/app`. Il n'y a donc **une seule** application à maintenir — une
-correction dans `superprint/app` se retrouve dans le bureau au build suivant.
+**Les trois applications sont dans le même paquet** — l'éditeur **SuperPrint**,
+le **Studio IA** et **SuperTyPo** — et se choisissent sur la page de lancement.
+Un seul installeur par système, donc, et non trois.
+
+Le front-end n'est **pas copié** dans ce dossier : `scripts/stage-frontend.mjs`
+l'assemble au moment du build, depuis `../superprint/`. Il n'y a donc **une
+seule** application à maintenir — une correction dans `superprint/app` se
+retrouve dans le bureau au build suivant.
 
 ```
 superprint_desktop/
-├── package.json              CLI Tauri (devDependency)
-├── scripts/build-windows.ps1  recette de compilation Windows
+├── package.json                 CLI Tauri (devDependency)
+├── src/launcher.html            page de lancement (trois cartes)
+├── scripts/
+│   ├── stage-frontend.mjs       assemble frontend/ depuis ../superprint/
+│   └── build-windows.ps1        recette de compilation Windows
+├── frontend/                    FABRIQUÉ, jamais versionné
 └── src-tauri/
-    ├── Cargo.toml            dépendances Rust (tauri 2)
-    ├── build.rs              appelé par tauri-build
-    ├── tauri.conf.json       fenêtre, icônes, installeurs
-    ├── capabilities/         autorisations de la fenêtre
-    ├── icons/                icônes générées par `npx tauri icon`
-    └── src/main.rs           ouverture de la fenêtre — et rien d'autre
+    ├── Cargo.toml               dépendances Rust (tauri 2)
+    ├── build.rs                 appelé par tauri-build
+    ├── tauri.conf.json          fenêtre, icônes, installeurs
+    ├── capabilities/            autorisations de la fenêtre
+    ├── icons/                   icônes générées par `npx tauri icon`
+    └── src/main.rs              ouverture de la fenêtre — et rien d'autre
 ```
+
+## Ce que le dossier embarqué contient
+
+`stage-frontend.mjs` fabrique `frontend/` et **vérifie son propre résultat** :
+
+| Source | Destination | Pour |
+|---|---|---|
+| `superprint/app/` | `frontend/app/` | l'éditeur SuperPrint |
+| `superprint/sp213-studio.html` | `frontend/studio.html` | le Studio IA |
+| `superprint/supertypo/` | `frontend/supertypo/` | SuperTyPo |
+| `superprint/icons/`, `favicon.png`, `manifest.webmanifest` | idem | partagé par les trois |
+| `superprint/JS/fabric.min.js` | `frontend/JS/` | moteur de canevas du Studio |
+| `superprint/CSS/fonts.css` | `frontend/CSS/` | typographie du Studio |
+| `src/launcher.html` | `frontend/index.html` | la page de lancement, version injectée |
+
+À la fin, **chaque `src=`/`href=` local des quatre pages est résolu sur le
+disque**, commentaires HTML et corps de `<script>` retirés : un fichier manquant
+fait échouer le build. Une image absente dans une application installée est une
+chose qu'on ne découvre qu'après la livraison.
+
+### Les polices ne sont copiées qu'une fois
+
+`superprint/CSS/fonts/` pèse **19,8 Mo**, dont **19,6 Mo sont octet pour octet
+déjà présents** dans `app/CSS/fonts/` (mesuré le 2026-10-13 : 176 fichiers sur
+185). Le script réécrit donc la feuille copiée pour pointer sur la copie déjà
+là, et ne copie réellement que les 9 fichiers sans équivalent. Sans cela, chaque
+téléchargement paierait deux fois les mêmes polices.
+
+> ⚠️ 27 des 117 polices demandées par `superprint/CSS/fonts.css` **n'existent
+> pas** (`bricolage-4..12`, `newsreader-4..12`, `spacegrotesk-4..12` — seuls les
+> rangs 1 à 3 sont livrés). C'est un **défaut préexistant du site**, que le
+> script **signale** à chaque build sans le transformer en échec.
 
 ## Compiler
 
@@ -53,6 +94,10 @@ winget install BrechtSanders.WinLibs.POSIX.UCRT
 > de Rust réclame (`-lgcc`, `-lgcc_eh`) : la compilation échoue à l'édition de
 > liens. C'est GCC qu'il faut, pas clang.
 
+`frontend/` est reconstruit automatiquement avant chaque compilation
+(`build.beforeBuildCommand` dans `tauri.conf.json`) : il n'y a rien à lancer à
+la main. Pour le seul assemblage, `node scripts/stage-frontend.mjs`.
+
 ### macOS et Linux
 
 ```bash
@@ -75,6 +120,9 @@ npx tauri build
 | `src-tauri/target/release/bundle/dmg/SuperPrint_<version>_<arch>.dmg` | macOS |
 | `src-tauri/target/release/bundle/appimage/SuperPrint_<version>_amd64.AppImage` | Linux |
 | `src-tauri/target/release/bundle/deb/SuperPrint_<version>_amd64.deb` | Linux (Debian/Ubuntu) |
+
+Ordre de grandeur mesuré le 2026-10-13 (Windows, NSIS) : `frontend/` **61,3 Mo**
+→ binaire **33 Mo**, installeur **32 Mo**.
 
 ## Téléchargement publié
 

@@ -1,6 +1,10 @@
 # Dépendances Node (CLI Tauri)
 node_modules/
 
+# Dossier embarqué par Tauri, FABRIQUÉ par `scripts/stage-frontend.mjs` à partir
+# de `../superprint/` : ~80 Mo recopiés, jamais versionnés.
+frontend/
+
 # Sortie de compilation Rust
 src-tauri/target/
 src-tauri/gen/
