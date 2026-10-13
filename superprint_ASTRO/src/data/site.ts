@@ -45,6 +45,24 @@ export const NAV_ITEMS: NavItem[] = [
   { href: 'rock.html', label: { fr: 'ROCK v1', en: 'ROCK v1', ja: 'ROCK v1' } },
 ];
 
+/**
+ * Un morceau de texte du format : tantôt droit, tantôt en gras.
+ *
+ * Le gras n'est pas décoratif : il désigne l'**extension** (`.exe`, `.dmg`,
+ * `.AppImage`) au milieu d'une ligne monospace, et c'est le seul repère qu'on
+ * cherche du regard dans un menu de téléchargement. Le modéliser en données
+ * évite de reconstruire une chaîne à balises dans le composant.
+ */
+export type Morceau = { t: string } | { b: string };
+
+/** Une variante du même système — la version Intel, le paquet .deb. */
+export interface DownloadVariante {
+  /** Ce qui précède le lien, ponctuation comprise. */
+  prefixe: Record<Lang, string>;
+  href: string;
+  label: Record<Lang, string>;
+}
+
 /** Une ligne du menu « Télécharger » de la barre. */
 export interface DownloadItem {
   /** Le système, qui choisit aussi le pictogramme (voir `SiteNav.astro`). */
@@ -52,16 +70,22 @@ export interface DownloadItem {
   href: string;
   /** Nom du système — identique dans les trois langues : c'est un nom propre. */
   nom: string;
-  /** Format du fichier, en clair — identique dans les trois langues. */
-  format: string;
+  /** Format du fichier principal, en morceaux (voir `Morceau`). */
+  format: Morceau[];
+  /** Seconde façon d'installer sur ce système, s'il y en a une. */
+  variante?: DownloadVariante;
 }
 
 /**
- * Les installeurs de l'application de bureau.
+ * Les cinq installeurs de l'application de bureau.
  *
- * UN INSTALLATEUR PAR SYSTÈME, PAS PAR APPLICATION. Les trois applications —
- * SuperPrint, Studio IA, SuperTyPo — sont dans le même paquet, et se choisissent
- * à l'ouverture. D'où trois lignes, et non neuf.
+ * TROIS LIGNES, CINQ FICHIERS. Un système par ligne — et une seconde façon
+ * d'installer sur deux d'entre elles (la version Intel pour macOS, le paquet
+ * `.deb` pour Linux). C'est ce qui évite de promettre neuf téléchargements là où
+ * il y a trois systèmes.
+ *
+ * Les trois applications — SuperPrint, Studio IA, SuperTyPo — sont dans le même
+ * paquet, et se choisissent à l'ouverture. C'est écrit une fois, en tête du menu.
  *
  * Les adresses portent `desktop-latest` et **aucun numéro de version** : le
  * workflow `.github/workflows/build-desktop.yml` renomme les paquets avant de
@@ -72,19 +96,29 @@ export const DESKTOP_DOWNLOADS: DownloadItem[] = [
     os: 'win',
     href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe',
     nom: 'PC — Windows',
-    format: 'Installateur .exe · 64 bits',
+    format: [{ t: 'Installateur ' }, { b: '.exe' }, { t: ' · 64 bits' }],
   },
   {
     os: 'mac',
     href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg',
     nom: 'MAC — macOS',
-    format: 'Image-disque .dmg · puce Apple',
+    format: [{ t: 'Image-disque ' }, { b: '.dmg' }],
+    variante: {
+      prefixe: { fr: 'Puce Apple · ', en: 'Apple silicon · ', ja: 'Appleシリコン · ' },
+      href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg',
+      label: { fr: 'version Intel', en: 'Intel build', ja: 'Intel版' },
+    },
   },
   {
     os: 'linux',
     href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage',
     nom: 'LINUX',
-    format: 'Exécutable .AppImage · x86-64',
+    format: [{ t: 'Exécutable ' }, { b: '.AppImage' }, { t: ' · x86-64' }],
+    variante: {
+      prefixe: { fr: 'Alternative : ', en: 'Alternative: ', ja: '別形式：' },
+      href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb',
+      label: { fr: 'paquet .deb', en: '.deb package', ja: '.deb パッケージ' },
+    },
   },
 ];
 
@@ -93,6 +127,5 @@ export const DOWNLOAD_LABELS = {
   bouton: { fr: 'Télécharger', en: 'Download', ja: 'ダウンロード' },
   titre: { fr: 'Application de bureau', en: 'Desktop application', ja: 'デスクトップアプリ' },
   sous: { fr: 'Les trois applications incluses', en: 'All three apps included', ja: '3つのアプリを同梱' },
-  formats: { fr: 'Tous les formats', en: 'All formats', ja: 'すべての形式' },
   enLigne: { fr: 'Ouvrir en ligne', en: 'Open online', ja: 'オンラインで開く' },
 } satisfies Record<string, Record<Lang, string>>;

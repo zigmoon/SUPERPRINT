@@ -10,9 +10,15 @@
  * ENTRER dans l'application ; elle sert maintenant à L'INSTALLER. L'entrée
  * « Ouvrir en ligne » reste, un cran plus bas dans le menu : rien n'est perdu.
  *
- * UN INSTALLATEUR PAR SYSTÈME, PAS PAR APPLICATION : les trois applications sont
- * dans le même paquet, et c'est écrit en tête du menu — ce qui évite de promettre
- * neuf téléchargements là où il y en a trois.
+ * LES INSTALLEURS SONT ICI, ET NULLE PART AILLEURS. Le bloc « télécharger » qui
+ * vivait sous les trois entrées de l'accueil a été retiré : cinq liens répétés
+ * deux fois, c'était un doublon à tenir à jour. Ce menu est désormais la seule
+ * adresse des fichiers.
+ *
+ * IL VIT DANS `.nav-tools`, PAS DANS `.nav-links`. Sous 1000 px, `.nav-links`
+ * est masqué : un menu qui y vivrait disparaîtrait avec elle, et le
+ * téléchargement serait inatteignable au doigt. `.nav-tools` reste visible à
+ * toutes les largeurs.
  */
 import { DESKTOP_DOWNLOADS, DOWNLOAD_LABELS, MARKUP_LANG_ORDER, NAV_ITEMS } from '../data/site';
 
@@ -23,15 +29,12 @@ interface Props {
   logoHref?: string;
   /** Ancre de la première entrée : `#features` sur l'accueil. */
   featuresHref?: string;
-  /** Ancre du bloc de téléchargements : `#telechargements` sur l'accueil. */
-  downloadsHref?: string;
 }
 
 const {
   active = null,
   logoHref = 'index.html',
   featuresHref = 'index.html#features',
-  downloadsHref = 'index.html#telechargements',
 } = Astro.props;
 
 const items = NAV_ITEMS.map((item, i) => ({
@@ -65,8 +68,12 @@ const ICONES: Record<string, string> = {
         ))}
       </a>
     ))}
-
+  </div>
+  <div class="nav-tools">
     <!-- ══════════ TÉLÉCHARGER — LES INSTALLEURS DE BUREAU ══════════
+         Dans `.nav-tools` : sous 1000 px `.nav-links` est masqué, un menu qui y
+         vivrait disparaîtrait avec elle.
+
          Panneau de DIVULGATION, pas menu ARIA : des liens, un bouton, Échap pour
          fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
          survol se coupe entre le bouton et la carte et le menu se referme au moment
@@ -91,25 +98,38 @@ const ICONES: Record<string, string> = {
               ))}
             </span>
           </p>
+          <!-- Les cinq fichiers sont ICI, et nulle part ailleurs dans le site.
+               Un système par ligne ; la variante (Intel, .deb) est un second lien
+               sur la même ligne. Le nom porte le lien principal, étiré sur toute
+               la ligne par `::after` : la ligne entière est cliquable SANS
+               imbriquer deux liens — ce qu'une ligne-lien aurait imposé dès
+               qu'elle en porte un second. -->
           <div class="nav-dd-liste">
             {DESKTOP_DOWNLOADS.map((item) => (
-              <a class="nav-dd-item" href={item.href} rel="noopener">
+              <div class="nav-dd-item">
                 <span class="nav-dd-ic" aria-hidden="true">
                   <svg viewBox="0 0 24 24" set:html={ICONES[item.os]} />
                 </span>
                 <span class="nav-dd-txt">
-                  <span class="nav-dd-os">{item.nom}</span>
-                  <span class="nav-dd-fmt">{item.format}</span>
+                  <a class="nav-dd-os" href={item.href} rel="noopener">{item.nom}</a>
+                  <span class="nav-dd-fmt">
+                    {item.format.map((m) => ('b' in m ? <b>{m.b}</b> : m.t))}
+                  </span>
+                  {item.variante && (
+                    <span class="nav-dd-alt">
+                      {MARKUP_LANG_ORDER.map((lang) => (
+                        <span class={`inline-${lang}`}>
+                          {item.variante!.prefixe[lang]}
+                          <a href={item.variante!.href} rel="noopener">{item.variante!.label[lang]}</a>
+                        </span>
+                      ))}
+                    </span>
+                  )}
                 </span>
-              </a>
+              </div>
             ))}
           </div>
           <div class="nav-dd-pied">
-            <a href={downloadsHref}>
-              {MARKUP_LANG_ORDER.map((lang) => (
-                <span class={`inline-${lang}`}>{DOWNLOAD_LABELS.formats[lang]}</span>
-              ))}
-            </a>
             <a href="app/index.html">
               {MARKUP_LANG_ORDER.map((lang) => (
                 <span class={`inline-${lang}`}>{DOWNLOAD_LABELS.enLigne[lang]}</span>
@@ -119,8 +139,6 @@ const ICONES: Record<string, string> = {
         </div>
       </div>
     </div>
-  </div>
-  <div class="nav-tools">
     <div class="lang-toggle">
       <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
       <button id="btn-fr" onclick="setLang('fr')">FR</button>

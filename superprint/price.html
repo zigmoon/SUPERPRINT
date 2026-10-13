@@ -332,14 +332,19 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 
    UN INSTALLATEUR PAR SYSTÈME, PAS PAR APPLICATION. Les trois applications
    (SuperPrint, Studio IA, SuperTyPo) sont dans le même paquet — c'est écrit une
-   fois, en tête du menu, et c'est ce qui évite de promettre trois
-   téléchargements là où il y en a trois par système.
+   fois, en tête du menu, et c'est ce qui évite de promettre neuf
+   téléchargements là où il y en a trois.
+
+   IL VIT DANS `.nav-tools`, PAS DANS `.nav-links`. Sous 1000 px, `.nav-links`
+   est masqué : un menu qui y vivrait disparaîtrait avec elle, et le
+   téléchargement serait inatteignable au doigt. `.nav-tools` reste visible à
+   toutes les largeurs.
 
    Panneau de DIVULGATION, pas menu ARIA : des liens, un bouton, Échap pour
    fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
    survol se coupe entre le bouton et la carte et le menu se referme au moment
    où l'on veut cliquer. */
-.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
+.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; }
 .nav-dd-btn {
   display: inline-flex; align-items: center; gap: 9px; cursor: pointer; border: 0;
   margin: 0; padding: 0 22px; height: 42px;
@@ -358,7 +363,11 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-btn[aria-expanded="true"] .nav-dd-chev { transform: rotate(180deg); }
 .nav-dd-panel {
   position: absolute; top: 100%; right: 0; z-index: 3;
-  width: min(400px, calc(100vw - 36px)); padding-top: 12px;
+  /* 400 px, ramenés à la largeur de la fenêtre sur téléphone. Le retrait de
+     84 px n'est pas arbitraire : il réserve la marge de la barre (16 px) plus
+     le burger et son intervalle (50 px), de sorte que le bord GAUCHE du
+     panneau — qui part du bord droit du bouton — ne sorte jamais de l'écran. */
+  width: min(400px, calc(100vw - 84px)); padding-top: 12px;
   opacity: 0; visibility: hidden; transform: translateY(-6px);
   transition: opacity .22s var(--ease), transform .22s var(--ease), visibility 0s linear .22s;
 }
@@ -383,13 +392,13 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 }
 .nav-dd-liste { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
 .nav-dd-item {
-  display: flex; align-items: center; gap: 12px;
+  position: relative; display: flex; align-items: center; gap: 12px;
   padding: 11px 10px; margin: 0 -10px;
-  text-decoration: none; color: inherit; border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   transition: background .2s var(--ease);
 }
 .nav-dd-item:hover { background: var(--paper-2); }
-.nav-dd-item:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.nav-dd-item:has(.nav-dd-os:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
 .nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; color: var(--ink); }
 .nav-dd-ic svg {
   display: block; width: 100%; height: 100%;
@@ -397,9 +406,19 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   stroke-linecap: round; stroke-linejoin: round;
 }
 .nav-dd-txt { min-width: 0; }
-.nav-dd-os { display: block; font-family: var(--f-caps); font-size: 16px; letter-spacing: .03em; line-height: 1.1; color: var(--ink); }
+.nav-dd-os {
+  display: block; font-family: var(--f-caps); font-size: 16px; letter-spacing: .03em;
+  line-height: 1.1; color: var(--ink); text-decoration: none;
+}
+/* La ligne entière devient la cible du lien principal. */
+.nav-dd-os::after { content: ''; position: absolute; inset: 0; }
 .nav-dd-fmt { display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .04em; color: var(--muted); }
-.nav-dd-pied { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.nav-dd-fmt b { font-weight: 600; color: var(--ink); }
+.nav-dd-alt { display: block; margin-top: 2px; font-size: 10.5px; line-height: 1.4; color: var(--muted); }
+/* Repasse au-dessus du lien étiré : sans ça, il serait inatteignable. */
+.nav-dd-alt a { position: relative; z-index: 1; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.nav-dd-alt a:hover { color: var(--ink); }
+.nav-dd-pied { display: flex; gap: 12px; margin-top: 12px; }
 .nav-dd-pied a {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
   color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent;
@@ -2120,6 +2139,14 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
     <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="price.html" class="active" aria-current="page"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+  </div>
+  <div class="nav-tools">
+    <!-- 🆕 v1.7.612 — LE MENU VIT DANS .nav-tools, ET NON DANS .nav-links.
+         Sous 1000 px, `.nav-links` est masqué : un menu qui y vivrait
+         disparaîtrait avec elle, et le téléchargement serait inatteignable au
+         doigt. `.nav-tools` reste visible à toutes les largeurs — le bouton
+         tient donc sa place sur téléphone sans qu'on ait à dupliquer les cinq
+         liens dans le menu burger. -->
     <div class="nav-dd" data-nav-dd>
       <button type="button" class="nav-dd-btn" id="navDlBtn" aria-expanded="false" aria-controls="navDlPanel">
         <span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span>
@@ -2131,42 +2158,47 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
             <span data-lang="fr">Application de bureau</span><span data-lang="en">Desktop application</span><span data-lang="ja">デスクトップアプリ</span>
             <span class="nav-dd-sous"><span class="inline-fr">Les trois applications incluses</span><span class="inline-en">All three apps included</span><span class="inline-ja">3つのアプリを同梱</span></span>
           </p>
+          <!-- Les cinq fichiers sont ICI, et nulle part ailleurs dans la page.
+               Un système par ligne ; la variante (Intel, .deb) est un second lien
+               sur la même ligne. Le nom porte le lien principal, étiré sur toute
+               la ligne par `::after` : la ligne entière est cliquable SANS
+               imbriquer deux liens — ce qu'une ligne-lien aurait imposé dès
+               qu'elle en porte un second. -->
           <div class="nav-dd-liste">
 
-            <a class="nav-dd-item" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">
+            <div class="nav-dd-item">
               <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 20h8M12 17v3"/></svg></span>
               <span class="nav-dd-txt">
-                <span class="nav-dd-os">PC — Windows</span>
-                <span class="nav-dd-fmt">Installateur .exe · 64 bits</span>
+                <a class="nav-dd-os" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">PC — Windows</a>
+                <span class="nav-dd-fmt">Installateur <b>.exe</b> · 64 bits</span>
               </span>
-            </a>
+            </div>
 
-            <a class="nav-dd-item" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">
+            <div class="nav-dd-item">
               <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M1 18h22l-1.6 2.4H2.6z"/></svg></span>
               <span class="nav-dd-txt">
-                <span class="nav-dd-os">MAC — macOS</span>
-                <span class="nav-dd-fmt">Image-disque .dmg · puce Apple</span>
+                <a class="nav-dd-os" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">MAC — macOS</a>
+                <span class="nav-dd-fmt">Image-disque <b>.dmg</b></span>
+                <span class="nav-dd-alt"><span class="inline-fr">Puce Apple · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">version Intel</a></span><span class="inline-en">Apple silicon · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel build</a></span><span class="inline-ja">Appleシリコン · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel版</a></span></span>
               </span>
-            </a>
+            </div>
 
-            <a class="nav-dd-item" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">
+            <div class="nav-dd-item">
               <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="1.5"/><path d="M6 9l3 3-3 3M12 15h5"/></svg></span>
               <span class="nav-dd-txt">
-                <span class="nav-dd-os">LINUX</span>
-                <span class="nav-dd-fmt">Exécutable .AppImage · x86-64</span>
+                <a class="nav-dd-os" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">LINUX</a>
+                <span class="nav-dd-fmt">Exécutable <b>.AppImage</b> · x86-64</span>
+                <span class="nav-dd-alt"><span class="inline-fr">Alternative : <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">paquet .deb</a></span><span class="inline-en">Alternative: <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb package</a></span><span class="inline-ja">別形式：<a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb パッケージ</a></span></span>
               </span>
-            </a>
+            </div>
 
           </div>
           <div class="nav-dd-pied">
-            <a href="index.html#telechargements"><span class="inline-fr">Tous les formats</span><span class="inline-en">All formats</span><span class="inline-ja">すべての形式</span></a>
             <a href="app/index.html"><span class="inline-fr">Ouvrir en ligne</span><span class="inline-en">Open online</span><span class="inline-ja">オンラインで開く</span></a>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="nav-tools">
     <div class="lang-toggle">
       <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
       <button id="btn-fr" onclick="setLang('fr')">FR</button>
@@ -2190,12 +2222,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="price.html" class="active" aria-current="page"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
   <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
-  <!-- 🆕 v1.7.612 — MÊME ARBITRAGE QUE SUR LA BARRE : « Télécharger » remplace
-     « Ouvrir l'app ». Cette page n'a jamais eu les trois liens d'applications
-     dans son menu burger — on garde donc « Ouvrir l'app » en lien simple, et
-     le téléchargement prend la place de l'appel à l'action. -->
-<a href="app/index.html"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
-<a href="index.html#telechargements" class="mm-cta"><span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span></a>
+  <a href="app/index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
        que setLang() continue de marquer la langue choisie. -->

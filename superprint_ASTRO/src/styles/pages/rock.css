@@ -281,14 +281,19 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 
    UN INSTALLATEUR PAR SYSTÈME, PAS PAR APPLICATION. Les trois applications
    (SuperPrint, Studio IA, SuperTyPo) sont dans le même paquet — c'est écrit une
-   fois, en tête du menu, et c'est ce qui évite de promettre trois
-   téléchargements là où il y en a trois par système.
+   fois, en tête du menu, et c'est ce qui évite de promettre neuf
+   téléchargements là où il y en a trois.
+
+   IL VIT DANS `.nav-tools`, PAS DANS `.nav-links`. Sous 1000 px, `.nav-links`
+   est masqué : un menu qui y vivrait disparaîtrait avec elle, et le
+   téléchargement serait inatteignable au doigt. `.nav-tools` reste visible à
+   toutes les largeurs.
 
    Panneau de DIVULGATION, pas menu ARIA : des liens, un bouton, Échap pour
    fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
    survol se coupe entre le bouton et la carte et le menu se referme au moment
    où l'on veut cliquer. */
-.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
+.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; }
 .nav-dd-btn {
   display: inline-flex; align-items: center; gap: 9px; cursor: pointer; border: 0;
   margin: 0; padding: 0 22px; height: 42px;
@@ -307,7 +312,11 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-btn[aria-expanded="true"] .nav-dd-chev { transform: rotate(180deg); }
 .nav-dd-panel {
   position: absolute; top: 100%; right: 0; z-index: 3;
-  width: min(400px, calc(100vw - 36px)); padding-top: 12px;
+  /* 400 px, ramenés à la largeur de la fenêtre sur téléphone. Le retrait de
+     84 px n'est pas arbitraire : il réserve la marge de la barre (16 px) plus
+     le burger et son intervalle (50 px), de sorte que le bord GAUCHE du
+     panneau — qui part du bord droit du bouton — ne sorte jamais de l'écran. */
+  width: min(400px, calc(100vw - 84px)); padding-top: 12px;
   opacity: 0; visibility: hidden; transform: translateY(-6px);
   transition: opacity .22s var(--ease), transform .22s var(--ease), visibility 0s linear .22s;
 }
@@ -332,13 +341,13 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 }
 .nav-dd-liste { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
 .nav-dd-item {
-  display: flex; align-items: center; gap: 12px;
+  position: relative; display: flex; align-items: center; gap: 12px;
   padding: 11px 10px; margin: 0 -10px;
-  text-decoration: none; color: inherit; border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   transition: background .2s var(--ease);
 }
 .nav-dd-item:hover { background: var(--paper-2); }
-.nav-dd-item:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.nav-dd-item:has(.nav-dd-os:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
 .nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; color: var(--ink); }
 .nav-dd-ic svg {
   display: block; width: 100%; height: 100%;
@@ -346,9 +355,19 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   stroke-linecap: round; stroke-linejoin: round;
 }
 .nav-dd-txt { min-width: 0; }
-.nav-dd-os { display: block; font-family: var(--f-caps); font-size: 16px; letter-spacing: .03em; line-height: 1.1; color: var(--ink); }
+.nav-dd-os {
+  display: block; font-family: var(--f-caps); font-size: 16px; letter-spacing: .03em;
+  line-height: 1.1; color: var(--ink); text-decoration: none;
+}
+/* La ligne entière devient la cible du lien principal. */
+.nav-dd-os::after { content: ''; position: absolute; inset: 0; }
 .nav-dd-fmt { display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .04em; color: var(--muted); }
-.nav-dd-pied { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.nav-dd-fmt b { font-weight: 600; color: var(--ink); }
+.nav-dd-alt { display: block; margin-top: 2px; font-size: 10.5px; line-height: 1.4; color: var(--muted); }
+/* Repasse au-dessus du lien étiré : sans ça, il serait inatteignable. */
+.nav-dd-alt a { position: relative; z-index: 1; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.nav-dd-alt a:hover { color: var(--ink); }
+.nav-dd-pied { display: flex; gap: 12px; margin-top: 12px; }
 .nav-dd-pied a {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
   color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent;

@@ -127,8 +127,9 @@ Ordre de grandeur mesuré le 2026-10-13 (Windows, NSIS) : `frontend/` **61,3 Mo*
 ## Téléchargement publié
 
 Le workflow renomme les paquets en noms **fixes**, sans numéro de version, et les
-attache à la version `desktop-latest` du dépôt. Les trois boutons de la page de
-présentation pointent dessus :
+attache à la version `desktop-latest` du dépôt. Le menu **« Télécharger »** de la
+barre de navigation pointe dessus — et c'est **la seule** adresse des fichiers :
+ils ne sont écrits nulle part ailleurs dans le site.
 
 ```
 https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe
