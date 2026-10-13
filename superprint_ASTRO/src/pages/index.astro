@@ -5,6 +5,7 @@
  * Modifier la page ici, puis retirer la source de la liste de conversion.
  */
 import MarketingLayout from '../layouts/MarketingLayout.astro';
+import ZoneVersions from '../components/ZoneVersions.astro';
 import '../styles/pages/index.css';
 
 const seo = {
@@ -1641,6 +1642,8 @@ const navNotes = "<!-- _NAV_HERO_590 -->\n<!-- _NAV_AUTEURS_591 : entree Auteurs
     </div>
   </div>
 </section>
+
+<ZoneVersions />
 
 <Fragment set:html={"<!-- ══════════════ FOOTER — COLOPHON ══════════════ -->"} />
 <Fragment slot="after">

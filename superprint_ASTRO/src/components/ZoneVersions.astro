@@ -1,0 +1,111 @@
+---
+/**
+ * « Nos logiciels · Nos versions » — la dernière zone avant le pied de page.
+ *
+ * ELLE NE DOUBLE PAS LES TROIS ENTRÉES DE L'ACCUEIL, elle les prolonge. Les
+ * entrées, en haut de page, ouvrent l'application en ligne et ne disent rien des
+ * versions. Ici on donne le numéro de version, les trois systèmes et l'accès au
+ * téléchargement — ce que le visiteur venu en bas de page est venu chercher.
+ *
+ * ELLE SÉPARE AUSSI DEUX BANDES SOMBRES, le CTA final et le colophon : enchaînés,
+ * ils se lisaient comme un seul bloc et ne laissaient aucun temps d'arrêt.
+ *
+ * LE BOUTON N'ÉNUMÈRE PAS LES FICHIERS. Il ouvre le menu « Télécharger » de la
+ * barre, qui reste la seule liste d'adresses du site — donc la seule à corriger
+ * le jour où un nom de paquet change. `assets/js/zone-versions.js` s'en charge.
+ */
+import {
+  APPLICATIONS_BUREAU,
+  DOWNLOAD_LABELS,
+  RELEASE_URL,
+  SYSTEMES,
+  VERSIONS_LABELS,
+  VERSION,
+} from '../data/site';
+---
+
+<section id="logiciels" aria-labelledby="lg-titre">
+  <div class="container">
+    <div class="lg-head">
+      <div class="hero-kicker" data-lang="fr">{VERSIONS_LABELS.kicker.fr}</div>
+      <div class="hero-kicker" data-lang="en">{VERSIONS_LABELS.kicker.en}</div>
+      <div class="hero-kicker" data-lang="ja">{VERSIONS_LABELS.kicker.ja}</div>
+      <h2 id="lg-titre" data-lang="fr">
+        {VERSIONS_LABELS.titre.fr.avant}<em>{VERSIONS_LABELS.titre.fr.em}</em>{VERSIONS_LABELS.titre.fr.apres}
+      </h2>
+      <h2 data-lang="en">
+        {VERSIONS_LABELS.titre.en.avant}<em>{VERSIONS_LABELS.titre.en.em}</em>{VERSIONS_LABELS.titre.en.apres}
+      </h2>
+      <h2 data-lang="ja">
+        {VERSIONS_LABELS.titre.ja.avant}<em>{VERSIONS_LABELS.titre.ja.em}</em>{VERSIONS_LABELS.titre.ja.apres}
+      </h2>
+      <p class="lead" data-lang="fr">{VERSIONS_LABELS.chapeau.fr}</p>
+      <p class="lead" data-lang="en">{VERSIONS_LABELS.chapeau.en}</p>
+      <p class="lead" data-lang="ja">{VERSIONS_LABELS.chapeau.ja}</p>
+    </div>
+
+    <div class="lg-grid">
+      {
+        APPLICATIONS_BUREAU.map((app) => (
+          <article class="lg-app" style={`--lg-accent:${app.accent}`}>
+            <div class="lg-tete">
+              <span class={app.plaqueClaire ? 'lg-logo lg-logo-clair' : 'lg-logo'}>
+                <img src={app.logo} alt="" width="50" height="50" loading="lazy" decoding="async" />
+              </span>
+              <span class="lg-id">
+                <h3 class="lg-nom">{app.nom}</h3>
+                <span class="lg-role">
+                  <span class="inline-fr">{app.role.fr}</span>
+                  <span class="inline-en">{app.role.en}</span>
+                  <span class="inline-ja">{app.role.ja}</span>
+                </span>
+              </span>
+            </div>
+            <p class="lg-desc" data-lang="fr">{app.resume.fr}</p>
+            <p class="lg-desc" data-lang="en">{app.resume.en}</p>
+            <p class="lg-desc" data-lang="ja">{app.resume.ja}</p>
+            <div class="lg-ver">
+              <span data-lang="fr">{VERSIONS_LABELS.version.fr}</span>
+              <span data-lang="en">{VERSIONS_LABELS.version.en}</span>
+              <span data-lang="ja">{VERSIONS_LABELS.version.ja}</span>
+              <b>v{VERSION}</b>
+            </div>
+            <div class="lg-os">
+              {SYSTEMES.map((os) => (
+                <i>
+                  <img src={os.marque} alt="" width="14" height="14" loading="lazy" decoding="async" />
+                  {os.nom}
+                </i>
+              ))}
+            </div>
+            <div class="lg-actions">
+              <button type="button" class="btn btn-primary" data-ouvre-telechargement>
+                <span class="inline-fr">{DOWNLOAD_LABELS.bouton.fr}</span>
+                <span class="inline-en">{DOWNLOAD_LABELS.bouton.en}</span>
+                <span class="inline-ja">{DOWNLOAD_LABELS.bouton.ja}</span>
+              </button>
+              <a class="btn btn-secondary" href={app.enLigne}>
+                <span class="inline-fr">{DOWNLOAD_LABELS.enLigne.fr}</span>
+                <span class="inline-en">{DOWNLOAD_LABELS.enLigne.en}</span>
+                <span class="inline-ja">{DOWNLOAD_LABELS.enLigne.ja}</span>
+              </a>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+    <p class="lg-note" data-lang="fr">
+      {VERSIONS_LABELS.note.fr.avant}<strong>{VERSIONS_LABELS.note.fr.gras}</strong>{VERSIONS_LABELS.note.fr.apres}{' '}
+      <a href={RELEASE_URL} target="_blank" rel="noopener">{VERSIONS_LABELS.voirVersions.fr} →</a>
+    </p>
+    <p class="lg-note" data-lang="en">
+      {VERSIONS_LABELS.note.en.avant}<strong>{VERSIONS_LABELS.note.en.gras}</strong>{VERSIONS_LABELS.note.en.apres}{' '}
+      <a href={RELEASE_URL} target="_blank" rel="noopener">{VERSIONS_LABELS.voirVersions.en} →</a>
+    </p>
+    <p class="lg-note" data-lang="ja">
+      {VERSIONS_LABELS.note.ja.avant}<strong>{VERSIONS_LABELS.note.ja.gras}</strong>{VERSIONS_LABELS.note.ja.apres}{' '}
+      <a href={RELEASE_URL} target="_blank" rel="noopener">{VERSIONS_LABELS.voirVersions.ja} →</a>
+    </p>
+  </div>
+</section>

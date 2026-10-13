@@ -156,3 +156,134 @@ export const DOWNLOAD_LABELS = {
   },
   enLigne: { fr: 'Ouvrir en ligne', en: 'Open online', ja: 'オンラインで開く' },
 } satisfies Record<string, Record<Lang, string>>;
+
+/** La page des publications, où vivent les vingt et un fichiers. */
+export const RELEASE_URL = 'https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest';
+
+export interface ApplicationBureau {
+  /** Nom affiché — nom propre, donc identique dans les trois langues. */
+  nom: string;
+  /** Le sous-titre : ce que fait l'application, en trois mots. */
+  role: Record<Lang, string>;
+  /** Une phrase de description, la même que celle des trois entrées de l'accueil. */
+  resume: Record<Lang, string>;
+  /**
+   * Le logotype. Ce sont ceux du haut de page : la zone du bas ne présente pas
+   * les applications autrement qu'en haut, elle les reprend.
+   */
+  logo: string;
+  /**
+   * La plaque du logotype. `true` = plaque blanche (logotype bicolore, on voit
+   * sa part sombre) ; `false` = plaque d'encre, exigée par l'icône blanche de
+   * l'éditeur, seule de son espèce.
+   */
+  plaqueClaire: boolean;
+  /** Le filet de gauche, repris de l'accent des trois entrées. */
+  accent: string;
+  /** L'application en ligne, pour le second bouton. */
+  enLigne: string;
+}
+
+/**
+ * Les trois applications, telles que la zone de fin de page les présente.
+ *
+ * Les versions ne sont pas ici : elles sont toutes les trois dans `VERSION`. Le
+ * jour où elles divergeront, c'est ce champ qu'il faudra ouvrir — tant qu'elles
+ * sont construites ensemble, un seul numéro suffit et ne peut pas se désunir.
+ */
+export const APPLICATIONS_BUREAU: ApplicationBureau[] = [
+  {
+    nom: 'SuperPrint',
+    role: { fr: 'Le bureau de PAO', en: 'The DTP desk', ja: 'DTPデスク' },
+    resume: {
+      fr: 'Mise en page, prépresse, export. Le poste complet, hors ligne.',
+      en: 'Layout, prepress, export. The complete desk, offline.',
+      ja: '組版、プリプレス、書き出し。オフラインで完結する制作環境。',
+    },
+    logo: 'icons/icon-192x192.png',
+    plaqueClaire: false,
+    accent: '#00A7C7',
+    enLigne: 'app/index.html',
+  },
+  {
+    nom: 'Studio IA',
+    role: { fr: 'La composition assistée', en: 'Assisted composition', ja: 'アシスト組版' },
+    resume: {
+      fr: 'Décrivez la maquette : l’IA la compose, vous l’éditez.',
+      en: 'Describe the layout: the AI composes it, you sign it off.',
+      ja: 'レイアウトを言葉に。AIが組み、あなたが仕上げる。',
+    },
+    logo: 'icons/studio_print_logo_blanc.png',
+    plaqueClaire: true,
+    accent: '#E1237B',
+    enLigne: 'sp213-studio.html',
+  },
+  {
+    nom: 'SuperTyPo',
+    role: { fr: 'Le moteur typographique', en: 'The type engine', ja: 'タイポグラフィ・エンジン' },
+    resume: {
+      fr: 'Les caractères décomposés, redessinés en courbes.',
+      en: 'Letterforms decomposed, redrawn as curves.',
+      ja: '書体を分解し、曲線で描き直す。',
+    },
+    logo: 'icons/sper_typo.png',
+    plaqueClaire: true,
+    accent: '#F2B90B',
+    enLigne: 'supertypo/index.html',
+  },
+];
+
+/**
+ * Les libellés de la zone « Nos logiciels · Nos versions ».
+ *
+ * `titre` est découpé en trois parce qu'un mot y passe en italique : une chaîne
+ * plate obligerait à injecter du HTML, ce qui rendrait la traduction dépendante
+ * du balisage.
+ */
+export const VERSIONS_LABELS = {
+  kicker: {
+    fr: 'Nos logiciels · Nos versions',
+    en: 'Our software · Our versions',
+    ja: '私たちのソフトウェア · バージョン',
+  },
+  titre: {
+    fr: { avant: 'Trois applications, ', em: 'une même version', apres: '.' },
+    en: { avant: 'Three applications, ', em: 'one same version', apres: '.' },
+    ja: { avant: '3つのアプリ、', em: 'ひとつのバージョン', apres: '。' },
+  },
+  chapeau: {
+    fr: 'Elles s’installent séparément — chacune ne pèse que ce qu’elle embarque — mais elles avancent ensemble : un seul numéro de version les décrit toutes les trois.',
+    en: 'They install separately — each one only carries what it needs — yet they move together: a single version number describes all three.',
+    ja: '別々にインストールできます — それぞれ必要な分だけを抱えています — それでも歩みは同じ。ひとつのバージョン番号が3つすべてを示します。',
+  },
+  version: { fr: 'Version', en: 'Version', ja: 'バージョン' },
+  note: {
+    fr: {
+      avant: 'Les versions PC, macOS et Linux sont en ',
+      gras: 'beta',
+      apres: ' : complètes et utilisables, mais encore jeunes. Elles se téléchargent librement, sans compte, depuis le bouton « Télécharger » de la barre — trois applications, trois systèmes, vingt et un fichiers.',
+    },
+    en: {
+      avant: 'The PC, macOS and Linux versions are in ',
+      gras: 'beta',
+      apres: ': complete and usable, but still young. They download freely, without an account, from the “Download” button in the bar — three applications, three systems, twenty-one files.',
+    },
+    ja: {
+      avant: 'PC・macOS・Linux 版は',
+      gras: 'ベータ',
+      apres: 'です。完成していて使えますが、まだ若い版です。アカウント不要で、バーの「ダウンロード」から自由に取得できます — 3つのアプリ、3つのシステム、21のファイル。',
+    },
+  },
+  voirVersions: {
+    fr: 'Voir toutes les versions',
+    en: 'See every version',
+    ja: 'すべてのバージョンを見る',
+  },
+} satisfies Record<string, Record<Lang, unknown>>;
+
+/** Les trois systèmes : le nom lu, et la marque qui le rend lisible sans lire. */
+export const SYSTEMES = [
+  { nom: 'PC', marque: 'icons/windows.svg' },
+  { nom: 'macOS', marque: 'icons/macos.svg' },
+  { nom: 'Linux', marque: 'icons/linux.svg' },
+] as const;

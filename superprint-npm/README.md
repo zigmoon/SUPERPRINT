@@ -15,14 +15,28 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.556-000000?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.611-000000?style=flat-square">
   <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.110-CB3837?style=flat-square">
+  <img alt="Desktop beta" src="https://img.shields.io/badge/desktop-Windows%20%7C%20macOS%20%7C%20Linux-F2B90B?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-Proprietary-blue?style=flat-square">
 </p>
+
+> ### 🖥️ Desktop versions — Windows · macOS · Linux — **out in beta**
+>
+> **EN** — The **PC (Windows)**, **macOS** and **Linux** versions are **in beta**: complete and usable, but still young. They download freely, without an account — **3 applications × 3 systems = 21 installers**. This npm package is unaffected: it stays the launcher for the browser application.
+>
+> **FR** — Les versions **PC (Windows)**, **macOS** et **Linux** sont en **beta** : complètes et utilisables, mais encore jeunes. Elles se téléchargent librement, sans compte — **3 applications × 3 systèmes = 21 installeurs**. Ce paquet npm n'est pas concerné : il reste le lanceur de l'application dans le navigateur.
+>
+> **JA** — **PC（Windows）**・**macOS**・**Linux** 版は**ベータ**です。完成していて使えますが、まだ若い版です。アカウント不要で自由にダウンロードできます — **3つのアプリ × 3つのシステム = 21のインストーラー**。この npm パッケージは対象外で、ブラウザ版のランチャーのままです。
+>
+> 👉 **[Download the desktop applications](https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest)**
+
 
 **SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, **spot inks**, master pages, linked text frames, fine typography) with an **AI layout studio** that turns a written brief into a print-ready, fully editable document.
 
 This package is the **launcher**. It downloads the application once, installs its local dependencies and serves it on **`http://127.0.0.1:5173`**. Your projects use SuperPrint's native editable `.sp` format and stay **on your computer** unless you deliberately export them or enable a cloud AI provider.
+
+> **No Node.js, or prefer a real application?** The three applications also install natively on **Windows, macOS and Linux** — see the desktop table at the top of this README. Those builds are **in beta**, and they do not need Node.js at all.
 
 ---
 
@@ -59,6 +73,20 @@ The server binds to the **loopback interface** by default, so it is not reachabl
 ### Updating
 
 The launcher checks the published version and re-downloads the application when a newer one is available. Existing local copies are reused otherwise, so later launches are fast and work offline.
+
+### Desktop — without Node.js (**beta**)
+
+> ⚠️ **Beta.** The desktop builds are complete and usable, but still young. They are **free, without an account**, and they install alongside the browser version — nothing is replaced.
+
+**One installer per application** — 3 applications × 3 systems = **21 files**. Each build carries only its own application, so it downloads only what it needs: **SuperPrint 58 MB**, **Studio IA 9.8 MB**, **SuperTyPo 1 MB**. They all live under the versionless [`desktop-latest`](https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest) tag, which is why these links never go stale.
+
+| System | SuperPrint | Studio IA | SuperTyPo |
+|---|---|---|---|
+| **PC — Windows** | [`.exe`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe) · [`.msi`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi) | [`.exe`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe) · [`.msi`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi) | [`.exe`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe) · [`.msi`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi) |
+| **MAC — macOS** | [Apple silicon](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg) · [Intel](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg) | [Apple silicon](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg) · [Intel](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg) | [Apple silicon](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg) · [Intel](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg) |
+| **LINUX** | [`.AppImage`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage) · [`.deb`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb) · [`.rpm`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm) | [`.AppImage`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage) · [`.deb`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb) · [`.rpm`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm) | [`.AppImage`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage) · [`.deb`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb) · [`.rpm`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm) |
+
+The `.msi` exists for managed deployment (GPO, SCCM). The `.rpm` covers Fedora, RHEL and openSUSE, where an AppImage offers no integration with the package manager. The three installed applications keep **their own name, their own icon and their own launcher entry** — `superprint`, `studio-ia`, `supertypo` — and never overwrite one another.
 
 ---
 

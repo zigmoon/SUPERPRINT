@@ -124,6 +124,32 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   });
 })();
 
+// ── Zone « Nos logiciels · Nos versions » : le bouton ouvre le menu de la barre ──
+/* 🆕 v1.7.614 — Le bouton de la zone du bas ne recopie pas les sept adresses de
+   fichiers : il ouvre le menu de la barre, qui reste la seule liste du site.
+   Deux pièges, tous les deux traités ici :
+   1. Le menu se referme au moindre clic hors de lui (écouteur sur `document`).
+      Un clic sur NOTRE bouton est hors de lui : sans `stopPropagation`, le menu
+      s'ouvrait puis se refermait dans le même clic.
+   2. La barre est collante, mais un parent qui défile la décroche. On la ramène
+      donc à l'écran avant d'ouvrir : si elle y est déjà, l'appel ne fait rien. */
+(function () {
+  var boutons = document.querySelectorAll('[data-ouvre-telechargement]');
+  if (!boutons.length) return;
+  var dd = document.querySelector('[data-nav-dd]');
+  if (!dd) return;
+  var btn = dd.querySelector('.nav-dd-btn');
+  if (!btn) return;
+  Array.prototype.forEach.call(boutons, function (b) {
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var barre = document.querySelector('nav');
+      if (barre) barre.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (dd.getAttribute('data-ouvert') !== 'true') btn.click();
+    });
+  });
+})();
+
 // ── Menu mobile (burger) ──
 (function () {
   var burger = document.getElementById('navBurger');

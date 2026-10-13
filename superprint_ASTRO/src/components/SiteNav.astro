@@ -42,11 +42,16 @@ const items = NAV_ITEMS.map((item, i) => ({
   href: i === 0 ? featuresHref : item.href,
 }));
 
-/** Les trois pictogrammes — moniteur, portable, terminal — au trait, sans remplissage. */
+/**
+ * Les marques des trois systèmes — Windows, Apple, Linux. Des FICHIERS, et non
+ * des tracés en ligne : le Tux officiel pèse cinq kilomètres de courbes, et il
+ * serait recopié trois fois par page. Ce sont les marques réelles, et non des
+ * pictogrammes : ici on cherche un système, pas un objet.
+ */
 const ICONES: Record<string, string> = {
-  win: '<rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 20h8M12 17v3"/>',
-  mac: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M1 18h22l-1.6 2.4H2.6z"/>',
-  linux: '<rect x="2" y="4" width="20" height="16" rx="1.5"/><path d="M6 9l3 3-3 3M12 15h5"/>',
+  win: 'icons/windows.svg',
+  mac: 'icons/macos.svg',
+  linux: 'icons/linux.svg',
 };
 
 ---
@@ -115,7 +120,7 @@ const ICONES: Record<string, string> = {
             {DESKTOP_DOWNLOADS.map((item) => (
               <div class="nav-dd-item">
                 <span class="nav-dd-ic" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" set:html={ICONES[item.os]} />
+                  <img src={ICONES[item.os]} alt="" width="22" height="22" loading="lazy" decoding="async" />
                 </span>
                 <span class="nav-dd-txt">
                   <span class="nav-dd-os">{item.nom}</span>
@@ -124,11 +129,8 @@ const ICONES: Record<string, string> = {
                       <span class="nav-dd-app">
                         <span class="nav-dd-app-nom">{app.nom}</span>
                         <span class="nav-dd-app-fmt">
-                          {item.paquets.map((paquet, n) => (
-                            <>
-                              {n > 0 && <span aria-hidden="true">·</span>}
-                              <a href={urlTelechargement(app, paquet)} rel="noopener">{paquet.label}</a>
-                            </>
+                          {item.paquets.map((paquet) => (
+                            <a href={urlTelechargement(app, paquet)} rel="noopener">{paquet.label}</a>
                           ))}
                         </span>
                       </span>

@@ -604,12 +604,11 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 /* Pas de surbrillance de ligne : la ligne n'est plus une cible. */
 .nav-dd-item { align-items: flex-start; padding-top: 13px; padding-bottom: 13px; }
 .nav-dd-item:has(a:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
-.nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; color: var(--ink); }
-.nav-dd-ic svg {
-  display: block; width: 100%; height: 100%;
-  fill: none; stroke: currentColor; stroke-width: 1.5;
-  stroke-linecap: round; stroke-linejoin: round;
-}
+/* Les marques des trois systemes, et non plus trois pictogrammes au trait : ici on
+   cherche un systeme, pas un objet. La couleur est cuite dans le fichier, a l'encre
+   du site — un SVG charge par <img> n'herite pas de currentColor. */
+.nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; }
+.nav-dd-ic img { display: block; width: 100%; height: 100%; }
 .nav-dd-txt { min-width: 0; }
 .nav-dd-os {
   display: block; font-family: var(--f-caps); font-size: 15px; letter-spacing: .03em;
@@ -624,19 +623,39 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-soft);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* 🆕 v1.7.614 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+   Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
+   dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
+   peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
+   bouton, donc comme une ACTION. Le contour suffit à délimiter la cible : le
+   séparateur « · » qui les espacait n'a plus lieu d'être. */
 .nav-dd-app-fmt {
-  display: flex; align-items: baseline; gap: 5px; flex: 0 0 auto;
-  font-family: var(--f-mono); font-size: 11px; color: var(--muted); white-space: nowrap;
+  display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  font-family: var(--f-mono); font-size: 10.5px; white-space: nowrap;
 }
 .nav-dd-app-fmt a {
-  color: var(--muted); text-decoration: none;
-  border-bottom: 1px solid var(--line-strong); padding-bottom: 1px;
+  display: inline-block; padding: 3px 10px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  color: var(--muted); text-decoration: none; line-height: 1.4;
+  /* Le poids est herite de « .nav-links a » (600) : sans cette remise a zero,
+     la mise en avant du premier format ne se verrait pas. */
+  font-weight: 400;
+  transition: color .18s var(--ease), background .18s var(--ease), border-color .18s var(--ease);
 }
-.nav-dd-app-fmt a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+/* « .nav-links a::after » trace un trait de 1 px a 21 px du bas — calibre pour une
+   entree de barre de 66 px, il tomberait en travers d'une gelule de 23 px. */
+.nav-dd-app-fmt a::after { display: none; }
+.nav-dd-app-fmt a:hover, .nav-dd-app-fmt a:focus-visible {
+  color: var(--paper); background: var(--ink); border-color: var(--ink); outline: none;
+}
 /* Le premier format de chaque ligne est le téléchargement par défaut : c'est
    celui que cherche l'immense majorité des visiteurs. Il est mis en avant —
-   et lui seul — pour que le choix ne demande pas de lire les trois. */
-.nav-dd-app-fmt a:first-child { color: var(--ink); font-weight: 600; border-bottom-color: var(--line-strong); }
+   et lui seul — pour que le choix ne demande pas de lire les trois. Encadré
+   plein, il se distingue au premier regard des gélules creuses. */
+.nav-dd-app-fmt a:first-child { color: var(--ink); font-weight: 600; border-color: var(--ink); }
+.nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
+  color: var(--paper); background: var(--ink);
+}
 .nav-dd-pied { display: flex; gap: 12px; margin-top: 12px; }
 .nav-dd-pied a {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
@@ -2393,63 +2412,63 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
           <div class="nav-dd-liste">
 
           <div class="nav-dd-item">
-            <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 20h8M12 17v3"/></svg></span>
+            <span class="nav-dd-ic" aria-hidden="true"><img src="icons/windows.svg" alt="" width="22" height="22" loading="lazy" decoding="async"></span>
             <span class="nav-dd-txt">
               <span class="nav-dd-os">PC — Windows</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
               <span class="nav-dd-app-nom">SuperPrint</span>
-              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
               <span class="nav-dd-app-nom">Studio IA</span>
-              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
               <span class="nav-dd-app-nom">SuperTyPo</span>
-              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
               </span>
             </span>
           </div>
 
           <div class="nav-dd-item">
-            <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M1 18h22l-1.6 2.4H2.6z"/></svg></span>
+            <span class="nav-dd-ic" aria-hidden="true"><img src="icons/macos.svg" alt="" width="22" height="22" loading="lazy" decoding="async"></span>
             <span class="nav-dd-txt">
               <span class="nav-dd-os">MAC — macOS</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
               <span class="nav-dd-app-nom">SuperPrint</span>
-              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
               <span class="nav-dd-app-nom">Studio IA</span>
-              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
               <span class="nav-dd-app-nom">SuperTyPo</span>
-              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
               </span>
             </span>
           </div>
 
           <div class="nav-dd-item">
-            <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="1.5"/><path d="M6 9l3 3-3 3M12 15h5"/></svg></span>
+            <span class="nav-dd-ic" aria-hidden="true"><img src="icons/linux.svg" alt="" width="22" height="22" loading="lazy" decoding="async"></span>
             <span class="nav-dd-txt">
               <span class="nav-dd-os">LINUX</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
               <span class="nav-dd-app-nom">SuperPrint</span>
-              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
               <span class="nav-dd-app-nom">Studio IA</span>
-              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
               <span class="nav-dd-app-nom">SuperTyPo</span>
-              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
               </span>
             </span>

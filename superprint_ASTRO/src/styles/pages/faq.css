@@ -365,12 +365,8 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 /* Pas de surbrillance de ligne : la ligne n'est plus une cible. */
 .nav-dd-item { align-items: flex-start; padding-top: 13px; padding-bottom: 13px; }
 .nav-dd-item:has(a:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
-.nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; color: var(--ink); }
-.nav-dd-ic svg {
-  display: block; width: 100%; height: 100%;
-  fill: none; stroke: currentColor; stroke-width: 1.5;
-  stroke-linecap: round; stroke-linejoin: round;
-}
+.nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; }
+.nav-dd-ic img { display: block; width: 100%; height: 100%; }
 .nav-dd-txt { min-width: 0; }
 .nav-dd-os {
   display: block; font-family: var(--f-caps); font-size: 15px; letter-spacing: .03em;
@@ -385,19 +381,39 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-soft);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* 🆕 v1.7.614 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+   Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
+   dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
+   peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
+   bouton, donc comme une ACTION. Le contour suffit à délimiter la cible : le
+   séparateur « · » qui les espacait n'a plus lieu d'être. */
 .nav-dd-app-fmt {
-  display: flex; align-items: baseline; gap: 5px; flex: 0 0 auto;
-  font-family: var(--f-mono); font-size: 11px; color: var(--muted); white-space: nowrap;
+  display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  font-family: var(--f-mono); font-size: 10.5px; white-space: nowrap;
 }
 .nav-dd-app-fmt a {
-  color: var(--muted); text-decoration: none;
-  border-bottom: 1px solid var(--line-strong); padding-bottom: 1px;
+  display: inline-block; padding: 3px 10px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  color: var(--muted); text-decoration: none; line-height: 1.4;
+  /* Le poids est herite de « .nav-links a » (600) : sans cette remise a zero,
+     la mise en avant du premier format ne se verrait pas. */
+  font-weight: 400;
+  transition: color .18s var(--ease), background .18s var(--ease), border-color .18s var(--ease);
 }
-.nav-dd-app-fmt a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+/* « .nav-links a::after » trace un trait de 1 px a 21 px du bas — calibre pour une
+   entree de barre de 66 px, il tomberait en travers d'une gelule de 23 px. */
+.nav-dd-app-fmt a::after { display: none; }
+.nav-dd-app-fmt a:hover, .nav-dd-app-fmt a:focus-visible {
+  color: var(--paper); background: var(--ink); border-color: var(--ink); outline: none;
+}
 /* Le premier format de chaque ligne est le téléchargement par défaut : c'est
    celui que cherche l'immense majorité des visiteurs. Il est mis en avant —
-   et lui seul — pour que le choix ne demande pas de lire les trois. */
-.nav-dd-app-fmt a:first-child { color: var(--ink); font-weight: 600; border-bottom-color: var(--line-strong); }
+   et lui seul — pour que le choix ne demande pas de lire les trois. Encadré
+   plein, il se distingue au premier regard des gélules creuses. */
+.nav-dd-app-fmt a:first-child { color: var(--ink); font-weight: 600; border-color: var(--ink); }
+.nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
+  color: var(--paper); background: var(--ink);
+}
 .nav-dd-pied { display: flex; gap: 12px; margin-top: 12px; }
 .nav-dd-pied a {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;

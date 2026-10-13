@@ -27,14 +27,27 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.556-000000?style=flat-square">
-  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.109-CB3837?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.611-000000?style=flat-square">
+  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.110-CB3837?style=flat-square">
+  <img alt="Desktop beta" src="https://img.shields.io/badge/desktop-Windows%20%7C%20macOS%20%7C%20Linux-F2B90B?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20spot%20inks-E1237B?style=flat-square">
   <img alt="AI" src="https://img.shields.io/badge/AI-cloud%20or%20local-F2B90B?style=flat-square">
   <img alt="UI" src="https://img.shields.io/badge/UI-FR%20%7C%20EN%20%7C%20JP-17130D?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square">
 </p>
+
+---
+
+> ### 🖥️ Desktop versions — Windows · macOS · Linux — **out in beta**
+>
+> **EN** — The **PC (Windows)**, **macOS** and **Linux** versions are **in beta**: complete and usable, but still young. They download freely, without an account — **3 applications × 3 systems = 21 installers**.
+>
+> **FR** — Les versions **PC (Windows)**, **macOS** et **Linux** sont en **beta** : complètes et utilisables, mais encore jeunes. Elles se téléchargent librement, sans compte — **3 applications × 3 systèmes = 21 installeurs**.
+>
+> **JA** — **PC（Windows）**・**macOS**・**Linux** 版は**ベータ**です。完成していて使えますが、まだ若い版です。アカウント不要で自由にダウンロードできます — **3つのアプリ × 3つのシステム = 21のインストーラー**。
+>
+> 👉 **[Download the desktop applications](https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest)**
 
 ---
 
@@ -55,6 +68,8 @@ SuperPrint is not a single tool: it is a small **family of browser-based creativ
 | **SuperPrint** | `app/index.html` | The full **DTP / prepress layout editor** — pages, spreads, bleed, CMYK, master pages, typography, imposition. |
 | **Studio IA** | `sp213-studio.html` | The **AI layout studio** — describe a brief in plain language and get a print-ready, editable document. Accepts office documents (see below) and reads their **full structure**. |
 | **SuperTyPo** | `supertypo/index.html` | A **font decomposer & typeface editor** — drop a font, edit each glyph as vector contours, re-export the typeface. |
+
+**The same three applications also install on the desktop** — Windows, macOS and Linux. One installer per application and per system, so each one only carries what it needs. See the **Desktop** section under *How to use it*.
 
 **Studio IA** accepts a written brief, one or more attached documents, or both. It drives a multi-page layout page by page (up to **120 pages**), places the images you attach, and honours typographic constraints: column width, hyphenation, widows and orphans, bleed. It runs on **cloud models** (DeepSeek, Groq, OpenRouter, Anthropic) **or fully locally** through **WebLLM over WebGPU** — no key, no network, nothing leaving the machine.
 
@@ -143,6 +158,20 @@ The Colour panel is a **list of colour libraries**, each one an accordion you op
 ### Online — nothing to install
 → **[https://superprint.cc](https://superprint.cc)** — the app opens in seconds.
 
+### Desktop — Windows, macOS, Linux (**beta**)
+
+> ⚠️ **Beta.** The desktop builds are complete and usable, but still young. They are **free, without an account**, and they install alongside the browser version — nothing is replaced.
+
+**One installer per application** — 3 applications × 3 systems = **21 files**. Each build carries only its own application, so it downloads only what it needs: **SuperPrint 58 MB**, **Studio IA 9.8 MB**, **SuperTyPo 1 MB**. They all live under the versionless [`desktop-latest`](https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest) tag, which is why these links never go stale.
+
+| System | SuperPrint | Studio IA | SuperTyPo |
+|---|---|---|---|
+| **PC — Windows** | [`.exe`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe) · [`.msi`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi) | [`.exe`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe) · [`.msi`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi) | [`.exe`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe) · [`.msi`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi) |
+| **MAC — macOS** | [Apple silicon](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg) · [Intel](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg) | [Apple silicon](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg) · [Intel](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg) | [Apple silicon](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg) · [Intel](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg) |
+| **LINUX** | [`.AppImage`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage) · [`.deb`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb) · [`.rpm`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm) | [`.AppImage`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage) · [`.deb`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb) · [`.rpm`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm) | [`.AppImage`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage) · [`.deb`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb) · [`.rpm`](https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm) |
+
+The `.msi` exists for managed deployment (GPO, SCCM). The `.rpm` covers Fedora, RHEL and openSUSE, where an AppImage offers no integration with the package manager. The three installed applications keep **their own name, their own icon and their own launcher entry** — `superprint`, `studio-ia`, `supertypo` — and never overwrite one another.
+
 ### Locally, with the npm launcher
 
 Requirement: [Node.js 18+](https://nodejs.org).
@@ -204,6 +233,8 @@ The repository ships **the product only** — three folders, two build helpers a
 | `superprint/` | The complete web application: editor, landing, Studio IA, SuperTyPo, documentation, script API | ✅ |
 | `sp213-local/` | The local distribution (Vite + WebLLM) downloaded by the npm launcher | ✅ |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) | ✅ |
+| `superprint_desktop/` | The **Tauri 2** desktop packaging: one configuration per application, the bundling script, the Debian documentation files and the icon sets | ✅ |
+| `.github/workflows/build-desktop.yml` | Builds the **21 installers** on GitHub runners (Windows, Linux, macOS Apple silicon and Intel) and publishes them to the `desktop-latest` release | ✅ |
 | `tools/` | Two dependency-free helpers: `serve.mjs` (local static server) and `make-release-zip.mjs` | ✅ |
 | `README.md` · `CHANGELOG.md` · `release.html` · `.gitignore` | Documentation and release notes | ✅ |
 | `_dev/` | Development tooling, logs, backups, fixtures | ❌ ignored |
@@ -212,6 +243,19 @@ The repository ships **the product only** — three folders, two build helpers a
 node tools/serve.mjs        # serve superprint/ on http://127.0.0.1:8080
 node tools/make-release-zip.mjs   # rebuild superprint/sp213-local.zip
 ```
+
+**Building the desktop applications** requires [Rust](https://rustup.rs) and the platform's build tools (on Windows: MSVC, or MinGW GCC — the fallback is detected automatically).
+
+The three applications are **one Tauri project compiled three times**, each with its own configuration overlay (`src-tauri/apps/<app>.json`). The bundled script stages one application at a time into `frontend/<app>/`, so each installer carries only its own application:
+
+```bash
+cd superprint_desktop
+npm install
+node scripts/prepare-bundle.mjs superprint                    # stage the layout editor alone
+npx tauri build --config src-tauri/apps/superprint.json      # -> .exe, .msi, .deb, .rpm, .AppImage, .dmg
+```
+
+`node scripts/prepare-bundle.mjs` with no argument stages all three. On Windows, `scripts/build-windows.ps1 -App <nom|tous>` wraps the whole sequence. The GitHub Actions workflow does the same in parallel across four runners — **the only practical way to obtain the macOS and Linux packages**, since a Tauri build can only target the machine it runs on.
 
 ⚠️ **Everything inside `superprint/` is deployed as-is** — it *is* the published website. Development tooling must therefore never be placed there. A safety net in `.gitignore` blocks `superprint/_*`, `superprint/RAPPORT-*.md`, `superprint/.venv/` and `superprint/.vscode/`.
 

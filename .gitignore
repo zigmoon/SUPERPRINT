@@ -69,3 +69,4 @@ superprint/.vscode/
 superprint-npm/*.tgz
 # Poids des modeles locaux (miroir WebLLM) : trop gros pour le depot, et servis par le site.
 models/
+superprint-npm/*.zip
