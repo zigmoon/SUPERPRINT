@@ -1,24 +1,32 @@
-# Build de l'application de bureau SuperPrint (Tauri).
+# Build des applications de bureau SuperPrint, Studio IA et SuperTyPo (Tauri).
 #
 # Ce script n'a qu'une raison d'être : rendre la compilation REPRODUCTIBLE sur une
 # machine Windows qui n'a que Rust. Tauri, lui, a besoin d'un éditeur de liens
 # Windows — soit l'édition « C++ build tools » de Visual Studio (la voie
 # recommandée), soit, à défaut, une chaîne MinGW-w64 GCC.
 #
-#   .\scripts\build-windows.ps1                 # installeur NSIS + MSI
-#   .\scripts\build-windows.ps1 -Bundles nsis   # installeur NSIS seul
-#   .\scripts\build-windows.ps1 -NoBundle       # binaire seul, sans installeur
+#   .\scripts\build-windows.ps1                      # les trois, installeur NSIS + MSI
+#   .\scripts\build-windows.ps1 -App studio          # Studio IA seul
+#   .\scripts\build-windows.ps1 -Bundles nsis        # installeur NSIS seul
+#   .\scripts\build-windows.ps1 -App supertypo -NoBundle
+#
+# LES TROIS APPLICATIONS SONT UN SEUL PROJET TAURI, compilé trois fois avec trois
+# surcouches de configuration (`src-tauri/apps/<app>.json`). La coquille native
+# est identique — une fenêtre, une webview — et seule change la page qu'elle
+# ouvre. Chaque surcouche désigne aussi ce que son paquet embarque.
 #
 # Variables d'environnement reconnues :
 #   SUPERPRINT_MINGW_BIN   dossier « bin » de MinGW-w64, si la détection échoue
 #
-# Sorties :
+# Sorties (par application) :
 #   src-tauri/target/release/superprint-desktop.exe
-#   src-tauri/target/release/bundle/nsis/SuperPrint_<version>_x64-setup.exe
-#   src-tauri/target/release/bundle/msi/SuperPrint_<version>_x64_en-US.msi
+#   src-tauri/target/release/bundle/nsis/<nom>_<version>_x64-setup.exe
+#   src-tauri/target/release/bundle/msi/<nom>_<version>_x64_en-US.msi
 
 [CmdletBinding()]
 param(
+    [ValidateSet('superprint', 'studio', 'supertypo', 'tous')]
+    [string]   $App = 'tous',
     [string]   $Bundles = 'nsis,msi',
     [switch]   $NoBundle,
     [ValidateSet('release', 'debug')]
@@ -102,20 +110,27 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'npm install a echoue' }
     }
 
-    $args = @('tauri', 'build')
-    if ($Profile -eq 'debug') { $args += '--debug' }
-    if ($NoBundle) { $args += '--no-bundle' } else { $args += @('--bundles', $Bundles) }
+    $apps = if ($App -eq 'tous') { @('superprint', 'studio', 'supertypo') } else { @($App) }
 
-    Write-Host "npx $($args -join ' ')" -ForegroundColor Cyan
-    npx @args
-    if ($LASTEXITCODE -ne 0) { throw 'la compilation Tauri a echoue' }
+    foreach ($une in $apps) {
+        Write-Host ''
+        Write-Host "── $une ──────────────────────────────────" -ForegroundColor Cyan
+
+        $args = @('tauri', 'build', '--config', "src-tauri/apps/$une.json")
+        if ($Profile -eq 'debug') { $args += '--debug' }
+        if ($NoBundle) { $args += '--no-bundle' } else { $args += @('--bundles', $Bundles) }
+
+        Write-Host "npx $($args -join ' ')" -ForegroundColor Cyan
+        npx @args
+        if ($LASTEXITCODE -ne 0) { throw "la compilation de « $une » a echoue" }
+    }
 
     Write-Host ''
     Write-Host 'Artefacts :' -ForegroundColor Green
-    Get-ChildItem 'src-tauri\target\*\superprint-desktop.exe' -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.FullName)" }
     Get-ChildItem 'src-tauri\target\*\bundle' -Recurse -File -ErrorAction SilentlyContinue |
         Where-Object { $_.Extension -in '.exe', '.msi' } |
-        ForEach-Object { Write-Host "  $($_.FullName)" }
+        Sort-Object Name |
+        ForEach-Object { Write-Host ("  {0,-46} {1,8:N1} Mo" -f $_.Name, ($_.Length / 1MB)) }
 }
 finally {
     Pop-Location

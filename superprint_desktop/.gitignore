@@ -1,13 +1,20 @@
 # Dépendances Node (CLI Tauri)
 node_modules/
 
-# Dossier embarqué par Tauri, FABRIQUÉ par `scripts/stage-frontend.mjs` à partir
-# de `../superprint/` : ~80 Mo recopiés, jamais versionnés.
+# Dossier embarqué par Tauri, FABRIQUÉ par `scripts/prepare-bundle.mjs` à partir
+# de `../superprint/` : ~69 Mo recopiés, jamais versionnés.
 frontend/
 
 # Sortie de compilation Rust
 src-tauri/target/
 src-tauri/gen/
+
+# Journal du .deb compressé — FABRIQUÉ par `scripts/prepare-bundle.mjs`.
+src-tauri/debian-changelog.gz
+
+# Copyright du .deb — FABRIQUÉ par `scripts/prepare-bundle.mjs` (en-tête +
+# LICENSE intégral), pour que le texte de la licence ne puisse pas diverger.
+src-tauri/copyright
 
 # Artefacts de distribution
 dist/

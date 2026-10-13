@@ -1,0 +1,51 @@
+{
+  "productName": "SuperTyPo",
+  "identifier": "cc.superprint.supertypo",
+  "build": {
+    "beforeBuildCommand": "node scripts/prepare-bundle.mjs supertypo",
+    "frontendDist": "../frontend/supertypo"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "SuperTyPo",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "dragDropEnabled": true,
+        "url": "supertypo/index.html"
+      }
+    ]
+  },
+  "bundle": {
+    "shortDescription": "Décomposition et édition de caractères.",
+    "longDescription": "SuperTyPo — décomposez un caractère en ses tracés, redessinez-les en courbes, recomposez et exportez. Application de bureau autonome, fonctionne hors-ligne.",
+    "icon": [
+      "icons/supertypo/32x32.png",
+      "icons/supertypo/128x128.png",
+      "icons/supertypo/128x128@2x.png",
+      "icons/supertypo/icon.icns",
+      "icons/supertypo/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/supertypo/icon.ico"
+      }
+    },
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/share/doc/super-ty-po/copyright": "copyright",
+          "/usr/share/doc/super-ty-po/changelog.gz": "debian-changelog.gz",
+          "/usr/share/doc/super-ty-po/NOTICE.md": "../NOTICE.md",
+          "/usr/share/doc/super-ty-po/TRADEMARKS.md": "../TRADEMARKS.md"
+        }
+      }
+    }
+  }
+}

@@ -346,6 +346,10 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    où l'on veut cliquer. */
 .nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
 .nav-dd-btn {
+  /* `relative` : les étiquettes de langue deviennent `absolute` en mobile (voir
+     la règle sr-only plus bas). Sans un repère positionné ici, elles se
+     placeraient par rapport à la barre et non par rapport au bouton. */
+  position: relative;
   display: inline-flex; align-items: center; gap: 9px; cursor: pointer; border: 0;
   margin: 0; padding: 0 22px; height: 42px;
   background: var(--ink); color: var(--paper);
@@ -361,13 +365,26 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: transform .25s var(--ease);
 }
 .nav-dd-btn[aria-expanded="true"] .nav-dd-chev { transform: rotate(180deg); }
+/* 🆕 v1.7.613 — FLÈCHE DE TÉLÉCHARGEMENT, POUR LE MOBILE.
+   Sous 1000 px le bouton ne garde que cette icône : « Télécharger » en toutes
+   lettres y occupait trop de place pour la valeur d'un seul mot. Elle n'est
+   jamais affichée au-dessus de 1000 px, où le libellé suffit. */
+.nav-dd-dl {
+  display: none; flex: 0 0 auto; width: 17px; height: 17px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .25s var(--ease);
+}
+/* Flèche vers le bas = « le menu s'ouvre vers le bas ». Une fois ouvert, elle
+   pointe vers le haut : c'est le geste inverse qui referme. */
+.nav-dd-btn[aria-expanded="true"] .nav-dd-dl { transform: rotate(180deg); }
 .nav-dd-panel {
   position: absolute; top: 100%; right: 0; z-index: 3;
   /* 400 px, ramenés à la largeur de la fenêtre sur téléphone. Le retrait de
      84 px n'est pas arbitraire : il réserve la marge de la barre (16 px) plus
      le burger et son intervalle (50 px), de sorte que le bord GAUCHE du
      panneau — qui part du bord droit du bouton — ne sorte jamais de l'écran. */
-  width: min(400px, calc(100vw - 84px)); padding-top: 12px;
+  width: min(440px, calc(100vw - 84px)); padding-top: 12px;
   opacity: 0; visibility: hidden; transform: translateY(-6px);
   transition: opacity .22s var(--ease), transform .22s var(--ease), visibility 0s linear .22s;
 }
@@ -397,8 +414,9 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   border-bottom: 1px solid var(--line);
   transition: background .2s var(--ease);
 }
-.nav-dd-item:hover { background: var(--paper-2); }
-.nav-dd-item:has(.nav-dd-os:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
+/* Pas de surbrillance de ligne : la ligne n'est plus une cible. */
+.nav-dd-item { align-items: flex-start; padding-top: 13px; padding-bottom: 13px; }
+.nav-dd-item:has(a:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
 .nav-dd-ic { flex: 0 0 auto; width: 22px; height: 22px; color: var(--ink); }
 .nav-dd-ic svg {
   display: block; width: 100%; height: 100%;
@@ -407,17 +425,31 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 }
 .nav-dd-txt { min-width: 0; }
 .nav-dd-os {
-  display: block; font-family: var(--f-caps); font-size: 16px; letter-spacing: .03em;
-  line-height: 1.1; color: var(--ink); text-decoration: none;
+  display: block; font-family: var(--f-caps); font-size: 15px; letter-spacing: .03em;
+  line-height: 1.1; color: var(--ink); margin-bottom: 5px;
 }
-/* La ligne entière devient la cible du lien principal. */
-.nav-dd-os::after { content: ''; position: absolute; inset: 0; }
-.nav-dd-fmt { display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .04em; color: var(--muted); }
-.nav-dd-fmt b { font-weight: 600; color: var(--ink); }
-.nav-dd-alt { display: block; margin-top: 2px; font-size: 10.5px; line-height: 1.4; color: var(--muted); }
-/* Repasse au-dessus du lien étiré : sans ça, il serait inatteignable. */
-.nav-dd-alt a { position: relative; z-index: 1; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
-.nav-dd-alt a:hover { color: var(--ink); }
+.nav-dd-apps { display: flex; flex-direction: column; gap: 2px; }
+.nav-dd-app {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; min-width: 0;
+}
+.nav-dd-app-nom {
+  font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-soft);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nav-dd-app-fmt {
+  display: flex; align-items: baseline; gap: 5px; flex: 0 0 auto;
+  font-family: var(--f-mono); font-size: 11px; color: var(--muted); white-space: nowrap;
+}
+.nav-dd-app-fmt a {
+  color: var(--muted); text-decoration: none;
+  border-bottom: 1px solid var(--line-strong); padding-bottom: 1px;
+}
+.nav-dd-app-fmt a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+/* Le premier format de chaque ligne est le téléchargement par défaut : c'est
+   celui que cherche l'immense majorité des visiteurs. Il est mis en avant —
+   et lui seul — pour que le choix ne demande pas de lire les trois. */
+.nav-dd-app-fmt a:first-child { color: var(--ink); font-weight: 600; border-bottom-color: var(--line-strong); }
 .nav-dd-pied { display: flex; gap: 12px; margin-top: 12px; }
 .nav-dd-pied a {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
@@ -1170,6 +1202,24 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
      il devient le repère du panneau, qui prend alors toute la largeur. */
   .nav-dd { position: static; margin-left: 0; }
   .nav-dd-panel { left: 16px; right: 16px; width: auto; }
+  /* 🆕 v1.7.613 — LE BOUTON DEVIENT UNE ICÔNE : FLÈCHE VERS LE BAS, PAS DE TEXTE.
+     Le libellé reste dans le document, réduit à un pixel et découpé (motif
+     « sr-only »). POURQUOI NE PAS SIMPLEMENT LE PASSER EN `display: none` :
+     un élément masqué sort de l'arbre d'accessibilité, le bouton n'aurait donc
+     plus AUCUN nom — un carré noir anonyme pour un lecteur d'écran. Ici le nom
+     est conservé, et il suit la langue : les règles `!important` de
+     `html[lang]` masquent les deux autres étiquettes, seule celle de la langue
+     active est lue. Aucun JavaScript n'est nécessaire. */
+  .nav-dd-btn { padding: 0 13px; gap: 0; }
+  .nav-dd-btn .inline-fr,
+  .nav-dd-btn .inline-en,
+  .nav-dd-btn .inline-ja {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; border: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap;
+  }
+  .nav-dd-dl { display: block; }
+  .nav-dd-chev { display: none; }
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
   .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
@@ -1199,6 +1249,25 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
+  /* 🎯 v1.7.613 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+     Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
+     ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
+     texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
+     dessous — recouvert sans que rien ne se voie, et incliquable.
+     MESURÉ à 390 px : « <a href="#hero" class="nav-logo"> intercepts pointer
+     events ». Comme ce bouton est le SEUL chemin vers les téléchargements sur
+     téléphone, il remonte d'un cran — exactement comme .nav-tools.
+
+     ⚠️ LE CRAN VA SUR LE BOUTON, PAS SUR .nav-links. Le panneau se recadre
+     sur 
+av (left: 16px; right: 16px), parce que .nav-dd est static en
+     mobile : 
+av est donc son repère. Poser position: relative sur
+     .nav-links — large de 43 px, le temps du bouton — en aurait fait le
+     nouveau repère, et le panneau s'est retrouvé large de 11 px (mesuré).
+     Le bouton, lui, est DÉJÀ en position: relative (il porte les étiquettes
+     sr-only) : un z-index y suffit, et ne déplace aucun repère. */
+  .nav-dd-btn { z-index: 2; }
   section { padding: 64px 20px; }
   .feat-grid, .studio-grid, .uc-grid { grid-template-columns: 1fr; }
   .pp-grid { grid-template-columns: 1fr; }
@@ -2162,13 +2231,14 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
     <div class="nav-dd" data-nav-dd>
       <button type="button" class="nav-dd-btn" id="navDlBtn" aria-expanded="false" aria-controls="navDlPanel">
         <span class="inline-fr">Télécharger</span><span class="inline-en">Download</span><span class="inline-ja">ダウンロード</span>
+        <svg class="nav-dd-dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11.5"/><path d="M7.4 10.4l4.6 4.6 4.6-4.6"/><path d="M4.5 20.5h15"/></svg>
         <svg class="nav-dd-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="nav-dd-panel" id="navDlPanel">
         <div class="nav-dd-boite">
           <p class="nav-dd-tete">
             <span data-lang="fr">Application de bureau</span><span data-lang="en">Desktop application</span><span data-lang="ja">デスクトップアプリ</span>
-            <span class="nav-dd-sous"><span class="inline-fr">Les trois applications incluses</span><span class="inline-en">All three apps included</span><span class="inline-ja">3つのアプリを同梱</span></span>
+            <span class="nav-dd-sous"><span class="inline-fr">Trois applications · un installeur chacune</span><span class="inline-en">Three apps · one installer each</span><span class="inline-ja">3つのアプリ · それぞれ専用インストーラー</span></span>
           </p>
           <!-- Les cinq fichiers sont ICI, et nulle part ailleurs dans la page.
                Un système par ligne ; la variante (Intel, .deb) est un second lien
@@ -2178,31 +2248,68 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
                qu'elle en porte un second. -->
           <div class="nav-dd-liste">
 
-            <div class="nav-dd-item">
-              <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 20h8M12 17v3"/></svg></span>
-              <span class="nav-dd-txt">
-                <a class="nav-dd-os" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">PC — Windows</a>
-                <span class="nav-dd-fmt">Installateur <b>.exe</b> · 64 bits</span>
+          <div class="nav-dd-item">
+            <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 20h8M12 17v3"/></svg></span>
+            <span class="nav-dd-txt">
+              <span class="nav-dd-os">PC — Windows</span>
+              <span class="nav-dd-apps">
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperPrint</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">Studio IA</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperTyPo</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
+            </span>
               </span>
-            </div>
+            </span>
+          </div>
 
-            <div class="nav-dd-item">
-              <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M1 18h22l-1.6 2.4H2.6z"/></svg></span>
-              <span class="nav-dd-txt">
-                <a class="nav-dd-os" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">MAC — macOS</a>
-                <span class="nav-dd-fmt">Image-disque <b>.dmg</b></span>
-                <span class="nav-dd-alt"><span class="inline-fr">Puce Apple · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">version Intel</a></span><span class="inline-en">Apple silicon · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel build</a></span><span class="inline-ja">Appleシリコン · <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel版</a></span></span>
+          <div class="nav-dd-item">
+            <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M1 18h22l-1.6 2.4H2.6z"/></svg></span>
+            <span class="nav-dd-txt">
+              <span class="nav-dd-os">MAC — macOS</span>
+              <span class="nav-dd-apps">
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperPrint</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">Studio IA</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperTyPo</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
+            </span>
               </span>
-            </div>
+            </span>
+          </div>
 
-            <div class="nav-dd-item">
-              <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="1.5"/><path d="M6 9l3 3-3 3M12 15h5"/></svg></span>
-              <span class="nav-dd-txt">
-                <a class="nav-dd-os" href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">LINUX</a>
-                <span class="nav-dd-fmt">Exécutable <b>.AppImage</b> · x86-64</span>
-                <span class="nav-dd-alt"><span class="inline-fr">Alternative : <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">paquet .deb</a></span><span class="inline-en">Alternative: <a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb package</a></span><span class="inline-ja">別形式：<a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb パッケージ</a></span></span>
+          <div class="nav-dd-item">
+            <span class="nav-dd-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="1.5"/><path d="M6 9l3 3-3 3M12 15h5"/></svg></span>
+            <span class="nav-dd-txt">
+              <span class="nav-dd-os">LINUX</span>
+              <span class="nav-dd-apps">
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperPrint</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">Studio IA</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
+            </span>
+            <span class="nav-dd-app">
+              <span class="nav-dd-app-nom">SuperTyPo</span>
+              <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a><span aria-hidden="true">·</span><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
+            </span>
               </span>
-            </div>
+            </span>
+          </div>
 
           </div>
           <div class="nav-dd-pied">

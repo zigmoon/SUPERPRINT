@@ -4,8 +4,8 @@
   "version": "1.7.611",
   "identifier": "cc.superprint.desktop",
   "build": {
-    "beforeBuildCommand": "node scripts/stage-frontend.mjs",
-    "frontendDist": "../frontend"
+    "beforeBuildCommand": "node scripts/prepare-bundle.mjs",
+    "frontendDist": "../frontend/superprint"
   },
   "app": {
     "withGlobalTauri": false,
@@ -20,7 +20,8 @@
         "resizable": true,
         "fullscreen": false,
         "center": true,
-        "dragDropEnabled": true
+        "dragDropEnabled": true,
+        "url": "app/index.html"
       }
     ],
     "security": {
@@ -31,33 +32,31 @@
     "active": true,
     "targets": "all",
     "category": "GraphicsAndDesign",
-    "shortDescription": "PAO professionnelle dans le navigateur.",
-    "longDescription": "SuperPrint — logiciel de publication assistée par ordinateur (PAO) avec Studio IA SP213 et SuperTyPo. Application de bureau autonome, fonctionne hors-ligne.",
     "copyright": "© Zigmoon — Simon Dupont-Gellert & Clémence Brunet",
     "publisher": "Zigmoon",
     "homepage": "https://superprint.cc",
     "licenseFile": "../LICENSE",
     "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/superprint/32x32.png",
+      "icons/superprint/128x128.png",
+      "icons/superprint/128x128@2x.png",
+      "icons/superprint/icon.icns",
+      "icons/superprint/icon.ico"
     ],
     "windows": {
       "nsis": {
         "languages": ["French", "English", "Japanese"],
-        "installerIcon": "icons/icon.ico"
+        "installerIcon": "icons/superprint/icon.ico"
       }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15"
     },
     "linux": {
       "deb": {
         "depends": [],
         "section": "graphics"
       }
-    },
-    "macOS": {
-      "minimumSystemVersion": "10.15"
     }
   }
 }

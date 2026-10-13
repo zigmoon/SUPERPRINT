@@ -20,7 +20,7 @@
  * téléchargement serait inatteignable au doigt. `.nav-tools` reste visible à
  * toutes les largeurs.
  */
-import { DESKTOP_DOWNLOADS, DOWNLOAD_LABELS, MARKUP_LANG_ORDER, NAV_ITEMS } from '../data/site';
+import { DESKTOP_APPLICATIONS, DESKTOP_DOWNLOADS, DOWNLOAD_LABELS, MARKUP_LANG_ORDER, NAV_ITEMS, urlTelechargement } from '../data/site';
 
 interface Props {
   /** `href` de l'entrée à marquer active, ou `null`. */
@@ -90,6 +90,7 @@ const ICONES: Record<string, string> = {
         {MARKUP_LANG_ORDER.map((lang) => (
           <span class={`inline-${lang}`}>{DOWNLOAD_LABELS.bouton[lang]}</span>
         ))}
+        <svg class="nav-dd-dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11.5"/><path d="M7.4 10.4l4.6 4.6 4.6-4.6"/><path d="M4.5 20.5h15"/></svg>
         <svg class="nav-dd-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="nav-dd-panel" id="navDlPanel">
@@ -104,12 +105,12 @@ const ICONES: Record<string, string> = {
               ))}
             </span>
           </p>
-          <!-- Les cinq fichiers sont ICI, et nulle part ailleurs dans le site.
-               Un système par ligne ; la variante (Intel, .deb) est un second lien
-               sur la même ligne. Le nom porte le lien principal, étiré sur toute
-               la ligne par `::after` : la ligne entière est cliquable SANS
-               imbriquer deux liens — ce qu'une ligne-lien aurait imposé dès
-               qu'elle en porte un second. -->
+          <!-- Les neuf installeurs sont ICI, et nulle part ailleurs dans le site.
+               Un SYSTÈME par ligne, et sous chacun les trois applications — dont
+               le nom ne porte plus le lien. Chaque fichier porte le sien : avec
+               trois applications et jusqu'à trois formats par système, un nom
+               cliquable serait ambigu, et l'`::after` qui étirait son lien sur
+               toute la ligne recouvrirait les deux lignes suivantes. -->
           <div class="nav-dd-liste">
             {DESKTOP_DOWNLOADS.map((item) => (
               <div class="nav-dd-item">
@@ -117,20 +118,22 @@ const ICONES: Record<string, string> = {
                   <svg viewBox="0 0 24 24" set:html={ICONES[item.os]} />
                 </span>
                 <span class="nav-dd-txt">
-                  <a class="nav-dd-os" href={item.href} rel="noopener">{item.nom}</a>
-                  <span class="nav-dd-fmt">
-                    {item.format.map((m) => ('b' in m ? <b>{m.b}</b> : m.t))}
-                  </span>
-                  {item.variante && (
-                    <span class="nav-dd-alt">
-                      {MARKUP_LANG_ORDER.map((lang) => (
-                        <span class={`inline-${lang}`}>
-                          {item.variante!.prefixe[lang]}
-                          <a href={item.variante!.href} rel="noopener">{item.variante!.label[lang]}</a>
+                  <span class="nav-dd-os">{item.nom}</span>
+                  <span class="nav-dd-apps">
+                    {DESKTOP_APPLICATIONS.map((app) => (
+                      <span class="nav-dd-app">
+                        <span class="nav-dd-app-nom">{app.nom}</span>
+                        <span class="nav-dd-app-fmt">
+                          {item.paquets.map((paquet, n) => (
+                            <>
+                              {n > 0 && <span aria-hidden="true">·</span>}
+                              <a href={urlTelechargement(app, paquet)} rel="noopener">{paquet.label}</a>
+                            </>
+                          ))}
                         </span>
-                      ))}
-                    </span>
-                  )}
+                      </span>
+                    ))}
+                  </span>
                 </span>
               </div>
             ))}

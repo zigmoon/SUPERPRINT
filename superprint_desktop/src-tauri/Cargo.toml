@@ -2,7 +2,7 @@
 name = "superprint-desktop"
 version = "1.7.611"
 description = "SuperPrint — PAO dans le navigateur, en application de bureau"
-authors = ["Simon Dupont-Gellert (Zigmoon)"]
+authors = ["Simon Dupont-Gellert (Zigmoon) <contact@superprint.cc>"]
 edition = "2021"
 rust-version = "1.77"
 license = "LicenseRef-Proprietary"

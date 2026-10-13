@@ -46,86 +46,113 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 /**
- * Un morceau de texte du format : tantôt droit, tantôt en gras.
+ * Un fichier téléchargeable, pour une application et un système donnés.
  *
- * Le gras n'est pas décoratif : il désigne l'**extension** (`.exe`, `.dmg`,
- * `.AppImage`) au milieu d'une ligne monospace, et c'est le seul repère qu'on
- * cherche du regard dans un menu de téléchargement. Le modéliser en données
- * évite de reconstruire une chaîne à balises dans le composant.
+ * `label` est ce que lit le visiteur : « .exe », « Apple silicon », « .deb ».
+ * Aucune traduction n'est nécessaire — ce sont des noms de formats, pas des
+ * phrases. Les traduire obligerait à maintenir trois listes pour ne rien dire
+ * de plus, et c'est justement le genre de table qui finit par diverger.
  */
-export type Morceau = { t: string } | { b: string };
-
-/** Une variante du même système — la version Intel, le paquet .deb. */
-export interface DownloadVariante {
-  /** Ce qui précède le lien, ponctuation comprise. */
-  prefixe: Record<Lang, string>;
-  href: string;
-  label: Record<Lang, string>;
+export interface DownloadPaquet {
+  /** Nom du fichier publié, sans le préfixe de l'application. */
+  fichier: string;
+  label: string;
 }
 
-/** Une ligne du menu « Télécharger » de la barre. */
-export interface DownloadItem {
-  /** Le système, qui choisit aussi le pictogramme (voir `SiteNav.astro`). */
-  os: 'win' | 'mac' | 'linux';
-  href: string;
-  /** Nom du système — identique dans les trois langues : c'est un nom propre. */
+/** Une des trois applications de bureau. */
+export interface DownloadApplication {
+  /** Préfixe des noms de fichiers publiés : « SuperPrint », « Studio-IA »… */
+  cle: string;
+  /** Ce que lit le visiteur — nom propre, donc identique dans les 3 langues. */
   nom: string;
-  /** Format du fichier principal, en morceaux (voir `Morceau`). */
-  format: Morceau[];
-  /** Seconde façon d'installer sur ce système, s'il y en a une. */
-  variante?: DownloadVariante;
+}
+
+/** Un système, et les paquets disponibles pour chacune des trois applications. */
+export interface DownloadSysteme {
+  os: 'win' | 'mac' | 'linux';
+  /** Nom propre, donc identique dans les trois langues. */
+  nom: string;
+  /**
+   * Les fichiers publiés sur ce système.
+   * ⚠️ LE PREMIER EST LE TÉLÉCHARGEMENT PAR DÉFAUT : les styles le mettent en
+   * avant, et lui seul. C'est ce qui évite de faire lire trois extensions à
+   * quelqu'un qui veut simplement installer l'application.
+   */
+  paquets: DownloadPaquet[];
+}
+
+const GITHUB = 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest';
+
+/** L'adresse publiée d'un fichier, reconstruite depuis l'application et le système. */
+export function urlTelechargement(app: DownloadApplication, paquet: DownloadPaquet): string {
+  return `${GITHUB}/${app.cle}-${paquet.fichier}`;
 }
 
 /**
- * Les cinq installeurs de l'application de bureau.
+ * Les trois applications de bureau.
  *
- * TROIS LIGNES, CINQ FICHIERS. Un système par ligne — et une seconde façon
- * d'installer sur deux d'entre elles (la version Intel pour macOS, le paquet
- * `.deb` pour Linux). C'est ce qui évite de promettre neuf téléchargements là où
- * il y a trois systèmes.
+ * Trois paquets séparés, et non un paquet qui contient tout : mesuré le
+ * 2026-10-13, l'éditeur pèse 57,9 Mo, le Studio IA 9,8 Mo et SuperTyPo 1,0 Mo.
+ * Un paquet unique en aurait livré 68,7 Mo d'un bloc — et 183,6 Mo si les trois
+ * avaient chacun tout embarqué. Les trois applications ne se renvoient pas
+ * l'une à l'autre (vérifié) : chacune est complète et indépendante.
+ */
+export const DESKTOP_APPLICATIONS: DownloadApplication[] = [
+  { cle: 'SuperPrint', nom: 'SuperPrint' },
+  { cle: 'Studio-IA', nom: 'Studio IA' },
+  { cle: 'SuperTyPo', nom: 'SuperTyPo' },
+];
+
+/**
+ * Les trois systèmes, et pour chacun les fichiers réellement publiés.
  *
- * Les trois applications — SuperPrint, Studio IA, SuperTyPo — sont dans le même
- * paquet, et se choisissent à l'ouverture. C'est écrit une fois, en tête du menu.
+ * RIEN DE CE QUE TAURI CONSTRUIT N'EST LAISSÉ DE CÔTÉ. `bundle.targets` vaut
+ * « all », donc Windows livre un `.msi` **et** un `.exe`, Linux un `.deb`, un
+ * `.rpm` **et** un `.AppImage`, macOS un `.dmg` par architecture. Le `.msi` sert
+ * le déploiement en parc (GPO, SCCM) ; le `.rpm` les systèmes Fedora, RHEL et
+ * openSUSE, auxquels l'AppImage n'offre aucune intégration avec le gestionnaire
+ * de paquets.
  *
  * Les adresses portent `desktop-latest` et **aucun numéro de version** : le
  * workflow `.github/workflows/build-desktop.yml` renomme les paquets avant de
  * les publier, précisément pour que ces liens n'aient jamais à être retouchés.
  */
-export const DESKTOP_DOWNLOADS: DownloadItem[] = [
+export const DESKTOP_DOWNLOADS: DownloadSysteme[] = [
   {
     os: 'win',
-    href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe',
     nom: 'PC — Windows',
-    format: [{ t: 'Installateur ' }, { b: '.exe' }, { t: ' · 64 bits' }],
+    paquets: [
+      { fichier: 'Windows-x64-setup.exe', label: '.exe' },
+      { fichier: 'Windows-x64.msi', label: '.msi' },
+    ],
   },
   {
     os: 'mac',
-    href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg',
     nom: 'MAC — macOS',
-    format: [{ t: 'Image-disque ' }, { b: '.dmg' }],
-    variante: {
-      prefixe: { fr: 'Puce Apple · ', en: 'Apple silicon · ', ja: 'Appleシリコン · ' },
-      href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg',
-      label: { fr: 'version Intel', en: 'Intel build', ja: 'Intel版' },
-    },
+    paquets: [
+      { fichier: 'macOS-AppleSilicon.dmg', label: 'Apple silicon' },
+      { fichier: 'macOS-Intel.dmg', label: 'Intel' },
+    ],
   },
   {
     os: 'linux',
-    href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage',
     nom: 'LINUX',
-    format: [{ t: 'Exécutable ' }, { b: '.AppImage' }, { t: ' · x86-64' }],
-    variante: {
-      prefixe: { fr: 'Alternative : ', en: 'Alternative: ', ja: '別形式：' },
-      href: 'https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb',
-      label: { fr: 'paquet .deb', en: '.deb package', ja: '.deb パッケージ' },
-    },
+    paquets: [
+      { fichier: 'Linux-x86_64.AppImage', label: '.AppImage' },
+      { fichier: 'Linux-x86_64.deb', label: '.deb' },
+      { fichier: 'Linux-x86_64.rpm', label: '.rpm' },
+    ],
   },
 ];
 
 /** Les libellés du menu « Télécharger », un par langue. */
 export const DOWNLOAD_LABELS = {
   bouton: { fr: 'Télécharger', en: 'Download', ja: 'ダウンロード' },
-  titre: { fr: 'Application de bureau', en: 'Desktop application', ja: 'デスクトップアプリ' },
-  sous: { fr: 'Les trois applications incluses', en: 'All three apps included', ja: '3つのアプリを同梱' },
+  titre: { fr: 'Applications de bureau', en: 'Desktop applications', ja: 'デスクトップアプリ' },
+  sous: {
+    fr: 'Trois applications · un installeur chacune',
+    en: 'Three apps · one installer each',
+    ja: '3つのアプリ · それぞれ専用インストーラー',
+  },
   enLigne: { fr: 'Ouvrir en ligne', en: 'Open online', ja: 'オンラインで開く' },
 } satisfies Record<string, Record<Lang, string>>;

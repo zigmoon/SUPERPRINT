@@ -1,0 +1,51 @@
+{
+  "productName": "SuperPrint",
+  "identifier": "cc.superprint.desktop",
+  "build": {
+    "beforeBuildCommand": "node scripts/prepare-bundle.mjs superprint",
+    "frontendDist": "../frontend/superprint"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "SuperPrint",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "dragDropEnabled": true,
+        "url": "app/index.html"
+      }
+    ]
+  },
+  "bundle": {
+    "shortDescription": "PAO professionnelle dans le navigateur.",
+    "longDescription": "SuperPrint — logiciel de publication assistée par ordinateur (PAO) : mise en page multipage, prépresse, séparation CMJN, export PDF et imposition. Application de bureau autonome, fonctionne hors-ligne.",
+    "icon": [
+      "icons/superprint/32x32.png",
+      "icons/superprint/128x128.png",
+      "icons/superprint/128x128@2x.png",
+      "icons/superprint/icon.icns",
+      "icons/superprint/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/superprint/icon.ico"
+      }
+    },
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/share/doc/super-print/copyright": "copyright",
+          "/usr/share/doc/super-print/changelog.gz": "debian-changelog.gz",
+          "/usr/share/doc/super-print/NOTICE.md": "../NOTICE.md",
+          "/usr/share/doc/super-print/TRADEMARKS.md": "../TRADEMARKS.md"
+        }
+      }
+    }
+  }
+}

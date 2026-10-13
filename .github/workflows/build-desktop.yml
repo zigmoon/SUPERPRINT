@@ -1,22 +1,41 @@
 # ══════════════════════════════════════════════════════════════════════════════
-#  APPLICATION DE BUREAU SUPERPRINT — Windows, macOS, Linux
+#  APPLICATIONS DE BUREAU — SuperPrint · Studio IA · SuperTyPo
 #
-#  Construit la coquille Tauri (`superprint_desktop/`) sur les trois systèmes —
-#  chaque système ne peut produire que SES paquets — puis publie les trois
-#  installeurs dans une version « desktop-latest ».
+#  Trois applications, quatre tâches système : ce workflow produit NEUF
+#  installeurs principaux, plus les formats secondaires que chaque système sait
+#  faire en plus.
 #
-#  POURQUOI UNE VERSION AU NOM FIXE. Les fichiers produits par Tauri portent la
-#  version (« SuperPrint_1.7.611_x64-setup.exe »). Un lien de la page de
-#  présentation ne peut pas suivre un nom qui change à chaque livraison. On
-#  renomme donc les artefacts avant publication, et l'adresse reste stable :
+#  POURQUOI UNE MATRICE APPLICATION × SYSTÈME.
+#  `superprint_desktop/` est UN SEUL projet Tauri, compilé trois fois avec trois
+#  surcouches de configuration (`src-tauri/apps/<app>.json`). Ce n'est pas un
+#  détail d'élégance : la coquille native est identique — une fenêtre, une
+#  webview — et seule change la page qu'elle ouvre. Trois projets séparés
+#  auraient triplé le code à maintenir sans rien apporter.
 #
-#    https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe
-#    https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg
-#    https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage
+#  CE QUE CHAQUE APPLICATION EMBARQUE, ET RIEN DE PLUS.
+#  `scripts/prepare-bundle.mjs` fabrique trois dossiers distincts :
+#    · SuperPrint — 57,9 Mo, l'éditeur complet ;
+#    · Studio IA   —  9,8 Mo, la page du studio, son moteur de toile, ses polices ;
+#    · SuperTyPo   —  1,0 Mo, entièrement autonome.
+#  Séparer les paquets n'est donc pas qu'une commodité : 68,7 Mo livrés au lieu
+#  de 183,6 Mo si les trois embarquaient tout. Chaque paquet a été vérifié page
+#  par page : aucune des trois applications ne renvoie vers une des deux autres,
+#  il n'y a donc aucun lien mort une fois les trois séparées.
 #
-#  ⚠️ Ces adresses ne repondent qu'APRES le premier passage de ce workflow.
+#  RIEN N'EST JETÉ. `bundle.targets` vaut « all », donc Tauri livre, pour chaque
+#  système, tous les formats qu'il sait faire : Windows → NSIS **et** MSI,
+#  Linux → `.deb`, `.rpm` **et** `.AppImage`, macOS → `.app` puis `.dmg`. Le
+#  `.msi` sert le déploiement en parc (GPO, SCCM), le `.rpm` les systèmes
+#  Fedora / RHEL / openSUSE, auxquels l'AppImage n'offre aucune intégration.
+#
+#  POURQUOI DES NOMS FIXES. Les fichiers produits par Tauri portent la version
+#  (« SuperPrint_1.7.611_x64-setup.exe »). Un lien de la page de présentation ne
+#  peut pas suivre un nom qui change à chaque livraison : on renomme donc les
+#  artefacts avant publication, et les adresses restent stables.
+#
+#  ⚠️ Ces adresses ne répondent qu'APRÈS le premier passage de ce workflow.
 # ══════════════════════════════════════════════════════════════════════════════
-name: Application de bureau
+name: Applications de bureau
 
 on:
   workflow_dispatch:
@@ -29,30 +48,36 @@ permissions:
 
 jobs:
   build:
-    name: Compiler (${{ matrix.name }})
+    name: ${{ matrix.app }} · ${{ matrix.systeme }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
+        app: [superprint, studio, supertypo]
+        # Les quatre systèmes, écrits en clair : la liste `include` est AJOUTÉE
+        # à chacune des trois applications, ce qui donne bien douze tâches.
+        # Le nom d'artefact ne doit pas contenir d'espace : « macOS-ARM » et non
+        # « macOS Apple Silicon ».
         include:
-          - name: Windows
+          - systeme: Windows
             platform: windows-latest
             target: ''
-          - name: macOS Apple Silicon
+          - systeme: macOS-ARM
             platform: macos-latest
             target: aarch64-apple-darwin
-          - name: macOS Intel
+          - systeme: macOS-Intel
             platform: macos-latest
             target: x86_64-apple-darwin
-          - name: Linux
+          - systeme: Linux
             platform: ubuntu-22.04
             target: ''
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # WebKitGTK : la webview du système sous Linux. Rien de tel n'existe sous
       # Windows (WebView2) ni sous macOS (WKWebView), où le système fournit tout.
+      # `rpm` sert à construire le paquet RPM — il n'est pas installé d'origine.
       - name: Dépendances système (Linux)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
@@ -61,12 +86,16 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libappindicator3-dev \
             librsvg2-dev \
-            patchelf
+            patchelf \
+            rpm
 
+      # Node 24 : c'est le LTS en cours. Node 20, qu'on installait avant, est
+      # sorti du support — et GitHub le déprécie aussi pour le moteur des
+      # actions elles-mêmes.
       - name: Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Rust
         uses: dtolnay/rust-toolchain@stable
@@ -76,24 +105,36 @@ jobs:
       - name: Cache Rust
         uses: swatinem/rust-cache@v2
         with:
+          # Le cache est partagé par les trois applications : même projet Cargo,
+          # seule la configuration d'empaquetage change. La clé doit donc ignorer
+          # `matrix.app`, sinon chaque application recompilerait 100 % de ses
+          # dépendances depuis zéro.
+          key: ${{ matrix.platform }}-${{ matrix.target }}
           workspaces: superprint_desktop/src-tauri -> target
 
       - name: CLI Tauri
         working-directory: superprint_desktop
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
+      # L'assemblage de la bonne application est le travail de
+      # `beforeBuildCommand`, déclaré dans chaque surcouche — il s'exécute donc
+      # ici, et il refuse de compiler si une surcouche ne désigne pas la même
+      # application que son `frontendDist` (voir scripts/prepare-bundle.mjs).
+      #
       # `tauri-action` sans tagName ni releaseName : il compile et s'arrête là.
       # La publication est le travail du job « publier », plus bas.
-      - name: Compiler l'application
+      - name: Compiler
         uses: tauri-apps/tauri-action@v1
         with:
           projectPath: superprint_desktop
-          args: ${{ matrix.target != '' && format('--target {0}', matrix.target) || '' }}
+          args: >-
+            --config src-tauri/apps/${{ matrix.app }}.json
+            ${{ matrix.target != '' && format('--target {0}', matrix.target) || '' }}
 
       - name: Téléverser les paquets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: paquets-${{ matrix.name }}
+          name: paquets-${{ matrix.app }}-${{ matrix.systeme }}
           path: superprint_desktop/src-tauri/target/**/bundle/**
           if-no-files-found: error
 
@@ -102,40 +143,61 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
+      # On NE fusionne PAS les téléversements dans un seul dossier : chaque
+      # application est déjà rangée dans le sien, et c'est ce dossier qui permet
+      # de savoir à quelle application appartient un fichier. Tauri nomme les
+      # installeurs d'après le `productName`, et deux applications différentes
+      # peuvent produire des noms qui se ressemblent beaucoup.
       - name: Récupérer tous les paquets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: paquets
-          merge-multiple: true
 
       # Le renommage est la raison d'être de ce job : il transforme des noms
       # versionnés en adresses stables, et échoue BRUYAMMENT si un paquet
-      # manque — un lien mort sur la page de présentation serait pire que
-      # pas de lien du tout.
+      # manque — un lien mort sur la page de présentation serait pire que pas de
+      # lien du tout.
+      #
+      # `find paquets -path "*$app*"` restreint la recherche au dossier de
+      # l'application. Le motif est sensible à la casse, et les dossiers portent
+      # le nom technique de l'application (`paquets-studio-...`), jamais le nom
+      # affiché : « Studio » ne peut donc pas être attrapé par le motif des deux
+      # autres.
       - name: Normaliser les noms
         run: |
           set -eu
           out=livraison
           mkdir -p "$out"
 
-          copier() {  # motif_source  nom_stable
-            trouve=$(find paquets -iname "$1" -type f | head -n 1 || true)
+          copier() {  # application  motif_source  nom_stable
+            trouve=$(find paquets -path "*$1*" -iname "$2" -type f | head -n 1 || true)
             if [ -z "$trouve" ]; then
-              echo "MANQUANT : $1" >&2
+              echo "MANQUANT : $1 / $2" >&2
               exit 1
             fi
-            cp "$trouve" "$out/$2"
-            echo "$1  ->  $2"
+            cp "$trouve" "$out/$3"
+            printf '%-11s %-24s -> %s\n' "$1" "$2" "$3"
           }
 
-          copier '*_x64-setup.exe'      'SuperPrint-Windows-x64-setup.exe'
-          copier '*_aarch64.dmg'        'SuperPrint-macOS-AppleSilicon.dmg'
-          copier '*_x64.dmg'            'SuperPrint-macOS-Intel.dmg'
-          copier '*_amd64.AppImage'     'SuperPrint-Linux-x86_64.AppImage'
-          copier '*_amd64.deb'          'SuperPrint-Linux-x86_64.deb'
+          for app in superprint studio supertypo; do
+            case "$app" in
+              superprint) nom='SuperPrint' ;;
+              studio)     nom='Studio-IA' ;;
+              supertypo)  nom='SuperTyPo' ;;
+            esac
 
+            copier "$app" '*_x64-setup.exe'   "$nom-Windows-x64-setup.exe"
+            copier "$app" '*_x64_en-US.msi'   "$nom-Windows-x64.msi"
+            copier "$app" '*_aarch64.dmg'     "$nom-macOS-AppleSilicon.dmg"
+            copier "$app" '*_x64.dmg'         "$nom-macOS-Intel.dmg"
+            copier "$app" '*_amd64.AppImage'  "$nom-Linux-x86_64.AppImage"
+            copier "$app" '*_amd64.deb'       "$nom-Linux-x86_64.deb"
+            copier "$app" '*.x86_64.rpm'      "$nom-Linux-x86_64.rpm"
+          done
+
+          echo
           ls -lh "$out"
 
       - name: Publier la version « desktop-latest »
@@ -145,7 +207,7 @@ jobs:
           set -eu
           gh release view desktop-latest >/dev/null 2>&1 || \
             gh release create desktop-latest \
-              --title "SuperPrint — application de bureau" \
-              --notes "Installeurs de l'application de bureau SuperPrint, pour Windows, macOS et Linux. Les noms de fichiers sont fixes : les liens de telechargement du site pointent toujours sur la version la plus recente." \
+              --title "SuperPrint — applications de bureau" \
+              --notes "Les trois applications de bureau, pour Windows, macOS et Linux : SuperPrint (editeur de PAO), Studio IA (mise en page assistee par IA) et SuperTyPo (decomposition de caracteres). Les noms de fichiers sont fixes : les liens de telechargement du site pointent toujours sur la version la plus recente." \
               --latest=false
           gh release upload desktop-latest livraison/* --clobber

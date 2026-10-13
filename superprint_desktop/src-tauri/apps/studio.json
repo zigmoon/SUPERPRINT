@@ -1,0 +1,51 @@
+{
+  "productName": "Studio IA",
+  "identifier": "cc.superprint.studio",
+  "build": {
+    "beforeBuildCommand": "node scripts/prepare-bundle.mjs studio",
+    "frontendDist": "../frontend/studio"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Studio IA",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "dragDropEnabled": true,
+        "url": "index.html"
+      }
+    ]
+  },
+  "bundle": {
+    "shortDescription": "Studio de mise en page assisté par IA.",
+    "longDescription": "Studio IA — décrivez la maquette en une phrase, l'intelligence artificielle la compose et vous l'éditez ensuite librement. Application de bureau autonome, fonctionne hors-ligne.",
+    "icon": [
+      "icons/studio/32x32.png",
+      "icons/studio/128x128.png",
+      "icons/studio/128x128@2x.png",
+      "icons/studio/icon.icns",
+      "icons/studio/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/studio/icon.ico"
+      }
+    },
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/share/doc/studio-ia/copyright": "copyright",
+          "/usr/share/doc/studio-ia/changelog.gz": "debian-changelog.gz",
+          "/usr/share/doc/studio-ia/NOTICE.md": "../NOTICE.md",
+          "/usr/share/doc/studio-ia/TRADEMARKS.md": "../TRADEMARKS.md"
+        }
+      }
+    }
+  }
+}
