@@ -1698,12 +1698,10 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .fondations-grid {
   display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.613 — LE FILET DU HAUT PASSE À 2 px, EN ENCRE PLEINE.
-     Il séparait les fondations des trois entrées d'un trait gris de 1 px
-     (--line : #DCD3C3) — assez discret pour ne plus se lire comme une
-     séparation. Le filet du bas reste tel quel : c'est celui du haut qui
-     ouvre le bloc, et c'est lui qui doit se voir. */
-  border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line);
+  /* Le filet du haut reste le gris clair de 1 px (--line) : un essai à 2 px en
+     encre pleine a été fait, puis REVENU EN ARRIÈRE — trop lourd au-dessus d'un
+     bloc qui reste discret. Le filet du bas est identique. */
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
 .fondation {
   display: flex; align-items: flex-start; gap: 13px; min-width: 0;
