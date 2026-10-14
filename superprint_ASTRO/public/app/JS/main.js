@@ -16668,7 +16668,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         //   empilés. Le bringToFront est fait UNE fois au début du drag
         //   (pas à chaque frame) pour éviter de perturber l'ordre des
         //   calques à chaque micro-mouvement.
-        //   ⚠️ DÉPLACÉ EN v1.7.613 EN TÊTE DE CE GESTIONNAIRE, AVANT le retour
+        //   ⚠️ DÉPLACÉ EN v1.7.614 EN TÊTE DE CE GESTIONNAIRE, AVANT le retour
         //   anticipé des textbox en édition : placé ici, il ne s'exécutait JAMAIS
         //   pour un bloc texte qu'on venait d'ouvrir (voir le commentaire plus haut).
 

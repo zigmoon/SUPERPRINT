@@ -9,6 +9,23 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.614] — 2026-10-14
+
+_Un bloc texte placé sur une image ou une forme reste visible — et la version qui le rend livrable_
+
+> **Pourquoi cette version existe.** Le correctif touche `app/JS/main.js` — mais l'application charge ce fichier avec une empreinte **figée sur la version** (`JS/main.js?v=…-v613-…`) et son service worker met en cache sous un **nom qui porte la version**. Déployer le fichier sans relever ces deux chaînes n'aurait rien livré : un navigateur déjà venu aurait servi l'**ancien** `main.js` depuis son cache, et à version égale le lanceur npm ne rejoue rien. Le cache est donc bumpé **en même temps** que la version — c'est ce qui transforme un correctif en livraison.
+
+### Fixed — un bloc texte placé sur une image ou une forme disparaissait
+
+- **Mesuré dans le document ouvert, et non supposé.** L'ordre des objets était : `textbox` en **index 0**, puis les repères (fond perdu, marge, fond), puis un `rect` gris `#b3b3b3` en **index 4**. Chez Fabric c'est l'index qui décide de l'ordre de peinture, et **aucun rendu spécial ne remonte les textes** : le bloc texte était donc peint **avant** la forme, qui le recouvrait intégralement. Le `rect` en question est exactement ce que produit l'outil Rectangle.
+- ⚠️ **Trois causes distinctes, toutes corrigées.**
+  1. **Glisser un bloc texte qu'on venait d'ouvrir ne le remontait pas.** Le `bringToFront` du glisser existait déjà, mais il était placé **après** le retour anticipé qui protège un textbox en cours d'édition — retour nécessaire (on étend une sélection de texte, ce n'est pas un drag d'objet), mais qui emportait la remontée avec lui. Elle passe désormais **avant**, même drapeau, toujours une seule fois par glisser.
+  2. **Ouvrir un bloc ne le remontait pas du tout.** « Ouvrir » = entrer en édition. L'événement `text:editing:entered` est le seul point qui couvre **tous** les chemins d'entrée (double-clic, menu contextuel, édition programmée) : c'est donc là qu'on remonte, en une ligne.
+  3. **L'outil « écrire dans / sur une forme » cachait le texte qu'il venait de créer.** Pour « autour » et « sur le tracé », la **forme** était envoyée devant — choix délibéré, noté dans le code, pour pouvoir double-cliquer la forme et y insérer une image. Mais quand la forme est **opaque**, le texte est peint dessous et disparaît. La forme ne passe donc devant **que si elle est transparente** : là elle ne cache rien, et le double-clic reste possible. Dès qu'elle a une matière, c'est le **texte** qui vient devant.
+- **Vérifié sur le code réellement servi**, extrait du fichier et exécuté contre Fabric 5.1.0 sur un canevas jetable — aucun contact avec un document en cours : forme opaque en mode « autour », le texte passe de l'index 0 à l'index 1 ; forme transparente, la forme reste devant ; mode « dedans », texte devant ; mode « sur le tracé » sur forme pleine, texte devant ; **texte en cours d'édition glissé, remonte de 0 à 1** (le cas qui échouait) ; et le drapeau empêche toute remontée au second appel. Syntaxe des quatre copies vérifiée.
+- ⚠️ **Ce qui n'a pas été touché, et pourquoi.** Les **repères** gardent leur traitement : les remonter systématiquement changerait l'aspect de documents existants — mesuré, le `rect` de contenu était **au-dessus** des repères dans le document examiné. L'insertion d'un **fond de page** reste en arrière-plan : c'est une fonction qui le dit, pas un défaut. Une correction ne doit pas déplacer des calques qu'on n'a pas signalés.
+- **Quatre copies de `main.js`**, identiques au bit près : la source web, le miroir du paquet npm, et les deux du site Astro. `superprint_desktop/frontend/` est une **sortie** de compilation, fabriquée depuis `superprint/` à chaque build : les trois applications de bureau héritent donc de la correction sans qu'on y touche.
+
 ## [1.7.613] — 2026-10-14
 
 _Une barre qui reste devant, trois icônes qui manquaient, et trois polices qui n'existaient qu'en une graisse_
