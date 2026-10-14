@@ -317,13 +317,21 @@ templates and your exported PDF / PNG / JPG files.
 You may **not** copy, redistribute, resell, host, mirror, modify, create derivative works from,
 remove the copyright notices, or reuse the code, the templates and the asset library — including to
 build, train or improve a competing product or an AI model — without written permission.
+Self-hosting is part of that permission, not a right: it is available on request, like the
+commercial, custom-build and white-label options below.
 
-Commercial licensing, custom builds, white-labelling, self-hosting and partnerships:
-**contact@superprint.cc** · **all@2points13.fr**
+**Trademarks.** The license covers the *code*, not the *name*: "SuperPrint", "SP213" and
+"SuperTyPo", and their logos, are trademarks of Simon Dupont-Gellert (Zigmoon), governed
+separately — see [TRADEMARKS.md](superprint/TRADEMARKS.md). An authorised derivative or hosted
+instance must not present itself under these names in a way that implies official origin or
+endorsement.
 
 Third-party components bundled with the application (Fabric.js, pdf-lib, pdf.js, JSZip, Mammoth,
 SheetJS, WebLLM, Little CMS `lcms-wasm`), the bundled fonts and the colour-library names (Pantone,
 Toyo, Focoltone, HKS, RAL, NCS, DIC) keep their own licenses and trademarks, which prevail over this
-one for the parts they cover. The shade values shipped with the application are indicative sRGB
-conversions, not the manufacturers' official libraries — a manufacturer's own `.ase` file can be
-imported for exact values.
+one for the parts they cover — see [NOTICE.md](superprint/NOTICE.md). The shade values shipped
+with the application are indicative sRGB conversions, not the manufacturers' official
+libraries — a manufacturer's own `.ase` file can be imported for exact values.
+
+Commercial licensing, custom builds, white-labelling, self-hosting and partnerships:
+**contact@superprint.cc** · **all@2points13.fr**
