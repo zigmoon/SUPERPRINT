@@ -9,6 +9,41 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.616] — 2026-10-15
+
+_Les règles deux fois plus fines, le sous-menu Papier à une ligne, et une désinstallation Windows qui ne bloque plus_
+
+> ⚠️ **Pourquoi 616 alors que 615 venait d'être coupée — et il faut le dire franchement.** La version **1.7.615 a été construite et son archive binaire publiée** (`desktop-v1.7.615`) **avant** que cette seconde salve de correctifs n'arrive : l'archive porte donc un code antérieur. Rejouer le même tag aurait consisté à **réécrire une référence publiée** et à écraser une livraison existante — ce que ce dépôt s'interdit par principe. On bump donc, et c'est un aveu utile : **le train de livraison était parti trop tôt**. La règle qui en sort est celle qui vaut déjà pour `version.txt` : on ne coupe une version qu'une fois le travail **terminé**, pas entre deux salves. *Rien n'a été distribué aux utilisateurs* (ni zip, ni npm) : ces correctifs arrivent donc à eux en même temps que le reste de 1.7.615.
+
+### Changed — les règles sont deux fois moins épaisses
+
+- **20 px → 10 px**, sur la barre X comme sur la barre Y, avec les nombres réduits de 9,6 à 7 px et les traits de 8/5 px à 5/2,5 px (mêmes proportions), la marque rouge du pli de 12 à 6 px. Elles mangeaient 20 px d'aperçu sur deux côtés ; une règle est un repère, pas un bandeau. L'épaisseur est **une seule constante** : le carré d'angle, le décalage de la barre Y et l'origine de ses graduations s'en déduisent, donc rien ne peut se désaligner.
+- ⚠️ **La barre Y couche ses chiffres, et ce n'est pas une coquetterie.** À 10 px de large, trois chiffres ne tiennent pas à l'endroit : « 250 » à 7 px d'IBM Plex Mono mesure **12,6 px** et déborderait de 2,6 px sur le canevas. Elle écrit donc ses nombres dans le sens vertical (`writing-mode: vertical-rl`), la convention des règles verticales en PAO. **Mesuré contre la feuille de style réelle** : toutes les étiquettes font **7,0 px de large**, « 250 » compris, et tiennent donc dans la barre ; la barre X garde ses nombres à l'endroit, et ses 7 px tiennent dans les 10 px de haut.
+- **En double page, rien d'autre ne change** — vérifié par l'analyse : le trait rouge du pli se place à `mmToPx(pageFormat.width)`, or `pageFormat.width` vaut bien la largeur d'**une** page (210 mm pour un A4), donc le repère tombe sur la reliure et non sur le bord du spread ; l'origine reste au coin haut-gauche du document, et l'allègement se propage par la constante unique.
+
+### Changed — le sous-menu Image ne déverse plus le catalogue
+
+- Le catalogue de papiers vivait **deux fois** : listé au premier niveau du sous-menu Image, **et** de nouveau dans la palette. Le menu ne contient plus qu'**une ligne — « Papier »** — qui ouvre la palette, exactement comme « Image » et « SVG » tiennent en une ligne juste au-dessus.
+- **Rien n'est perdu, et ce n'est pas une supposition** : `creerEntreeDePapier` attache le glisser **et** le clic (dépôt sur la page active) quel que soit le conteneur, donc la palette porte les deux gestes. CSS mort retiré (`.sp-papier-aide`, et `.sp-papier-item` qui redoublait `.sp-papier-ligne` — lequel a déjà son curseur `grab`).
+
+### Fixed — la désinstallation Windows ne bloque plus
+
+- Le gabarit NSIS de Tauri lance l'ancien désinstalleur pour remplacer une version en place ; **dès que l'application tourne**, Windows verrouille le `.exe`, le désinstalleur échoue, le gabarit affiche `unableToUninstall` et appelle `Abort`. L'utilisateur restait **sans issue**, sans même savoir qu'il suffisait de fermer le logiciel.
+- La correction **n'est pas** un gabarit recopié : un gabarit recopié devrait suivre chaque mise à jour de `tauri-cli`, et une divergence se paierait par un installeur cassé. Vérifié dans le gabarit **généré** : Tauri appelle quatre greffes officielles (`NSIS_HOOK_PREINSTALL` / `POSTINSTALL` / `PREUNINSTALL` / `POSTUNINSTALL`). On ajoute donc `src-tauri/nsis/hooks.nsh`, branché par `bundle.windows.nsis.installerHooks` — **fermeture propre puis forcée** de l'application, la présence n'étant pas devinée (`taskkill` la dit par son code de retour) mais **mesurée** (`Delete` échoue exactement quand un processus tient le fichier), avec une consigne claire dans la langue de l'assistant si elle résiste. La greffe est posée sur `PREINSTALL` **et** `PREUNINSTALL`, pour que la désinstallation manuelle fonctionne aussi.
+- ⚠️ La fusion des surcouches `apps/*.json` est **récursive** — prouvé par l'artefact : la surcouche ne contient que `installerIcon`, or les installeurs générés ont bien les 3 langues du socle. `installerHooks` sera donc hérité par les trois applications.
+- ⚠️ `makensis` n'est pas installé sur le poste : la compilation NSIS n'est vérifiée **que par la CI**. Une erreur de compilation échouerait bruyamment — elle ne livrerait pas un installeur cassé en silence.
+
+### Fixed — deux empreintes de cache relevées, dont une oubliée
+
+- ⚠️ **Le CSS a sa propre empreinte**, distincte de celle de `main.js` et du service worker. Cette version touchant **aussi la feuille de style**, relever `main.js` seul n'aurait rien livré : les visiteurs déjà venus auraient gardé l'ancien CSS, donc des règles de 20 px. Relevé **en vérifiant et non en supposant** — le CSS servi répondait encore `font-size: 9.6px` alors que le fichier disait 7 px.
+- Deuxième relevé, après coup : `main.js` a de nouveau changé (les règles), donc son empreinte devait suivre aussi.
+  - JS : `?v=20261015-v615-tableau-regles-fines` → `?v=20261015-v616-tableau-regles-fines`
+  - CSS : `?v=20261015-v615-regles-fines-tableau` → `?v=20261015-v616-regles-fines-tableau`
+  - SW : `superprint-shell-v1.7.615-…` → `superprint-shell-v1.7.616-tableau-regles-fines`
+- Copies alignées **au bit près** (`superprint/app/` → `sp213-local/public/superprint/` et `superprint_ASTRO/public/`) ; syntaxe vérifiée sur les copies de `main.js` et `superprint-papiers.js`, JSON de Tauri validé.
+
+> ⚠️ **Reste ouvert.** La **transparence du calque dans l'aperçu 3D** n'est pas traitée : le fait qui commande le remède est **mesuré** — l'image de page capturée est **blanche opaque** (255/255/255/255 aux quatre coins), donc l'encre et le support sont les mêmes pixels, et on ne peut pas rendre la feuille translucide sans délaver l'impression. Deux modèles défendables s'opposent, et le choix revient au propriétaire du projet. Les notes de version de `release.html` racontent toujours 1.7.604 → 1.7.614. `.rpm` et `.dmg` ne portent toujours aucun fichier de licence.
+
 ## [1.7.615] — 2026-10-14
 
 _Un tableau qui s'aligne sur ses filets, et des règles qui partent enfin du coin du document_
