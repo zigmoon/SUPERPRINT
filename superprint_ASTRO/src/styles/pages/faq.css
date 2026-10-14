@@ -312,6 +312,22 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
+/* 🆕 v1.7.615 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+   Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
+   du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
+   couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
+   la traversait donc en dehors de tout élément de `.nav-dd` : `:hover` devenait
+   faux, le menu se refermait, et la souris arrivait sur un panneau déjà passé
+   en `visibility: hidden` — il ne se rouvrait pas. Mesuré avant correction :
+   bande morte de 5,7 px, menu déjà refermé en son milieu.
+   Ce pont invisible la couvre. Transparent, sans effet sur la mise en page, il
+   reste ENTIÈREMENT dans la barre : rien ne peut le rogner. Sa largeur est
+   celle du bouton, donc il ne recouvre aucun lien voisin — les autres entrées
+   de la barre s'arrêtent exactement là où il commence.
+   ⚠️ La hauteur suit la barre : si 66 px ou 42 px changent, la reprendre. */
+.nav-dd-btn::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 12px;
+}
 .nav-dd-chev {
   flex: 0 0 auto; width: 12px; height: 12px;
   fill: none; stroke: currentColor; stroke-width: 2.2;
