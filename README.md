@@ -27,8 +27,8 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.612-000000?style=flat-square">
-  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.110-CB3837?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.614-000000?style=flat-square">
+  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.112-CB3837?style=flat-square">
   <img alt="Desktop beta" src="https://img.shields.io/badge/desktop-Windows%20%7C%20macOS%20%7C%20Linux-F2B90B?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20spot%20inks-E1237B?style=flat-square">
@@ -301,9 +301,12 @@ SuperPrint is designed to be **privacy-friendly**:
 
 ## ✦ License
 
-**Proprietary license — all rights reserved.** SuperPrint is **not** open source. It runs in a
-browser, so its code is readable, but readable is not free to reuse.
+**Proprietary — all rights reserved. Not open source.** SuperPrint — the page-layout editor, the
+SP213 AI layout studio, the SuperTyPo font editor, their source code, documentation and build
+tooling — is **proprietary software**: free to use, but not free to copy, modify or redistribute.
 See the full text in [LICENSE](LICENSE).
+
+SuperPrint runs in a browser, so its code can be read — but readable is not free to reuse.
 
 Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon) · 2.13. All rights reserved.
 
