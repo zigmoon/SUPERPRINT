@@ -308,7 +308,7 @@ See the full text in [LICENSE](LICENSE).
 
 SuperPrint runs in a browser, so its code can be read — but readable is not free to reuse.
 
-Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon) · 2.13. All rights reserved.
+Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon) & Clémence Brunet · 2.13. All rights reserved.
 
 You may **use** SuperPrint at [superprint.cc](https://superprint.cc) and through its local launcher
 (`npx superprint`), and **everything you produce belongs to you** — your documents, images, fonts,

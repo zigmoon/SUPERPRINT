@@ -1,7 +1,7 @@
 SUPERPRINT — LICENSE
 Proprietary licence. All rights reserved.
 
-Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon). Published by 2.13 — https://2points13.fr
+Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon) & Clémence Brunet. Published by 2.13 — https://2points13.fr
 
 This file is the licence of SuperPrint: the page-layout editor, the SP213 AI layout
 studio, the SuperTyPo font editor, their source code (HTML, CSS, JavaScript, Rust,
@@ -52,8 +52,8 @@ TERMS AND CONDITIONS
    forms, their documentation, their build tooling, their templates, their asset
    library and the native .sp project format.
 
-   "Licensor" means Simon Dupont-Gellert (Zigmoon), publisher 2.13, holder of the
-   rights over the Software.
+   "Licensor" means Simon Dupont-Gellert (Zigmoon) & Clémence Brunet, publisher 2.13, joint holders of
+   the rights over the Software.
 
    "You" means the individual or legal entity exercising rights under this
    licence, and any entity that controls, is controlled by, or is under common

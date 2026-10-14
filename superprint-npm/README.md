@@ -201,7 +201,7 @@ SuperPrint — the page-layout editor, the SP213 AI layout studio, the SuperTyPo
 their source code, documentation and build tooling — is **proprietary software**: free to
 use, but not free to copy, modify or redistribute. See the full text in [LICENSE](LICENSE).
 
-Copyright (C) 2026 Simon Dupont-Gellert (Zigmoon) · 2.13.
+Copyright (C) 2026 Simon Dupont-Gellert (Zigmoon) & Clémence Brunet · 2.13.
 
 **In short** — use SuperPrint for any purpose, including commercial work, with no fee and no
 account; everything **you produce** with it belongs to you — your documents, images, fonts,

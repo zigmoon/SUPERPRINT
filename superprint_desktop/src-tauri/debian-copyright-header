@@ -10,11 +10,12 @@ repris mot pour mot du fichier LICENSE du dépôt, au moment de la construction 
 paquet — il ne peut donc pas diverger.
 
 Upstream-Name     {{NOM}}
-Upstream-Contact  Simon Dupont-Gellert (Zigmoon) <contact@superprint.cc>
+Upstream-Contact  Simon Dupont-Gellert (Zigmoon) & Clémence Brunet
+                  <contact@superprint.cc>
 Source            https://github.com/zigmoon/SUPERPRINT
 Packaged-By       2.13 — https://2points13.fr <all@2points13.fr>
 
-Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon). Published by 2.13.
+Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon) & Clémence Brunet. Published by 2.13.
 
 Périmètre : le paquet `{{PAQUET}}` contient et distribue {{PERIMETRE}}. Il est
 régi par la licence propriétaire dont le texte suit.
