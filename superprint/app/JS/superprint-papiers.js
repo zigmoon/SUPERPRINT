@@ -4,9 +4,8 @@
    CE QUE CE MODULE AJOUTE À SUPERPRINT
      · les ASPÉRITÉS de papier dans le SOUS-MENU DE L'ICÔNE IMAGE de la colonne de
        gauche, APRÈS « SVG » — c'est là, et NULLE PART AILLEURS, qu'elles se
-       prennent. Il n'y a plus d'icône « Aspérités papier » dans la colonne : la
-       première ligne du bloc ouvre la PALETTE (le widget), les suivantes déposent
-       un papier ;
+       prennent. Il n'y a plus d'icône dans la colonne : la première ligne du bloc
+       ouvre la PALETTE « Papier » (le widget), les suivantes déposent un papier ;
      · le DÉPÔT d'un papier sur une page par glisser-déposer, ou par simple clic
        sur une entrée du menu quand une page est active ;
      · l'HABILLAGE de la page : teinte + grain + une petite marque, posés SUR la
@@ -56,6 +55,56 @@
     window.__spPapiersInstalle = true;
 
     var VERSION = 'v10-sous-menu-image';
+    /* ── LE NOM DE LA PALETTE, DANS LES TROIS LANGUES ──────────────────────
+       « Aspérités papier » s'est révélé trop long pour une barre de titre, et
+       moins clair que le mot simple : on appelle cette palette « Papier ».
+
+       Pourquoi ces trois chaines existent AUSSI dans le dictionnaire de l'app
+       (`papierTitle`, main.js) : les elements portent `data-translate`, donc
+       l'app les retraduit a chaque changement de langue. Mais le module est
+       charge `defer` et construit ses elements APRES le premier passage de la
+       traduction : sans ce repli, le libelle resterait vide jusqu'au prochain
+       changement de langue. Le repli pose donc le texte initial.
+       ⚠️ Toute modification ici doit etre reportee dans `papierTitle`. */
+    var NOM_PALETTE = { fr: 'Papier', en: 'Paper', ja: '紙' };
+
+    /* ── LA LANGUE COURANTE, SELON LA MÊME RÈGLE QUE L'APPLICATION ────────────
+       ⚠️ CE N'EST PAS UN DÉTAIL DE CONFORT, ET LA PREMIÈRE VERSION SE TROMPAIT.
+       Elle lisait `sp_lang` en premier. Or depuis la v1.7.599 l'app impose au
+       démarrage la langue du POSTE (`navigator.language`), SAUF si l'utilisateur
+       a fait un choix explicite — marqué par la clé `sp_lang_choisi`. Sur un
+       navigateur en anglais, l'app affichait donc « Paper » pendant que le repli
+       croyait lire « Papier » : deux langues dans le même panneau.
+       La règle est recopiée de `main.js` (bloc _SP_LANGUE_599), dans le même
+       ordre : le paramètre d'adresse, puis le choix explicite, puis le poste.
+       Repli final : l'anglais, comme l'application. */
+    function langueCourante() {
+        try {
+            if (window.currentLanguage && NOM_PALETTE[window.currentLanguage]) return window.currentLanguage;
+            var q = '';
+            try {
+                var requete = (typeof window.__spBootQuery === 'string') ? window.__spBootQuery : (window.location.search || '');
+                q = String(new URLSearchParams(requete).get('lang') || '').toLowerCase();
+            } catch (_) {}
+            if (q === 'jp') q = 'ja';
+            if (NOM_PALETTE[q]) return q;
+            var choixExplicite = false;
+            try { choixExplicite = (localStorage.getItem('sp_lang_choisi') === '1'); } catch (_) {}
+            if (choixExplicite) {
+                var enregistree = '';
+                try { enregistree = String(localStorage.getItem('sp_lang') || '').toLowerCase(); } catch (_) {}
+                if (NOM_PALETTE[enregistree]) return enregistree;
+            }
+            var poste = '';
+            try { poste = String(navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase(); } catch (_) {}
+            if (poste.indexOf('fr') === 0) return 'fr';
+            if (poste.indexOf('ja') === 0) return 'ja';
+            return 'en';
+        } catch (_) { return 'en'; }
+    }
+
+    /** Le nom de la palette, dans la langue courante. */
+    function nomPalette() { return NOM_PALETTE[langueCourante()]; }
 
     /* ─────────────────────────────────────────────────────────── Catalogue ──
        `grain`      : quantité d'ASPÉRITÉS, de 0 (lisse) à 1 (très marqué).
@@ -649,11 +698,12 @@
 
     /* ═══════════════════════ INTERFACE : UNE SEULE PORTE ══════════════════════
        LES ASPÉRITÉS SE PRENNENT DANS LE SOUS-MENU DE L'ICÔNE IMAGE, ET LÀ SEULEMENT.
+       La palette s'appelle « Papier » — `papierTitle` dans les trois langues.
 
          · le SOUS-MENU DE L'ICÔNE IMAGE, APRÈS « SVG ». Le menu et son ouverture
            restent ceux de l'app (`setupImportDropdown`, `main.js:23163`) : on n'y
            ajoute que nos entrées ;
-         · sa PREMIÈRE LIGNE, « Aspérités papier », ouvre la PALETTE — le widget
+         · sa PREMIÈRE LIGNE, « Papier », ouvre la PALETTE — le widget
            flottant. Un second clic la ferme (`basculeWidget`). Le widget est
            déplaçable par sa barre de titre, et sa position est retenue d'une
            session à l'autre, comme celle des autres widgets.
@@ -787,7 +837,7 @@
         racine.appendChild(sep);
 
         /* ── LA LIGNE QUI OUVRE LA PALETTE, ET POURQUOI ELLE EST ICI.
-           Il n'y a PLUS d'icône « Aspérités papier » dans la colonne de gauche :
+           Il n'y a PLUS d'icône « Papier » dans la colonne de gauche :
            les aspérités ne vivent que dans ce sous-menu, et c'est donc cette ligne
            qui ouvre le widget. Elle porte la classe `dropdown-item`, comme « Image »
            et « SVG » juste au-dessus, pour ne pas détonner dans le menu.
@@ -797,11 +847,11 @@
         bouton.className = 'dropdown-item sp-papier-ouvrir';
         bouton.id = 'spPapierOuvrir';
         bouton.type = 'button';
-        bouton.setAttribute('aria-label', 'Aspérités papier');
+        bouton.setAttribute('aria-label', nomPalette());
         bouton.setAttribute('aria-pressed', 'false');
-        bouton.title = 'Aspérités papier — ouvrir la palette (un second clic la ferme)';
+        bouton.title = nomPalette() + ' — ' + 'ouvrir la palette (un second clic la ferme)';
         bouton.innerHTML = iconeEtoiles() +
-            '<span class="sp-papier-ouvrir-nom">Aspérités papier</span>' +
+            '<span class="sp-papier-ouvrir-nom" data-translate="papierTitle">' + nomPalette() + '</span>' +
             '<span class="sp-papier-ouvrir-fleche" aria-hidden="true">▸</span>';
         bouton.addEventListener('click', function (e) {
             e.preventDefault();
@@ -838,11 +888,11 @@
         widget.className = 'sp-papier-widget sp-papier-widget-ferme';
         widget.id = 'spPapierWidget';
         widget.setAttribute('role', 'dialog');
-        widget.setAttribute('aria-label', 'Aspérités papier');
+        widget.setAttribute('aria-label', nomPalette());
         widget.innerHTML =
             '<div class="sp-papier-entete" id="spPapierEntete">' +
             '<span class="sp-papier-point"></span>' +
-            '<span class="sp-papier-nom">Aspérités papier</span>' +
+            '<span class="sp-papier-nom" data-translate="papierTitle">' + nomPalette() + '</span>' +
             '<span class="sp-papier-fleche">▾</span>' +
             '</div>' +
             '<div class="sp-papier-corps" id="spPapierCorps"></div>';

@@ -16668,7 +16668,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         //   empilés. Le bringToFront est fait UNE fois au début du drag
         //   (pas à chaque frame) pour éviter de perturber l'ordre des
         //   calques à chaque micro-mouvement.
-        //   ⚠️ DÉPLACÉ EN v1.7.614 EN TÊTE DE CE GESTIONNAIRE, AVANT le retour
+        //   ⚠️ DÉPLACÉ EN v1.7.615 EN TÊTE DE CE GESTIONNAIRE, AVANT le retour
         //   anticipé des textbox en édition : placé ici, il ne s'exécutait JAMAIS
         //   pour un bloc texte qu'on venait d'ouvrir (voir le commentaire plus haut).
 
@@ -24588,6 +24588,315 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     
         }
         
+        /* ── TABLEAU — outil « Regles et grilles > Tableau » ──────────────────────────────
+           L'application n'a pas d'objet « tableau » : sa representation native, deja
+           retenue par l'import IDML/DOCX, est un BLOC DE TEXTE — une ligne par rangee,
+           une TABULATION entre les colonnes, et des taquets calcules sur la largeur de
+           colonne. L'avantage est decisif : chaque cellule est du texte reel, donc tous
+           les outils de typographie (corps, graisse, interlettrage, couleur, alignement,
+           styles, recherche/remplacement) s'y appliquent sans une ligne de code de plus.
+           Les FILETS sont des fabric.Line posees DERRIERE le bloc dans un seul groupe :
+           le groupe ne contient aucun texte, donc le bloc reste parfaitement editable —
+           aucun groupement du texte, aucune regression de l'edition. */
+        window.spTableau = (function () {
+            var MIN_C = 1, MAX_C = 20, MIN_L = 1, MAX_L = 40;
+            var defC = 3, defL = 4, defLargeurMm = 180, defHauteurMm = 8, defCorps = 10;
+
+            function trad(cle, secours) {
+                try {
+                    var v = (typeof translate === 'function') ? translate(cle) : cle;
+                    return (v && v !== cle) ? v : secours;
+                } catch (_) { return secours; }
+            }
+            function mmVersPx(mm) {
+                return (typeof window.spTabMmVers === 'function') ? window.spTabMmVers(mm) : (mm * 72) / 25.4;
+            }
+            function entier(v, lo, hi, d) {
+                var n = parseInt(v, 10);
+                return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d;
+            }
+            function nombre(v, lo, hi, d) {
+                var n = parseFloat(String(v).replace(',', '.'));
+                return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d;
+            }
+
+            /* Un taquet par frontiere de colonne : les cellules s'alignent dessus. */
+            function taquets(largeurPx, colonnes) {
+                var stops = [], i;
+                for (i = 1; i < colonnes; i++) stops.push({ pos: (largeurPx * i) / colonnes, type: 'left' });
+                return { active: stops.length > 0, step: mmVersPx(12.7), stops: stops };
+            }
+            function contenu(lignes, colonnes) {
+                var vide = [], out = [], i;
+                for (i = 0; i < colonnes; i++) vide.push('');
+                for (i = 0; i < lignes; i++) out.push(vide.join('\t'));
+                return out.join('\n');
+            }
+
+            /* Filets : (lignes+1) horizontales + (colonnes+1) verticales, en coordonnees
+               locales (0,0)-(w,h), regroupes pour n'etre transformes qu'une fois. */
+            function creerFilets(w, h, colonnes, lignes) {
+                if (typeof fabric === 'undefined') return null;
+                var trace = [], i;
+                var opt = { stroke: '#1a1a1a', strokeWidth: 1, selectable: false, evented: false, objectCaching: false };
+                for (i = 0; i <= lignes; i++) {
+                    var y = (h * i) / lignes;
+                    trace.push(new fabric.Line([0, y, w, y], Object.assign({}, opt)));
+                }
+                for (i = 0; i <= colonnes; i++) {
+                    var x = (w * i) / colonnes;
+                    trace.push(new fabric.Line([x, 0, x, h], Object.assign({}, opt)));
+                }
+                var g = new fabric.Group(trace, {
+                    selectable: false, evented: false, objectCaching: false,
+                    originX: 'left', originY: 'top', hoverCursor: 'default'
+                });
+                g._spTableauFilets = true;
+                g._spLargeurBase = w;
+                g._spHauteurBase = h;
+                return g;
+            }
+
+            /* Le groupe copie la transformation du bloc : deplacement, redimensionnement,
+               rotation et inclinaison suivent, sans groupement du texte lui-meme. */
+            function synchroniser(tb) {
+                var inf = tb._spTableauGrille;
+                if (!inf || !inf.filets || !tb.canvas) return;
+                var g = inf.filets;
+                var w = (typeof tb.width === 'number' && tb.width > 0) ? tb.width : inf.filets._spLargeurBase;
+                var h = (typeof tb.height === 'number' && tb.height > 0) ? tb.height : inf.filets._spHauteurBase;
+                g.set({
+                    left: tb.left, top: tb.top,
+                    scaleX: w / g._spLargeurBase, scaleY: h / g._spHauteurBase,
+                    angle: tb.angle || 0, skewX: tb.skewX || 0, skewY: tb.skewY || 0,
+                    originX: 'left', originY: 'top'
+                });
+                g.setCoords();
+            }
+
+            function brancherSuivi(tb, cv) {
+                var inf = tb._spTableauGrille;
+                var suivre = function () {
+                    /* Redimensionnement : la largeur des colonnes et les taquets suivent. */
+                    if (typeof tb.width === 'number' && tb.width > 0 && inf.largeur !== tb.width) {
+                        inf.largeur = tb.width;
+                        tb._spTabs = taquets(tb.width, inf.colonnes);
+                        if (typeof window.spTabRafraichir === 'function') { try { window.spTabRafraichir(tb); } catch (_) {} }
+                    }
+                    synchroniser(tb);
+                };
+                tb.on('moving', suivre);
+                tb.on('scaling', suivre);
+                tb.on('rotating', suivre);
+                tb.on('skewing', suivre);
+                tb.on('modified', function () { suivre(); if (typeof scheduleRender === 'function') scheduleRender(cv); });
+                /* Supprimer le bloc supprime ses filets. */
+                cv.on('object:removed', function (ev) {
+                    if (ev && ev.target === tb && inf.filets) {
+                        var g = inf.filets;
+                        inf.filets = null;
+                        tb._spTableauGrille = null;
+                        try { cv.remove(g); } catch (_) {}
+                    }
+                });
+            }
+
+            /* Insertion : on passe par createSimpleTextBox() et non par un new
+               fabric.Textbox, pour heriter de tout l'enregistrement Fabric de
+               l'application (clip-path, dimensions fixes, conversion du scale en
+               redimensionnement, indicateur de debordement). */
+            /* Le canvas actif nest pas visible par un simple identifiant ici :
+               lapplication lobtient par getActiveCanvas(), aussi expose sur window. */
+            var canvasActif = function () {
+                var c = null;
+                try { if (typeof getActiveCanvas === 'function') c = getActiveCanvas(); } catch (_) {}
+                if (!c) { try { if (typeof window.getActiveCanvas === 'function') c = window.getActiveCanvas(); } catch (_) {} }
+                return c || null;
+            };
+
+            function inserer(cfg) {
+                var cv = canvasActif();
+                if (!cv) return false;
+
+                var largeurPx = mmVersPx(cfg.largeurMm);
+                var hauteurPx = mmVersPx(cfg.hauteurMm);
+                var hauteurTot = hauteurPx * cfg.lignes;
+
+                var marge = mmVersPx(10);
+                var bavure = 0;
+                try { bavure = mmToPx(bleed) || 0; } catch (_) { bavure = mmVersPx(3); }
+                var x = bavure + marge;
+                var y = bavure + marge;
+                try {
+                    if (typeof canvasWidth === 'number' && canvasWidth > 0) {
+                        var dispo = canvasWidth - x - marge;
+                        if (dispo > mmVersPx(20) && largeurPx > dispo) { largeurPx = dispo; }
+                    }
+                } catch (_) {}
+
+                createSimpleTextBox(cv, x, y, largeurPx, hauteurTot);
+                var tb = cv.getActiveObject();
+                if (!tb || tb.type !== 'textbox') return false;
+
+                tb.set({
+                    text: contenu(cfg.lignes, cfg.colonnes),
+                    /* 1 mm = 72/25,4 px dans cet espace document, donc 1 px document = 1 pt :
+                       le corps se transmet tel quel. */
+                    fontSize: cfg.corps,
+                    fontFamily: 'Open Sans',
+                    fill: '#000000',
+                    textAlign: 'left',
+                    lineHeight: 1,
+                    charSpacing: 0
+                });
+                tb._fixedWidth = largeurPx;
+                tb._fixedHeight = hauteurTot;
+                tb._spTabs = taquets(largeurPx, cfg.colonnes);
+                tb._spTableauGrille = { colonnes: cfg.colonnes, lignes: cfg.lignes, largeur: largeurPx, filets: null };
+
+                if (typeof tb._clearCache === 'function') tb._clearCache();
+                tb.initDimensions();
+                tb.setCoords();
+
+                var filets = creerFilets(largeurPx, hauteurTot, cfg.colonnes, cfg.lignes);
+                if (filets) {
+                    tb._spTableauGrille.filets = filets;
+                    cv.add(filets);
+                    cv.sendToBack(filets);
+                    synchroniser(tb);
+                    brancherSuivi(tb, cv);
+                }
+                if (typeof applyTextboxClipPath === 'function') applyTextboxClipPath(tb);
+                if (typeof window.spTabRafraichir === 'function') { try { window.spTabRafraichir(tb); } catch (_) {} }
+                cv.setActiveObject(tb);
+                cv.requestRenderAll();
+                if (typeof saveState === 'function') saveState('Tableau insere');
+                return true;
+            }
+
+            /* ── Boite de dialogue ──────────────────────────────────────────────────── */
+            function ouvrir() {
+                var _cv = canvasActif();
+                if (!_cv) return Promise.resolve(false);
+
+                return new Promise(function (resolve) {
+                    var cm = entier(defC, MIN_C, MAX_C, 3);
+                    var lm = entier(defL, MIN_L, MAX_L, 4);
+                    var largeur = defLargeurMm, hauteur = defHauteurMm, corps = defCorps;
+
+                    var overlay = document.createElement('div');
+                    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100010;display:flex;align-items:center;justify-content:center;';
+                    var card = document.createElement('div');
+                    card.className = 'sp-modal-card';
+                    card.style.cssText = 'position:relative;min-width:380px;max-width:92vw;padding:20px 22px;';
+
+                    var boutonPas = function (id, signe) {
+                        return '<button id="' + id + '" class="sp-tab-pas" data-pas="' + signe + '" style="width:28px;height:30px;border:1px solid #d9d9d9;border-radius:0;background:#f7f7f7;font-size:15px;line-height:1;cursor:pointer;padding:0;">' + (signe > 0 ? '+' : '\u2212') + '</button>';
+                    };
+                    var champNb = function (id, valeur, max) {
+                        return '<input type="text" inputmode="numeric" id="' + id + '" value="' + valeur + '" data-max="' + max + '" style="width:52px;height:30px;padding:0 4px;border:1px solid #d9d9d9;border-radius:0;font-family:\'IBM Plex Mono\',monospace;font-size:13px;text-align:center;">';
+                    };
+                    var champMm = function (id, valeur) {
+                        return '<input type="text" inputmode="decimal" id="' + id + '" value="' + valeur + '" style="width:64px;height:30px;padding:0 6px;border:1px solid #d9d9d9;border-radius:0;font-family:\'IBM Plex Mono\',monospace;font-size:13px;text-align:center;">';
+                    };
+                    var etiq = 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;';
+                    var lib = 'font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:#555;';
+                    var grp = 'display:flex;align-items:center;gap:6px;';
+
+                    card.innerHTML = '<div class="sp-modal-header">'
+                        + '<div class="sp-modal-title">' + trad('tableauTitre', 'Ins\u00e9rer un tableau') + '</div>'
+                        + '<div class="sp-modal-close" id="spTabFermer">\u2715</div>'
+                        + '</div>'
+                        + '<div style="' + etiq + '"><span style="' + lib + '">' + trad('tableauColonnes', 'Colonnes') + '</span>'
+                        + '<span style="' + grp + '">' + boutonPas('spTabColMoins', -1) + champNb('spTabCol', cm, MAX_C) + boutonPas('spTabColPlus', 1) + '</span></div>'
+                        + '<div style="' + etiq + '"><span style="' + lib + '">' + trad('tableauLignes', 'Lignes') + '</span>'
+                        + '<span style="' + grp + '">' + boutonPas('spTabLigMoins', -1) + champNb('spTabLig', lm, MAX_L) + boutonPas('spTabLigPlus', 1) + '</span></div>'
+                        + '<div style="' + etiq + '"><span style="' + lib + '">' + trad('tableauLargeur', 'Largeur totale (mm)') + '</span>'
+                        + '<span style="' + grp + '">' + champMm('spTabLargeur', largeur) + '</span></div>'
+                        + '<div style="' + etiq + '"><span style="' + lib + '">' + trad('tableauHauteurLigne', 'Hauteur de ligne (mm)') + '</span>'
+                        + '<span style="' + grp + '">' + champMm('spTabHauteur', hauteur) + '</span></div>'
+                        + '<div style="' + etiq + '"><span style="' + lib + '">' + trad('tableauCorps', 'Corps du texte (pt)') + '</span>'
+                        + '<span style="' + grp + '">' + champMm('spTabCorps', corps) + '</span></div>'
+                        + '<div style="font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:#555;margin:14px 0 7px;">' + trad('tableauApercu', 'Aper\u00e7u') + '</div>'
+                        + '<div id="spTabApercu" style="height:132px;border:1px solid #1a1a1a;background:#fff;"></div>'
+                        + '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">'
+                        + '<button id="spTabAnnuler" class="modal-btn modal-btn-secondary">' + (typeof translate === 'function' ? translate('cancel') : 'Annuler') + '</button>'
+                        + '<button id="spTabOk" class="modal-btn modal-btn-primary">' + trad('tableauInserer', 'Ins\u00e9rer') + '</button>'
+                        + '</div>';
+
+                    overlay.appendChild(card);
+                    document.body.appendChild(overlay);
+
+                    var colEl = document.getElementById('spTabCol');
+                    var ligEl = document.getElementById('spTabLig');
+                    var largEl = document.getElementById('spTabLargeur');
+                    var hautEl = document.getElementById('spTabHauteur');
+                    var corpsEl = document.getElementById('spTabCorps');
+                    var apercu = document.getElementById('spTabApercu');
+
+                    function dessinerApercu() {
+                        var pc = 100 / cm, pl = 100 / lm;
+                        apercu.style.backgroundImage =
+                            'repeating-linear-gradient(to right,#cfcfcf 0 1px,transparent 1px ' + pc + '%)'
+                            + ',repeating-linear-gradient(to bottom,#cfcfcf 0 1px,transparent 1px ' + pl + '%)';
+                        apercu.style.backgroundPosition = '0 0';
+                    }
+                    function relire() {
+                        cm = entier(colEl.value, MIN_C, MAX_C, cm);
+                        lm = entier(ligEl.value, MIN_L, MAX_L, lm);
+                        colEl.value = cm; ligEl.value = lm;
+                        largeur = nombre(largEl.value, 20, 500, largeur);
+                        hauteur = nombre(hautEl.value, 2, 60, hauteur);
+                        corps = nombre(corpsEl.value, 4, 72, corps);
+                        largEl.value = largeur; hautEl.value = hauteur; corpsEl.value = corps;
+                        dessinerApercu();
+                    }
+                    document.querySelectorAll('.sp-tab-pas').forEach(function (b) {
+                        b.addEventListener('click', function () {
+                            var pas = parseInt(b.getAttribute('data-pas'), 10);
+                            if (b.id === 'spTabColMoins' || b.id === 'spTabColPlus') cm = entier(cm + pas, MIN_C, MAX_C, cm);
+                            else lm = entier(lm + pas, MIN_L, MAX_L, lm);
+                            colEl.value = cm; ligEl.value = lm;
+                            dessinerApercu();
+                        });
+                    });
+                    [colEl, ligEl, largEl, hautEl, corpsEl].forEach(function (e) {
+                        e.addEventListener('change', relire);
+                        e.addEventListener('blur', relire);
+                    });
+                    dessinerApercu();
+
+                    function fermer() { try { document.body.removeChild(overlay); } catch (_) {} }
+                    document.getElementById('spTabOk').addEventListener('click', function () {
+                        relire();
+                        var ok = inserer({ colonnes: cm, lignes: lm, largeurMm: largeur, hauteurMm: hauteur, corps: corps });
+                        fermer();
+                        resolve(ok);
+                    });
+                    document.getElementById('spTabAnnuler').addEventListener('click', function () { fermer(); resolve(false); });
+                    document.getElementById('spTabFermer').addEventListener('click', function () { fermer(); resolve(false); });
+                    overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) { fermer(); resolve(false); } });
+                    document.addEventListener('keydown', function (e) {
+                        if (e.key === 'Escape' && document.body.contains(overlay)) { fermer(); resolve(false); }
+                    });
+                    colEl.focus();
+                    colEl.select();
+                });
+            }
+
+            function brancher() {
+                var b = document.getElementById('insererTableau');
+                if (!b || b.__spTableauBranche) return;
+                b.__spTableauBranche = true;
+                b.addEventListener('click', function (e) { e.preventDefault(); ouvrir(); });
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', brancher);
+            else brancher();
+
+            return { ouvrir: ouvrir, inserer: inserer };
+        })();
+
+
         function createSimpleTextBox(activeCanvas, left, top, boxWidth, boxHeight) {
     
     const text = new fabric.Textbox(getDefaultTextPlaceholder(), {
@@ -50319,6 +50628,18 @@ https://superprint.app
     const oldVRuler = canvasInner.querySelector('.ruler-vertical');
     if (oldHRuler) oldHRuler.remove();
     if (oldVRuler) oldVRuler.remove();
+    /* v1.7.615 — les règles ne vivent plus DANS la page mais dans le cadre. Ce
+       nettoyage reste : il enlève les règles laissées par une version antérieure
+       ou par un rendu interrompu, et retire le cadre quand on masque les règles. */
+    const _spCadreExistant = canvasInner.closest('.canvas-wrapper');
+    if (_spCadreExistant && _spCadreExistant.__spRegles615) {
+        try { _spCadreExistant.__spRegles615.conteneur.remove(); } catch (_) {}
+        try { if (_spCadreExistant.__spRegles615.observateur) _spCadreExistant.__spRegles615.observateur.disconnect(); } catch (_) {}
+        try { if (_spCadreExistant.__spRegles615.surDefilement) _spCadreExistant.__spRegles615.surDefilement.retirer(); } catch (_) {}
+        try { if (_spCadreExistant.__spRegles615.surRedimensionnement) window.removeEventListener('resize', _spCadreExistant.__spRegles615.surRedimensionnement); } catch (_) {}
+        try { if (_spCadreExistant.__spRegles615.surveiller) clearInterval(_spCadreExistant.__spRegles615.surveiller); } catch (_) {}
+        _spCadreExistant.__spRegles615 = null;
+    }
     
     if (!visible) {
         // Masquer les repères (garder en mémoire leur position dans le DOM)
@@ -50358,209 +50679,310 @@ https://superprint.app
     const finalWidth = isSpreadCanvas ? (pageFormat.width * 2) : pageFormat.width;
     const finalHeight = pageFormat.height;
 
-    // Créer règle horizontale (en haut)
-    const hRuler = document.createElement('div');
-    hRuler.className = 'ruler-horizontal';
-    // Limiter la règle au format de la page (sans fond perdu)
-    hRuler.style.width = mmToPx(finalWidth) + 'px';
-    hRuler.style.left = (pbOffsetX + bleedPx) + 'px';
-    if (pbOffsetY > 0) hRuler.style.top = (pbOffsetY - 20) + 'px';
-    
-    // Graduations tous les 10mm
-    for (let mmValue = 0; mmValue <= finalWidth; mmValue += 10) {
-        const x = mmToPx(mmValue); // relatif au début de la règle (= début du format)
-        if (x > mmToPx(finalWidth)) break;
-        
-        const isMajor = mmValue % 50 === 0;
-        const tickHeight = isMajor ? 8 : (mmValue % 10 === 0 ? 5 : 3);
-        
-        const tick = document.createElement('div');
-        tick.className = 'ruler-tick' + (isMajor ? ' major' : '');
-        tick.style.left = x + 'px';
-        tick.style.bottom = '0';
-        tick.style.width = (isMajor ? '1px' : '0.5px');
-        tick.style.height = tickHeight + 'px';
-        hRuler.appendChild(tick);
-        
-        // Étiquette tous les 50mm
-        if (isMajor) {
-            const label = document.createElement('div');
-            label.className = 'ruler-label';
-            label.textContent = mmValue;
-            label.style.left = (x + 2) + 'px';
-            label.style.top = '2px';
-            hRuler.appendChild(label);
+    // ── v1.7.615 — LES RÈGLES SONT CELLES DU CADRE, PAS CELLES DE LA PAGE ──
+    /* MESURÉ AVANT : les règles étaient ajoutées à `.canvas-inner` — la PAGE —
+       donc dessinées au bord du document et seulement sur la largeur du format.
+       Pire : `.canvas-inner` est dans `#pagesContainer`, qui porte
+       `transform: scale(zoomLevel)` ; graduations et chiffres grandissaient donc
+       avec le zoom, alors qu'un instrument de mesure doit rester fixe.
+       MAINTENANT : elles vivent dans `.canvas-wrapper`, le cadre de
+       prévisualisation, occupent toute sa largeur et toute sa hauteur, et ne
+       subissent plus le zoom. Le zéro reste sur le BORD DE PAGE — donc après le
+       fond perdu — comme dans InDesign : c'est le zéro qui suit le document,
+       pas l'instrument.
+
+       Pourquoi les graduations sont RÉGÉNÉRÉES et non déplacées : l'écart vaut
+       `mmToPx(10) × zoom` et l'origine se trouve à `page.left + bleed × zoom`.
+       Les deux changent au zoom ET au défilement. On ne crée que les
+       graduations de la fenêtre visible : sur un format de 2000 mm à 400 %, tout
+       dessiner ferait des dizaines de milliers de traits. */
+    const SP_REGLE_TAILLE = 20;                       // épaisseur des règles, en px écran
+    const _spWrapper = canvasInner.closest('.canvas-wrapper') || canvasInner.parentElement;
+    const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
+
+    function _spReglesDessiner() {
+        if (!_spWrapper || !_spWrapper.__spRegles615) return;
+        const etat = _spWrapper.__spRegles615;
+        if (!etat.page || !document.contains(etat.page)) return;
+        /* ⚠️ LE ZOOM SE MESURE, IL NE SE LIT PAS — c'est la correction d'un vrai
+           défaut. `typeof window.zoomLevel` vaut 'object' : le garde-fou
+           `typeof zoomLevel === 'number'` était donc toujours faux, et le repli
+           sur 1 s'appliquait à tous les zooms. Mesuré à 200 % : la page faisait
+           1225 px (216 mm × 2) mais les graduations restaient espacées de
+           141,7 px, soit mmToPx(50) × 1.
+           Le rapport entre la largeur RÉELLE et la largeur de mise en page donne
+           le facteur appliqué : `getBoundingClientRect()` inclut le `transform`,
+           `offsetWidth` non. Ce rapport ne dépend donc d'AUCUNE variable interne,
+           et reste juste si l'application change de mécanisme de zoom. */
+        const cadre = _spWrapper.getBoundingClientRect();
+        const page = etat.page.getBoundingClientRect();
+        const zoom = (etat.page.offsetWidth > 0) ? (page.width / etat.page.offsetWidth) : 1;
+        if (cadre.width < 2 || page.width < 2) return;
+        /* `mmToPx` convertit des points (72/25,4) et ne connaît pas le zoom :
+           l'écart réel à l'écran est donc `mmToPx(x) × zoom`. */
+        const fondPerdu = mmToPx(bleed) * zoom;
+        const origineX = page.left - cadre.left + fondPerdu;
+        const origineY = page.top - cadre.top + fondPerdu;
+        const pas = mmToPx(10) * zoom;
+        if (!(pas > 2)) return;                          // zoom trop faible : illisible
+        const mmLargeur = Math.max(0, pxToMm((page.width - 2 * fondPerdu) / zoom));
+        const mmHauteur = Math.max(0, pxToMm((page.height - 2 * fondPerdu) / zoom));
+
+        const dessinerAxe = (regle, longueurCadre, origine, mmMax, horizontal) => {
+            while (regle.firstChild) regle.removeChild(regle.firstChild);
+            for (let mm = 0; mm <= mmMax; mm += 10) {
+                const pos = origine + mmToPx(mm) * zoom;
+                if (pos < -24 || pos > longueurCadre + 24) continue;   // hors fenêtre
+                const majeur = (mm % 50 === 0);
+                const t = document.createElement('div');
+                t.className = 'ruler-tick' + (majeur ? ' major' : '');
+                if (horizontal) {
+                    t.style.left = pos + 'px';
+                    t.style.bottom = '0';
+                    t.style.width = (majeur ? '1px' : '0.5px');
+                    t.style.height = (majeur ? 8 : 5) + 'px';
+                } else {
+                    t.style.top = pos + 'px';
+                    t.style.right = '0';
+                    t.style.height = (majeur ? '1px' : '0.5px');
+                    t.style.width = (majeur ? 8 : 5) + 'px';
+                }
+                t.style.position = 'absolute';
+                regle.appendChild(t);
+                if (majeur) {
+                    const lab = document.createElement('div');
+                    lab.className = 'ruler-label';
+                    lab.textContent = mm;
+                    if (horizontal) { lab.style.left = (pos + 2) + 'px'; lab.style.top = '2px'; }
+                    else { lab.style.left = '2px'; lab.style.top = (pos + 2) + 'px'; }
+                    lab.style.position = 'absolute';
+                    regle.appendChild(lab);
+                }
+                if (mm > 4000) break;                        // garde-fou
+            }
+        };
+
+        dessinerAxe(etat.hRuler, cadre.width, origineX, mmLargeur, true);
+        dessinerAxe(etat.vRuler, cadre.height - SP_REGLE_TAILLE, origineY - SP_REGLE_TAILLE, mmHauteur, false);
+
+        if (etat.spread && etat.largeurPageMm) {
+            const pli = origineX + mmToPx(etat.largeurPageMm) * zoom;
+            if (pli >= -24 && pli <= cadre.width + 24) {
+                const c = document.createElement('div');
+                c.className = 'ruler-tick major';
+                c.style.position = 'absolute';
+                c.style.left = pli + 'px';
+                c.style.bottom = '0';
+                c.style.width = '2px';
+                c.style.height = '12px';
+                c.style.background = '#ff4444';
+                c.style.opacity = '0.7';
+                etat.hRuler.appendChild(c);
+            }
         }
     }
-    
-    // En spread: ajouter un marqueur de centre (pliure) sur la règle horizontale
-    if (isSpreadCanvas) {
-        const centerX = mmToPx(pageFormat.width); // relatif au début de la règle
-        const centerTick = document.createElement('div');
-        centerTick.className = 'ruler-tick major';
-        centerTick.style.left = centerX + 'px';
-        centerTick.style.bottom = '0';
-        centerTick.style.width = '2px';
-        centerTick.style.height = '12px';
-        centerTick.style.background = '#ff4444';
-        centerTick.style.opacity = '0.7';
-        hRuler.appendChild(centerTick);
-    }
-    
-    // Drag depuis la règle pour créer un repère horizontal
-    (() => {
-        let dragging = false;
-        let ghostLine = null;
-        let ghostLabel = null;
-        const onMouseMove = (e) => {
-            if (!dragging) return;
-            const innerRect = canvasInner.getBoundingClientRect();
-            let y = e.clientY - innerRect.top;
-            // clamp
-            y = Math.max(0, Math.min(canvasHeight, y));
-            const mmValue = Math.round(pxToMm(y - mmToPx(bleed)));
-            ghostLine.style.top = y + 'px';
-            ghostLabel.style.top = (y - 12) + 'px';
-            ghostLabel.textContent = mmValue + 'mm';
-        };
-        const finish = (e) => {
-            if (!dragging) return;
-            dragging = false;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', finish);
-            const innerRect = canvasInner.getBoundingClientRect();
-            const y = e.clientY - innerRect.top;
-            // If released outside canvas vertically above the top ruler area, cancel
-            if (e.clientY < innerRect.top) {
-                if (ghostLine) ghostLine.remove();
-                if (ghostLabel) ghostLabel.remove();
-                ghostLine = ghostLabel = null;
-                return;
+
+    /* Un seul jeu de règles par cadre : plusieurs pages partagent le même
+       `.canvas-wrapper`. On réutilise donc le cadre existant et on ne recrée que
+       s'il a disparu (changement de page, re-rendu). */
+    if (!_spWrapper) {
+        console.warn('[Règles v615] cadre de prévisualisation introuvable');
+    } else {
+        const dejaLa = _spWrapper.__spRegles615 && document.contains(_spWrapper.__spRegles615.conteneur);
+        const conteneur = dejaLa
+            ? _spWrapper.__spRegles615.conteneur
+            : document.createElement('div');
+
+        if (!dejaLa) {
+            conteneur.id = 'spRegles615';
+            /* `pointer-events:none` sur le cadre : les règles ne doivent pas
+               intercepter les clics destinés au document. Les règles elles-mêmes
+               le rétablissent, puisqu'on y glisse pour créer un repère. */
+            conteneur.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:60;';
+
+            const hRuler = document.createElement('div');
+            hRuler.className = 'ruler-horizontal';
+            hRuler.style.cssText = 'position:absolute;top:0;left:0;right:0;height:' + SP_REGLE_TAILLE +
+                'px;width:auto;pointer-events:auto;';
+
+            const vRuler = document.createElement('div');
+            vRuler.className = 'ruler-vertical';
+            /* Elle commence SOUS la règle horizontale : sans cela les deux se
+               recouvrent dans le coin, et le premier centimètre vertical devient
+               illisible. */
+            vRuler.style.cssText = 'position:absolute;top:' + SP_REGLE_TAILLE + 'px;left:0;bottom:0;width:' +
+                SP_REGLE_TAILLE + 'px;height:auto;pointer-events:auto;';
+
+            const coin = document.createElement('div');
+            coin.style.cssText = 'position:absolute;top:0;left:0;width:' + SP_REGLE_TAILLE + 'px;height:' +
+                SP_REGLE_TAILLE + 'px;background:#f0f0f0;border-right:1px solid #ccc;' +
+                'border-bottom:1px solid #ccc;pointer-events:auto;';
+
+            conteneur.appendChild(coin);
+            conteneur.appendChild(hRuler);
+            conteneur.appendChild(vRuler);
+            _spWrapper.appendChild(conteneur);
+
+            _spWrapper.__spRegles615 = {
+                conteneur, hRuler, vRuler, page: canvasInner,
+                exportInfo: null, spread: !!isSpreadCanvas, largeurPageMm: pageFormat ? pageFormat.width : 0,
+            };
+
+            /* ── LE REDESSIN. Trois déclencheurs, et le troisième est le zoom. */
+            /* ⚠️ LE REDESSIN EST DIFFÉRÉ D'UNE IMAGE, ET CE N'EST PAS UN DÉTAIL.
+               MESURÉ : à 280 % la page faisait 1714,39 px pour un `offsetWidth` de
+               612 — le zoom valait donc 2,8013 — mais les étiquettes étaient
+               espacées de 381,7 px, soit mmToPx(50) × 2,693 : elles affichaient le
+               zoom PRÉCÉDENT, avec un cran de retard.
+               La raison : un observateur de mutation se déclenche quand l'attribut
+               change, donc au moment où l'application ÉCRIT le `transform`, AVANT
+               que le navigateur ait recalculé la mise en page. `getBoundingClientRect()`
+               renvoyait alors l'ancienne géométrie. En reportant le calcul à l'image
+               suivante, la mise en page est à jour.
+               Le défilement et le redimensionnement passent par le même chemin, ce qui
+               évite en prime plusieurs redessins dans une même image. */
+            /* ⚠️ PAS DE `requestAnimationFrame` ICI. Mesuré : avec lui, forcer
+               `pagesContainer.style.transform` ne changeait RIEN — l'observateur
+               était bien posé, aucune erreur ne remontait, mais le rappel ne
+               s'exécutait pas, faute de peinture. Un `setTimeout(0)` s'exécute
+               toujours : il passe après la tâche en cours, donc après les écritures
+               de style, et toute lecture de mise en page qui suit déclenche le
+               recalcul. */
+            let redessinDemande = false;
+            const redessiner = () => {
+                if (redessinDemande) return;
+                redessinDemande = true;
+                setTimeout(() => { redessinDemande = false; _spReglesDessiner(); }, 0);
+            };
+
+            /* ── LA SURVEILLANCE, ET POURQUOI ELLE EXISTE EN PLUS DES AUTRES ──
+               Le zoom n'a pas de signal public : il s'écrit dans le `style` du
+               conteneur, et l'observateur de mutation couvre ce cas. Mais rien ne
+               garantit que ce soit le SEUL chemin — un changement de format, un
+               ajustement de défilement ou une modification du fond perdu déplacent
+               aussi les graduations sans toucher à ce `style`.
+               On compare donc une SIGNATURE de la géométrie, quatre fois par
+               seconde, et on ne redessine que si elle change. C'est exact quel que
+               soit le mécanisme, et cela ne coûte que deux lectures de rectangle. */
+            const signatureRegles = () => {
+                if (!_spWrapper || !_spWrapper.__spRegles615 || !_spWrapper.__spRegles615.page) return '';
+                const pg = _spWrapper.__spRegles615.page;
+                if (!document.contains(pg)) return 'absente';
+                const r = pg.getBoundingClientRect();
+                const c = _spWrapper.getBoundingClientRect();
+                return [r.left.toFixed(1), r.top.toFixed(1), r.width.toFixed(1), r.height.toFixed(1),
+                    pg.offsetWidth, c.width.toFixed(1), c.height.toFixed(1)].join('|');
+            };
+            let derniereSignature = signatureRegles();
+            const surveiller = setInterval(() => {
+                const s = signatureRegles();
+                if (s !== derniereSignature) { derniereSignature = s; _spReglesDessiner(); }
+            }, 250);
+            _spWrapper.__spRegles615.surveiller = surveiller;
+
+            const defilement = _spWrapper.querySelector('.canvas-scroll-area') || _spWrapper;
+            defilement.addEventListener('scroll', redessiner, { passive: true });
+            _spWrapper.__spRegles615.surDefilement = defilement;
+            _spWrapper.__spRegles615.redessiner = redessiner;
+
+            window.addEventListener('resize', redessiner);
+            _spWrapper.__spRegles615.surRedimensionnement = redessiner;
+
+            /* LE ZOOM N'A PAS DE SIGNAL, MAIS IL ÉCRIT `transform` SUR
+               `#pagesContainer` — l'observateur suffit donc, sans toucher au code de
+               zoom (main.js:34821). */
+            const pagesContainer = document.getElementById('pagesContainer');
+            if (pagesContainer && typeof MutationObserver === 'function') {
+                const obs = new MutationObserver(redessiner);
+                obs.observe(pagesContainer, { attributes: true, attributeFilter: ['style'] });
+                _spWrapper.__spRegles615.observateur = obs;
             }
-            // finalize as guide
-            if (ghostLine && ghostLabel) {
-                makeGuideDraggable(ghostLine, ghostLabel, 'horizontal');
-                // Auto-hide label after short delay
-                const _gl = ghostLabel;
-                setTimeout(() => { _gl.style.opacity = '0'; }, 1400);
-            }
-            ghostLine = ghostLabel = null;
-        };
-        hRuler.addEventListener('mousedown', (e) => {
-            dragging = true;
-            const innerRect = canvasInner.getBoundingClientRect();
-            const startY = e.clientY - innerRect.top;
-            const mmValue = Math.round(pxToMm(startY - mmToPx(bleed)));
-            ghostLine = document.createElement('div');
-            ghostLine.className = 'guide-line horizontal';
-            ghostLine.style.top = startY + 'px';
-            ghostLine.dataset.position = mmValue;
-            ghostLabel = document.createElement('div');
-            ghostLabel.className = 'guide-label';
-            ghostLabel.textContent = mmValue + 'mm';
-            ghostLabel.style.left = '5px';
-            ghostLabel.style.top = (startY - 12) + 'px';
-            canvasInner.appendChild(ghostLine);
-            canvasInner.appendChild(ghostLabel);
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', finish);
-        });
-    })();
-    
-    // Créer règle verticale (à gauche)
-    const vRuler = document.createElement('div');
-    vRuler.className = 'ruler-vertical';
-    // Limiter la règle au format de la page (sans fond perdu)
-    vRuler.style.height = mmToPx(finalHeight) + 'px';
-    vRuler.style.top = (pbOffsetY + bleedPx) + 'px';
-    if (pbOffsetX > 0) vRuler.style.left = (pbOffsetX - 20) + 'px';
-    
-    // Graduations tous les 10mm, de 0 au format final
-    for (let mmValue = 0; mmValue <= finalHeight; mmValue += 10) {
-        const y = mmToPx(mmValue); // relatif au début de la règle (= début du format)
-        if (y > mmToPx(finalHeight)) break;
-        
-        const isMajor = mmValue % 50 === 0;
-        const tickWidth = isMajor ? 8 : (mmValue % 10 === 0 ? 5 : 3);
-        
-        const tick = document.createElement('div');
-        tick.className = 'ruler-tick' + (isMajor ? ' major' : '');
-        tick.style.top = y + 'px';
-        tick.style.right = '0';
-        tick.style.height = (isMajor ? '1px' : '0.5px');
-        tick.style.width = tickWidth + 'px';
-        vRuler.appendChild(tick);
-        
-        // Ajouter étiquette tous les 50mm
-        if (isMajor) {
-            const label = document.createElement('div');
-            label.className = 'ruler-label';
-            label.textContent = mmValue;
-            label.style.left = '2px';
-            label.style.top = (y + 2) + 'px';
-            vRuler.appendChild(label);
+        } else {
+            /* Le cadre existe déjà : on le rattache à la page courante — c'est
+               elle qui donne l'origine — et on rafraîchit. */
+            _spWrapper.__spRegles615.page = canvasInner;
+            _spWrapper.__spRegles615.spread = !!isSpreadCanvas;
+            _spWrapper.__spRegles615.largeurPageMm = pageFormat ? pageFormat.width : 0;
         }
+
+        _spReglesDessiner();
     }
-    
-    // Drag depuis la règle pour créer un repère vertical
+
+    /* ── LES REPÈRES SE CRÉENT TOUJOURS EN GLISSANT DEPUIS LA RÈGLE. Le
+       gestionnaire travaillait en PIXELS ÉCRAN (`clientY - rect.top`) tout en y
+       soustrayant `mmToPx(bleed)`, des pixels DOCUMENT. À zoom 1 les deux
+       coïncident — le défaut était donc invisible ; à 50 %, le repère se posait
+       au double de la position visée. On divise désormais par le zoom pour
+       revenir dans l'espace du document, qui est celui des repères. */
     (() => {
-        let dragging = false;
-        let ghostLine = null;
-        let ghostLabel = null;
-        const onMouseMove = (e) => {
-            if (!dragging) return;
-            const innerRect = canvasInner.getBoundingClientRect();
-            let x = e.clientX - innerRect.left;
-            x = Math.max(0, Math.min(canvasWidth, x));
-            const mmValue = Math.round(pxToMm(x - mmToPx(bleed)));
-            ghostLine.style.left = x + 'px';
-            ghostLabel.style.left = (x + 5) + 'px';
-            ghostLabel.textContent = mmValue + 'mm';
+        const hRuler = _spWrapper && _spWrapper.__spRegles615 ? _spWrapper.__spRegles615.hRuler : null;
+        const vRuler = _spWrapper && _spWrapper.__spRegles615 ? _spWrapper.__spRegles615.vRuler : null;
+        if (!hRuler || !vRuler) return;
+        /* Même mesure que dans `_spReglesDessiner` : le facteur d'échelle se
+           déduit du rapport entre taille rendue et taille de mise en page. */
+        const zoomCourant = () => (canvasInner && canvasInner.offsetWidth > 0)
+            ? (canvasInner.getBoundingClientRect().width / canvasInner.offsetWidth)
+            : 1;
+        const versDocument = (client, cote) => {
+            const r = canvasInner.getBoundingClientRect();
+            return ((cote === 'y' ? client - r.top : client - r.left)) / zoomCourant();
         };
-        const finish = (e) => {
-            if (!dragging) return;
-            dragging = false;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', finish);
-            const innerRect = canvasInner.getBoundingClientRect();
-            const x = e.clientX - innerRect.left;
-            if (e.clientX < innerRect.left) {
-                if (ghostLine) ghostLine.remove();
-                if (ghostLabel) ghostLabel.remove();
+        const mmDepuis = (docPx) => Math.round(pxToMm(docPx - mmToPx(bleed)));
+
+        const brancher = (regle, horizontal) => {
+            let dragging = false, ghostLine = null, ghostLabel = null;
+            const onMouseMove = (e) => {
+                if (!dragging) return;
+                const d = Math.max(0, Math.min(horizontal ? canvasHeight : canvasWidth,
+                    versDocument(horizontal ? e.clientY : e.clientX, horizontal ? 'y' : 'x')));
+                const mmValue = mmDepuis(d);
+                if (horizontal) { ghostLine.style.top = d + 'px'; ghostLabel.style.top = (d - 12) + 'px'; }
+                else { ghostLine.style.left = d + 'px'; ghostLabel.style.left = (d + 5) + 'px'; }
+                ghostLabel.textContent = mmValue + 'mm';
+            };
+            const finish = (e) => {
+                if (!dragging) return;
+                dragging = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', finish);
+                const r = canvasInner.getBoundingClientRect();
+                const dehors = horizontal ? (e.clientY < r.top) : (e.clientX < r.left);
+                if (dehors) {
+                    if (ghostLine) ghostLine.remove();
+                    if (ghostLabel) ghostLabel.remove();
+                    ghostLine = ghostLabel = null;
+                    return;
+                }
+                if (ghostLine && ghostLabel) {
+                    makeGuideDraggable(ghostLine, ghostLabel, horizontal ? 'horizontal' : 'vertical');
+                    const _gl = ghostLabel;
+                    setTimeout(() => { _gl.style.opacity = '0'; }, 1400);
+                }
                 ghostLine = ghostLabel = null;
-                return;
-            }
-            if (ghostLine && ghostLabel) {
-                makeGuideDraggable(ghostLine, ghostLabel, 'vertical');
-                // Auto-hide label after short delay
-                const _gl = ghostLabel;
-                setTimeout(() => { _gl.style.opacity = '0'; }, 1400);
-            }
-            ghostLine = ghostLabel = null;
+            };
+            regle.addEventListener('mousedown', (e) => {
+                dragging = true;
+                const d = Math.max(0, Math.min(horizontal ? canvasHeight : canvasWidth,
+                    versDocument(horizontal ? e.clientY : e.clientX, horizontal ? 'y' : 'x')));
+                const mmValue = mmDepuis(d);
+                ghostLine = document.createElement('div');
+                ghostLine.className = 'guide-line ' + (horizontal ? 'horizontal' : 'vertical');
+                ghostLabel = document.createElement('div');
+                ghostLabel.className = 'guide-label';
+                ghostLabel.textContent = mmValue + 'mm';
+                ghostLine.dataset.position = mmValue;
+                if (horizontal) { ghostLine.style.top = d + 'px'; ghostLabel.style.left = '5px'; ghostLabel.style.top = (d - 12) + 'px'; }
+                else { ghostLine.style.left = d + 'px'; ghostLabel.style.left = (d + 5) + 'px'; ghostLabel.style.top = '5px'; }
+                canvasInner.appendChild(ghostLine);
+                canvasInner.appendChild(ghostLabel);
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', finish);
+            });
         };
-        vRuler.addEventListener('mousedown', (e) => {
-            dragging = true;
-            const innerRect = canvasInner.getBoundingClientRect();
-            const startX = e.clientX - innerRect.left;
-            const mmValue = Math.round(pxToMm(startX - mmToPx(bleed)));
-            ghostLine = document.createElement('div');
-            ghostLine.className = 'guide-line vertical';
-            ghostLine.style.left = startX + 'px';
-            ghostLine.dataset.position = mmValue;
-            ghostLabel = document.createElement('div');
-            ghostLabel.className = 'guide-label';
-            ghostLabel.textContent = mmValue + 'mm';
-            ghostLabel.style.left = (startX + 5) + 'px';
-            ghostLabel.style.top = '5px';
-            canvasInner.appendChild(ghostLine);
-            canvasInner.appendChild(ghostLabel);
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', finish);
-        });
+
+        brancher(hRuler, true);
+        brancher(vRuler, false);
     })();
-    
-    canvasInner.appendChild(hRuler);
-    canvasInner.appendChild(vRuler);
 
     // Rendre existants repères (si déjà présents) déplaçables
     canvasInner.querySelectorAll('.guide-line.horizontal').forEach(line => {
@@ -69550,7 +69972,20 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         missingFontsLoading: "Chargement de {0}…",
         missingFontsLoadedDone: "{0} chargée.",
         missingFontsLoadFailed: "Impossible de charger {0}.",
-        missingFontsReadError: "Erreur de lecture du fichier."
+        missingFontsReadError: "Erreur de lecture du fichier.",
+    /* Le nom de la palette des papiers et de leurs aspérités. Distinct de
+       `paperType` (« Type de papier »), qui est la SIMULATION papier du
+       contrôle en amont — deux choses différentes, deux libellés. */
+    papierTitle: "Papier",
+    menuTableau: "Tableau",
+    tableauTitre: "Insérer un tableau",
+    tableauColonnes: "Colonnes",
+    tableauLignes: "Lignes",
+    tableauLargeur: "Largeur totale (mm)",
+    tableauHauteurLigne: "Hauteur de ligne (mm)",
+    tableauCorps: "Corps du texte (pt)",
+    tableauApercu: "Aperçu",
+    tableauInserer: "Insérer"
     },
     en: {
         // Interface principale
@@ -70480,6 +70915,16 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         missingFontsLoadedDone: "{0} loaded.",
         missingFontsLoadFailed: "Unable to load {0}.",
         missingFontsReadError: "Error reading the file.",
+    papierTitle: "Paper",
+    menuTableau: "Table",
+    tableauTitre: "Insert a table",
+    tableauColonnes: "Columns",
+    tableauLignes: "Rows",
+    tableauLargeur: "Total width (mm)",
+    tableauHauteurLigne: "Row height (mm)",
+    tableauCorps: "Text size (pt)",
+    tableauApercu: "Preview",
+    tableauInserer: "Insert",
         shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Text</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bold</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Italic</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Underline</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Highlight selection</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Select all</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Tab (block being edited: inserts a tab; tab stops enabled if needed — default step 10 mm)</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Built-in Tab (move to the next field)</span><span class=\"sp-shortcut-keys\"><kbd>Option</kbd> + <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cross-block selection (chained text)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Click</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Editing</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Copy</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cut</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Paste</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Undo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo (alt.)</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Delete block / page</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Duplicate selection</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>Drag</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Objects & Layers</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Group</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Ungroup</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bring to front</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Send to back</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Link text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Unlink text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Quick Tools</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add text</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add image</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add rectangle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add circle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Pen tool</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Typography panel</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Files & Navigation</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Save</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Open file</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Export PDF</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Print / Export</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">New page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Previous page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2190</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Next page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2192</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Show/hide guides</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Imposition</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Zoom</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom in</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom out</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2212</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom 100%</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">On macOS, <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>\u2318 Cmd</kbd></div>"
     },
     ja: {
@@ -71318,6 +71763,16 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         missingFontsLoadedDone: "{0} を読み込みました。",
         missingFontsLoadFailed: "{0} を読み込めませんでした。",
         missingFontsReadError: "ファイルの読み込みエラー。",
+        papierTitle: "紙",
+        menuTableau: "表",
+        tableauTitre: "表を挿入",
+        tableauColonnes: "列",
+        tableauLignes: "行",
+        tableauLargeur: "全体の幅 (mm)",
+        tableauHauteurLigne: "行の高さ (mm)",
+        tableauCorps: "文字サイズ (pt)",
+        tableauApercu: "プレビュー",
+        tableauInserer: "挿入"
     }
         };
 
