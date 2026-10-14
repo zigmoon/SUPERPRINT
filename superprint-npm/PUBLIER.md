@@ -26,9 +26,18 @@ npm login
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.111**).
+C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.112**).
 
-> ⚠️ **npm 12 et preuve de présence (2FA)** : si `npm publish` affiche « Authenticate your account at … Press ENTER to open in the browser… », la publication est **staged** (préparée mais non publiée) et attend une approbation dans le navigateur — ou un code : `npm publish --otp=XXXXXX`. Ne pas relancer `npm publish` tel quel : npm répond **E409 « Cannot publish over previously staged version »**. Dans ce cas, bumper (`npm version patch --no-git-tag-version`) puis republier, ou approuver le stage (`npm stage list`, `npm stage approve <stage-id>`). Vérifier ensuite que la version est bien sur le registre et non seulement en cache local : `Invoke-RestMethod https://registry.npmjs.org/superprint/1.0.NNN` (404 = pas publiée) et `npm view superprint dist-tags`.
+> ⚠️ **npm 12 et preuve de présence (2FA)** : si `npm publish` affiche « Authenticate your account at … Press ENTER to open in the browser… », la publication est **staged** (préparée mais non publiée) et attend une approbation dans le navigateur — ou un code : `npm publish --otp=XXXXXX`. Ne pas relancer `npm publish` tel quel : npm répond **E409 « Cannot publish over previously staged version »**. Dans ce cas, bumper (`npm version patch --no-git-tag-version`) puis republier, ou approuver le stage (`npm stage list`, `npm stage approve <stage-id>`).
+
+> 🔴 **MESURÉ LE 14/10/2026 — LE CATALOGUE MENT PENDANT PLUSIEURS MINUTES. NE JAMAIS EN CONCLURE QU'UNE PUBLICATION A ÉCHOUÉ.** Une publication qui réussit (`+ superprint@1.0.NNN`) n'est **pas** immédiatement lisible : les chemins de **lecture** (le packument, `dist-tags`, et **le tarball lui-même**) sont servis par un cache qui peut rester en arrière **plusieurs minutes**. Relevé ce jour-là, sur une version réellement publiée à 19:21:11 UTC :
+>   · `npm view superprint version` → annonçait encore l'**ancienne** version ;
+>   · `dist-tags.latest` → encore l'ancienne ;
+>   · `https://registry.npmjs.org/superprint/1.0.NNN` → **404** ;
+>   · `https://registry.npmjs.org/superprint/-/superprint-1.0.NNN.tgz` → **404**, alors que la version **existait**.
+> Le chemin d'**écriture**, lui, est autoritaire : un `409` (« already staged » / « previously published ») signifie que la version **est là**. C'est la **contradiction entre les deux** qui doit alerter — pas le 404 seul.
+> **Conséquence pratique** : après une publication, attendre quelques minutes et revérifier, au lieu de conclure trop vite. Le contrôle fiable est la lecture de `time` dans le packument (`(Invoke-RestMethod https://registry.npmjs.org/superprint).time`), qui finit par lister la version avec **son horodatage** — c'est la preuve de la publication, et non un simple 200 sur le tarball.
+> ❌ **Erreur commise ce jour-là, et consignée pour ne pas la refaire** : ayant vu un 404 sur le catalogue **et** sur le tarball, j'ai conclu que la version n'existait pas et publié un **numéro neuf** (1.0.111 → 1.0.112). Les deux existent désormais, avec un contenu identique. Rien de cassé — `latest` pointe sur la plus récente — mais un numéro a été consommé pour rien.
 
 ## 4. Mettre à jour plus tard (après modification)
 
