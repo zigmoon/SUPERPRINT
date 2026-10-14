@@ -357,6 +357,27 @@ Tous sous
 Ces adresses ne répondent qu'après le **premier passage** du workflow :
 `Actions → Applications de bureau → Run workflow`.
 
+### Garder une version
+
+`desktop-latest` écrase ses fichiers à chaque livraison : c'est ce qui garde
+les liens du site valables, mais l'installeur de la version précédente n'est
+alors plus téléchargeable nulle part. Le workflow publie donc **une seconde
+release**, portant le tag de la version :
+
+```
+https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-v1.7.614
+```
+
+Elle contient les **mêmes 21 fichiers**, figés — plus un `SHA256SUMS` donnant
+l'empreinte de chacun. Elle n'est créée que si le workflow est parti **du
+tag** et que celui-ci nomme bien la version compilée : un lancement à la main
+depuis `main` n'en produit pas, plutôt que de figer des binaires sous un tag
+qui n'est pas le leur.
+
+> ℹ️ Cette archive n'est pas rétroactive : les versions livrées avant cette
+> étape n'existent plus en binaire. Leur code source reste accessible par le
+> tag correspondant.
+
 ## Signer
 
 Les paquets publiés ne sont **pas signés**. macOS affichera donc un avertissement

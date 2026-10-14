@@ -40,6 +40,13 @@
 #  peut pas suivre un nom qui change à chaque livraison : on renomme donc les
 #  artefacts avant publication, et les adresses restent stables.
 #
+#  DEUX PUBLICATIONS, ET POURQUOI. Ces noms fixes sont attachés à la version
+#  `desktop-latest`, qui écrase ses fichiers à chaque passage : c'est ce qui
+#  garde les liens du site vivants. Une seconde release, portant le tag de la
+#  version, fige les mêmes fichiers — sans elle, l'installeur de la veille ne
+#  serait plus téléchargeable nulle part dès la livraison suivante. D'où la
+#  dernière étape du job « publier ».
+#
 #  ⚠️ Ces adresses ne répondent qu'APRÈS le premier passage de ce workflow.
 # ══════════════════════════════════════════════════════════════════════════════
 name: Applications de bureau
@@ -167,6 +174,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Node : la version de l'application est lue dans `tauri.conf.json` par
+      # `node -p`, pour être comparée au tag. L'image du runner en embarque un,
+      # mais rien ne garantit lequel ni jusqu'à quand — la version est donc
+      # déclarée ici, comme dans le job de compilation.
+      - name: Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
       # On NE fusionne PAS les téléversements dans un seul dossier : chaque
       # application est déjà rangée dans le sien, et c'est ce dossier qui permet
       # de savoir à quelle application appartient un fichier. Tauri nomme les
@@ -233,3 +249,62 @@ jobs:
               --notes "Les trois applications de bureau, pour Windows, macOS et Linux : SuperPrint (editeur de PAO), Studio IA (mise en page assistee par IA) et SuperTyPo (decomposition de caracteres). Les noms de fichiers sont fixes : les liens de telechargement du site pointent toujours sur la version la plus recente." \
               --latest=false
           gh release upload desktop-latest livraison/* --clobber
+
+      # ── ARCHIVE VERSIONNÉE ──────────────────────────────────────────────────
+      #
+      # Ce que `desktop-latest` ne peut PAS conserver. Il porte des noms fixes
+      # et se fait écraser à chaque passage (`--clobber`) : c'est exactement ce
+      # qu'il faut pour les liens du site, mais l'installeur publié la veille
+      # disparaît le lendemain — il n'existe alors plus nulle part, et le tag du
+      # dépôt ne garde que le code source, pas les binaires.
+      #
+      # Cette seconde publication fige donc les mêmes fichiers sous une release
+      # portant le tag de la version, que rien ne réécrit.
+      #
+      # L'ORDRE COMPTE : cette étape vient APRÈS `desktop-latest`, parce que
+      # c'est `desktop-latest` qui alimente les téléchargements du site. Une
+      # archive est un supplément : elle ne doit jamais pouvoir retarder ni
+      # empêcher la mise à jour des liens. Pour la même raison, elle avertit et
+      # s'abstient plutôt que d'échouer.
+      #
+      # DEUX CONTRÔLES AVANT DE FIGER QUOI QUE CE SOIT, parce qu'une release
+      # versionnée est une affirmation : « ces binaires SONT la version 1.7.614 ».
+      #   1. Le workflow doit être parti DU TAG. `workflow_dispatch` sait partir
+      #      d'une branche : les binaires viendraient alors d'un commit que le
+      #      tag ne désigne pas, et l'affirmation serait fausse.
+      #   2. Le tag doit dire la même chose que l'application compilée. Rien
+      #      n'empêche de poser un tag `desktop-v1.7.999` sur un build 1.7.614.
+      #
+      # `SHA256SUMS` ne va QUE dans l'archive : une empreinte n'a de sens que
+      # pour un fichier qui ne bougera plus.
+      - name: Publier l'archive versionnée
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+
+          case "${GITHUB_REF:-}" in
+            refs/tags/desktop-v*) tag="${GITHUB_REF_NAME}" ;;
+            *)
+              echo "::warning::construit depuis ${GITHUB_REF:-?}, pas depuis un tag : archive versionnee ignoree"
+              exit 0
+              ;;
+          esac
+          version="${tag#desktop-v}"
+
+          declaree=$(node -p "require('./superprint_desktop/src-tauri/tauri.conf.json').version")
+          if [ "$version" != "$declaree" ]; then
+            echo "::warning::le tag $tag annonce $version, l'application compilee est $declaree : archive versionnee ignoree"
+            exit 0
+          fi
+
+          ( cd livraison && sha256sum * > ../SHA256SUMS )
+          cat SHA256SUMS
+
+          gh release view "$tag" >/dev/null 2>&1 || \
+            gh release create "$tag" \
+              --title "SuperPrint $version — applications de bureau" \
+              --notes "Archive figee de la version $version. Les memes 21 fichiers que desktop-latest, mais qui ne seront plus jamais remplaces : c'est ici qu'on garde cette version. Le fichier SHA256SUMS donne l'empreinte de chacun. Notes de version detaillees : release.html." \
+              --latest=false
+          gh release upload "$tag" livraison/* SHA256SUMS --clobber
+          echo "archive $tag publiee"

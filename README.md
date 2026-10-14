@@ -162,7 +162,7 @@ The Colour panel is a **list of colour libraries**, each one an accordion you op
 
 > ⚠️ **Beta.** The desktop builds are complete and usable, but still young. They are **free, without an account**, and they install alongside the browser version — nothing is replaced.
 
-**One installer per application** — 3 applications × 3 systems = **21 files**. Each build carries only its own application, so it downloads only what it needs: **SuperPrint 58 MB**, **Studio IA 9.8 MB**, **SuperTyPo 1 MB**. They all live under the versionless [`desktop-latest`](https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest) tag, which is why these links never go stale.
+**One installer per application** — 3 applications × 3 systems = **21 files**. Each build carries only its own application, so it downloads only what it needs: **SuperPrint 58 MB**, **Studio IA 9.8 MB**, **SuperTyPo 1 MB**. They all live under the versionless [`desktop-latest`](https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest) tag, which is why these links never go stale. Every version is also kept, frozen, under its own `desktop-v<version>` release — stable links for the current build, an archive for the ones before it.
 
 | System | SuperPrint | Studio IA | SuperTyPo |
 |---|---|---|---|
@@ -234,7 +234,7 @@ The repository ships **the product only** — three folders, two build helpers a
 | `sp213-local/` | The local distribution (Vite + WebLLM) downloaded by the npm launcher | ✅ |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) | ✅ |
 | `superprint_desktop/` | The **Tauri 2** desktop packaging: one configuration per application, the bundling script, the Debian documentation files and the icon sets | ✅ |
-| `.github/workflows/build-desktop.yml` | Builds the **21 installers** on GitHub runners (Windows, Linux, macOS Apple silicon and Intel) and publishes them to the `desktop-latest` release | ✅ |
+| `.github/workflows/build-desktop.yml` | Builds the **21 installers** on GitHub runners (Windows, Linux, macOS Apple silicon and Intel) and publishes them to the `desktop-latest` release, then archives each version under its own `desktop-v<version>` tag | ✅ |
 | `tools/` | Two dependency-free helpers: `serve.mjs` (local static server) and `make-release-zip.mjs` | ✅ |
 | `README.md` · `CHANGELOG.md` · `release.html` · `.gitignore` | Documentation and release notes | ✅ |
 | `_dev/` | Development tooling, logs, backups, fixtures | ❌ ignored |
