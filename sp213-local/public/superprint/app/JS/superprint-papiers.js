@@ -3,7 +3,10 @@
 
    CE QUE CE MODULE AJOUTE À SUPERPRINT
      · les ASPÉRITÉS de papier dans le SOUS-MENU DE L'ICÔNE IMAGE de la colonne de
-       gauche, APRÈS « SVG » — c'est là que la demande les range ;
+       gauche, APRÈS « SVG » — c'est là, et NULLE PART AILLEURS, qu'elles se
+       prennent. Il n'y a plus d'icône « Aspérités papier » dans la colonne : la
+       première ligne du bloc ouvre la PALETTE (le widget), les suivantes déposent
+       un papier ;
      · le DÉPÔT d'un papier sur une page par glisser-déposer, ou par simple clic
        sur une entrée du menu quand une page est active ;
      · l'HABILLAGE de la page : teinte + grain + une petite marque, posés SUR la
@@ -52,7 +55,7 @@
     if (window.__spPapiersInstalle) return;
     window.__spPapiersInstalle = true;
 
-    var VERSION = 'v9-matieres-orbite';
+    var VERSION = 'v10-sous-menu-image';
 
     /* ─────────────────────────────────────────────────────────── Catalogue ──
        `grain`      : quantité d'ASPÉRITÉS, de 0 (lisse) à 1 (très marqué).
@@ -77,6 +80,13 @@
                                        RECYCLÉ (impuretés de la pâte de récupération).
     */
     var PAPIERS = [
+        /* ⚠️ « AUCUN » EN TÊTE, ET CE N'EST PAS QU'UNE QUESTION D'ORDRE.
+           C'est le choix par défaut — la page sans papier — et l'entrée qu'on
+           cherche le plus souvent, pour RETIRER un papier. Reléguée en dernière
+           position, elle obligeait à parcourir les douze autres à chaque fois.
+           L'ordre de ce tableau est celui des deux listes (aucune n'a de tri
+           propre) : le corriger ici suffit pour le sous-menu Image. */
+        { id: 'aucun',    nom: 'Aucun (défaut)',  teinte: null,      grain: 0,    matiere: 'mat',      transparent: 0,    calque: false, grammage: 0,   style: 'fin' },
         { id: 'blanc',    nom: 'Blanc couché',    teinte: '#ffffff', grain: 0.05, matiere: 'mat',      transparent: 0,    calque: false, grammage: 115, style: 'fin' },
         { id: 'ivoire',   nom: 'Ivoire',          teinte: '#f7f2e6', grain: 0.11, matiere: 'mat',      transparent: 0,    calque: false, grammage: 120, style: 'fin' },
         /* ⚠️ JUMEAU EXACT D'« Ivoire », À LA MATIÈRE PRÈS. Sans lui, « le brillant
@@ -102,7 +112,6 @@
         { id: 'calque',   nom: 'Calque',          teinte: '#fbfbf7', grain: 0.06, matiere: 'mat',      transparent: 0.62, calque: true,  grammage: 90,  style: 'fin' },
         { id: 'tracing',  nom: 'Calque brillant', teinte: '#fcfcf8', grain: 0.05, matiere: 'brillant', transparent: 0.55, calque: true,  grammage: 95,  style: 'fin' },
         { id: 'velin',    nom: 'Vélin transparent', teinte: '#faf9f4', grain: 0.09, matiere: 'mat',    transparent: 0.45, calque: true,  grammage: 110, style: 'fin' },
-        { id: 'aucun',    nom: 'Aucun (défaut)',  teinte: null,      grain: 0,    matiere: 'mat',      transparent: 0,    calque: false, grammage: 0,   style: 'fin' },
     ];
 
     function papierParId(id) {
@@ -638,18 +647,21 @@
         };
     }
 
-    /* ═══════════════════════ INTERFACE : UNE ICÔNE, DEUX ENTRÉES ═══════════════
-       LES ASPÉRITÉS SE PRENNENT PAR DEUX CHEMINS, et les deux mènent au même
-       endroit — le même catalogue, le même dépôt, la même matière :
+    /* ═══════════════════════ INTERFACE : UNE SEULE PORTE ══════════════════════
+       LES ASPÉRITÉS SE PRENNENT DANS LE SOUS-MENU DE L'ICÔNE IMAGE, ET LÀ SEULEMENT.
 
-         · l'ICÔNE ÉTOILES de la colonne de gauche. Elle OUVRE UN WIDGET — un
-           panneau flottant, au gabarit des widgets de l'app (Styles, Nuancier,
-           Filtres). On reclique dessus : le widget DISPARAÎT (`basculeWidget`).
-           Le widget est déplaçable par sa barre de titre, et sa position est
-           retenue d'une session à l'autre, comme celle des autres widgets ;
          · le SOUS-MENU DE L'ICÔNE IMAGE, APRÈS « SVG ». Le menu et son ouverture
            restent ceux de l'app (`setupImportDropdown`, `main.js:23163`) : on n'y
-           ajoute que nos entrées.
+           ajoute que nos entrées ;
+         · sa PREMIÈRE LIGNE, « Aspérités papier », ouvre la PALETTE — le widget
+           flottant. Un second clic la ferme (`basculeWidget`). Le widget est
+           déplaçable par sa barre de titre, et sa position est retenue d'une
+           session à l'autre, comme celle des autres widgets.
+
+       ⚠️ IL N'Y A PLUS D'ICÔNE DANS LA COLONNE DE GAUCHE. Elle a été retirée :
+       une même chose à deux endroits obligeait à deviner lequel fait quoi. La
+       colonne garde donc ses outils, et les aspérités se rangent sous l'import
+       d'image — leur place, puisque c'est une matière d'image.
 
        Les deux listes sont construites par le MÊME `creerEntreeDePapier` : il n'y a
        donc pas deux façons de déposer un papier selon l'endroit d'où on l'a pris.
@@ -709,9 +721,14 @@
                         : p.style === 'mouchete' ? 'mouchetures (recyclé)' : 'grain fin') +
                 ' — glisser sur la page, ou cliquer pour la page active';
 
+        /* Le nom tel quel, plus le signe du brillant. La mention « (calque) » a été
+           RETIRÉE, pour deux raisons : elle était redondante — « Calque (calque) »,
+           « Vélin transparent (calque) » — et ses 9 caractères poussaient le widget
+           jusqu'à sa largeur maximale (200 px) là où Styles et Pathfinder tiennent
+           en 160. La translucidité reste dite deux fois : par le nom lui-même, et
+           par l'infobulle, qui précise « calque (translucide) ». */
         var nom = document.createElement('span');
-        nom.textContent = p.nom + (p.matiere === 'brillant' ? ' ✦' : '') +
-            (p.transparent ? ' (calque)' : '');
+        nom.textContent = p.nom + (p.matiere === 'brillant' ? ' ✦' : '');
         b.appendChild(pastilleDe(p, 22));
         b.appendChild(nom);
 
@@ -769,10 +786,30 @@
         sep.className = 'sp-papier-sep';
         racine.appendChild(sep);
 
-        var titre = document.createElement('div');
-        titre.className = 'sp-papier-titre';
-        titre.textContent = 'Papiers — aspérités';
-        racine.appendChild(titre);
+        /* ── LA LIGNE QUI OUVRE LA PALETTE, ET POURQUOI ELLE EST ICI.
+           Il n'y a PLUS d'icône « Aspérités papier » dans la colonne de gauche :
+           les aspérités ne vivent que dans ce sous-menu, et c'est donc cette ligne
+           qui ouvre le widget. Elle porte la classe `dropdown-item`, comme « Image »
+           et « SVG » juste au-dessus, pour ne pas détonner dans le menu.
+           L'ancien titre (« Papiers — aspérités »), purement décoratif et en
+           `pointer-events:none`, devient donc un bouton. */
+        bouton = document.createElement('button');
+        bouton.className = 'dropdown-item sp-papier-ouvrir';
+        bouton.id = 'spPapierOuvrir';
+        bouton.type = 'button';
+        bouton.setAttribute('aria-label', 'Aspérités papier');
+        bouton.setAttribute('aria-pressed', 'false');
+        bouton.title = 'Aspérités papier — ouvrir la palette (un second clic la ferme)';
+        bouton.innerHTML = iconeEtoiles() +
+            '<span class="sp-papier-ouvrir-nom">Aspérités papier</span>' +
+            '<span class="sp-papier-ouvrir-fleche" aria-hidden="true">▸</span>';
+        bouton.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            basculeWidget();
+            fermerMenu();
+        });
+        racine.appendChild(bouton);
 
         var aide = document.createElement('div');
         aide.className = 'sp-papier-aide';
@@ -813,8 +850,15 @@
         listeWidget = widget.querySelector('#spPapierCorps');
 
         var intro = document.createElement('div');
+        /* ⚠️ CETTE LIGNE DÉCIDE DE LA LARGEUR DU WIDGET, et ce n'est pas une figure
+           de style : le widget est en `position:fixed`, donc sa largeur est ajustée
+           à son contenu — c'est-à-dire à sa plus large ligne. Mesurée au canevas,
+           « Glisser une pastille sur la page visée » faisait 205,2 px et poussait
+           donc le panneau à sa largeur maximale (200 px), quand Styles, Pathfinder,
+           Nuancier et Filtres tiennent en 160. La phrase est raccourcie pour
+           repasser sous les 160 px, sans rien perdre de ce qu'elle dit. */
         intro.className = 'sp-papier-intro';
-        intro.textContent = 'Glisser une pastille sur la page visée';
+        intro.textContent = 'Glisser sur la page visée';
         listeWidget.appendChild(intro);
 
         PAPIERS.forEach(function (p) { listeWidget.appendChild(creerEntreeDePapier(p, 'sp-papier-ligne')); });
@@ -848,10 +892,12 @@
             widget.style.bottom = 'auto';
         }
         /* Sans position retenue : SOUS les autres widgets de gauche. Ils occupent
-           16 px (Filtres), 80 px (Nuancier) et 144 px (Styles) ; à 216 px on passe
-           au-dessus d'eux sans les recouvrir, ce qui laisse chacun atteignable. */
+           16 px (Filtres), 80 px (Nuancier), 144 px (Styles) et 208 px (Pathfinder),
+           soit un pas de 64 px. Le créneau suivant est donc 272 px — et non 216,
+           qui mordait sur Pathfinder (208 + 28 px de hauteur) : la valeur d'avant
+           avait oublié ce quatrième widget. */
         else {
-            widget.style.bottom = '216px';
+            widget.style.bottom = '272px';
             widget.style.top = 'auto';
         }
     }
@@ -891,38 +937,6 @@
         });
     }
 
-    /**
-     * L'ICÔNE DE LA COLONNE — et son va-et-vient.
-     *
-     * Un clic OUVRE le widget ; un second clic le REFERME (`widgetVisible`), et
-     * l'icône reprend son état de repos. C'est la demande, et c'est aussi ce que
-     * font les autres boutons de la colonne : on ne laisse pas deux panneaux
-     * ouverts sur le même sujet.
-     */
-    function construireBouton() {
-        if (bouton && bouton.parentNode) return true;
-        var ancre = document.getElementById('importDropdown');
-        if (!ancre || !ancre.parentNode) return false;
-
-        bouton = document.createElement('button');
-        bouton.className = 'btn btn-tool';
-        bouton.id = 'spPapierIcone';
-        bouton.type = 'button';
-        bouton.setAttribute('aria-label', 'Aspérités papier');
-        bouton.setAttribute('aria-pressed', 'false');
-        bouton.title = 'Aspérités papier — ouvrir la palette (un second clic la ferme)';
-        bouton.innerHTML = iconeEtoiles();
-        bouton.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            basculeWidget();
-        });
-
-        // Juste après le groupe Import (l'icône image), comme demandé.
-        ancre.parentNode.insertBefore(bouton, ancre.nextSibling);
-        return true;
-    }
-
     function basculeWidget() {
         if (!construireWidget()) return false;
         widgetVisible = !widgetVisible;
@@ -952,9 +966,9 @@
     }
 
     function construireInterface() {
-        var a = construireBlocImage();
-        var b = construireBouton();
-        return a || b;
+        /* Une seule chose à construire, et une seule porte : le bloc du sous-menu
+           Image. C'est lui qui porte aussi la ligne d'ouverture du widget. */
+        return construireBlocImage();
     }
 
     /** Referme le menu d'import — c'est celui de l'app (classe `open`). */
@@ -1075,8 +1089,13 @@
             /* Nos entrées, dans le menu Image. */
             '.sp-papier-bloc{margin:1px 0 3px;}',
             '.sp-papier-sep{height:1px;background:rgba(128,128,128,.32);margin:6px 10px;}',
-            '.sp-papier-titre{padding:0 12px;font-size:9px;line-height:1.5;letter-spacing:.7px;' +
-                'opacity:.62;text-transform:uppercase;pointer-events:none;}',
+            /* ── LA LIGNE QUI OUVRE LA PALETTE, dans le sous-menu Image.
+                  Elle porte `dropdown-item` — le gabarit des entrées du menu — et
+                  n'a donc besoin que de deux choses : que son libellé puisse se
+                  couper proprement, et une flèche poussée à droite qui annonce
+                  qu'elle ouvre autre chose. */
+            '.sp-papier-ouvrir-nom{flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+            '.sp-papier-ouvrir-fleche{margin-left:auto;opacity:.5;font-size:10px;}',
             '.sp-papier-aide{padding:0 12px 4px;font-size:9px;opacity:.5;pointer-events:none;}',
             '.sp-papier-item{display:flex;align-items:center;gap:8px;}',
             '.sp-papier-item span:last-child{white-space:nowrap;}',
@@ -1085,34 +1104,48 @@
             '.sp-papier-actif{background:rgba(13,148,136,.16) !important;' +
                 'box-shadow:inset 0 0 0 1px rgba(13,148,136,.45);}',
 
-            /* ── LE WIDGET. Gabarit des widgets de l'app (Styles, Nuancier, Filtres) :
-                  même fond, même bord, même ombre, même repli. `position:fixed` pour
-                  qu'il reste en place qu'on le pose dans `#widgetsOverlay` ou dans le
-                  corps du document — l'app fait migrer ses widgets d'un conteneur à
-                  l'autre, et le nôtre ne doit pas en dépendre. */
-            '.sp-papier-widget{position:fixed;z-index:340;width:216px;max-height:74vh;' +
+            /* ── LE WIDGET, AU GABARIT EXACT DES WIDGETS DE L'APP.
+                  Valeurs relevées dans `CSS/main.css`, aux règles mêmes de Styles
+                  (`.typo-styles-widget`, l.1574) et de Pathfinder
+                  (`.pathfinder-widget`, l.2817), puis MESURÉES côte à côte dans le
+                  navigateur — c'est l'écart que la demande signalait :
+                    · boîte   : min-width 160 / max-width 200, radius 10, bord 1 px
+                                rgba(0,0,0,.12), ombre 0 8px 24px rgba(0,0,0,.15) ;
+                    · en-tête : padding 6px 8px, gap 6px, 11 px / 700, letter-spacing
+                                .8 px, MAJUSCULES, et AUCUN filet bas ;
+                    · pastille: 5 px, #111 (clair) / #e6e6e6 (sombre) ;
+                    · flèche  : 10 px, opacité .6, retournement en .2 s ;
+                    · lignes  : 6px 8px, radius 6, 10 px, survol neutre rgba(0,0,0,.06).
+                  La version précédente faisait 216 px de large, un en-tête de
+                  33,3 px (contre 26,7), un titre en 400 sans majuscules, une
+                  pastille de 7 px teal et un filet bas : cinq écarts, tous visibles
+                  dès qu'on met les deux panneaux côte à côte.
+                  `position:fixed` reste, lui : l'app fait migrer ses widgets de
+                  `#widgetsOverlay` au corps du document, et le nôtre ne doit pas
+                  dépendre du conteneur où il atterrit. */
+            '.sp-papier-widget{position:fixed;z-index:340;min-width:160px;max-width:200px;max-height:74vh;' +
                 'display:flex;flex-direction:column;background:rgba(255,255,255,.96);color:#111;' +
                 'border:1px solid rgba(0,0,0,.12);border-radius:10px;' +
-                'box-shadow:0 8px 24px rgba(0,0,0,.18);backdrop-filter:saturate(1.2) blur(2px);' +
+                'box-shadow:0 8px 24px rgba(0,0,0,.15);backdrop-filter:saturate(1.2) blur(2px);' +
                 'overflow:hidden;user-select:none;-webkit-user-select:none;' +
                 'font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;}',
             '.theme-dark .sp-papier-widget{background:rgba(24,24,24,.96);color:#e6e6e6;' +
                 'border-color:rgba(255,255,255,.1);}',
-            '.sp-papier-entete{display:flex;align-items:center;gap:8px;padding:9px 10px;' +
-                'font-size:11px;letter-spacing:.5px;border-bottom:1px solid rgba(0,0,0,.08);' +
+            '.sp-papier-entete{display:flex;align-items:center;gap:6px;padding:6px 8px;' +
+                'font-weight:700;font-size:11px;letter-spacing:.8px;text-transform:uppercase;' +
                 'cursor:move;}',
-            '.theme-dark .sp-papier-entete{border-bottom-color:rgba(255,255,255,.08);}',
-            '.sp-papier-point{width:7px;height:7px;border-radius:50%;background:#0d9488;flex:0 0 auto;}',
-            '.sp-papier-fleche{margin-left:auto;opacity:.6;transition:transform .18s ease;}',
+            '.sp-papier-point{width:5px;height:5px;border-radius:50%;background:#111;flex:0 0 auto;}',
+            '.theme-dark .sp-papier-point{background:#e6e6e6;}',
+            '.sp-papier-fleche{margin-left:auto;opacity:.6;font-size:10px;transition:transform .2s;}',
             '.sp-papier-widget-ferme .sp-papier-fleche{transform:rotate(-90deg);}',
             '.sp-papier-corps{display:flex;flex-direction:column;gap:1px;padding:6px;overflow:auto;}',
             '.sp-papier-widget-ferme .sp-papier-corps{display:none;}',
             '.sp-papier-intro{font-size:9px;line-height:1.4;opacity:.55;padding:1px 6px 7px;}',
-            '.sp-papier-ligne{display:flex;align-items:center;gap:8px;width:100%;padding:5px 6px;' +
+            '.sp-papier-ligne{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;' +
                 'border:1px solid transparent;border-radius:6px;background:transparent;' +
-                'font:inherit;font-size:10.5px;letter-spacing:.3px;color:inherit;text-align:left;' +
+                'font:inherit;font-size:10px;letter-spacing:.3px;color:inherit;text-align:left;' +
                 'cursor:grab;}',
-            '.sp-papier-ligne:hover{background:rgba(13,148,136,.10);border-color:rgba(13,148,136,.25);}',
+            '.sp-papier-ligne:hover{background:rgba(0,0,0,.06);}',
             '.sp-papier-ligne:active{cursor:grabbing;}',
             '.sp-papier-ligne span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
         ].join('\n');
@@ -1174,7 +1207,9 @@
                 papiersParPage: JSON.parse(JSON.stringify(papiersParPage)),
                 pages: nombreDePages(),
                 interface: !!racine,
-                icone: !!bouton,
+                // La ligne du sous-menu qui ouvre le widget (elle a remplacé
+                // l'icône de la colonne : le sous-menu est la seule porte).
+                ouvreur: !!bouton,
                 widget: !!widget,
                 widgetVisible: widgetVisible,
                 // Le nombre de calques RÉELLEMENT posés dans la page — c'est ce qui
