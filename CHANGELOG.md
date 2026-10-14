@@ -17,6 +17,16 @@ _Une barre qui reste devant, trois icônes qui manquaient, et trois polices qui 
 
 > ⚠️ **Restent ouverts, inchangés depuis 1.7.612** — `release.html` annonce toujours `v1.7.603` (les notes 604 à 613 sont à **écrire** en trois langues) ; `rock.html` n'applique pas `?lang=xx` à son lien « Ouvrir en ligne », faute d'y avoir `appliquerLangueAuxLiens()` ; et `superprint_ASTRO/_legacy/index.html` est en retard sur `src/pages/index.astro` alors qu'il est toujours listé pour conversion — lancer `npm run convert` **écraserait** la zone « Téléchargement », les marques des systèmes et le panneau d'installation.
 
+### Changed — le sous-menu de téléchargement passe en trois colonnes
+
+- **Il mesurait 440 × 455 px** : les trois systèmes empilés, donc **plus haut que large**, et il fallait descendre pour voir Linux. Ce sont trois systèmes **comparables** — on cherche le sien, on ne les lit pas dans l'ordre. Côte à côte, ils se comparent : **940 × 234 px**.
+- **Le panneau est centré sur la barre**, et non plus ancré au bord droit du bouton : presque deux fois plus large que la zone qui l'ouvre, un ancrage à droite l'aurait fait sortir de l'écran d'un côté. `.nav-dd` devient `static`, `nav` (qui est `sticky`) devient le repère.
+- ⚠️ **Le décalage de centrage passe par une variable `--dd-x`, et ce n'est pas cosmétique.** Les règles qui posent `transform` — `[data-ouvert]`, `:hover` — sont **plus spécifiques** que `.nav-dd-panel` : une redéfinition écrite dans la requête mobile aurait été écrasée, et le panneau serait sorti de la moitié de sa largeur par la gauche au téléphone.
+- ⚠️ **La largeur est déduite du contenu, et deux modèles ont été mesurés puis écartés.** L'exigence, rangée par rangée : Windows **231** px, macOS **331** (« Apple silicon »), Linux **323** — soit 885 px de colonnes. Un panneau de **880 px** laissait la colonne Linux dépasser de **22 px hors de la boîte blanche** ; des **tiers égaux** (`minmax(0, 1fr)`) donnaient 282/282/282 **et tronquaient six noms**. D'où **940 px**, la largeur qui contient les 885 px plus 23 de marge.
+- **Seuil des trois colonnes : 960 px de fenêtre.** En dessous, l'empilement d'origine reprend — et là un nom tronqué n'est plus possible, chaque système occupant toute la largeur.
+- ⚠️ **Ce que les vérifications ne regardaient pas** : elles testaient si un **nom** se tronquait, et si une **rangée** débordait de **sa colonne**. Aucune ne comparait la **grille à son conteneur** — c'est pourtant là qu'était le défaut. Il fallait `scrollWidth` contre `clientWidth` de la **boîte**.
+- **Aucun balisage ne change** : les trois systèmes étaient déjà trois frères dans `.nav-dd-liste`, il suffit que ce conteneur devienne une grille. Le composant Astro et les quatre pages gardent un balisage identique.
+
 ### Fixed — trois icônes manquaient dans le sous-ensemble `sp213-local`
 
 - Le miroir local — celui dont le lanceur npm tire `sp213-local.zip` — **n'a jamais reçu** `icons/windows.svg`, `icons/macos.svg` ni `icons/linux.svg`, alors que **quatre** de ses pages (`index`, `faq`, `price`, `rock`) les réclament par chemin relatif. Les marques des trois systèmes s'affichaient donc **cassées**, dans le sous-menu de téléchargement comme dans les gélules de la zone « Téléchargement ».
