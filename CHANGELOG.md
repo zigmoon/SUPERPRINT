@@ -17,6 +17,19 @@ _Une barre qui reste devant, trois icônes qui manquaient, et trois polices qui 
 
 > ⚠️ **Restent ouverts, inchangés depuis 1.7.612** — `release.html` annonce toujours `v1.7.603` (les notes 604 à 613 sont à **écrire** en trois langues) ; `rock.html` n'applique pas `?lang=xx` à son lien « Ouvrir en ligne », faute d'y avoir `appliquerLangueAuxLiens()` ; et `superprint_ASTRO/_legacy/index.html` est en retard sur `src/pages/index.astro` alors qu'il est toujours listé pour conversion — lancer `npm run convert` **écraserait** la zone « Téléchargement », les marques des systèmes et le panneau d'installation.
 
+### Added — le billet de version sur le journal de app.zigmoon.com
+
+- **`release.html` s'arrêtait à SUPER PRINT v1.7.585**, et sa copie déployée dans `Index_app/` à la même version : **27 livraisons n'y étaient pas racontées**. Le journal reçoit d'abord les **dix entrées déjà rédigées** (586 à 591 et 600 à 603), recopiées telles quelles depuis la copie du dépôt, puis **un billet consolidé « v1.7.604 → v1.7.613 »**.
+- **Pourquoi un seul billet pour dix versions, et non dix.** Les six dernières ont un récit commun — les applications de bureau, la page de présentation, la zone Téléchargement — et les séparer fabriquerait de **fausses frontières** entre des travaux qui n'en ont pas. Les versions 604 à 610, elles, ne sont documentées **nulle part** sinon dans les messages de commit : le billet s'y appuie, et le dit.
+- **Le billet est trilingue**, comme tout le journal : **31 paires** d'attributs `data-i18n-fr / -en / -jp`, six sections, 23 points. Vérifié dans le navigateur : le français s'affiche, le bouton JP bascule bien les six sections et les 23 points.
+- ⚠️ **Les deux fichiers sont écrits**, et pas seulement celui demandé : `Index_app/release.html` est la page **publiée**, mais `release.html` à la racine est **suivi par git** et s'arrêtait à 603. N'écrire que dans la copie déployée aurait recréé exactement le défaut que ce CHANGELOG signale depuis deux versions.
+- ⚠️ **Deux pièges rencontrés, tous deux dus au même motif** : les commentaires `<!-- ===== … ===== -->` du fichier contiennent des **`=`** dans leur texte (« 48 mises en page »), ce qui casse un analyseur qui délimite sur `=` ; et la balise `<meta name="keywords">` de la racine **n'a pas de `>` fermant** — un défaut préexistant. La copie se fait donc par **ancres littérales**, et les métadonnées en ne remplaçant que la **valeur** de l'attribut.
+
+### Changed — le lanceur npm passe à 1.0.111, plancher 1.7.613
+
+- **`MIN_APP_VERSION` avancé de 1.7.612 à 1.7.613**, après vérification du déploiement — c'est la règle de `PUBLIER.md`, et elle a été **mesurée** et non supposée : `version.txt` en ligne = 1.7.613, et le zip servi par app.zigmoon.com **retéléchargé et haché** (56 458 423 octets, sha256 `010E9D03…992C4A`) est **identique octet pour octet** au zip local.
+- ⚠️ **Sans ce bump, les correctifs n'auraient atteint personne d'installé** : à version **égale**, l'étape 1/4 du lanceur ne rejoue rien. Or 1.7.613 répare trois défauts qui ne se voyaient qu'à l'usage — une barre peinte **derrière** la page, trois icônes des systèmes **absentes**, et trois polices déclarées sur **une seule graisse**, qui faisaient tomber les titres du studio sur une police système.
+
 ### Fixed — la langue ne suivait pas le visiteur sur toutes les pages
 
 - **`rock.html` perdait la langue.** Elle était la **seule** des quatre pages de présentation à ne pas avoir `appliquerLangueAuxLiens()` : ses onze liens vers les trois outils partaient **sans** `?lang=xx`. Mesuré après un clic sur FR — rock.html : **0 lien sur 11** portait la langue ; index.html : **les 76**.
