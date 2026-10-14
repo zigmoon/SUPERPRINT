@@ -46,7 +46,8 @@
     "windows": {
       "nsis": {
         "languages": ["French", "English", "Japanese"],
-        "installerIcon": "icons/superprint/icon.ico"
+        "installerIcon": "icons/superprint/icon.ico",
+        "installerHooks": "nsis/hooks.nsh"
       }
     },
     "macOS": {

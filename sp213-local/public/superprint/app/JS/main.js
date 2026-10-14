@@ -50696,7 +50696,13 @@ https://superprint.app
        Les deux changent au zoom ET au défilement. On ne crée que les
        graduations de la fenêtre visible : sur un format de 2000 mm à 400 %, tout
        dessiner ferait des dizaines de milliers de traits. */
-    const SP_REGLE_TAILLE = 20;                       // épaisseur des règles, en px écran
+    /* ⚠️ ÉPAISSEUR DES RÈGLES : 10 px, MOITIÉ DE CE QU'ELLES ÉTAIENT (20 px).
+       La barre X comme la barre Y, et le carré d'angle qui en découle : elles
+       mangeaient 20 px de la fenêtre d'aperçu sur deux côtés, et ce n'est pas
+       leur rôle — une règle est un repère, pas un bandeau. La taille est UNE
+       SEULE constante : le carré d'angle, le décalage de la barre Y et l'origine
+       de ses graduations s'en déduisent, donc rien ne peut se désaligner. */
+    const SP_REGLE_TAILLE = 10;
     const _spWrapper = canvasInner.closest('.canvas-wrapper') || canvasInner.parentElement;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
@@ -50736,16 +50742,20 @@ https://superprint.app
                 const majeur = (mm % 50 === 0);
                 const t = document.createElement('div');
                 t.className = 'ruler-tick' + (majeur ? ' major' : '');
+                /* ⚠️ LES TRAITS SUIVENT L'ÉPAISSEUR DE LA RÈGLE. À 10 px, un trait
+                   majeur de 8 px et un mineur de 5 px auraient rempli la barre et
+                   écrasé les chiffres : ils mesurent maintenant 5 px et 2,5 px,
+                   c'est-à-dire la moitié — proportionnellement identiques. */
                 if (horizontal) {
                     t.style.left = pos + 'px';
                     t.style.bottom = '0';
                     t.style.width = (majeur ? '1px' : '0.5px');
-                    t.style.height = (majeur ? 8 : 5) + 'px';
+                    t.style.height = (majeur ? 5 : 2.5) + 'px';
                 } else {
                     t.style.top = pos + 'px';
                     t.style.right = '0';
                     t.style.height = (majeur ? '1px' : '0.5px');
-                    t.style.width = (majeur ? 8 : 5) + 'px';
+                    t.style.width = (majeur ? 5 : 2.5) + 'px';
                 }
                 t.style.position = 'absolute';
                 regle.appendChild(t);
@@ -50753,8 +50763,18 @@ https://superprint.app
                     const lab = document.createElement('div');
                     lab.className = 'ruler-label';
                     lab.textContent = mm;
-                    if (horizontal) { lab.style.left = (pos + 2) + 'px'; lab.style.top = '2px'; }
-                    else { lab.style.left = '2px'; lab.style.top = (pos + 2) + 'px'; }
+                    /* ⚠️ LA BARRE Y COUCHE SES CHIFFRES, LA BARRE X NON — et ce
+                       n'est pas une coquetterie. Étalonné à 10 px de large, trois
+                       chiffres ne tiennent PAS horizontalement : « 200 » à 7 px
+                       d'IBM Plex Mono mesure ≈ 12,6 px, soit 3 px de débordement
+                       sur le canevas. La barre Y écrit donc ses nombres dans le
+                       SENS VERTICAL (`writing-mode`, voir `.ruler-vertical
+                       .ruler-label`) — la convention des règles verticales en PAO
+                       (InDesign, Photoshop) — et le chiffre reste ENTIER dans la
+                       barre. La barre X, elle, garde ses nombres à l'endroit :
+                       elle a toute la largeur de la fenêtre pour les porter. */
+                    if (horizontal) { lab.style.left = (pos + 1) + 'px'; lab.style.top = '1px'; }
+                    else { lab.style.left = '1px'; lab.style.top = (pos + 1) + 'px'; }
                     lab.style.position = 'absolute';
                     regle.appendChild(lab);
                 }
@@ -50774,7 +50794,7 @@ https://superprint.app
                 c.style.left = pli + 'px';
                 c.style.bottom = '0';
                 c.style.width = '2px';
-                c.style.height = '12px';
+                c.style.height = '6px';
                 c.style.background = '#ff4444';
                 c.style.opacity = '0.7';
                 etat.hRuler.appendChild(c);

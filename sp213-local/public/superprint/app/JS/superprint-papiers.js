@@ -4,10 +4,12 @@
    CE QUE CE MODULE AJOUTE À SUPERPRINT
      · les ASPÉRITÉS de papier dans le SOUS-MENU DE L'ICÔNE IMAGE de la colonne de
        gauche, APRÈS « SVG » — c'est là, et NULLE PART AILLEURS, qu'elles se
-       prennent. Il n'y a plus d'icône dans la colonne : la première ligne du bloc
-       ouvre la PALETTE « Papier » (le widget), les suivantes déposent un papier ;
+       prennent. Le bloc du sous-menu ne contient plus qu'UNE ligne — « Papier » —
+       qui ouvre la PALETTE (le widget) ; c'est la palette qui porte le catalogue
+       entier, pastille et gestes compris. Un sous-menu n'est pas un catalogue :
+       « Image » et « SVG » tiennent en une ligne, « Papier » aussi ;
      · le DÉPÔT d'un papier sur une page par glisser-déposer, ou par simple clic
-       sur une entrée du menu quand une page est active ;
+       sur une entrée de la palette quand une page est active ;
      · l'HABILLAGE de la page : teinte + grain + une petite marque, posés SUR la
        page en MULTIPLICATION (`mix-blend-mode:multiply`) — un papier TEINTE ce
        qu'il y a dessous (blanc × teinte = teinte, noir × teinte = noir), il ne le
@@ -853,6 +855,13 @@
         bouton.innerHTML = iconeEtoiles() +
             '<span class="sp-papier-ouvrir-nom" data-translate="papierTitle">' + nomPalette() + '</span>' +
             '<span class="sp-papier-ouvrir-fleche" aria-hidden="true">▸</span>';
+        /* ⚠️ LE MENU NE CONTIENT PLUS QU'UNE SEULE LIGNE, ET C'EST VOULU. Les
+           aspérités du catalogue étaient listées ICI, au premier niveau du
+           sous-menu : treize papiers déversés dans un menu qui n'en demandait
+           pas tant, alors que « Image » et « SVG » au-dessus tiennent en une
+           ligne chacun. Le catalogue vit dans le WIDGET — qui les affiche tous,
+           avec la même pastille et le même geste (glisser, ou cliquer pour la
+           page active) : rien n'est perdu, et la porte est de nouveau unique. */
         bouton.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -860,13 +869,6 @@
             fermerMenu();
         });
         racine.appendChild(bouton);
-
-        var aide = document.createElement('div');
-        aide.className = 'sp-papier-aide';
-        aide.textContent = 'Glisser sur une page';
-        racine.appendChild(aide);
-
-        PAPIERS.forEach(function (p) { racine.appendChild(creerEntreeDePapier(p, 'dropdown-item sp-papier-item')); });
 
         ancrage.parentNode.insertBefore(racine, ancrage.nextSibling);
         return true;
@@ -1004,11 +1006,13 @@
         return widgetVisible;
     }
 
-    /** Souligne, dans les deux listes, le papier de la page ACTIVE. */
+    /** Souligne, dans la palette, le papier de la page ACTIVE. */
     function majMarqueActive() {
         var p = papierDePage(pageActive());
         var id = p ? p.id : null;
-        var toutes = document.querySelectorAll('.sp-papier-item, .sp-papier-ligne');
+        /* Une seule liste porte les papiers : celle du widget (`.sp-papier-ligne`).
+           Le sous-menu n'en affiche plus — voir `construireBlocImage`. */
+        var toutes = document.querySelectorAll('.sp-papier-ligne');
         for (var i = 0; i < toutes.length; i++) {
             var actif = id != null && toutes[i].getAttribute('data-papier') === id;
             toutes[i].classList.toggle('sp-papier-actif', actif);
@@ -1146,11 +1150,6 @@
                   qu'elle ouvre autre chose. */
             '.sp-papier-ouvrir-nom{flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
             '.sp-papier-ouvrir-fleche{margin-left:auto;opacity:.5;font-size:10px;}',
-            '.sp-papier-aide{padding:0 12px 4px;font-size:9px;opacity:.5;pointer-events:none;}',
-            '.sp-papier-item{display:flex;align-items:center;gap:8px;}',
-            '.sp-papier-item span:last-child{white-space:nowrap;}',
-            '.sp-papier-item[draggable="true"]{cursor:grab;}',
-            '.sp-papier-item[draggable="true"]:active{cursor:grabbing;}',
             '.sp-papier-actif{background:rgba(13,148,136,.16) !important;' +
                 'box-shadow:inset 0 0 0 1px rgba(13,148,136,.45);}',
 

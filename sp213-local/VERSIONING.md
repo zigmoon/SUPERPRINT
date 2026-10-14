@@ -13,7 +13,7 @@
 | Version app (affichée) | `1.7.615` |
 | Pastille du colophon (`index.html` **et** `price.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
 | Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.615-ordre-des-calques` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261011-v611-fondations-open-source` (JS) · `?v=20261013-v543-grille-rapide-ia` (CSS) |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261015-v615-tableau-regles-fines` (JS) · `?v=20261015-v615-regles-fines-tableau` (CSS) |
 | Badge preview (`spVersionBadge`) | `v1.7.615` — 5 marqueurs : commentaire, `title` (`JS v604`), `data-sp-js="v604"`, `data-sp-sw`, texte |
 | Splash screen | `1.7.615` |
 | Onboarding | `LAYOUT EDITOR — V 1.7.615` + `V 1.7.615 \| 09 2026` |
