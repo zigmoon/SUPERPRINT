@@ -25,21 +25,21 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
 //    version is invalid or older than the online version ».
 //    La version du paquet npm, elle, vit dans package.json.
-// 📌 Dernier plancher avancé : 1.7.613 (zip 1.7.613 en ligne sur app.zigmoon.com,
-//    vérifié le 14/10/2026 — 56 458 423 octets, sha256 010E9D03…992C4A, IDENTIQUES
+// 📌 Dernier plancher avancé : 1.7.614 (zip 1.7.614 en ligne sur app.zigmoon.com,
+//    vérifié le 14/10/2026 — 56 459 564 octets, sha256 EAB82EEA…8B951, IDENTIQUES
 //    octet pour octet au zip local refabriqué par tools/make-release-zip.mjs : le
 //    fichier déployé a été retéléchargé et haché, pas seulement mesuré en taille ;
-//    ET `version.txt` en ligne sur superprint.cc = 1.7.613 : les deux fichiers que
+//    ET `version.txt` en ligne sur superprint.cc = 1.7.614 : les deux fichiers que
 //    ce CLI lit sont donc à jour, le plancher peut les suivre).
 //    ⚠️ Pourquoi ce bump était nécessaire : à version ÉGALE, l'étape 1/4 ne rejoue
-//    rien (voir plus bas) — rester en 1.7.612 n'aurait servi qu'aux nouvelles
+//    rien (voir plus bas) — rester en 1.7.613 n'aurait servi qu'aux nouvelles
 //    installations, les autres gardant l'ancienne application sans que rien ne le
-//    signale. Or 1.7.613 corrige trois défauts qui ne se voyaient qu'à l'usage : la
-//    barre des fondations passait DERRIÈRE la page dès qu'on défilait, trois icônes
-//    des systèmes manquaient dans le paquet local, et les trois polices « 2026 »
-//    n'existaient qu'en une graisse (les titres du studio tombaient sur une police
-//    système).
-const MIN_APP_VERSION = '1.7.613';
+//    signale. Or 1.7.614 corrige le défaut le plus visible du lot : un bloc texte
+//    posé sur une image ou une forme DISPARAISSAIT, la forme le recouvrant
+//    entièrement. Le cache de l'application est bumpé avec la version (empreinte
+//    `JS/main.js?v=…-v614-…` et `superprint-shell-v1.7.614-…`), sans quoi un
+//    navigateur déjà venu aurait continué de servir l'ancien `main.js`.
+const MIN_APP_VERSION = '1.7.614';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');
