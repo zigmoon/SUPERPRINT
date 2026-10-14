@@ -16636,6 +16636,19 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             return;
         }
         
+        /* 🆕 v1.7.613 — CE QUE JE CRÉE, DÉPLACE OU OUVRE VIENT DEVANT.
+           Le bloc qui remonte l'objet au premier plan pendant un glisser existait
+           déjà (FIX 2026-06-08), mais il était placé APRÈS le retour anticipé
+           ci-dessous — celui qui protège un textbox en cours d'édition. Glisser un
+           bloc texte qu'on venait d'ouvrir ne le remontait donc PAS : il passait
+           sous l'image ou la forme, et disparaissait entièrement. Mesuré : le texte
+           restait à l'index 0 pendant que la forme créée ensuite occupait l'index 4.
+           La remontée est donc faite ICI, avant le retour anticipé, avec le même
+           drapeau et toujours UNE SEULE fois par glisser. */
+        if (obj && !obj._spDragBroughtToFront) {
+            try { canvas.bringToFront(obj); } catch(_) {}
+            obj._spDragBroughtToFront = true;
+        }
         // ✅ FIX CHAÎNAGE: Un textbox en mode édition ne doit JAMAIS être déplacé
         // (l'utilisateur étend sa sélection texte, pas un drag d'objet)
         // 🔒 On vérifie AUSSI _wasEditingOnMouseDown car Fabric peut avoir appelé exitEditing()
@@ -16655,10 +16668,9 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         //   empilés. Le bringToFront est fait UNE fois au début du drag
         //   (pas à chaque frame) pour éviter de perturber l'ordre des
         //   calques à chaque micro-mouvement.
-        if (obj && !obj._spDragBroughtToFront) {
-            try { canvas.bringToFront(obj); } catch(_) {}
-            obj._spDragBroughtToFront = true;
-        }
+        //   ⚠️ DÉPLACÉ EN v1.7.613 EN TÊTE DE CE GESTIONNAIRE, AVANT le retour
+        //   anticipé des textbox en édition : placé ici, il ne s'exécutait JAMAIS
+        //   pour un bloc texte qu'on venait d'ouvrir (voir le commentaire plus haut).
 
         // ✂️ SHIFT+DRAG — Contrainte axiale (horizontal OU vertical, comme InDesign)
         if (e.e && e.e.shiftKey && obj && obj._shiftDragOrigin) {
@@ -17115,6 +17127,15 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     // ✨ CORRECTIF : Mettre à jour le panneau quand on entre/sort du mode édition
     canvas.on('text:editing:entered', (e) => {
         if (e.target && (e.target.type === 'textbox' || e.target.type === 'text')) {
+            /* 🆕 v1.7.613 — OUVRIR UN BLOC LE RAMÈNE DEVANT.
+               Demande utilisateur : « ce que je crée, déplace ou ouvre vient
+               devant ». Entrer en édition EST l'ouverture d'un bloc : le texte
+               qu'on vient d'ouvrir doit être visible, et non rester sous l'image
+               ou la forme qui le recouvre. Une seule ligne, ici, parce que cet
+               événement couvre TOUS les chemins d'entrée en édition (double-clic,
+               menu contextuel, édition programmée) : le poser ailleurs aurait
+               laissé des chemins de côté. */
+            try { canvas.bringToFront(e.target); } catch (_) {}
             
             // ✨ FORCER selectionColor explicitement (fond bleu de sélection)
             e.target.selectionColor = 'rgba(13, 153, 255, 0.3)';
@@ -32611,10 +32632,14 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                         activeCanvas.add(_newShape);
                         activeCanvas.add(_newText);
                         _newShape.setCoords(); _newText.setCoords();
-                        // Ordre Z selon le mode : « dedans » → texte devant ;
-                        //   « autour/dessus » → forme devant (dbl-clic = image).
+                        /* Ordre Z de la paire collée : même règle que la création —
+                           « dedans » toujours devant, et sinon la FORME devant
+                           seulement si elle est transparente (cf. _spCreateTextForMode).
+                           🆕 v1.7.613 : une paire collée sur une forme OPAQUE laissait le
+                           texte dessous, donc invisible ; il passe devant. */
                         try {
-                            if (_newText._spTextShapeMode === 'inside') activeCanvas.bringToFront(_newText);
+                            const _spFormeOpaque = !!(_newShape && _newShape.fill && _newShape.fill !== 'transparent');
+                            if (_newText._spTextShapeMode === 'inside' || _spFormeOpaque) activeCanvas.bringToFront(_newText);
                             else activeCanvas.bringToFront(_newShape);
                         } catch (_) {}
                         _newShape._spLastLeft = _newShape.left; _newShape._spLastTop = _newShape.top;
@@ -97484,10 +97509,20 @@ function initObjectRightClickMenu() {
         // Le texte « dedans » est mesurable seulement une fois sur le canvas :
         // on (re)calcule sa hauteur réelle et on le recentre sur la forme.
         if (cfg.mode === 'inside') { try { _spCenterInsideBox(t, shape); } catch (_) {} }
-        // Ordre Z initial : « dedans » → texte devant ; « autour/dessus » → forme
-        // devant (pour pouvoir double-cliquer la forme et y insérer une image).
+        /* Ordre Z initial. Deux règles se combinent :
+             · un texte « dedans » est TOUJOURS devant — sinon la forme le masque ;
+             · un texte « autour / sur le tracé » laissait la FORME devant, pour
+               pouvoir double-cliquer la forme et y insérer une image.
+           🆕 v1.7.613 — CE DERNIER CAS CACHE LE TEXTE QUAND LA FORME EST OPAQUE.
+           Mesuré : écrit « sur le tracé » d'un rectangle plein, le texte est peint
+           SOUS la forme et disparaît entièrement — c'est le défaut signalé. On ne
+           met donc la forme devant QUE si elle est TRANSPARENTE : là, elle ne cache
+           rien et le double-clic reste possible. Dès qu'elle a une matière (couleur,
+           dégradé, motif), c'est le TEXTE qui passe devant — c'est lui qu'on vient
+           de créer, et il doit être visible. */
         try {
-            if (cfg.mode === 'inside') canvas.bringToFront(t);
+            const _spFormeOpaque = !!(shape && shape.fill && shape.fill !== 'transparent');
+            if (cfg.mode === 'inside' || _spFormeOpaque) canvas.bringToFront(t);
             else canvas.bringToFront(shape);
         } catch (_) {}
         return t;
