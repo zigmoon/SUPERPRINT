@@ -2239,6 +2239,28 @@ body { background: var(--paper); }
 </footer>
 
 <script>
+// ── Language switcher ──
+/* Ajoute (ou retire) « ?lang=xx » sur les liens vers les trois outils. Les paramètres
+   déjà présents (?tpl=…, ?from=…) sont conservés. Fonction déclarée : elle est hissée,
+   donc utilisable par setLang() juste en dessous. */
+function appliquerLangueAuxLiens(lang) {
+  var outils = ["app/index.html", "sp213-studio.html", "supertypo/index.html"];
+  document.querySelectorAll("a[href]").forEach(function (a) {
+    var href = a.getAttribute("href") || "";
+    var q = href.indexOf("?");
+    var chemin = (q < 0 ? href : href.slice(0, q));
+    if (outils.indexOf(chemin.replace(/^\.\//, "")) < 0) return;
+    var params = new URLSearchParams(q < 0 ? "" : href.slice(q + 1));
+    if (lang === "en") params["delete"]("lang"); else params.set("lang", lang);
+    /* 🆕 v1.7.580tt — LE STUDIO PART SUR SA PRÉ-HOME (demande utilisateur) :
+       « home=1 » demande à sp213-studio.html d'afficher son écran de démarrage,
+       avec la langue choisie ici (les deux paramètres cohabitent). */
+    if (chemin.replace(/^\.\//, "") === "sp213-studio.html") params.set("home", "1");
+    var s = params.toString();
+    a.setAttribute("href", chemin + (s ? "?" + s : ""));
+  });
+}
+
 /* ══════════════ CHANGEMENT DE LANGUE ══════════════
    Même mécanisme que la présentation : le CSS affiche la variante de la langue du
    document ([data-lang] et .inline-xx), on ne fait donc que poser html[lang]. */
@@ -2252,6 +2274,7 @@ function setLang(lang) {
   if (_c) _c.setAttribute('href', 'https://superprint.cc/rock.html' + (lang === 'en' ? '' : '?lang=' + lang));
   try { history.replaceState(null, '', location.pathname + (lang === 'en' ? '' : '?lang=' + lang) + location.hash); } catch (e) {}
   try { localStorage.setItem('sp_landing_lang', lang); localStorage.setItem('sp_lang', lang); } catch (e) {}
+  appliquerLangueAuxLiens(lang);
   if (typeof window.rkLangue === 'function') window.rkLangue();
 }
 (function () {

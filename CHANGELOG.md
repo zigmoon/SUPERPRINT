@@ -17,6 +17,21 @@ _Une barre qui reste devant, trois icônes qui manquaient, et trois polices qui 
 
 > ⚠️ **Restent ouverts, inchangés depuis 1.7.612** — `release.html` annonce toujours `v1.7.603` (les notes 604 à 613 sont à **écrire** en trois langues) ; `rock.html` n'applique pas `?lang=xx` à son lien « Ouvrir en ligne », faute d'y avoir `appliquerLangueAuxLiens()` ; et `superprint_ASTRO/_legacy/index.html` est en retard sur `src/pages/index.astro` alors qu'il est toujours listé pour conversion — lancer `npm run convert` **écraserait** la zone « Téléchargement », les marques des systèmes et le panneau d'installation.
 
+### Fixed — la langue ne suivait pas le visiteur sur toutes les pages
+
+- **`rock.html` perdait la langue.** Elle était la **seule** des quatre pages de présentation à ne pas avoir `appliquerLangueAuxLiens()` : ses onze liens vers les trois outils partaient **sans** `?lang=xx`. Mesuré après un clic sur FR — rock.html : **0 lien sur 11** portait la langue ; index.html : **les 76**.
+- **`price.html` n'envoyait pas le Studio sur sa pré-home.** La fonction existait, mais c'est un **fork** de celle de la présentation qui n'a jamais reçu la modification `v1.7.580tt` : elle posait `lang` sans poser `home=1`. Mesuré : `sp213-studio.html?lang=fr` sur price, contre `sp213-studio.html?home=1&lang=fr` sur index et faq. **Le même bouton n'ouvrait donc pas le même écran selon la page d'où l'on venait.**
+- ⚠️ **La cause est la même dans les deux cas, et elle vaut d'être nommée** : ce code existe en **plusieurs copies** — `JS/marketing/lang-switcher.js` (présentation), `JS/pages/price/0-lang-switcher.js`, `JS/pages/rock/0-lang-switcher.js` — trois fichiers jumeaux, trois histoires. Une modification portée sur l'un n'atteint pas les autres. C'est le **même motif** que les trois icônes absentes du miroir et que le `querySelector("#")` corrigé à deux endroits sur trois.
+- **La correction reprend le texte de la présentation mot pour mot**, commentaire compris : écrire une variante « adaptée » recréerait le problème qu'on répare. Appliquée aux **huit fichiers** — les deux pages servies, leurs deux copies du miroir, les deux sources `_legacy`, et les **deux fichiers JS de l'arbre Astro** dont les pages se servent réellement.
+- **Vérifié dans les trois langues, sur les quatre pages** : FR et JA posent `?lang=xx` sur tous les liens vers les outils, EN le **retire** (la langue de référence n'a pas de paramètre), et **aucun** lien vers le studio ne part sans `home=1`.
+
+### Fixed — le rocher 3D du site construit ne s'affichait pas
+
+- **Trouvé en vérifiant les pages dans le navigateur, pas en lisant le code.** Sur le site Astro construit, la page ROCK restait bloquée sur **« Chargement de la scène… »** : le rocher — le sujet même de la page — ne s'affichait jamais. Mesuré : le voile de chargement restait visible, le canvas gardait sa taille par défaut **300 × 150** (jamais dimensionné par le moteur), et la requête `JS/pages/rock/JS/three.module.min.js` partait en **404**. Après correction : voile masqué, canvas **1030 × 948**, cinq faces, et le bouton « Tourner le rocher » fait bien passer de la face 01 à la 02.
+- **La cause est un déplacement de code, et rien d'autre.** Ce module était écrit **en ligne** dans `rock.html`, à la racine : `./JS/three.module.min.js` y désignait `/JS/three.module.min.js`, et c'était **juste**. Une fois le code extrait dans `JS/pages/rock/1-rock-engine.js`, `./` a changé de sens — il désigne désormais `/JS/pages/rock/JS/…`, qui n'existe pas. `../../` remonte de `/JS/pages/rock/` à `/JS/`, où le fichier se trouve.
+- ⚠️ **C'est l'erreur la plus facile à commettre en découpant un fichier, et la plus difficile à voir en le relisant** : le chemin est **juste** dans l'ancien fichier et **faux** dans le nouveau, sans qu'une seule ligne de code ait changé de contenu. L'arbre web, lui, n'a jamais eu le défaut — son import est resté en ligne, à la racine.
+- Une note a été laissée dans le fichier pour empêcher de « corriger » le chemin en sens inverse.
+
 ### Changed — le sous-menu de téléchargement passe en trois colonnes
 
 - **Il mesurait 440 × 455 px** : les trois systèmes empilés, donc **plus haut que large**, et il fallait descendre pour voir Linux. Ce sont trois systèmes **comparables** — on cherche le sien, on ne les lit pas dans l'ordre. Côte à côte, ils se comparent : **940 × 234 px**.
