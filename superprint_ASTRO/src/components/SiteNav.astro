@@ -15,10 +15,11 @@
  * deux fois, c'était un doublon à tenir à jour. Ce menu est désormais la seule
  * adresse des fichiers.
  *
- * IL VIT DANS `.nav-tools`, PAS DANS `.nav-links`. Sous 1000 px, `.nav-links`
- * est masqué : un menu qui y vivrait disparaîtrait avec elle, et le
- * téléchargement serait inatteignable au doigt. `.nav-tools` reste visible à
- * toutes les largeurs.
+ * IL VIT DANS `.nav-links`, À LA PLACE DE L'ANCIEN APPEL À L'ACTION :
+ * placé dans `.nav-tools`, le bouton glissait de 277 px vers la droite
+ * (mesuré), la barre répartissant ses groupes en `space-between`. Sous
+ * 1000 px, SEULS SES LIENS DE TEXTE disparaissent (`.nav-links > a`), pas
+ * lui : le téléchargement reste atteignable au doigt.
  */
 import { DESKTOP_APPLICATIONS, DESKTOP_DOWNLOADS, DOWNLOAD_LABELS, MARKUP_LANG_ORDER, NAV_ITEMS, urlTelechargement } from '../data/site';
 

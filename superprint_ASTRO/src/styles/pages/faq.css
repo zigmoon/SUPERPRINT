@@ -283,16 +283,22 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    fois, en tête du menu, et c'est ce qui évite de promettre neuf
    téléchargements là où il y en a trois.
 
-   IL VIT DANS `.nav-tools`, PAS DANS `.nav-links`. Sous 1000 px, `.nav-links`
-   est masqué : un menu qui y vivrait disparaîtrait avec elle, et le
-   téléchargement serait inatteignable au doigt. `.nav-tools` reste visible à
-   toutes les largeurs.
+   IL VIT DANS `.nav-links`, À LA PLACE DE L'ANCIEN APPEL À L'ACTION :
+   placé dans `.nav-tools`, le bouton glissait de 277 px vers la droite
+   (mesuré), la barre répartissant ses groupes en `space-between`. Sous
+   1000 px, SEULS SES LIENS DE TEXTE disparaissent (`.nav-links > a`), pas
+   lui : le téléchargement reste atteignable au doigt.
 
    Panneau de DIVULGATION, pas menu ARIA : des liens, un bouton, Échap pour
    fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
    survol se coupe entre le bouton et la carte et le menu se referme au moment
    où l'on veut cliquer. */
-.nav-dd { position: relative; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
+/* `static`, ET NON `relative` : le panneau est désormais PLUS LARGE que le
+   bouton qui l'ouvre, donc ancré à lui il serait asymétrique. `nav` est
+   `sticky`, donc positionné : il devient le repère du panneau, qui se centre
+   alors sur la barre. Le rembourrage de la barre étant symétrique, `left: 50%`
+   tombe exactement au milieu de la fenêtre. */
+.nav-dd { position: static; align-self: center; display: flex; align-items: center; height: 42px; margin-left: 12px; }
 .nav-dd-btn {
   /* `relative` : les étiquettes de langue deviennent `absolute` en mobile (voir
      la règle sr-only plus bas). Sans un repère positionné ici, elles se
@@ -327,22 +333,31 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    pointe vers le haut : c'est le geste inverse qui referme. */
 .nav-dd-btn[aria-expanded="true"] .nav-dd-dl { transform: rotate(180deg); }
 .nav-dd-panel {
-  position: absolute; top: 100%; right: 0; z-index: 3;
-  /* 400 px, ramenés à la largeur de la fenêtre sur téléphone. Le retrait de
-     84 px n'est pas arbitraire : il réserve la marge de la barre (16 px) plus
-     le burger et son intervalle (50 px), de sorte que le bord GAUCHE du
-     panneau — qui part du bord droit du bouton — ne sorte jamais de l'écran. */
-  width: min(440px, calc(100vw - 84px)); padding-top: 12px;
-  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  position: absolute; top: 100%; z-index: 3;
+  /* CENTRÉ SUR LA BARRE, et non plus ancré au bord droit du bouton : à 940 px,
+     le panneau est presque deux fois plus large que la zone qui l'ouvre, donc
+     un ancrage à droite le ferait déborder hors de l'écran d'un côté. `left:
+     50%` part du repère positionné — `nav` — dont le rembourrage est symétrique :
+     la moitié tombe donc au milieu de la fenêtre. Le retrait de 32 px sur petit
+     écran laisse 16 px de marge de chaque côté. */
+  left: 50%; width: min(940px, calc(100vw - 32px)); padding-top: 12px;
+  opacity: 0; visibility: hidden;
+  /* ⚠️ LE DÉCALAGE HORIZONTAL PASSE PAR `--dd-x`, ET CE N'EST PAS COSMÉTIQUE.
+     Le centrage et l'animation d'ouverture utilisent tous deux `transform`. Or
+     les règles qui posent `transform` ici sont PLUS SPÉCIFIQUES que
+     `.nav-dd-panel` (`[data-ouvert]`, `:hover`) : une redéfinition écrite dans la
+     requête mobile serait donc écrasée. En lisant le décalage dans une variable,
+     il suffit de la changer sur l'élément lui-même. */
+  --dd-x: -50%; transform: translate(var(--dd-x), -6px);
   transition: opacity .22s var(--ease), transform .22s var(--ease), visibility 0s linear .22s;
 }
 .nav-dd[data-ouvert="true"] .nav-dd-panel {
-  opacity: 1; visibility: visible; transform: translateY(0); transition-delay: 0s;
+  opacity: 1; visibility: visible; transform: translate(var(--dd-x), 0); transition-delay: 0s;
 }
 /* Le survol n'existe que là où il y a un pointeur : au doigt, c'est le clic. */
 @media (hover: hover) and (pointer: fine) {
   .nav-dd:hover .nav-dd-panel {
-    opacity: 1; visibility: visible; transform: translateY(0); transition-delay: 0s;
+    opacity: 1; visibility: visible; transform: translate(var(--dd-x), 0); transition-delay: 0s;
   }
 }
 .nav-dd-boite {
@@ -420,6 +435,56 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent;
 }
 .nav-dd-pied a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.613) ══════════════
+   Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
+   plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
+   systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
+   Côte à côte, ils se comparent ; le panneau devient plus large que haut :
+   940 × 234 px mesurés.
+
+   POURQUOI LE SEUIL PORTE SUR LA FENÊTRE ET NON SUR LE PANNEAU. La largeur du
+   panneau est une fonction PURE de celle de la fenêtre (`min(940px, 100vw -
+   32px)`) : les deux formes du seuil sont donc équivalentes, et une requête de
+   média suffit — une requête de conteneur n'ajouterait rien.
+
+   ⚠️ LA LARGEUR DU PANNEAU EST DÉDUITE DU CONTENU, ET LA MESURE EST LE SEUL
+   JUGE. L'exigence, rangée par rangée : Windows 231 px (les gélules « .exe » et
+   « .msi » sont courtes), macOS 331 px (« Apple silicon » est le plus long
+   libellé), Linux 323 px (trois gélules). Total : 885 px de colonnes, donc
+   917 px de panneau une fois le rembourrage payé. D'où 940 — les 23 px qui
+   restent évitent de jouer à la limite.
+
+   DEUX AUTRES MODÈLES ONT ÉTÉ MESURÉS, PUIS ÉCARTÉS :
+     · un panneau de 880 px laissait la colonne Linux dépasser de 22 px HORS DE
+       LA BOÎTE BLANCHE (boite.scrollWidth 901 contre clientWidth 879). `1fr`
+       valant `minmax(auto, 1fr)`, une piste ne descend pas sous son minimum de
+       contenu : 885 px de pistes dans 848 px de grille ne pouvaient que sortir ;
+     · des tiers égaux (`minmax(0, 1fr)`) donnent 282 / 282 / 282 et TRONQUENT
+       six noms, la colonne macOS ayant besoin de 331 px. L'égalité exigerait un
+       panneau de 1025 px et une fenêtre de 1057.
+
+   LE SEUIL DE 960 px DE FENÊTRE DÉCOULE DU MÊME CALCUL : c'est la largeur à
+   partir de laquelle la grille dispose TOUJOURS d'au moins 896 px, dont les 885
+   nécessaires. En dessous, l'empilement d'origine reprend — et là un nom
+   tronqué n'est plus possible, chaque système occupant toute la largeur.
+
+   ⚠️ AUCUN BALISAGE NE CHANGE. Les trois systèmes sont déjà trois frères dans
+   `.nav-dd-liste` ; il suffit que ce conteneur devienne une grille. Le
+   balisage reste donc identique dans les deux mises en page. */
+@media (min-width: 960px) {
+  .nav-dd-liste { display: grid; grid-template-columns: repeat(3, 1fr); }
+  /* Le filet HORIZONTAL séparait des lignes devenues voisines : il devient
+     VERTICAL, entre les colonnes. */
+  .nav-dd-item {
+    margin: 0; padding: 14px 16px;
+    border-bottom: 0; border-right: 1px solid var(--line);
+  }
+  /* Les colonnes du bord ne portent pas de rembourrage vers l'extérieur : celui
+     de la boîte le fait déjà, et le doubler décalerait leur texte par rapport à
+     l'en-tête, qui est aligné sur la boîte. */
+  .nav-dd-item:first-child { padding-left: 0; }
+  .nav-dd-item:last-child { padding-right: 0; border-right: 0; }
+}
 /* 🆕 v1.7.472 — le sélecteur de langue était 0,5 px trop haut : les éléments se centrent
    dans la zone de contenu de la barre (65 px), alors que la barre en fait 66 avec son
    filet bas. Une marge haute de 1 px décale le bloc d’un demi-pixel vers le bas, sans
@@ -1478,7 +1543,10 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
      40 px par la gauche (mesuré à 360 px). `nav` est `sticky`, donc positionné :
      il devient le repère du panneau, qui prend alors toute la largeur. */
   .nav-dd { position: static; margin-left: 0; }
-  .nav-dd-panel { left: 16px; right: 16px; width: auto; }
+  /* Le panneau prend ici toute la largeur entre deux marges : le décalage de
+     centrage doit donc retomber à zéro, sinon il sortirait de la moitié de sa
+     largeur par la gauche. Voir `--dd-x` et pourquoi c'est une variable. */
+  .nav-dd-panel { --dd-x: 0; left: 16px; right: 16px; width: auto; }
   /* 🆕 v1.7.613 — LE BOUTON DEVIENT UNE ICÔNE : FLÈCHE VERS LE BAS, PAS DE TEXTE.
      Le libellé reste dans le document, réduit à un pixel et découpé (motif
      « sr-only »). POURQUOI NE PAS SIMPLEMENT LE PASSER EN `display: none` :
