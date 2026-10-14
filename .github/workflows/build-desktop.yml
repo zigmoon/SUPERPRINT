@@ -308,3 +308,23 @@ jobs:
               --latest=false
           gh release upload "$tag" livraison/* SHA256SUMS --clobber
           echo "archive $tag publiee"
+
+      # ── ANCRAGE DU BADGE « LATEST » ─────────────────────────────────────────
+      #
+      # MESURE, pas precaution : sur la 1.7.614, `gh release create --latest=false`
+      # n'a PAS suffi — GitHub a quand meme affiche la release archivee comme
+      # « Latest », parce qu'elle est la plus recente. Le badge ne se retire pas,
+      # il se designe : il faut nommer explicitement celle qui le garde.
+      #
+      # C'est `desktop-latest` qui doit le porter : c'est elle que le site
+      # presente comme porte d'entree, ses 21 noms fixes etant ceux des liens
+      # de telechargement. L'etape vient donc EN DERNIER, apres la creation de
+      # l'archive, et elle s'execute meme quand celle-ci s'est abstenue.
+      - name: Ancrer « Latest » sur desktop-latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          gh release edit desktop-latest --latest
+          echo "badge Latest : desktop-latest"
+
