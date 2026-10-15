@@ -63947,49 +63947,7 @@ function alignSelectedObjects(direction) {
         }
         window.getAIKeyFor = getAIKeyFor;
 
-        function openAIModal() {
-    const modal = document.getElementById('aiModal');
-    if (!modal) {
-        console.error('AI Modal not found!');
-        return;
-    }
-    
-    // 🆕 Défaut = DeepSeek (demande utilisateur, 2026-09-12). La préférence
-    //   ENREGISTRÉE reste prioritaire : on ne change que le repli.
-    const provider = localStorage.getItem('sp_ai_provider') || 'deepseek';
-    const apiKey = getAIKeyFor(provider);
-    
-    document.getElementById('aiProvider').value = provider;
-    document.getElementById('aiApiKey').value = apiKey;
-    updateAIKeyField();
-    
-    updateAIModelDropdown(provider);
-    
-    const savedModel = localStorage.getItem('sp_ai_model');
-    if (savedModel && AI_MODELS[provider].includes(savedModel)) {
-        document.getElementById('aiModel').value = savedModel;
-    }
-    
-    modal.classList.add('active');
-    modal.style.display = 'flex';
-
-    // 🆕 v1.7.448 — la pop-in suit la langue de l'application (onglets, pastilles, boutons)
-    try { if (typeof window.spAiSyncLang === 'function') window.spAiSyncLang(); } catch (_) {}
-
-    // v143: réinitialise la structure sur "Page simple" et synchronise le toggle barre IA
-    if (typeof aiSetDocType === 'function') aiSetDocType(window._aiDocType || 'single');
-    const _fbToggle = document.getElementById('aiFooterBarToggle');
-    if (_fbToggle) _fbToggle.checked = (localStorage.getItem('sp_ai_footerbar') === '1');
-
-    // 🆕 SP213 : restaurer l'état du modèle layout & canevas
-    try {
-        window._aiSp213Enabled = (localStorage.getItem('sp_ai_sp213') === '1');
-    } catch(e) { window._aiSp213Enabled = false; }
-    const _sp213Toggle = document.getElementById('aiSp213Toggle');
-    if (_sp213Toggle) _sp213Toggle.checked = !!window._aiSp213Enabled;
-        }
-        
-        // Nouvelle fonction pour réinitialiser le document depuis la modale IA
+        // Réinitialise le document (bouton « Nouveau doc » de l'onglet IA)
         async function resetDocumentForAI() {
             // Demander confirmation
             /* _SP_DLG_574 : confirmation SuperPrint en rouge (action destructrice). */
@@ -64029,17 +63987,9 @@ function alignSelectedObjects(direction) {
             }
         }
 
-        function closeAIModal() {
-    const modal = document.getElementById('aiModal');
-    if (modal) {
-        modal.classList.remove('active');
-        modal.style.display = 'none';
-    }
-        }
-
         // ════════════════════════════════════════════════════════════
         // 🆕 SP213 — Modèle alternatif spécialisé LAYOUT & CANEVAS
-        // Activé depuis la pop-in IA. Ce n'est pas un fournisseur API :
+        // Activé depuis l'onglet IA des Préférences. Ce n'est pas un fournisseur API :
         // c'est un "modèle virtuel" qui injecte une éducation avancée
         // (grilles, canevas, colonage, alignements, pagination) dans le
         // system prompt, au-dessus du contexte SuperPrint standard.
@@ -64049,7 +63999,7 @@ function alignSelectedObjects(direction) {
         window._aiSp213Enabled = window._aiSp213Enabled || false;
 
         // Restaure l'état SP213 depuis localStorage dès le chargement
-        // (la barre footer IA doit le respecter sans ouvrir la pop-in).
+        // (la barre de prompt doit le respecter sans ouvrir les Préférences).
         try {
             if (localStorage.getItem('sp_ai_sp213') === '1') window._aiSp213Enabled = true;
         } catch(e) {}
@@ -69304,7 +69254,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     (function() {
         try {
             // 🛡️ v1.7.366 — le repli etait encore 'openai' alors que TOUT le
-            //   reste est passe a DeepSeek (attribut `selected`, openAIModal(),
+            //   reste est passe a DeepSeek (attribut `selected`, spOuvrirPrefsIA(),
             //   callAI(), _aiProviderNote). Au tout premier lancement la liste
             //   etait donc remplie pour OpenAI alors que la pop-in annoncait
             //   DeepSeek. On aligne le repli sur le defaut reel.
@@ -69669,11 +69619,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         settingsAiOk: "Une clé est enregistrée.",
         settingsAiAucune: "Aucune clé enregistrée.",
         settingsAiReglages: "Réglages de l'assistant",
-        settingsAiOuvrirPanneau: "Ouvrir l'assistant IA",
         settingsAiOuvrirStudio: "Ouvrir le Studio SP213",
-        aiSetupTitle: "L'assistant IA n'est pas encore configuré",
-        aiSetupText: "Aucune clé n'est enregistrée : l'assistant ne peut pas encore composer de maquette. Les réglages de l'IA se font dans les Préférences.",
-        aiSetupLink: "Configurer la clé dans les Préférences, onglet IA →",
         aiPromptSansCle: "Aucune clé configurée : cliquez ici pour ouvrir les Préférences de SuperPrint, onglet IA.",
         aiFooterNoKeyTitle: "Aucune clé IA configurée",
         aiFooterNoKeyText: "L'assistant ne peut pas encore composer de maquette : les réglages de l'IA se font dans les Préférences de SuperPrint.",
@@ -69696,7 +69642,6 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         uninstAppImage: "Le fichier AppImage a été supprimé, ainsi que les données de l'application.",
         uninstErreur: "La désinstallation n'a pas pu être menée à bien. Rien n'a été supprimé.",
         // === AI modal ===
-        aiModalTitle: "Prompt IA",
         aiBannerTitle: "Mode Création IA",
         aiBannerText: "L'IA génère une maquette sur la page active. Indiquez si c'est une page simple, une double page (spread) ou un document multi-pages, et la structure attendue.",
         aiSectionConfig: "Configuration",
@@ -70638,11 +70583,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         settingsAiOk: "A key is saved.",
         settingsAiAucune: "No key saved.",
         settingsAiReglages: "Assistant settings",
-        settingsAiOuvrirPanneau: "Open the AI assistant",
         settingsAiOuvrirStudio: "Open the SP213 Studio",
-        aiSetupTitle: "The AI assistant is not configured yet",
-        aiSetupText: "No key is saved yet: the assistant cannot compose a layout. The AI settings live in Preferences.",
-        aiSetupLink: "Set the key in Preferences, AI tab →",
         aiPromptSansCle: "No key configured: click here to open SuperPrint's Preferences, AI tab.",
         aiFooterNoKeyTitle: "No AI key configured",
         aiFooterNoKeyText: "The assistant cannot compose a layout yet: AI settings live in SuperPrint's Preferences.",
@@ -70665,7 +70606,6 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         uninstAppImage: "The AppImage file has been removed, along with the application data.",
         uninstErreur: "The uninstallation could not be completed. Nothing was removed.",
         // === AI modal ===
-        aiModalTitle: "AI prompt",
         aiBannerTitle: "AI Creation Mode",
         aiBannerText: "The AI generates a layout on the active page. Specify whether it's a single page, a spread (two-page), or a multi-page document, along with the expected structure.",
         aiSectionConfig: "Configuration",
@@ -71606,11 +71546,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         settingsAiOk: "キーが保存されています。",
         settingsAiAucune: "キーが保存されていません。",
         settingsAiReglages: "アシスタントの設定",
-        settingsAiOuvrirPanneau: "AIアシスタントを開く",
         settingsAiOuvrirStudio: "SP213スタジオを開く",
-        aiSetupTitle: "AIアシスタントはまだ設定されていません",
-        aiSetupText: "キーが未登録のため、アシスタントはまだレイアウトを作成できません。AIの設定は環境設定で行います。",
-        aiSetupLink: "環境設定の「AI」タブでキーを設定 →",
         aiPromptSansCle: "キーが未設定です。ここをクリックしてSuperPrintの環境設定（AIタブ）を開きます。",
         aiFooterNoKeyTitle: "AIキーが未設定です",
         aiFooterNoKeyText: "アシスタントはまだレイアウトを作成できません。AIの設定はSuperPrintの環境設定で行います。",
@@ -71633,7 +71569,6 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         uninstAppImage: "AppImage ファイルとアプリのデータを削除しました。",
         uninstErreur: "アンインストールを完了できませんでした。削除されたものはありません。",
         // === AI modal ===
-        aiModalTitle: "AIプロンプト",
         aiBannerTitle: "AI作成モード",
         aiBannerText: "AIがアクティブページにレイアウトを生成します。シングルページ、見開き（スプレッド）、または複数ページドキュメントのいずれかと、期待する構成を指定してください。",
         aiSectionConfig: "設定",
@@ -95013,8 +94948,8 @@ window.saveProjectSP_toObject = function() {
  *
  * Décision produit : composer une maquette par IA se fait dans le STUDIO SP213
  * (sp213-studio.html, au même niveau que le dossier /app/), pas dans le panneau IA
- * historique — celui-ci est désormais rangé dans les Réglages (premier onglet, en bas)
- * où il reste accessible via openAIModal().
+ * historique — celui-ci vit désormais ENTIEREMENT dans les Réglages, onglet IA
+ * (maquette à décrire, exemples, réglages de la clé et du modèle).
  * ⚠️ Le bouton porte toujours l'id #openAIBtn : on ne change QUE son action et son
  *    libellé (le titre suit la langue, cf. aiAssistantTitle dans les trois dictionnaires).
  */
@@ -95066,14 +95001,13 @@ function spIAConfiguree() {
 }
 window.spIAConfiguree = spIAConfiguree;
 
-/** Met le message de configuration en accord avec l'etat reel — AUX DEUX
-    endroits ou l'utilisateur peut se trouver : la BARRE DE PROMPT en pied de
-    page (celle que l'icone ouvre) et la fenetre modale. Un seul test, donc
-    aucune divergence possible entre les deux. */
+/** Met le message de configuration en accord avec l'etat reel, dans la BARRE DE
+    PROMPT en pied de page : c'est le seul endroit ou l'utilisateur peut tomber
+    sur un champ mort. La fenetre modale qui portait la meme banniere n'existe
+    plus, il n'y a donc plus deux affichages a tenir d'accord — un seul test,
+    une seule verite. */
 function spMajBanniereIA() {
     var configure = spIAConfiguree();
-    var b = document.getElementById('aiSetupBanner');
-    if (b) b.style.display = configure ? 'none' : 'flex';
     var barre = document.getElementById('aiFooterNoKey');
     if (barre) barre.style.display = configure ? 'none' : 'flex';
     /* ⚠️ translate() renvoie la CLE quand la traduction manque : on ne pose donc
@@ -95096,8 +95030,8 @@ window.spMajBanniereIA = spMajBanniereIA;
     ⚠️ C'est la demande, et elle a ete mal comprise plusieurs fois : « la boite
     de prompting qu'on a dessinee et qui arrive en bas ». Le bouton ouvrait la
     FENETRE MODALE, qui se lit comme un panneau d'assistant, pas comme un champ
-    de prompt. La fenetre modale reste accessible — depuis les Preferences,
-    bouton « Ouvrir l'assistant IA » (spOuvrirPanneauIA).
+    de prompt. Son contenu — la maquette a decrire, les exemples prets a
+    l'emploi — est desormais ENTIEREMENT dans les Preferences, onglet IA.
     Sans cle, la barre affiche son message et le lien vers les Preferences. */
 window.spOuvrirIA = function () {
     try { aiToggleFooterBar(true); } catch (e) { return false; }
@@ -95109,25 +95043,9 @@ window.spOuvrirIA = function () {
     return false;
 };
 
-/** La FENETRE MODALE de l'assistant : le panneau complet, avec les exemples et
-    la creation. Elle n'est plus exposee dans la barre du haut, mais reste
-    joignable depuis les Preferences. */
-window.spOuvrirPanneauIA = function () {
-    try { openAIModal(); } catch (e) { return false; }
-    spMajBanniereIA();
-    if (spIAConfiguree()) {
-        setTimeout(function () {
-            var ch = document.getElementById('aiPromptModal');
-            if (ch) { try { ch.focus(); } catch (_) {} }
-        }, 120);
-    }
-    return false;
-};
-
 /** La banniere — et le champ de prompt quand rien n'est configure — renvoient
     aux Preferences, DANS LE BON ONGLET (IA) et non en bas d'un autre. */
 window.spOuvrirPrefsIA = function () {
-    try { closeAIModal(); } catch (_) {}
     /* La barre de prompt flotte au-dessus de la page : on la referme, sinon elle
        resterait par-dessus les Preferences qu'on vient d'ouvrir. */
     try { aiToggleFooterBar(false); } catch (_) {}

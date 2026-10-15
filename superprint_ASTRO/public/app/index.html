@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.626 — Zigmoon
+         SuperPrint 1.7.627 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.626 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.627 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.626",
+          "softwareVersion": "1.7.627",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -571,8 +571,8 @@
          déjà AVANT son propre Hypher (lignes 5201 et 11462). Si le noyau ne se
          charge pas, la césure continue avec Hypher : aucun changement visible.
          Retirer ces deux lignes remet l'application à l'identique. -->
-    <script src="JS/superprint-core.js?v=20261011-v626-rust-couleurs" defer></script>
-    <script src="JS/superprint-branchement.js?v=20261011-v626-rust-couleurs" defer></script>
+    <script src="JS/superprint-core.js?v=20261011-v627-rust-couleurs" defer></script>
+    <script src="JS/superprint-branchement.js?v=20261011-v627-rust-couleurs" defer></script>
     <!-- 🦀 Import PostScript/EPS branché sur son PROPRE noyau Rust.
          Deuxième module, et c'est délibéré : le noyau de césure/couleurs/montage
          (superprint_core.wasm, 406 Ko) est téléchargé par tout le monde, alors
@@ -583,7 +583,7 @@
          jusque-là, `main.js` charge `JS/sp-eps-import.js` comme avant. Si le
          noyau ne se charge pas, rien ne change pour l'utilisateur.
          Retirer cette ligne remet l'application à l'identique. -->
-    <script src="JS/superprint-eps.js?v=20261011-v626-rust-eps" defer></script>
+    <script src="JS/superprint-eps.js?v=20261011-v627-rust-eps" defer></script>
     <!-- 🦀 Export PDF IMPOSÉ branché sur le noyau Rust.
          Le bouton de la modale d'imposition fait déjà, dans `index.html` :
          `window._spGuardExport(this, window.exportImposedPDF || exportImposedPDF)`.
@@ -594,7 +594,7 @@
          appelle l'export vectoriel du produit, qui reste en place. Aucune ligne
          de main.js n'est touchée. Retirer cette ligne remet l'application à
          l'identique. -->
-    <script src="JS/superprint-montage.js?v=20261012-v626-rust-montage" defer></script>
+    <script src="JS/superprint-montage.js?v=20261012-v627-rust-montage" defer></script>
     <!-- 🦀 Import de DOCUMENTS branché sur son PROPRE noyau Rust (le troisième).
          406,5 Ko (césure, couleurs, montage) + 324,8 Ko (EPS) + 290,1 Ko
          (documents) : les trois modules sont séparés pour que personne ne paie
@@ -619,7 +619,7 @@
          croire que tout a été vu, et elle ne dit rien plutôt que de deviner
          quand un objet ne peut pas être décrit. Aucune ligne de main.js n'est
          touchée. Retirer cette ligne remet l'application à l'identique. -->
-    <script src="JS/superprint-prepresse.js?v=20261013-v626-rust-prepresse" defer></script>
+    <script src="JS/superprint-prepresse.js?v=20261013-v627-rust-prepresse" defer></script>
     <!-- ═══════════════════════════════════════════════════════════════════════
          PAPIERS — catalogue, dépôt, matière. Les entrées se rangent dans le
          SOUS-MENU DE L'ICÔNE IMAGE (après « SVG »), et le dépôt sur une page pose
@@ -638,7 +638,7 @@
          Open Sans, Montserrat, Roboto, Lato, Poppins, Playfair Display, Bebas Neue,
          IBM Plex Mono, IBM Plex Sans, Fira Code, Space Mono, Noto Sans JP.
          100% self-hosted — RGPD-friendly + offline-ready. Aucun appel CDN. -->
-    <link rel="stylesheet" href="CSS/fonts.css?v=20261015-v626-polices-allegees">
+    <link rel="stylesheet" href="CSS/fonts.css?v=20261015-v627-polices-allegees">
 
     <!-- 🛡️ Force-load Open Sans (used as default for new text blocks). Without this,
          Chrome Windows falls back to Times when fabric draws on canvas because
@@ -698,7 +698,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20261015-v626-regles-fond-clair">
+    <link rel="stylesheet" href="CSS/main.css?v=20261015-v627-regles-fond-clair">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1283,7 +1283,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.626</div>
+                <div class="splash-version">1.7.627</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1385,7 +1385,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.626</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.627</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1481,7 +1481,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.626 | 10 2026<br>
+                V 1.7.627 | 10 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -2246,12 +2246,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.626). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.627). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.626 — internal cache tag: JS v626 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.627 — internal cache tag: JS v627 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: calc(8px + var(--sp-regle-haut, 0px)); display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v626"
-                      data-sp-sw="v1.7.626">v1.7.626</span>
+                      data-sp-js="v627"
+                      data-sp-sw="v1.7.627">v1.7.627</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -2599,16 +2599,23 @@
                            on le dit ici, et le lien mène aux Préférences, onglet IA.
                            La pastille du titre ne suffisait pas — un point ambre ne
                            dit ni ce qui manque ni où le régler. */
+                        /* v1.7.627 — RETOUR UTILISATEUR : « met un gris léger à la place
+                           de ton jaune et pas d'émoji ». Le jaune ambre (#fff8e1) se
+                           lisait comme un avertissement dans une interface neutre ; il
+                           devient le gris de la maison, et la clé emoji disparaît. */
                         #aiFooterNoKey {
                             display:none; align-items:flex-start; gap:9px; padding:9px 11px;
-                            border-radius:8px; font-size:11px; line-height:1.45; color:#6b5400;
-                            background:#fff8e1; border:1px solid #f0d68a; position:relative; z-index:7;
+                            border-radius:8px; font-size:11px; line-height:1.45; color:#555;
+                            background:#f4f4f4; border:1px solid #e2e2e2; position:relative; z-index:7;
                         }
-                        #aiFooterNoKey strong { display:block; font-size:11.5px; margin-bottom:2px; }
+                        #aiFooterNoKey strong { display:block; font-size:11.5px; margin-bottom:2px; color:#333; }
                         #aiFooterNoKey a { display:inline-block; margin-top:4px; font-weight:700; color:#1a1a1a; text-decoration:underline; }
+                        /* Thème sombre : le même gris transposé — pas la moindre trace
+                           d'ambre, pour que le message reste neutre. */
                         .theme-dark #aiFooterNoKey {
-                            background:rgba(245,158,11,0.14); border-color:rgba(245,158,11,0.42); color:#f3d9a4;
+                            background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.16); color:#bdbdbd;
                         }
+                        .theme-dark #aiFooterNoKey strong { color:#eaeaea; }
                         .theme-dark #aiFooterNoKey a { color:#ffffff; }
                         #aiFooterInput {
                             width:100%; padding:9px 12px; border-radius:8px; font-size:12.5px; font-family:inherit;
@@ -2793,7 +2800,6 @@
                              Il est révélé par spMajBanniereIA(), qui lit l'état réel
                              de la clé — le même test que partout ailleurs. -->
                         <div id="aiFooterNoKey">
-                            <span aria-hidden="true" style="flex:0 0 auto; font-size:14px; line-height:1.2;">🔑</span>
                             <div>
                                 <strong data-translate="aiFooterNoKeyTitle">Aucune clé IA configurée</strong>
                                 <span data-translate="aiFooterNoKeyText">L'assistant ne peut pas encore composer de maquette : les réglages de l'IA se font dans les Préférences de SuperPrint.</span>
@@ -4764,7 +4770,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.626 — 15 octobre 2026
+                        SuperPrint v1.7.627 — 15 octobre 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -4836,7 +4842,6 @@
                         </div>
 
                         <div class="ai-actions" style="margin-top: 12px;">
-                            <button class="btn btn-secondary" onclick="closeSettings(); spOuvrirPanneauIA();" data-translate="settingsAiOuvrirPanneau">Ouvrir l'assistant IA</button>
                             <button class="btn btn-secondary" onclick="spOuvrirStudioIALien()" data-translate="settingsAiOuvrirStudio">Ouvrir le Studio SP213</button>
                         </div>
                     </section>
@@ -4879,7 +4884,62 @@
                             </div>
                         </div>
                     </details>
-                </div>
+                
+<!-- ═══ LA MAQUETTE ET LES EXEMPLES ═══
+     Ils vivaient dans la POP-IN « Assistant IA », qui est supprimee : tout ce
+     qui concerne l'IA est ici, dans son onglet. La barre de prompt en pied de
+     page reste le geste rapide, et c'est elle que l'icone de la barre ouvre. -->
+                    <section class="ai-block">
+                    <div class="ai-block-head">
+                    <span class="ai-step">1</span>
+                    <h3 data-translate="aiSectionCreate">Décrire la maquette</h3>
+                    </div>
+
+                    <label class="ai-label" for="aiPromptModal" data-translate="aiPromptLabel">Décrivez la maquette souhaitée</label>
+                    <textarea id="aiPromptModal" class="ai-textarea"
+                    data-translate-placeholder="aiPromptPlaceholder"
+                    placeholder="Ex : double page magazine, photo panoramique en haut, texte sur deux colonnes, palette crème et bordeaux. Ou : livret 8 pages (couverture, sommaire, 5 pages contenu, contact)."></textarea>
+
+                    <div class="ai-actions">
+                    <button class="btn btn-secondary" onclick="aiPastePrompt()" data-translate-title="aiBtnPasteTitle" title="Coller depuis le presse-papier" data-translate="aiBtnPaste">Coller</button>
+                    <button class="btn btn-secondary" onclick="aiScrollToExamples()" data-translate="aiBtnExamples">Exemples ↓</button>
+                    <div class="ai-spacer"></div>
+                    <button class="btn btn-secondary" onclick="resetDocumentForAI()" data-translate-title="aiBtnNewDocTitle" title="Effacer tout et repartir sur une page blanche" data-translate="aiBtnNewDoc">Nouveau doc</button>
+                    <button class="btn btn-primary ai-create" onclick="aiCustomPrompt()" data-translate="aiBtnCreate">Créer la maquette</button>
+                    </div>
+
+                    <div class="ai-row">
+                    <span class="ai-label" data-translate="aiStructureLabel">Structure</span>
+                    <div class="ai-field">
+                    <div class="ai-chips">
+                    <button type="button" class="ai-doc-type active" data-ai-doctype="single" onclick="aiSetDocType('single')" data-translate="aiDocTypeSingle">Page simple</button>
+                    <button type="button" class="ai-doc-type" data-ai-doctype="spread" onclick="aiSetDocType('spread')" data-translate="aiDocTypeSpread">Double page</button>
+                    <button type="button" class="ai-doc-type" data-ai-doctype="multi" onclick="aiSetDocType('multi')" data-translate="aiDocTypeMulti">Multi-pages</button>
+                    <span id="aiPageCountWrap" style="display:none; align-items:center; gap:6px;">
+                    <input type="number" id="aiPageCount" value="8" min="2" max="48" class="ai-input ai-input-num">
+                    <span class="ai-help" data-translate="aiPagesUnit">pages</span>
+                    </span>
+                    </div>
+                    </div>
+                    </div>
+
+                    <p class="ai-intro" data-translate="aiIntroNew">
+                    Décrivez une maquette en une phrase : l’IA compose la page active (ou tout le document)
+                    avec une grille propre, votre palette et vos textes.
+                    </p>
+
+                    </section>
+
+                    <section class="ai-block" id="aiExamplesBlock">
+                    <div class="ai-block-head">
+                    <span class="ai-step">2</span>
+                    <h3 data-translate="aiSectionExamples">Exemples prêts à l’emploi</h3>
+                    </div>
+                    <p class="ai-block-hint" data-translate="aiExamplesHint">Cliquez sur « Utiliser » : le texte est placé dans la zone de l’étape 1, il ne reste qu’à lancer la création.</p>
+                    <div class="ai-tabs" id="aiExampleTabs" role="tablist"></div>
+                    <div class="ai-panels" id="aiExamplePanels"></div>
+                    </section>
+</div>
                 <!-- Tab 3: Shortcuts -->
                 <div id="shortcutsTabContent" class="settings-tab-content" style="display: none;">
                     <div id="shortcutsInnerContent">
@@ -5038,87 +5098,6 @@
         </div>
     </div>
 
-    <!-- AI Assistant Modal -->
-    <div class="modal-overlay" id="aiModal" style="display: none;">
-        <div class="modal sp-modal-card ai-modal-box" style="max-width: 860px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
-            <div class="modal-header" style="flex-shrink: 0; position: relative;">
-                <div class="modal-title" data-translate="aiModalTitle">Prompt IA</div>
-                <button class="modal-close sp-modal-close" onclick="closeAIModal()" style="position: absolute; right: 12px; top: 8px;">×</button>
-            </div>
-            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 16px;">
-                <!-- 🆕 BANNIÈRE « RIEN N'EST CONFIGURÉ ». Elle reste cachée tant qu'une
-                     clé existe (c'est spMajBanniereIA() qui décide, à l'ouverture).
-                     Sans elle, l'utilisateur tombait sur un formulaire sans savoir
-                     qu'il lui manquait une clé, ni où la mettre. -->
-                <div id="aiSetupBanner" style="display: none; align-items: flex-start; gap: 11px; padding: 12px 14px; margin-bottom: 16px; background: #fff8e1; border: 1px solid #f0d68a; border-radius: 6px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#b8860b" aria-hidden="true" style="flex-shrink: 0; margin-top: 1px;">
-                        <path d="M12 2.4l1.75 4.95 4.95 1.75-4.95 1.75L12 15.8l-1.75-4.95L5.3 9.1l4.95-1.75z"/>
-                        <path d="M18.9 13.5l.85 2.4 2.4.85-2.4.85-.85 2.4-.85-2.4-2.4-.85 2.4-.85z"/>
-                    </svg>
-                    <div style="font-size: 11px; line-height: 1.55; color: #6b5400;">
-                        <strong style="display: block; margin-bottom: 3px; font-size: 12px;" data-translate="aiSetupTitle">L'assistant IA n'est pas encore configuré</strong>
-                        <span data-translate="aiSetupText">Aucune clé n'est enregistrée : l'assistant ne peut pas encore composer de maquette. Les réglages de l'IA se font dans les Préférences.</span>
-                        <a href="#" onclick="return spOuvrirPrefsIA()" style="display: inline-block; margin-top: 6px; font-weight: 700; color: #1a1a1a; text-decoration: underline;" data-translate="aiSetupLink">Configurer la clé dans les Préférences, onglet IA →</a>
-                    </div>
-                </div>
-
-                <!-- ═══════════ 1. LA MAQUETTE ═══════════ -->
-                <section class="ai-block">
-                    <div class="ai-block-head">
-                        <span class="ai-step">1</span>
-                        <h3 data-translate="aiSectionCreate">Décrire la maquette</h3>
-                    </div>
-
-                    <label class="ai-label" for="aiPromptModal" data-translate="aiPromptLabel">Décrivez la maquette souhaitée</label>
-                    <textarea id="aiPromptModal" class="ai-textarea"
-                              data-translate-placeholder="aiPromptPlaceholder"
-                              placeholder="Ex : double page magazine, photo panoramique en haut, texte sur deux colonnes, palette crème et bordeaux. Ou : livret 8 pages (couverture, sommaire, 5 pages contenu, contact)."></textarea>
-
-                    <div class="ai-actions">
-                        <button class="btn btn-secondary" onclick="aiPastePrompt()" data-translate-title="aiBtnPasteTitle" title="Coller depuis le presse-papier" data-translate="aiBtnPaste">Coller</button>
-                        <button class="btn btn-secondary" onclick="aiScrollToExamples()" data-translate="aiBtnExamples">Exemples ↓</button>
-                        <div class="ai-spacer"></div>
-                        <button class="btn btn-secondary" onclick="resetDocumentForAI()" data-translate-title="aiBtnNewDocTitle" title="Effacer tout et repartir sur une page blanche" data-translate="aiBtnNewDoc">Nouveau doc</button>
-                        <button class="btn btn-primary ai-create" onclick="aiCustomPrompt()" data-translate="aiBtnCreate">Créer la maquette</button>
-                    </div>
-
-                    <div class="ai-row">
-                        <span class="ai-label" data-translate="aiStructureLabel">Structure</span>
-                        <div class="ai-field">
-                            <div class="ai-chips">
-                                <button type="button" class="ai-doc-type active" data-ai-doctype="single" onclick="aiSetDocType('single')" data-translate="aiDocTypeSingle">Page simple</button>
-                                <button type="button" class="ai-doc-type" data-ai-doctype="spread" onclick="aiSetDocType('spread')" data-translate="aiDocTypeSpread">Double page</button>
-                                <button type="button" class="ai-doc-type" data-ai-doctype="multi" onclick="aiSetDocType('multi')" data-translate="aiDocTypeMulti">Multi-pages</button>
-                                <span id="aiPageCountWrap" style="display:none; align-items:center; gap:6px;">
-                                    <input type="number" id="aiPageCount" value="8" min="2" max="48" class="ai-input ai-input-num">
-                                    <span class="ai-help" data-translate="aiPagesUnit">pages</span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <p class="ai-intro" data-translate="aiIntroNew">
-                        Décrivez une maquette en une phrase : l’IA compose la page active (ou tout le document)
-                        avec une grille propre, votre palette et vos textes.
-                    </p>
-
-                </section>
-
-                <!-- ═══════════ 2. EXEMPLES (ONGLETS) ═══════════ -->
-                <section class="ai-block" id="aiExamplesBlock">
-                    <div class="ai-block-head">
-                        <span class="ai-step">2</span>
-                        <h3 data-translate="aiSectionExamples">Exemples prêts à l’emploi</h3>
-                    </div>
-                    <p class="ai-block-hint" data-translate="aiExamplesHint">Cliquez sur « Utiliser » : le texte est placé dans la zone de l’étape 1, il ne reste qu’à lancer la création.</p>
-                    <div class="ai-tabs" id="aiExampleTabs" role="tablist"></div>
-                    <div class="ai-panels" id="aiExamplePanels"></div>
-                </section>
-
-
-</div>
-        </div>
-    </div>
 
     <div class="modal-overlay" id="cheminDeFerModal" onclick="if(event.target === this) closeCheminDeFerModal(true)">
         <div class="modal" style="max-width: 900px;">
@@ -6698,7 +6677,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20261015-v626-regles-et-onglet-ia" defer></script>
+    <script src="JS/main.js?v=20261015-v627-popin-ia-dans-onglet" defer></script>
     <!-- 🎨 v1.7.525 — _SP_NUANCIERS_525 : nuanciers (accordéons) + import .ase.
          Chargé APRÈS main.js : il réutilise le gestionnaire `change` de
          #spotColorSelect au lieu de le réécrire. -->
@@ -6710,7 +6689,7 @@
     <!-- 🆕 Aperçu 3D (three.js) : module ES autonome, expose window.SP3DPreview.
          Si three.js n'est pas disponible (ex. ouverture via file://), le bouton
          PLAY reste inerte et n'impacte pas le reste de l'app. -->
-    <script type="module" src="JS/sp-3d-preview.js?v=20261015-v626-calque-encre"></script>
+    <script type="module" src="JS/sp-3d-preview.js?v=20261015-v627-calque-encre"></script>
 
     <!-- ── Startup session pop-in (Resume / Open / New) ───────────────────────── -->
     <div id="sp-startup-overlay" role="dialog" aria-modal="true" aria-labelledby="sp-startup-title" hidden>
