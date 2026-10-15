@@ -5011,7 +5011,7 @@
     <div class="modal-overlay" id="aiModal" style="display: none;">
         <div class="modal sp-modal-card ai-modal-box" style="max-width: 860px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
             <div class="modal-header" style="flex-shrink: 0; position: relative;">
-                <div class="modal-title" data-translate="aiModalTitle">Assistant IA</div>
+                <div class="modal-title" data-translate="aiModalTitle">Prompt IA</div>
                 <button class="modal-close sp-modal-close" onclick="closeAIModal()" style="position: absolute; right: 12px; top: 8px;">×</button>
             </div>
             <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 16px;">
@@ -5030,16 +5030,26 @@
                         <a href="#" onclick="return spOuvrirPrefsIA()" style="display: inline-block; margin-top: 6px; font-weight: 700; color: #1a1a1a; text-decoration: underline;" data-translate="aiSetupLink">Configurer la clé dans les Préférences, onglet IA →</a>
                     </div>
                 </div>
-                <p class="ai-intro" data-translate="aiIntroNew">
-                    Décrivez une maquette en une phrase : l’IA compose la page active (ou tout le document)
-                    avec une grille propre, votre palette et vos textes.
-                </p>
 
                 <!-- ═══════════ 1. LA MAQUETTE ═══════════ -->
                 <section class="ai-block">
                     <div class="ai-block-head">
                         <span class="ai-step">1</span>
                         <h3 data-translate="aiSectionCreate">Décrire la maquette</h3>
+                    </div>
+
+                    <label class="ai-label" for="aiPromptModal" data-translate="aiPromptLabel">Décrivez la maquette souhaitée</label>
+                    <textarea id="aiPromptModal" class="ai-textarea"
+                              onclick="return spPromptIAClic()"
+                              data-translate-placeholder="aiPromptPlaceholder"
+                              placeholder="Ex : double page magazine, photo panoramique en haut, texte sur deux colonnes, palette crème et bordeaux. Ou : livret 8 pages (couverture, sommaire, 5 pages contenu, contact)."></textarea>
+
+                    <div class="ai-actions">
+                        <button class="btn btn-secondary" onclick="aiPastePrompt()" data-translate-title="aiBtnPasteTitle" title="Coller depuis le presse-papier" data-translate="aiBtnPaste">Coller</button>
+                        <button class="btn btn-secondary" onclick="aiScrollToExamples()" data-translate="aiBtnExamples">Exemples ↓</button>
+                        <div class="ai-spacer"></div>
+                        <button class="btn btn-secondary" onclick="resetDocumentForAI()" data-translate-title="aiBtnNewDocTitle" title="Effacer tout et repartir sur une page blanche" data-translate="aiBtnNewDoc">Nouveau doc</button>
+                        <button class="btn btn-primary ai-create" onclick="aiCustomPrompt()" data-translate="aiBtnCreate">Créer la maquette</button>
                     </div>
 
                     <div class="ai-row">
@@ -5057,19 +5067,10 @@
                         </div>
                     </div>
 
-                    <label class="ai-label" for="aiPromptModal" data-translate="aiPromptLabel">Décrivez la maquette souhaitée</label>
-                    <textarea id="aiPromptModal" class="ai-textarea"
-                              onclick="return spPromptIAClic()"
-                              data-translate-placeholder="aiPromptPlaceholder"
-                              placeholder="Ex : double page magazine, photo panoramique en haut, texte sur deux colonnes, palette crème et bordeaux. Ou : livret 8 pages (couverture, sommaire, 5 pages contenu, contact)."></textarea>
-
-                    <div class="ai-actions">
-                        <button class="btn btn-secondary" onclick="aiPastePrompt()" data-translate-title="aiBtnPasteTitle" title="Coller depuis le presse-papier" data-translate="aiBtnPaste">Coller</button>
-                        <button class="btn btn-secondary" onclick="aiScrollToExamples()" data-translate="aiBtnExamples">Exemples ↓</button>
-                        <div class="ai-spacer"></div>
-                        <button class="btn btn-secondary" onclick="resetDocumentForAI()" data-translate-title="aiBtnNewDocTitle" title="Effacer tout et repartir sur une page blanche" data-translate="aiBtnNewDoc">Nouveau doc</button>
-                        <button class="btn btn-primary ai-create" onclick="aiCustomPrompt()" data-translate="aiBtnCreate">Créer la maquette</button>
-                    </div>
+                    <p class="ai-intro" data-translate="aiIntroNew">
+                        Décrivez une maquette en une phrase : l’IA compose la page active (ou tout le document)
+                        avec une grille propre, votre palette et vos textes.
+                    </p>
 
                 </section>
 

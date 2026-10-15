@@ -69670,6 +69670,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiSetupTitle: "L'assistant IA n'est pas encore configuré",
         aiSetupText: "Aucune clé n'est enregistrée : l'assistant ne peut pas encore composer de maquette. Les réglages de l'IA se font dans les Préférences.",
         aiSetupLink: "Configurer la clé dans les Préférences, onglet IA →",
+        aiPromptSansCle: "Aucune clé configurée : cliquez ici pour ouvrir les Préférences de SuperPrint, onglet IA.",
         saveExportTitle: "Exporter vers",
         exportAucunePage: "Aucune page à exporter.",
         exportHtmlOk: "Export HTML : {n} page(s).",
@@ -69688,7 +69689,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         uninstAppImage: "Le fichier AppImage a été supprimé, ainsi que les données de l'application.",
         uninstErreur: "La désinstallation n'a pas pu être menée à bien. Rien n'a été supprimé.",
         // === AI modal ===
-        aiModalTitle: "Assistant IA",
+        aiModalTitle: "Prompt IA",
         aiBannerTitle: "Mode Création IA",
         aiBannerText: "L'IA génère une maquette sur la page active. Indiquez si c'est une page simple, une double page (spread) ou un document multi-pages, et la structure attendue.",
         aiSectionConfig: "Configuration",
@@ -70635,6 +70636,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiSetupTitle: "The AI assistant is not configured yet",
         aiSetupText: "No key is saved yet: the assistant cannot compose a layout. The AI settings live in Preferences.",
         aiSetupLink: "Set the key in Preferences, AI tab →",
+        aiPromptSansCle: "No key configured: click here to open SuperPrint's Preferences, AI tab.",
         saveExportTitle: "Export to",
         exportAucunePage: "No page to export.",
         exportHtmlOk: "HTML export: {n} page(s).",
@@ -70653,7 +70655,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         uninstAppImage: "The AppImage file has been removed, along with the application data.",
         uninstErreur: "The uninstallation could not be completed. Nothing was removed.",
         // === AI modal ===
-        aiModalTitle: "AI Assistant",
+        aiModalTitle: "AI prompt",
         aiBannerTitle: "AI Creation Mode",
         aiBannerText: "The AI generates a layout on the active page. Specify whether it's a single page, a spread (two-page), or a multi-page document, along with the expected structure.",
         aiSectionConfig: "Configuration",
@@ -71599,6 +71601,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiSetupTitle: "AIアシスタントはまだ設定されていません",
         aiSetupText: "キーが未登録のため、アシスタントはまだレイアウトを作成できません。AIの設定は環境設定で行います。",
         aiSetupLink: "環境設定の「AI」タブでキーを設定 →",
+        aiPromptSansCle: "キーが未設定です。ここをクリックしてSuperPrintの環境設定（AIタブ）を開きます。",
         saveExportTitle: "書き出し先",
         exportAucunePage: "書き出すページがありません。",
         exportHtmlOk: "HTML書き出し：{n}ページ。",
@@ -71617,7 +71620,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         uninstAppImage: "AppImage ファイルとアプリのデータを削除しました。",
         uninstErreur: "アンインストールを完了できませんでした。削除されたものはありません。",
         // === AI modal ===
-        aiModalTitle: "AIアシスタント",
+        aiModalTitle: "AIプロンプト",
         aiBannerTitle: "AI作成モード",
         aiBannerText: "AIがアクティブページにレイアウトを生成します。シングルページ、見開き（スプレッド）、または複数ページドキュメントのいずれかと、期待する構成を指定してください。",
         aiSectionConfig: "設定",
@@ -95050,11 +95053,23 @@ function spIAConfiguree() {
 }
 window.spIAConfiguree = spIAConfiguree;
 
-/** Met la banniere de configuration en accord avec l'etat reel. */
+/** Met la banniere de configuration en accord avec l'etat reel — et le CHAMP
+    aussi : le message vit dans le champ principal, pas seulement au-dessus.
+    C'est plus direct, et c'est la demande : on clique la ou on allait ecrire,
+    et on arrive dans les Preferences, onglet IA (spPromptIAClic). */
 function spMajBanniereIA() {
+    var configure = spIAConfiguree();
     var b = document.getElementById('aiSetupBanner');
-    if (!b) return;
-    b.style.display = spIAConfiguree() ? 'none' : 'flex';
+    if (b) b.style.display = configure ? 'none' : 'flex';
+    var champ = document.getElementById('aiPromptModal');
+    if (champ) {
+        /* ⚠️ translate() renvoie la CLE quand la traduction manque : on ne pose
+           donc le texte que s'il existe vraiment, sinon le champ afficherait un
+           identifiant technique au lieu d'une phrase. */
+        var cle = configure ? 'aiPromptPlaceholder' : 'aiPromptSansCle';
+        var texte = (typeof translate === 'function') ? translate(cle) : '';
+        if (texte && texte !== cle) champ.placeholder = texte;
+    }
 }
 window.spMajBanniereIA = spMajBanniereIA;
 
