@@ -9,6 +9,39 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.618] — 2026-10-15
+
+_Les cinq paquets de bureau rattrapent enfin le travail — et les notes de version publiques cessent d'annoncer un numéro que leur prose ne décrivait pas_
+
+> **Pourquoi cette version existe, et pourquoi elle ne touche pas le web.** L'étiquette `desktop-v1.7.617` pointait **huit livraisons en arrière** : les binaires publiés portaient les règles à **10 px** et des éléments flottants **non décalés**. La preuve est dans le CSS, mesurée et non supposée — **au tag** : `.ruler-horizontal { height: 10px }` ; **dans le travail** : `{ height: 20px }`. Une référence publiée ne se réécrit pas : on coupe la version **suivante**, comme 615 → 616 → 617. Le **web reste donc en 1.7.617**, et ce n'est pas un oubli — la chaîne de bureau ne lit **jamais** `version.txt` (**0** occurrence dans `build-desktop.yml`), elle compare le tag à `tauri.conf.json`. Les deux numéros sont **déjà découplés**, et le web était en ligne et vérifié (zip de 56 476 643 octets, empreinte SHA-256 identique au bit près à celle construite ici).
+
+### Changed — les cinq paquets de bureau reconstruits sur le travail réel
+
+- **Ce que la reconstruction change, et c'est le but de l'opération** : `.ruler-horizontal { height: 20px }`, `--sp-regle-haut` publiée par le cadre d'aperçu, badge de version et widgets décalés, calque 3D en deux couches, outil Tableau, panneau « Papier ». Autrement dit : tout ce que les binaires de 1.7.617 ne portaient pas.
+- **Vérifié dans les paquets réellement publiés**, pas dans le journal de build : le `changelog.gz` du `.deb` — décompressé — annonce `super-print (1.7.618)` ; son `copyright` nomme **Simon Dupont-Gellert et Clémence Brunet** sous licence propriétaire ; le `SHA256SUMS` publié **concorde** avec l'artefact téléchargé ; et l'installeur Windows porte `FileVersion 1.7.618` avec un `LegalCopyright` qui nomme **les deux auteurs**.
+- **Ce qui n'a PAS pu être vérifié directement, et il faut le dire** : le frontend est **compressé** dans le binaire (34,31 Mo pour un binaire unique) — aucune marque textuelle (`--sp-regle-haut`, empreintes de cache) n'y est cherchable. La preuve est donc **la chaîne, et elle est close** : `superprint_desktop/frontend/` est **exclu de git** (`.gitignore`), donc absent du dépôt, et `tauri.conf.json` déclare `beforeBuildCommand: node scripts/prepare-bundle.mjs` — sans cette régénération, la compilation **échouerait** faute de `frontendDist`. Le succès de la construction **est** la preuve qu'elle a eu lieu, et le CSS du tag est à 20 px.
+- **13 travaux sur 13** en succès (3 applications × 4 plateformes + publication), release `desktop-v1.7.618` à **22 artefacts**, et `desktop-latest` — la cible des liens du site — **écrasé** à 08:50. Les téléchargements servent donc 1.7.618 sans qu'aucune page ait été touchée.
+
+### Fixed — deux incohérences latentes, trouvées en vérifiant et non en supposant
+
+- ⚠️ **Le journal du paquet `.deb` était écrit avec la version du SITE.** `prepare-bundle.mjs` lisait `superprint/version.txt` pour remplir `/usr/share/doc/<paquet>/changelog.gz` — la version du web, pour un journal qui décrit le **paquet**. La ligne était juste par **coïncidence** tant que les deux numéros étaient égaux ; fausse dès qu'ils divergent, ce qui est exactement le cas depuis 1.7.618 : le paquet aurait annoncé 1.7.618 dans son nom et 1.7.617 dans son journal. Corrigé sur la source que le script **impose déjà partout** — « la version doit rester dans `tauri.conf.json`, pas ici » (`verifierSurcouches`) : c'est la version de l'application empaquetée, donc celle du `.deb`. Vérifié par exécution réelle : les trois journaux annoncent `super-print (1.7.618)`, `studio-ia (1.7.618)`, `super-ty-po (1.7.618)`.
+- ⚠️ **`Cargo.lock` figeait le crate local à 1.7.611** alors que `Cargo.toml` disait 1.7.617 : le fichier **committé** n'avait pas suivi depuis **quatre livraisons**. Cargo le réécrit à chaque construction, mais dans l'arbre de travail, jamais dans le dépôt — et rien ne le signalait. Remis à 1.7.618.
+
+### Changed — les notes de version publiques rattrapent 1.7.614 → 1.7.618
+
+- **Le défaut durait depuis trois versions, et ce fichier l'avait écrit trois fois.** Les notes publiées sur `app.zigmoon.com` annonçaient `v1.7.604 → v1.7.617` : seul le **numéro** du titre avait suivi les bumps, jamais la prose. Le `id` de l'article disait `superprint-v1-7-604-613`, son introduction disait « Dix versions », et son contenu s'arrêtait à la 613 — trois témoins du même décalage, sous un titre qui affirmait le contraire.
+- **Un billet neuf, trilingue, écrit plutôt que remplacé** : `v1.7.614 → v1.7.618`, **7 sections, 18 points, 26 blocs** `data-i18n-fr / -en / -jp`. La règle du fichier est respectée — on **n'a pas** retouché la prose du billet précédent : on a corrigé ce qui le **désigne**, c'est-à-dire son étiquette, ramenée à `v1.7.604 → v1.7.613`, ce que son contenu et son `id` disaient déjà.
+- **Vérifié dans le navigateur, pas seulement dans le fichier** : la page s'ouvre en français (langue du navigateur), la bascule `FR → EN → JP → FR` change bien les sept titres et les dix-huit points du nouveau billet, et l'ancien affiche `SUPER PRINT v1.7.604 → v1.7.613`.
+- ⚠️ **Et une erreur de plan, rattrapée par la mesure.** Mon intention première était de « synchroniser » la copie déployée `Index_app/release.html` depuis `release.html` à la racine. La mesure l'a démentie : **les deux fichiers ont divergé**, et pas dans le sens supposé. `Index_app/release.html` est la page **complète** « Zigmoon Apps » et porte **cinq entrées que la racine n'a pas** (`chessfunart-v1-4`, `splash-v1-4-0`, `a7las-apis`, `superprint-2`, `superprint-3`), plus une section, un style et deux scripts de plus. La racine, elle, est un **sous-ensemble SuperPrint** : `chessfunart` y compte **0 occurrence**, et **0 commit** dans tout son historique. Recopier la racine sur `Index_app` aurait **supprimé les entrées d'autres applications**. Les deux fichiers sont donc traités **chacun selon ses propres ancres**, et rien d'autre n'y a été touché — vérifié après écriture : les cinq entrées sont **présentes**, et le nombre d'articles passe de 239 à 240 à la racine, de 242 à 243 dans `Index_app`.
+
+> ✅ **Ferme trois points laissés ouverts** par 1.7.615, 1.7.616 et 1.7.617, qui annonçaient tous les trois que les notes de version racontaient encore 1.7.604 → 1.7.614. Les mentions sont conservées et datées plutôt que supprimées.
+
+### Reste ouvert
+
+- L'**aperçu 3D** ne traite la couche encre que sur la face **avant** d'une feuille : la face arrière de la feuille qui tourne garde la page aplatie. Limite **antérieure** à ce correctif, mais visible.
+- `.rpm` et `.dmg` ne portent toujours **aucun fichier de licence** (lacune antérieure).
+- La **publication npm** est **reportée** : le paquet `superprint@1.0.113` est prêt (5 fichiers, 17,8 ko, plancher 1.7.617, cohérent avec le zip en ligne), mais le jeton de `~/.npmrc` est **expiré** — le registre le rejette avec un `401` sur `/-/whoami` **et** un `404` sur le `PUT`, sans BOM ni problème de fin de ligne (vérifié octet par octet). Il faut en générer un nouveau.
+
 ## [1.7.617] — 2026-10-15
 
 _Le calque se voit au travers sans délaver la typo_
@@ -55,7 +88,7 @@ _Le calque se voit au travers sans délaver la typo_
 - **La greffe NSIS a été compilée pour de vrai, localement**, avec le `makensis` 3.11 que Tauri télécharge lui-même : zéro avertissement, en reproduisant exactement le motif d'appel du gabarit, les quatre greffes apparaissant une à une dans la trace. Cela remplace « ça devrait compiler » par « ça compile ».
 - **Le mécanisme des greffes a été vérifié dans la source de Tauri** (`tauri-utils-2.10.1/src/config.rs`) : `#[serde(rename_all = "camelCase", deny_unknown_fields)] pub struct NsisConfig { … pub installer_hooks: Option<PathBuf> }`. Le `deny_unknown_fields` tranche : une clé inexistante ferait **échouer** la construction, or elle a réussi. Le mécanisme **fonctionne** — c'est le **besoin** qui n'existait pas : la greffe a été **retirée** (voir « désinstallation Windows », 1.7.616).
 
-> ⚠️ **Reste ouvert.** L'**aperçu 3D** ne traite la couche encre que sur la face **avant** d'une feuille : la face arrière de la feuille qui tourne (visible une demi-seconde pendant le feuilletage) garde la page aplatie. C'est une limite **antérieure** à ce correctif — cette face n'a jamais reçu de papier — mais elle se voit. Les notes de version de `release.html` racontent toujours 1.7.604 → 1.7.614. `.rpm` et `.dmg` ne portent toujours aucun fichier de licence.
+> ⚠️ **Reste ouvert.** L'**aperçu 3D** ne traite la couche encre que sur la face **avant** d'une feuille : la face arrière de la feuille qui tourne (visible une demi-seconde pendant le feuilletage) garde la page aplatie. C'est une limite **antérieure** à ce correctif — cette face n'a jamais reçu de papier — mais elle se voit. ✅ **Fermé en 1.7.618** : les notes de version publiques couvrent désormais **1.7.614 → 1.7.618**, prose trilingue écrite (voir cette entrée). `.rpm` et `.dmg` ne portent toujours aucun fichier de licence.
 
 ## [1.7.616] — 2026-10-15
 
@@ -96,7 +129,7 @@ _Les règles deux fois plus fines, le sous-menu Papier à une ligne, et une dés
   - SW : `superprint-shell-v1.7.615-…` → `superprint-shell-v1.7.616-tableau-regles-fines`
 - Copies alignées **au bit près** (`superprint/app/` → `sp213-local/public/superprint/` et `superprint_ASTRO/public/`) ; syntaxe vérifiée sur les copies de `main.js` et `superprint-papiers.js`, JSON de Tauri validé.
 
-> ⚠️ **Reste ouvert.** La **transparence du calque dans l'aperçu 3D** n'est pas traitée : le fait qui commande le remède est **mesuré** — l'image de page capturée est **blanche opaque** (255/255/255/255 aux quatre coins), donc l'encre et le support sont les mêmes pixels, et on ne peut pas rendre la feuille translucide sans délaver l'impression. Deux modèles défendables s'opposent, et le choix revient au propriétaire du projet. Les notes de version de `release.html` racontent toujours 1.7.604 → 1.7.614. `.rpm` et `.dmg` ne portent toujours aucun fichier de licence.
+> ⚠️ **Reste ouvert.** La **transparence du calque dans l'aperçu 3D** n'est pas traitée : le fait qui commande le remède est **mesuré** — l'image de page capturée est **blanche opaque** (255/255/255/255 aux quatre coins), donc l'encre et le support sont les mêmes pixels, et on ne peut pas rendre la feuille translucide sans délaver l'impression. Deux modèles défendables s'opposent, et le choix revient au propriétaire du projet. ✅ **Fermé en 1.7.618** : les notes de version publiques couvrent désormais **1.7.614 → 1.7.618**, prose trilingue écrite (voir cette entrée). `.rpm` et `.dmg` ne portent toujours aucun fichier de licence.
 
 ## [1.7.615] — 2026-10-14
 
@@ -127,7 +160,7 @@ _Un tableau qui s'aligne sur ses filets, et des règles qui partent enfin du coi
 - **Le nom est traduit, mais la règle de langue de l'application est respectée à la lettre.** Depuis 1.7.599 l'application **impose** la langue du système au démarrage, sauf choix explicite de l'utilisateur (`sp_lang_choisi`). Le panneau applique **exactement** cette précédence (`?lang=` → choix explicite → langue du navigateur → anglais) : sur un navigateur anglais il affiche **Paper** et non *Papier* — deux langues dans un même panneau auraient été un défaut, pas un détail. Vérifié dans les quatre cas : système anglais → *Paper*, français explicite → *Papier*, japonais explicite → **紙**, anglais explicite → *Paper*, avec le texte visible, l'`aria-label` et le titre d'infobulle **d'accord entre eux**.
 - « Aucun (défaut) » est **en tête** de la liste des aspérités, et le panneau fermé adopte exactement le gabarit des widgets voisins (en-tête 26,7 px, 28,0 × 160,0 px fermé, pastille 5 px `#111`, titre capitales 700).
 
-> ⚠️ **Reste ouvert.** Les **notes de version** de `release.html` continuent de raconter 1.7.604 → 1.7.614 : seul le **numéro** a suivi le bump, la prose du nouveau billet est à écrire en trois langues. Les archives `desktop-v1.7.614` restent **figées** avec la licence d'avant Clémence Brunet — c'est leur nature ; `desktop-latest` est réécrit à chaque build et portera la licence courante.
+> ⚠️ **Reste ouvert.** Les **notes de version** de `release.html` racontaient 1.7.604 → 1.7.614, seul le **numéro** ayant suivi le bump. ✅ **Fermé en 1.7.618** : la prose est désormais **écrite en trois langues** pour **1.7.614 → 1.7.618** (voir cette entrée). Les archives `desktop-v1.7.614` restent **figées** avec la licence d'avant Clémence Brunet — c'est leur nature ; `desktop-latest` est réécrit à chaque build et portera la licence courante.
 
 ### Added — deux corrections de livraison, et une fausse piste fermée
 
