@@ -28,6 +28,10 @@ on:
       - main
     paths:
       - '.github/release-notes-desktop-latest.md'
+      # Le workflow lui-meme : corriger une ligne ici doit pouvoir se prouver en
+      # une poussee, sans avoir a retoucher le texte de la page pour le faire
+      # partir. C'est ainsi que les deux premieres erreurs ont ete trouvees.
+      - '.github/workflows/release-notes.yml'
 
 permissions:
   contents: write
@@ -85,6 +89,12 @@ jobs:
             exit 1
           fi
 
-          gh release view desktop-latest --json name,url,updatedAt \
-            --jq '"  page : " + .name + "  " + .url + "  (mise a jour : " + .updatedAt + ")"'
+          # ⚠️ `gh release view` n'accepte QUE ses propres champs, et il les énumère
+          # quand on se trompe. Mesuré deux fois le 15 octobre :
+          #   « isLatest »   -> champ inexistant (le badge se lit par l'API) ;
+          #   « updatedAt »  -> champ inexistant (c'est `publishedAt`).
+          # Chaque erreur a terminé le job en échec APRÈS que la page ait été
+          # correctement mise à jour : le travail passait, le rapport échouait.
+          gh release view desktop-latest --json name,url,publishedAt \
+            --jq '"  page : " + .name + "  " + .url + "  (publiee le " + .publishedAt + ")"'
           echo "  badge Latest : $latest"
