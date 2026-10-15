@@ -777,7 +777,19 @@ async function main() {
   // Les fichiers du `.deb` qui ne peuvent pas être recopiés tels quels : les
   // journaux (à compresser) et les copyrights (à assembler). Un par paquet.
   console.log('\nFichiers communs aux paquets');
-  const versionDuProduit = (await fs.readFile(path.join(product, 'version.txt'), 'utf8')).trim();
+  /* ⚠️ LA VERSION DU JOURNAL EST CELLE DU PAQUET, PAS CELLE DU WEB — et ce
+     n'était pas le cas avant. Cette ligne lisait `superprint/version.txt`, la
+     version du SITE, pour écrire le journal du `.deb`. La faute ne se voyait
+     pas tant que les deux numéros étaient égaux : elle n'était juste que par
+     COÏNCIDENCE. Depuis que la version de bureau vit sa propre vie (1.7.618,
+     quand le web reste 1.7.617), le paquet aurait annoncé 1.7.618 dans son nom
+     et 1.7.617 dans `/usr/share/doc/<paquet>/changelog.gz`.
+     La source juste est celle que ce script IMPOSE déjà partout — « la version
+     doit rester dans tauri.conf.json, pas ici » (voir `verifierSurcouches`) :
+     c'est la version de l'application empaquetée, donc celle du `.deb`. */
+  const versionDuProduit = JSON.parse(
+    await fs.readFile(path.join(srcTauri, 'tauri.conf.json'), 'utf8'),
+  ).version;
   await compresserJournauxDebian(versionDuProduit);
   await ecrireCopyrightsDebian();
 }
