@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.627-popin-ia-dans-onglet';
+const CACHE_NAME = 'superprint-shell-v1.7.628-nettete-mac-et-tableau-solidaire';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

@@ -4743,6 +4743,21 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
+            /* ═══ v1.7.628 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+               ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
+               blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
+               cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
+               _fixedHeight. Le magnetisme cherchait la derniere ligne qui tient et
+               renvoyait sa hauteur cumulee — il ne savait donc pas rendre une hauteur
+               PLUS GRANDE que le texte, ce qui est pourtant le cas normal d'un cadre.
+               Il ne sert qu'a arrondir une hauteur qui COUPE une ligne : quand tout
+               tient, la hauteur demandee est la bonne, on la renvoie telle quelle.
+               C'est le modele d'InDesign : le cadre garde la taille qu'on lui donne. */
+            const _hauteurTotale = window.spLineBoxHeight(target, H.length - 1, H);
+            if (_hauteurTotale !== null && hauteurDemandee >= _hauteurTotale - TOL) {
+                return hauteurDemandee;
+            }
+
             let dernierQuiTient = -1;
             for (let i = 0; i < H.length; i++) {
                 const box = window.spLineBoxHeight(target, i, H);
@@ -4766,7 +4781,7 @@ if (window._spGpuEnabled) {
     //   chemins d'entrée).
     window.spSnapHeightToLines = _spSnapHeightToLines;
 
-    function _spApplyLocalResize(target, newW, newH, anchorPoint, anchorOriginX, anchorOriginY) {
+    function _spApplyLocalResize(target, newW, newH, anchorPoint, anchorOriginX, anchorOriginY, aimanter) {
         const fixedW = Math.max(MIN_WIDTH, Math.round(newW));
         let fixedH = Math.max(MIN_HEIGHT, Math.round(newH));
         // 🎯 v1.7.379 — HAUTEUR AIMANTÉE SUR LES LIGNES (jamais de ligne coupée).
@@ -4783,7 +4798,12 @@ if (window._spGpuEnabled) {
         //   par un autre chemin et n'est pas concernée.
         try {
             const isText = target && (target.type === 'textbox' || target.type === 'text');
-            if (isText && !target.isEditing) {
+            /* « aimanter » vaut vrai par defaut : les poignees haut, bas et les coins
+               changent la HAUTEUR, donc le magnetisme y a un sens (ne pas couper une
+               ligne). Les poignees gauche et droite passent la valeur false : elles ne
+               touchent qu'a la largeur, et faire passer la hauteur par le magnetisme
+               la rognait au passage. */
+            if (isText && !target.isEditing && aimanter !== false) {
                 fixedH = Math.max(MIN_HEIGHT, Math.round(_spSnapHeightToLines(target, fixedH)));
             }
         } catch (_) {}
@@ -4814,7 +4834,7 @@ if (window._spGpuEnabled) {
         // Projection sur l'axe X local (negative = pointer du côté gauche de l'ancre)
         const localDX = vx * axes.x.x + vy * axes.x.y;
         const newW = -localDX; // poignée gauche : largeur = distance à l'ancre côté gauche
-        _spApplyLocalResize(target, newW, L.origH, L.anchorPoint, L.anchorOriginX, L.anchorOriginY);
+        _spApplyLocalResize(target, newW, L.origH, L.anchorPoint, L.anchorOriginX, L.anchorOriginY, false);
 
         if (target.canvas) target.canvas.requestRenderAll();
         return true;
@@ -4833,7 +4853,7 @@ if (window._spGpuEnabled) {
         const vy = pointer.y - L.anchorPoint.y;
         const localDX = vx * axes.x.x + vy * axes.x.y;
         const newW = localDX;
-        _spApplyLocalResize(target, newW, L.origH, L.anchorPoint, L.anchorOriginX, L.anchorOriginY);
+        _spApplyLocalResize(target, newW, L.origH, L.anchorPoint, L.anchorOriginX, L.anchorOriginY, false);
 
         if (target.canvas) target.canvas.requestRenderAll();
         return true;
@@ -5761,11 +5781,50 @@ if (window._spGpuEnabled) {
             fabric.Textbox.prototype.initDimensions = function() {
                 spEnterWrapSession(this);
 
+                let r;
                 try {
-                    return __spOrigInitDimensions.apply(this, arguments);
+                    r = __spOrigInitDimensions.apply(this, arguments);
                 } finally {
                     spExitWrapSession(this);
                 }
+
+                /* ═══ LE CADRE GARDE SA HAUTEUR — LA REGLE EST ICI, PAS PAR OBJET ═══
+                   ⚠️ CE QUI ETAIT CASSE, ET QUI L'ETAIT DEPUIS TOUJOURS.
+                   Fabric TERMINE initDimensions() par
+                       this.height = this.calcTextHeight();
+                   donc la hauteur du cadre suit le CONTENU : le bas remonte des
+                   qu'il y a du blanc. L'application s'en protegeait par une
+                   SURCHARGE PAR OBJET (text.initDimensions = ...), posee a la
+                   creation et au collage. Or une propriete posee sur UN OBJET n'est
+                   ni serialisee ni heritee : elle disparait a la reouverture d'un
+                   document, au clonage, et pour tout objet venu d'un autre chemin.
+
+                   MESURE, sur un cadre de 320 x 260 px :
+                     · creation et edition            -> 259,73 px   (surcharge presente)
+                     · apres un aller-retour JSON     ->  15,82 px   (surcharge perdue)
+                     · glisser la poignee du BAS      ->  15,82 px, et cette valeur
+                       etait ECRITE dans _fixedHeight : la hauteur voulue detruite.
+                   C'est « je ne peux plus tirer le bloc vers le bas ».
+
+                   La regle vit desormais la ou Fabric l'applique, et une seule fois.
+                   La convention du projet est respectee : _fixedHeight <= 0 signifie
+                   « pas de hauteur fixe », donc hauteur automatique (spIsFixedSize).
+                   C'est aussi le modele d'InDesign : le cadre a une hauteur EXPLICITE,
+                   le texte qui ne la remplit pas laisse du blanc, et celui qui deborde
+                   declenche l'indicateur de depassement — deja en place.
+
+                   Ce seul endroit couvre ce que la surcharge par objet ne pouvait pas :
+                   les CELLULES DE TABLEAU (des blocs texte), les BLOCS CHAINES (dont
+                   la hauteur borne le recoulement) et l'IMPORT IDML/DOCX. */
+                try {
+                    var fh = this._fixedHeight;
+                    if (typeof fh === 'number' && isFinite(fh) && fh > 0 && this.height !== fh) {
+                        this.height = fh;
+                        this.dirty = true;
+                    }
+                } catch (_) {}
+
+                return r;
             };
             fabric.Textbox.prototype.__spInitDimensionsWrapped = true;
         }
@@ -14312,6 +14371,37 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
 
         function renderAllPages() {
     const container = document.getElementById('pagesContainer');
+    /* ═══ _SP_REPERES_628 — LES REPERES SONT LUS MAINTENANT, REPOSES A LA FIN. ═══
+       MESURE : ils ne survivaient a AUCUNE reconstruction. Un document d'une page avec
+       deux reperes, passe en double page, n'en portait plus aucun — et le retour en
+       page simple ne les ramenait pas davantage.
+
+       LA CAUSE EST UN CHAINON MANQUANT, PAS UNE ERREUR. Les reperes sont exclus de la
+       serialisation Fabric (excludeFromExport: true) : ils vivent a cote du document,
+       dans les guides du projet, ecrits par _spCollectGuides() et relus par
+       _spRestoreGuides(). Ces deux fonctions n'etaient appelees qu'a l'ENREGISTREMENT et
+       a l'OUVERTURE d'un fichier. Or cette fonction-ci reconstruit tous les canvas a
+       partir des objets de pages — ou les reperes ne sont pas.
+
+       ⚠️ ET LA CAPTURE DOIT SE FAIRE ICI, PAS EN FIN DE FONCTION. Un premier essai la
+       plaçait apres updatePageIndicator() : elle lisait alors les canvas DEJA
+       reconstruits, donc vides, et les reperes disparaissaient malgre la correction.
+       On lit l'ancien etat tant qu'il existe — comme la memorisation des folios qui
+       suit — et on repose a la fin, quand les nouveaux canvas sont prets.
+
+       POURQUOI ICI, ET PAS DANS LES DEUX BOUTONS DE MODE : c'est le seul point de
+       passage commun. Un changement de format, un import, une reconstruction
+       d'historique passent aussi par ici : corriger les boutons aurait laisse les
+       autres chemins casses. */
+    try {
+        window._spReperesEnAttente = (typeof _spCollectGuides === 'function') ? _spCollectGuides() : null;
+        if (window._spReperesEnAttente && Object.keys(window._spReperesEnAttente).length) {
+            window._spReperesEnAttente.depuisLeFormat = true;   // cotes dans le FORMAT
+        } else {
+            window._spReperesEnAttente = null;
+        }
+    } catch (_) { window._spReperesEnAttente = null; }
+
     /* ⚡ _SP_RESTAURATION_CIBLEE_602 : reconstruction COMPLÈTE des planches → les repères
        de synchronisation ne sont plus garantis, on les efface TOUS. Coût réel : une
        planche de plus à relire lors de la prochaine annulation ; en échange, il est
@@ -14493,12 +14583,42 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
 
     updatePageIndicator();
 
+    /* _SP_REPERES_628 — LES REPERES SURVIVENT A TOUTE RECONSTRUCTION.
+       MESURE : ils ne survivaient a AUCUNE. Un document d'une page avec deux reperes,
+       passe en double page, n'en portait plus aucun — et le retour en page simple ne les
+       ramenait pas davantage.
+
+       LA CAUSE EST UN CHAINON MANQUANT, PAS UNE ERREUR. Les reperes sont exclus de la
+       serialisation Fabric (excludeFromExport: true) : ils vivent a cote du document,
+       dans les guides du projet, ecrits par _spCollectGuides() et relus par
+       _spRestoreGuides(). Ces deux fonctions n'etaient appelees qu'a l'ENREGISTREMENT et
+       a l'OUVERTURE d'un fichier. Or cette fonction-ci reconstruit tous les canvas a
+       partir des objets de pages — ou les reperes ne sont pas. Ils partaient donc avec
+       l'ancien canvas, sans que personne ne les repose.
+
+       POURQUOI ICI, ET PAS DANS LES DEUX BOUTONS DE MODE : c'est le seul point de passage
+       commun. Les boutons ne sont que deux chemins parmi d'autres — un changement de
+       format, un import, une reconstruction d'historique passent aussi par ici. Corriger
+       les boutons aurait laisse les autres chemins casses. */
     /* _SP_GRID_506_DEBUT — les colonnes rouges vivent même quand la grille bleue est éteinte : le
        redessin ne doit donc plus dépendre de window._spGridVisible seul. */
     if ((window._spGridVisible || window._spColonnesActives) && typeof window.rebuildGridAll === 'function') {
         window.rebuildGridAll();
     }
-    
+
+    /* _SP_REPERES_628 — REPOSE DES REPERES CAPTURES AU DEBUT DE CETTE FONCTION.
+       La capture a lieu avant toute destruction (voir le debut de renderAllPages) :
+       ici les nouveaux canvas existent, donc les reperes peuvent retrouver leur place
+       sur le bon format. La repose est differee de 450 ms par _spRestoreGuides, ce qui
+       laisse le temps aux canvas d'etre prets. */
+    try {
+        if (window._spReperesEnAttente) {
+            const _aReposer = window._spReperesEnAttente;
+            window._spReperesEnAttente = null;
+            if (typeof _spRestoreGuides === 'function') _spRestoreGuides(_aReposer);
+        }
+    } catch (e) { console.warn('[reperes: repose apres reconstruction]', e); }
+
     // Le temps de loadFromJSON dépend fortement du navigateur, des images et de
     // la machine. Un délai fixe rendait les pages cliquables trop tôt sur Chrome.
     const spreadCanvasCount = pages.length === 0
@@ -16726,16 +16846,29 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 }
             });
 
+            /* ⚠️ DRAPEAU + setCoords() EN FIN DE BLOC : voir l'en-tete du fichier
+               de correction. Écrire left/top sans setCoords laisse aCoords et
+               lineCoords sur l'ANCIENNE position — Fabric dessine l'objet au bon
+               endroit mais repond « elle est la » a l'ancien. Le choix de l'objet
+               sous le curseur se fait sur ces coordonnees : on clique sur l'image
+               et la selection tombe a cote. */
+            let _accroche = false;
             if (bestX != null && bestXDist <= SNAP_THRESHOLD) {
                 const targetX = pointsX.reduce((a, b) => Math.abs(b - bestX) < Math.abs(a - bestX) ? b : a, pointsX[0]);
                 const dx = (bestX - targetX) / zoom; // Convertir le delta écran en delta canvas
                 obj.left = (obj.left || 0) + dx;
+                _accroche = true;
             }
             if (bestY != null && bestYDist <= SNAP_THRESHOLD) {
                 const targetY = pointsY.reduce((a, b) => Math.abs(b - bestY) < Math.abs(a - bestY) ? b : a, pointsY[0]);
                 const dy = (bestY - targetY) / zoom; // Convertir le delta écran en delta canvas
                 obj.top = (obj.top || 0) + dy;
+                _accroche = true;
             }
+            /* Une seule fois, et seulement si l'accrochage a bouge quelque chose :
+               setCoords() recalcule quatre points et deux matrices, l'appeler a
+               chaque frame de glissement sans raison serait du travail perdu. */
+            if (_accroche && typeof obj.setCoords === 'function') obj.setCoords();
         }
         
         // Marquer l'objet en drag si ce n'est pas déjà fait
@@ -24728,11 +24861,19 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                par `f`, le coin superieur gauche du tableau etant (x, y). Une seule
                fonction, donc aucune divergence possible entre deplacement et
                redimensionnement. */
-            function appliquerGeometrie(desc, f, x, y) {
+            function appliquerGeometrie(desc, f, x, y, sauf) {
                 desc.x = x; desc.y = y;
                 desc.largeur = desc.refLargeur * f;
                 desc.hauteur = desc.refHauteur * f;
                 cellulesVivantes(desc).forEach(function (o) {
+                    /* ⚠️ ON NE TOUCHE PAS A LA CELLULE QUE FABRIC MANIPULE. Pendant
+                       un scaling, Fabric calcule le facteur d'echelle a partir de
+                       la taille COURANTE de l'objet : reecrire width et remettre
+                       scaleX a 1 la lui change sous les pieds, et le decalage se
+                       multiplie a chaque evenement — les cellules partent d'un
+                       cote, les filets restent de l'autre. Elle sera normalisee une
+                       seule fois, par le gestionnaire modified. */
+                    if (sauf && o === sauf) return;
                     var m = o._spTabCellule;
                     if (!m) return;
                     var lw = m.rw * f, lh = m.rh * f;
@@ -24770,15 +24911,15 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                     var m = tb._spTabCellule;
                     if (!m) return;
                     desc.enCours = true;
-                    var dx = tb.left - (desc.x + m.rx * (desc.largeur / desc.refLargeur));
-                    var dy = tb.top - (desc.y + m.ry * (desc.hauteur / desc.refHauteur));
-                    desc.x += dx; desc.y += dy;
-                    cellulesVivantes(desc).forEach(function (o) {
-                        if (o === tb) return;
-                        o.set({ left: o.left + dx, top: o.top + dy });
-                        o.setCoords();
-                    });
-                    synchroniserFilets(desc);
+                    var f = desc.largeur / desc.refLargeur;
+                    var dx = tb.left - (desc.x + m.rx * f);
+                    var dy = tb.top - (desc.y + m.ry * f);
+                    /* ⚠️ On REPOSITIONNE depuis la reference, on n'AJOUTE pas le
+                       delta a la position courante. Ajouter cumulait l'erreur d'un
+                       evenement sur le suivant : au bout d'un glissement un peu
+                       long, les cellules avaient visiblement glisse par rapport
+                       aux filets. Une seule source de verite. */
+                    appliquerGeometrie(desc, f, desc.x + dx, desc.y + dy, tb);
                     desc.enCours = false;
                 };
 
@@ -24796,7 +24937,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                        resterait a sa taille — deux defauts visibles d'un coup. */
                     var f = (Math.abs(fx - 1) >= Math.abs(fy - 1)) ? fx : fy;
                     if (!isFinite(f) || f <= 0.05) f = 0.05;
-                    appliquerGeometrie(desc, f, tb.left - m.rx * f, tb.top - m.ry * f);
+                    /* « tb » est EXCLUE : c'est elle que Fabric redimensionne, et lui
+                       reprendre sa geometrie en plein geste faussait son calcul. */
+                    appliquerGeometrie(desc, f, tb.left - m.rx * f, tb.top - m.ry * f, tb);
                     desc.enCours = false;
                 };
 
@@ -24805,16 +24948,20 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 tb.on('modified', function () {
                     if (desc.enCours) return;
                     desc.enCours = true;
-                    /* Apres un redimensionnement, Fabric a laisse scaleX/scaleY ;
-                       on remet a 1 puisque la taille est desormais portee par les
-                       cellules elles-memes. */
+                    /* ═══ LA NORMALISATION FINALE, ET RIEN QUE LA ═══
+                       C'est ICI, et seulement ici, que la cellule que Fabric vient de
+                       manipuler est remise dans la geometrie commune : scaleX/scaleY
+                       reviennent a 1, la taille passe dans width/height, et le texte
+                       reprend son corps. Pendant le geste, on n'y a pas touche.
+                       Un seul facteur pour les deux axes, celui de l'axe qui a le plus
+                       bouge : « comme une image, en conservant ses proportions ». */
                     var m = tb._spTabCellule;
-                    if (m && (tb.scaleX !== 1 || tb.scaleY !== 1)) {
-                        var lw = (tb.width || 0) * (tb.scaleX || 1);
-                        var f = lw / m.rw;
-                        if (isFinite(f) && f > 0.05) {
-                            appliquerGeometrie(desc, f, tb.left - m.rx * f, tb.top - m.ry * f);
-                        }
+                    if (m) {
+                        var fx = ((tb.width || 0) * (tb.scaleX || 1)) / m.rw;
+                        var fy = ((tb.height || 0) * (tb.scaleY || 1)) / m.rh;
+                        var f = (Math.abs(fx - 1) >= Math.abs(fy - 1)) ? fx : fy;
+                        if (!isFinite(f) || f <= 0.05) f = desc.largeur / desc.refLargeur;
+                        appliquerGeometrie(desc, f, tb.left - m.rx * f, tb.top - m.ry * f);
                     }
                     desc.enCours = false;
                     if (typeof scheduleRender === 'function') scheduleRender(cv);
@@ -35199,9 +35346,16 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     // Quand on utilise CSS transform: scale(), le navigateur étire le bitmap rasterisé
     // → texte flou. En augmentant fabric.devicePixelRatio, le backing store du canvas
     // a plus de pixels → le texte est re-rendu en haute résolution → net même zoomé.
-    const _baseDPR = window.devicePixelRatio || 1;
+    /* ATTENTION : let, ET PLUS const. Cette valeur change quand l'ecran change —
+       c'est LE defaut qui rendait le document flou sur un Mac rebranche sur son
+       ecran Retina. Voir _spDensiteChangee() plus bas. */
+    let _baseDPR = window.devicePixelRatio || 1;
     let _lastAppliedZoomDPR = _baseDPR;
-    let _zoomDprTimerId = null;
+    let _spDPRTimer = null;
+    let _spDPRRelance = false;
+    /* Duree MESUREE du dernier re-rendu : elle sert d'intervalle de throttle, pour
+       qu'un canvas lourd ne soit pas re-rasterise plus vite qu'il ne peut l'etre. */
+    let _spDureeDPR = 0;
 
     let _highDPRCanvasIndex = -1;
 
@@ -35271,6 +35425,121 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         try { if (typeof window.spTabRegleMaj === 'function') window.spTabRegleMaj(); } catch (_) {}
     }
 
+    /* ═══ _SP_NETTETE_627 — RE-RASTERISER TOUS LES CANVAS A LA DENSITE COURANTE ═══
+       Sert au changement d'ecran, et a lui seul : le zoom, lui, ne doit toucher que
+       la page visible (une haute resolution sur douze pages ferait exploser la
+       memoire). Apres un changement de densite, TOUTES les pages doivent etre
+       re-rasterisees — pas seulement celle qu'on regarde — parce que les autres
+       seront affichees a leur tour, a cette meme densite. */
+    function _spAppliquerDensiteATous() {
+        const cible = (zoomLevel <= 1) ? _baseDPR : Math.min(8, _baseDPR * zoomLevel);
+        fabric.devicePixelRatio = cible;
+        _lastAppliedZoomDPR = cible;
+        _highDPRCanvasIndex = -1;      // plus aucune page n'est « celle en haute resolution »
+        try {
+            canvases.forEach((c) => {
+                if (!c || !c.lowerCanvasEl) return;
+                try {
+                    c.setDimensions({ width: c.width, height: c.height });
+                    c.requestRenderAll();
+                } catch (_) {}
+            });
+        } catch (_) {}
+        /* Meme precaution que dans _updateCanvasDPRForZoom : setDimensions peut
+           ecraser la CSS inline du .canvas-container qui ancre la page dans le
+           pasteboard. Sans elle : bord de page qui disparait, traits parasites. */
+        if (typeof window._spReassertPasteboardLayout === 'function') {
+            try { canvases.forEach((cc) => { if (cc) window._spReassertPasteboardLayout(cc); }); } catch (_) {}
+        }
+        try { if (typeof window.spTabRegleMaj === 'function') window.spTabRegleMaj(); } catch (_) {}
+        return cible;
+    }
+
+    /* ═══ _SP_NETTETE_627 — SURVEILLER LA DENSITE DE L'ECRAN ═══
+       DEUX MOYENS COMPLEMENTAIRES, ET LE SECOND N'EST PAS DU ZELE :
+         · matchMedia('(resolution: Ndppx)') est l'evenement exact, mais il faut
+           REARMER l'ecoute a chaque changement de valeur (l'objet est lie a la
+           valeur qu'on a demandee) ;
+         · resize est le filet : un changement d'ecran en produit toujours un, et
+           certains moteurs ne declenchent pas le premier.
+       Les deux passent par le MEME test, qui compare la densite attendue a celle
+       reellement appliquee : si elles concordent, on ne fait rien. C'est ce qui
+       evite de re-rasteriser tous les canvas a chaque pixel d'un redimensionnement. */
+    function _spDensiteEcran() { return window.devicePixelRatio || 1; }
+
+    let _spEcouteDensite = null;
+
+    function _spArmerEcouteDensite() {
+        try {
+            if (_spEcouteDensite && _spEcouteDensite.removeEventListener) {
+                _spEcouteDensite.removeEventListener('change', _spDensiteChangee);
+            }
+        } catch (_) {}
+        try {
+            _spEcouteDensite = window.matchMedia('(resolution: ' + _spDensiteEcran() + 'dppx)');
+            if (_spEcouteDensite.addEventListener) _spEcouteDensite.addEventListener('change', _spDensiteChangee);
+        } catch (_) { _spEcouteDensite = null; }
+    }
+
+    function _spDensiteChangee() {
+        const nouvelle = _spDensiteEcran();
+        const attendue = (zoomLevel <= 1) ? nouvelle : Math.min(8, nouvelle * zoomLevel);
+        /* Rien a faire : la densite appliquee est deja la bonne. C'est CE test qui
+           rend le controle periodique gratuit — il ne compare que deux nombres. */
+        if (Math.abs(attendue - _lastAppliedZoomDPR) < 0.05) return;
+        _baseDPR = nouvelle;
+        _spAppliquerDensiteATous();
+        /* L'objet MediaQueryList est lie a la valeur qu'on a demandee : il faut
+           REARMER l'ecoute pour la nouvelle densite. On ne le fait QUE dans ce cas —
+           le re-armer a chaque seconde d'inactivite serait du gaspillage. */
+        _spArmerEcouteDensite();
+        try {
+            if (typeof window.spLog === 'function') window.spLog('🖥️ écran ' + nouvelle + 'x : rendu ajusté');
+        } catch (_) {}
+    }
+
+    try {
+        _spArmerEcouteDensite();
+        window.addEventListener('resize', _spDensiteChangee);
+        window.addEventListener('orientationchange', _spDensiteChangee);
+        /* ═══ LE FILET, ET POURQUOI IL EST NECESSAIRE ═══
+           MESURE : sous une bascule d'ecran simulee, matchMedia('(resolution: 2dppx)')
+           passe bien de faux a vrai, mais AUCUN evenement n'arrive a la page — ni le
+           « change » de la requete de media, ni le « resize » de la fenetre (compteur
+           a 0). Sur un vrai Mac, ces evenements existent et arrivent ; ici, ils
+           n'arrivent pas, et je ne peux donc PAS prouver qu'ils suffisent partout.
+           Un filet qui ne depend d'aucun evenement ferme la question : une fois par
+           seconde, on compare deux nombres. Ce test ne coute rien tant que la densite
+           ne bouge pas, et il garantit le rattrapage dans la seconde quand elle bouge
+           sans le dire. Le prix d'un document flou, lui, c'est la qualite percue du
+           logiciel phare. */
+        setInterval(_spDensiteChangee, 1000);
+    } catch (_) {}
+    window._spDensiteChangee = _spDensiteChangee;   // pour la sonde de verification
+
+    /* ═══ _SP_NETTETE_627 — LA MISE A JOUR DU DPR EST UN THROTTLE, PAS UN DEBOUNCE ═══
+       Un debounce de 150 ms ATTEND LE SILENCE. Pendant un zoom il n'y a pas de
+       silence : cinq crans cliques en 200 ms laissaient donc le canvas a l'ancienne
+       densite pour tout le geste — nettete mesuree 0,74 au lieu de 1.
+       Un throttle garantit une mise a jour AU PLUS TARD apres le delai, donc EN
+       COURS de geste. Et le delai est la duree MESUREE du dernier re-rendu, bornee :
+       un canvas leger se rattrape en 35 ms, un canvas lourd n'est pas re-rasterise
+       plus vite qu'il ne peut l'etre (220 ms au plus). Le dernier cran est toujours
+       applique : si un cran arrive pendant qu'un re-rendu est en cours, on en
+       programme un autre derriere (_spDPRRelance). */
+    function _spProgrammerDPR() {
+        if (_spDPRTimer !== null) { _spDPRRelance = true; return; }
+        const delai = Math.max(35, Math.min(220, Math.round(_spDureeDPR) || 35));
+        _spDPRTimer = setTimeout(() => {
+            _spDPRTimer = null;
+            const t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+            try { _updateCanvasDPRForZoom(); } catch (_) {}
+            const t1 = (window.performance && performance.now) ? performance.now() : Date.now();
+            _spDureeDPR = t1 - t0;
+            if (_spDPRRelance) { _spDPRRelance = false; _spProgrammerDPR(); }
+        }, delai);
+    }
+
     function normalizeZoomLevel() {
         if (!Number.isFinite(zoomLevel) || zoomLevel <= 0) {
             zoomLevel = 1.0;
@@ -35330,9 +35599,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             else zoomDisplay.textContent = pct;
         }
 
-        // ✅ FIX TYPO FLOUE: déclencher le re-rendu haute résolution (debounce 150ms)
-        if (_zoomDprTimerId) clearTimeout(_zoomDprTimerId);
-        _zoomDprTimerId = setTimeout(_updateCanvasDPRForZoom, 150);
+        // ✅ FIX TYPO FLOUE — mais en THROTTLE, pas en debounce : voir _spProgrammerDPR.
+        _spProgrammerDPR();
     }
 
     // ✅ Fix immédiat: forcer l'affichage 100% dès l'init
@@ -51418,11 +51686,43 @@ https://superprint.app
     canvas.requestRenderAll();
         }
 
+        /* _SP_REPERES_628 — LA POSITION SE MESURE DEPUIS LE FORMAT.
+           ELLE SE MESURAIT DEPUIS LE BORD DU CANVAS, DONC DEPUIS LE FOND PERDU.
+           Mesure : en page simple le format commence a x = 3 mm (le fond perdu) ; sur la
+           page de droite d'une double page, il commence a x = 0 (le pli). Un repere
+           enregistre a 105 se retrouvait donc a 102 mm du format en simple et a 105 mm en
+           double page droite : TROIS MILLIMETRES de decalage, exactement le symptome
+           signale. Et le prompt demande une cote DANS LE FORMAT (ses valeurs par defaut,
+           105 et 148,5, sont le milieu d'un A4) : la lecture d'origine etait donc deja
+           fausse de 3 mm, avant meme la double page. */
+        function _spReperePxDepuisFormat(canvas, orientation, positionMm) {
+            const bi = (canvas && canvas.bleedInfo) || {};
+            const marge = (orientation === 'vertical') ? (bi.left || 0) : (bi.top || 0);
+            return marge + mmToPx(positionMm);
+        }
+
+        /* L'INVERSE : LA COTE, EN MILLIMETRES, D'UN REPERE REELLEMENT POSE SUR LE CANVAS.
+           Sert a la collecte, pour enregistrer un repere GLISSE a sa vraie place. */
+        function _spRepereMmSelonFormat(canvas, obj) {
+            try {
+                if (!canvas || !obj) return null;
+                const bi = canvas.bleedInfo || {};
+                const vertical = (obj._guideOrientation !== 'horizontal');
+                const r = (typeof obj.getBoundingRect === 'function') ? obj.getBoundingRect(true, true) : null;
+                const posPx = r ? (vertical ? (r.left + r.width / 2) : (r.top + r.height / 2)) : (vertical ? obj.x1 : obj.y1);
+                const marge = vertical ? (bi.left || 0) : (bi.top || 0);
+                const mm = pxToMm(posPx - marge);
+                return (isFinite(mm)) ? Math.round(mm * 100) / 100 : null;
+            } catch (_) { return null; }
+        }
+        window._spRepereMmSelonFormat = _spRepereMmSelonFormat;
+
         function addManualGuide(canvas, orientation, positionMm) {
     if (!canvas) return;
     
     const guideColor = '#ff00ff'; // Magenta pour les repères manuels
-    const positionPx = mmToPx(positionMm);
+    /* La cote demandee est une cote DANS LE FORMAT : on la decale du fond perdu. */
+    const positionPx = _spReperePxDepuisFormat(canvas, orientation, positionMm);
     // 🎨 PASTEBOARD: utiliser pageCanvasWidth/Height pour les limites de guides
     const bi = canvas.bleedInfo || {};
     const gcW = bi.pageCanvasWidth || canvas.width;
@@ -94684,10 +94984,17 @@ function _spCollectGuides() {
             if (pageIdx === null) return;
             const gs = c.getObjects().filter(o => o && o.isManualGuide);
             if (!gs.length) return;
-            const list = gs.map(o => ({
-                o: (o._guideOrientation === 'horizontal') ? 'horizontal' : 'vertical',
-                pos: o.guidePosition
-            })).filter(g => typeof g.pos === 'number' && isFinite(g.pos));
+            /* ON RELIT LA POSITION REELLE, ON NE FAIT PAS CONFIANCE A LA VALEUR MEMORISEE.
+               guidePosition n'etait ecrit qu'a la CREATION : un repere glisse etait donc
+               enregistre a sa position d'origine, et revenait a sa place au rechargement
+               suivant. La geometrie de la ligne, elle, ne ment pas — et elle est convertie
+               en cote DANS LE FORMAT, donc lisible dans n'importe quelle mise en page. */
+            const list = gs.map(o => {
+                const mesure = (typeof _spRepereMmSelonFormat === 'function')
+                    ? _spRepereMmSelonFormat(c, o) : null;
+                const pos = (typeof mesure === 'number') ? mesure : o.guidePosition;
+                return { o: (o._guideOrientation === 'horizontal') ? 'horizontal' : 'vertical', pos: pos };
+            }).filter(g => typeof g.pos === 'number' && isFinite(g.pos));
             if (list.length) map[pageIdx] = list;
         });
     } catch (e) { console.warn('[guides collect]', e); }
@@ -94710,9 +95017,17 @@ function _spRestoreGuides(guidesMap) {
                     return bi.pageIndex === idx || bi.leftPageIndex === idx;
                 });
                 if (!c || typeof addManualGuide !== 'function') return;
+                /* COMPATIBILITE. Les fichiers anterieurs a cette version enregistraient une
+                   cote depuis le BORD DU CANVAS — donc, en page simple, depuis le fond perdu.
+                   On les reconnait a l'absence du marqueur depuisLeFormat, et on leur
+                   retranche ce fond perdu : ils retrouvent EXACTEMENT la position qu'ils
+                   avaient a l'ecran. Aucun document existant ne se decale. */
+                const ancienneLecture = (guidesMap.depuisLeFormat !== true);
+                const fondPerduMm = (typeof bleed === 'number' && isFinite(bleed)) ? bleed : 0;
                 list.forEach(g => {
                     if (g && typeof g.pos === 'number') {
-                        addManualGuide(c, g.o === 'horizontal' ? 'horizontal' : 'vertical', g.pos);
+                        const pos = ancienneLecture ? (g.pos - fondPerduMm) : g.pos;
+                        addManualGuide(c, g.o === 'horizontal' ? 'horizontal' : 'vertical', pos);
                     }
                 });
             });
