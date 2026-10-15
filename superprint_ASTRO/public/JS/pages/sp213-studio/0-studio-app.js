@@ -297,7 +297,7 @@
   const FONTS = {
     display: ['Bebas Neue', 'Playfair Display', 'Montserrat', 'Poppins'],
     body: ['Open Sans', 'IBM Plex Sans', 'Roboto', 'Lato', 'Times', 'Noto Sans JP'],
-    mono: ['IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Space Mono']
+    mono: ['IBM Plex Mono', 'Fira Code', 'Space Mono']
   };
   const FONT_NAMES = [...FONTS.display, ...FONTS.body, ...FONTS.mono];
 
@@ -315,7 +315,6 @@
     'times': 'Times', 'times new roman': 'Times', 'timesnewroman': 'Times', 'times-new-roman': 'Times', 'tinos': 'Times',
     'ibm plex sans': 'IBM Plex Sans', 'ibmplexsans': 'IBM Plex Sans', 'ibm-plex-sans': 'IBM Plex Sans',
     'ibm plex mono': 'IBM Plex Mono', 'ibmplexmono': 'IBM Plex Mono', 'ibm-plex-mono': 'IBM Plex Mono',
-    'jetbrains mono': 'JetBrains Mono', 'jetbrainsmono': 'JetBrains Mono', 'jetbrains-mono': 'JetBrains Mono',
     'fira code': 'Fira Code', 'firacode': 'Fira Code', 'fira-code': 'Fira Code',
     'space mono': 'Space Mono', 'spacemono': 'Space Mono', 'space-mono': 'Space Mono',
     'noto sans jp': 'Noto Sans JP', 'notosansjp': 'Noto Sans JP', 'noto-sans-jp': 'Noto Sans JP', 'noto': 'Noto Sans JP'
@@ -9385,12 +9384,12 @@ function spRtfLayoutInfo(src) {
     { nom: 'Technique', fam: 'sans', titre: 'IBM Plex Sans', corps: 'IBM Plex Sans' },
     { nom: 'Moderne utile', fam: 'sans', titre: 'Poppins', corps: 'Roboto' },
     { nom: 'Neutre utile', fam: 'sans', titre: 'Open Sans', corps: 'Open Sans' },
-    /* — famille mono (IBM Plex Mono, JetBrains, Fira Code, Space Mono) : data, tech — */
+    /* — famille mono (IBM Plex Mono, Fira Code, Space Mono) : data, tech — */
     { nom: 'Machine à écrire', fam: 'mono', titre: 'IBM Plex Mono', corps: 'IBM Plex Sans' },
-    { nom: 'Données', fam: 'mono', titre: 'JetBrains Mono', corps: 'IBM Plex Sans' },
+    { nom: 'Données', fam: 'mono', titre: 'IBM Plex Mono', corps: 'IBM Plex Sans' },
     { nom: 'Terminal', fam: 'mono', titre: 'Fira Code', corps: 'Roboto' },
     { nom: 'Console', fam: 'mono', titre: 'Space Mono', corps: 'Open Sans' },
-    { nom: 'Monospace adouci', fam: 'mono', titre: 'JetBrains Mono', corps: 'Lato' }
+    { nom: 'Monospace adouci', fam: 'mono', titre: 'IBM Plex Mono', corps: 'Lato' }
   ];
   /* Les combinaisons de la famille demandée ; si la famille n'en a aucune, on rend
      la liste ENTIÈRE (jamais de typographie vide : une maquette doit toujours sortir). */
@@ -18849,7 +18848,7 @@ function spRtfLayoutInfo(src) {
     'Bebas Neue': /bebas/i, 'Playfair Display': /playfair/i, 'Montserrat': /montserrat/i,
     'Poppins': /poppins/i, 'Open Sans': /open ?sans/i, 'IBM Plex Sans': /ibm plex sans/i,
     'Roboto': /roboto/i, 'Lato': /lato/i, 'Noto Sans JP': /noto|japonais|japanese/i,
-    'IBM Plex Mono': /ibm plex mono/i, 'JetBrains Mono': /jetbrains? mono/i,
+    'IBM Plex Mono': /ibm plex mono/i,
     'Fira Code': /fira code/i, 'Space Mono': /space mono/i, 'Inter': /inter/i,
     'Arial': /arial/i, 'Helvetica': /helvetica/i
   };
@@ -20640,7 +20639,7 @@ HAUTEUR OCCUPÉE PAR UN BLOC (pour ne pas dépasser le bas de page) :
 POLICES DISPONIBLES :
 • Display/titres : Bebas Neue, Playfair Display, Montserrat, Poppins
 • Corps : Open Sans, IBM Plex Sans, Roboto, Lato, Noto Sans JP
-• Mono : IBM Plex Mono, JetBrains Mono, Fira Code, Space Mono
+• Mono : IBM Plex Mono, Fira Code, Space Mono
 • Tu DOIS t'en tenir à cette liste. Si l'utilisateur demande une police qui n'y est
   pas (ex. Inter, Arial, Helvetica…), choisis la plus proche parmi la liste (Inter → Open Sans).
 
@@ -27386,7 +27385,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   Chaque "rectangle"/"circle"/"ellipse"/"triangle"/"line"/"star" devient un objet vectoriel Fabric.
 • Les polices DISPONIBLES dans SuperPrint (tu DOIS t'y limiter) :
   Display/titres : Bebas Neue, Playfair Display, Montserrat, Poppins.
-  Corps : Open Sans, IBM Plex Sans, Roboto, Lato, Noto Sans JP. Mono : IBM Plex Mono, JetBrains Mono, Fira Code, Space Mono.
+  Corps : Open Sans, IBM Plex Sans, Roboto, Lato, Noto Sans JP. Mono : IBM Plex Mono, Fira Code, Space Mono.
   Si l'utilisateur demande une police hors liste, choisis la plus proche (Inter → Open Sans).
 • L'aperçu du studio reflète EXACTEMENT ce que tu renvoies : une coordonnée fausse, un débord,
   ou une police inconnue = une maquette cassée à l'écran. Sois précis au millimètre.

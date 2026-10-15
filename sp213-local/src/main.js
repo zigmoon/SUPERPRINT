@@ -1000,7 +1000,7 @@ import * as XLSX from '@e965/xlsx';
     'Bebas Neue': /bebas/i, 'Playfair Display': /playfair|display\s*fair|fair\s*display/i, 'Montserrat': /montserrat/i,
     'Poppins': /poppins/i, 'Open Sans': /open ?sans/i, 'IBM Plex Sans': /ibm plex sans/i,
     'Roboto': /roboto/i, 'Lato': /lato/i, 'Noto Sans JP': /noto|japonais|japanese/i,
-    'IBM Plex Mono': /ibm plex mono/i, 'JetBrains Mono': /jetbrains? mono/i,
+    'IBM Plex Mono': /ibm plex mono/i,
     'Fira Code': /fira code/i, 'Space Mono': /space mono/i, 'Inter': /inter/i,
     'Arial': /arial/i, 'Helvetica': /helvetica/i
   };
@@ -1663,7 +1663,7 @@ import * as XLSX from '@e965/xlsx';
   Chaque "rectangle"/"circle"/"ellipse"/"triangle"/"line"/"star" devient un objet vectoriel Fabric.
 • Les polices DISPONIBLES dans SuperPrint (tu DOIS t'y limiter) :
   Display/titres : Bebas Neue, Playfair Display, Montserrat, Poppins.
-  Corps : Open Sans, IBM Plex Sans, Roboto, Lato. Mono : IBM Plex Mono, JetBrains Mono, Fira Code, Space Mono.
+  Corps : Open Sans, IBM Plex Sans, Roboto, Lato. Mono : IBM Plex Mono, Fira Code, Space Mono.
 • L'aperçu du studio reflète EXACTEMENT ce que tu renvoies : une coordonnée fausse, un débord,
   ou une police inconnue = une maquette cassée à l'écran. Sois précis au millimètre.
 
@@ -1826,7 +1826,7 @@ PIÈCES JOINTES
 POLICES DISPONIBLES :
 • Display/titres : Bebas Neue, Playfair Display, Montserrat, Poppins
 • Corps : Open Sans, IBM Plex Sans, Roboto, Lato
-• Mono : IBM Plex Mono, JetBrains Mono, Fira Code, Space Mono
+• Mono : IBM Plex Mono, Fira Code, Space Mono
 
 TYPES D'OBJETS (champ "type") :
 • rectangle : left, top, width, height, fill, opacity, rx, ry, stroke, strokeWidth(mm)
@@ -3453,7 +3453,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
   const SP213_FONTS = {
     display: ['Bebas Neue', 'Playfair Display', 'Montserrat', 'Poppins'],
     body: ['Open Sans', 'IBM Plex Sans', 'Roboto', 'Lato', 'Noto Sans JP'],
-    mono: ['IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Space Mono']
+    mono: ['IBM Plex Mono', 'Fira Code', 'Space Mono']
   };
   const SP213_FONT_NAMES = [...SP213_FONTS.display, ...SP213_FONTS.body, ...SP213_FONTS.mono];
 
@@ -3471,7 +3471,6 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     'lato': 'Lato',
     'ibm plex sans': 'IBM Plex Sans', 'ibmplexsans': 'IBM Plex Sans', 'ibm-plex-sans': 'IBM Plex Sans',
     'ibm plex mono': 'IBM Plex Mono', 'ibmplexmono': 'IBM Plex Mono', 'ibm-plex-mono': 'IBM Plex Mono',
-    'jetbrains mono': 'JetBrains Mono', 'jetbrainsmono': 'JetBrains Mono', 'jetbrains-mono': 'JetBrains Mono',
     'fira code': 'Fira Code', 'firacode': 'Fira Code', 'fira-code': 'Fira Code',
     'space mono': 'Space Mono', 'spacemono': 'Space Mono', 'space-mono': 'Space Mono',
     'noto sans jp': 'Noto Sans JP', 'notosansjp': 'Noto Sans JP', 'noto-sans-jp': 'Noto Sans JP', 'noto': 'Noto Sans JP'

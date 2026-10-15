@@ -9,7 +9,7 @@
    précachés changent, et c'est ce qui invalide le cache d'un utilisateur.
    Le contrôle `_dev/scripts/_make_zip_492.cjs` exige que ce nom contienne
    `version.txt` — ne pas repartir sur une numérotation parallèle. */
-const CACHE_NAME = 'superprint-shell-v1.7.617-regles-20px-decales';
+const CACHE_NAME = 'superprint-shell-v1.7.619-polices-allegees';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -103,10 +103,6 @@ const APP_SHELL = [
   './CSS/fonts/IBMPlexMono-400-italic-latin-ext.woff2',
   './CSS/fonts/IBMPlexMono-400-normal-latin.woff2',
   './CSS/fonts/IBMPlexMono-400-normal-latin-ext.woff2',
-  './CSS/fonts/JetBrainsMono-400-italic-latin.woff2',
-  './CSS/fonts/JetBrainsMono-400-italic-latin-ext.woff2',
-  './CSS/fonts/JetBrainsMono-400-normal-latin.woff2',
-  './CSS/fonts/JetBrainsMono-400-normal-latin-ext.woff2',
   './CSS/fonts/Lato-400-italic-latin.woff2',
   './CSS/fonts/Lato-400-italic-latin-ext.woff2',
   './CSS/fonts/Lato-400-normal-latin.woff2',

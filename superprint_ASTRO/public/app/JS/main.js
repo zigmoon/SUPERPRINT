@@ -13843,7 +13843,6 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     'Times': ['400', '700'],
     'Bebas Neue': ['400'],
     'IBM Plex Mono': ['400'],
-    'JetBrains Mono': ['400', '500', '700'],
     'Fira Code': ['400', '500', '700'],
     'Space Mono': ['400', '700']
         };
@@ -13893,7 +13892,6 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         ['Playfair Display', [400, 700], true],
         ['Bebas Neue', [400], false],
         ['IBM Plex Mono', [400, 700], true],
-        ['JetBrains Mono', [400, 700], true],
         ['Fira Code', [400], false],
         ['Space Mono', [400, 700], true]
     ];
@@ -16668,7 +16666,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         //   empilés. Le bringToFront est fait UNE fois au début du drag
         //   (pas à chaque frame) pour éviter de perturber l'ordre des
         //   calques à chaque micro-mouvement.
-        //   ⚠️ DÉPLACÉ EN v1.7.617 EN TÊTE DE CE GESTIONNAIRE, AVANT le retour
+        //   ⚠️ DÉPLACÉ EN v1.7.619 EN TÊTE DE CE GESTIONNAIRE, AVANT le retour
         //   anticipé des textbox en édition : placé ici, il ne s'exécutait JAMAIS
         //   pour un bloc texte qu'on venait d'ouvrir (voir le commentaire plus haut).
 
@@ -50628,7 +50626,7 @@ https://superprint.app
     const oldVRuler = canvasInner.querySelector('.ruler-vertical');
     if (oldHRuler) oldHRuler.remove();
     if (oldVRuler) oldVRuler.remove();
-    /* v1.7.617 — les règles ne vivent plus DANS la page mais dans le cadre. Ce
+    /* v1.7.619 — les règles ne vivent plus DANS la page mais dans le cadre. Ce
        nettoyage reste : il enlève les règles laissées par une version antérieure
        ou par un rendu interrompu, et retire le cadre quand on masque les règles. */
     const _spCadreExistant = canvasInner.closest('.canvas-wrapper');
@@ -50685,7 +50683,7 @@ https://superprint.app
     const finalWidth = isSpreadCanvas ? (pageFormat.width * 2) : pageFormat.width;
     const finalHeight = pageFormat.height;
 
-    // ── v1.7.617 — LES RÈGLES SONT CELLES DU CADRE, PAS CELLES DE LA PAGE ──
+    // ── v1.7.619 — LES RÈGLES SONT CELLES DU CADRE, PAS CELLES DE LA PAGE ──
     /* MESURÉ AVANT : les règles étaient ajoutées à `.canvas-inner` — la PAGE —
        donc dessinées au bord du document et seulement sur la largeur du format.
        Pire : `.canvas-inner` est dans `#pagesContainer`, qui porte
@@ -50808,7 +50806,7 @@ https://superprint.app
        `.canvas-wrapper`. On réutilise donc le cadre existant et on ne recrée que
        s'il a disparu (changement de page, re-rendu). */
     if (!_spWrapper) {
-        console.warn('[Règles v617] cadre de prévisualisation introuvable');
+        console.warn('[Règles v619] cadre de prévisualisation introuvable');
     } else {
         const dejaLa = _spWrapper.__spRegles615 && document.contains(_spWrapper.__spRegles615.conteneur);
         const conteneur = dejaLa
@@ -64081,7 +64079,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             return null;
         }
 
-        /* ══════════════ 🆕 v1.7.617 — OUVRIR UNE APPLICATION SŒUR, ET LUI PARLER ══════════════
+        /* ══════════════ 🆕 v1.7.619 — OUVRIR UNE APPLICATION SŒUR, ET LUI PARLER ══════════════
 
            DANS L'APPLICATION DE BUREAU, `window.open` N'OUVRE RIEN. La coquille
            refuse par défaut toute création de fenêtre demandée par la page : les
@@ -66090,7 +66088,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         // Construit un fabric.Object depuis un élément IA (px)
         // 🆕 Normalisation des polices (alignée sur le studio SP213) : mappe les
         //   variantes/synonymes vers les polices self-hosted disponibles.
-        const APP_FONT_NAMES = ['Bebas Neue', 'Playfair Display', 'Times', 'Montserrat', 'Poppins', 'Open Sans', 'IBM Plex Sans', 'Roboto', 'Lato', 'Noto Sans JP', 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Space Mono'];
+        const APP_FONT_NAMES = ['Bebas Neue', 'Playfair Display', 'Times', 'Montserrat', 'Poppins', 'Open Sans', 'IBM Plex Sans', 'Roboto', 'Lato', 'Noto Sans JP', 'IBM Plex Mono', 'Fira Code', 'Space Mono'];
         const APP_FONT_SYNONYMS = {
             'opensans': 'Open Sans', 'open-sans': 'Open Sans', 'open sans': 'Open Sans',
             'inter': 'Open Sans', 'arial': 'Open Sans', 'helvetica': 'Open Sans',
@@ -66103,7 +66101,6 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             'times': 'Times', 'times new roman': 'Times', 'timesnewroman': 'Times', 'times-new-roman': 'Times', 'tinos': 'Times',
             'ibm plex sans': 'IBM Plex Sans', 'ibmplexsans': 'IBM Plex Sans', 'ibm-plex-sans': 'IBM Plex Sans',
             'ibm plex mono': 'IBM Plex Mono', 'ibmplexmono': 'IBM Plex Mono', 'ibm-plex-mono': 'IBM Plex Mono',
-            'jetbrains mono': 'JetBrains Mono', 'jetbrainsmono': 'JetBrains Mono', 'jetbrains-mono': 'JetBrains Mono',
             'fira code': 'Fira Code', 'firacode': 'Fira Code', 'fira-code': 'Fira Code',
             'space mono': 'Space Mono', 'spacemono': 'Space Mono', 'space-mono': 'Space Mono',
             'noto sans jp': 'Noto Sans JP', 'notosansjp': 'Noto Sans JP', 'noto-sans-jp': 'Noto Sans JP', 'noto': 'Noto Sans JP'
@@ -67387,7 +67384,6 @@ CORPS / LECTURE :
 
 MONOSPACE / CODE :
   "IBM Plex Mono" — mono classique (code, données, numéros)
-  "JetBrains Mono" — mono moderne avec ligatures (code, tech)
   "Fira Code" — mono avec ligatures (code)
   "Space Mono" — mono futuriste (design expérimental)
 
@@ -67911,7 +67907,7 @@ RÈGLES DE CONTENU
   - Corporate : #003566, #001D3D, #FFC300, #FFD60A, #000814
 • POLICES TITRES : "Bebas Neue" (impact), "Playfair Display" (élégant), "Montserrat" (moderne), "Poppins" (friendly)
 • POLICES CORPS : "Open Sans" (neutre), "Lato" (chaleureux), "Open Sans" (humaniste), "IBM Plex Sans" (technique), "Times" (sérif classique)
-• POLICES MONO : "IBM Plex Mono", "JetBrains Mono", "Space Mono" (pour données, numéros, code)
+• POLICES MONO : "IBM Plex Mono", "Space Mono" (pour données, numéros, code)
 • IMAGES : utilise des rectangles gris (#E2E8F0 ou #CBD5E1) comme placeholders, pas d'URL externes. Ajoute TOUJOURS une légende sous les placeholders.
   🆕 Si l'utilisateur a fourni des images (voir section IMAGES FOURNIES ci-dessous), tu DOIS les intégrer dans la maquette avec le type "userImage" et l'index correspondant (0, 1, 2...).
 
@@ -73696,7 +73692,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     /* ⚠️ 2026-10-01 — LES TROIS POLICES 2026 (auto-hébergées dans CSS/fonts.css, 4 graisses
        chacune) : Newsreader (serif contemporaine, monde du livre), Space Grotesk et
        Bricolage Grotesque (créatives, communication et design). */
-    const base = ['Open Sans','Poppins','Playfair Display','Bebas Neue','Newsreader','Space Grotesk','Bricolage Grotesque','IBM Plex Mono','JetBrains Mono','Fira Code','Space Mono'];
+    const base = ['Open Sans','Poppins','Playfair Display','Bebas Neue','Newsreader','Space Grotesk','Bricolage Grotesque','IBM Plex Mono','Fira Code','Space Mono'];
     const customs = (customFonts || []).map(f => f.name);
     // De-duplicate while preserving order (base first, then customs)
     const seen = new Set();
@@ -77201,7 +77197,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         { type: 'text', text: '© Auteur', top: 16, fontSize: 9, fontFamily: 'IBM Plex Mono', fill: '#999', width: 200 }
     ]},
     { name: 'Bloc code', objects: [
-        { type: 'text', text: 'const hello = "world";', fontSize: 12, fontFamily: 'JetBrains Mono', fill: '#0b7285', width: 300 }
+        { type: 'text', text: 'const hello = "world";', fontSize: 12, fontFamily: 'IBM Plex Mono', fill: '#0b7285', width: 300 }
     ], build: (canvas, x, y) => {
         const bg = new fabric.Rect({
             left: x, top: y, width: 320, height: 36,
@@ -77209,7 +77205,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         });
         const t = new fabric.Textbox('const hello = "world";', {
             left: x + 10, top: y + 8, width: 300, fontSize: 12,
-            fontFamily: 'JetBrains Mono', fill: '#0b7285',
+            fontFamily: 'IBM Plex Mono', fill: '#0b7285',
             splitByGrapheme: false
         });
         addAssetObjects(canvas, [bg, t], 'Bloc code ajouté');
@@ -79052,7 +79048,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             { n: 'Startup · Poppins + IBM Plex Sans', d: 'Poppins', c: 'IBM Plex Sans', s: 38, t: 'Lancement', a: 'Ce que fait le produit, en une phrase', e: 'PITCH DECK', b: 'Le titre rond de Poppins pour l’énergie, IBM Plex Sans pour les tableaux et les chiffres du dossier.' },
             { n: 'Données · IBM Plex Sans + IBM Plex Mono', d: 'IBM Plex Sans', c: 'IBM Plex Mono', s: 34, t: 'Rapport annuel', a: 'Les chiffres d’abord', e: 'EXERCICE 2027', b: 'Les libellés en sans, les montants et les pourcentages en monospace : les colonnes tombent juste.' },
             { n: 'Contraste · Playfair Display + Poppins', d: 'Playfair Display', c: 'Poppins', s: 42, t: 'Élégance moderne', a: 'Le serif rencontre le géométrique', e: 'COLLECTION', b: 'Un serif classique pour le titre, un géométrique pour le texte : la combinaison contemporaine la plus sûre.' },
-            { n: 'Code · JetBrains Mono + Roboto', d: 'JetBrains Mono', c: 'Roboto', s: 28, t: 'Interface', a: 'Extraits, commandes, captures', e: 'MANUEL DÉVELOPPEUR', b: 'Le monospace pour les extraits de code, Roboto pour les explications et les légendes d’écran.' },
+            { n: 'Code · IBM Plex Mono + Roboto', d: 'IBM Plex Mono', c: 'Roboto', s: 28, t: 'Interface', a: 'Extraits, commandes, captures', e: 'MANUEL DÉVELOPPEUR', b: 'Le monospace pour les extraits de code, Roboto pour les explications et les légendes d’écran.' },
             { n: 'Gastronomie · Playfair Display + Montserrat', d: 'Playfair Display', c: 'Montserrat', s: 40, t: 'À table', a: 'La carte du mois', e: 'MENU · HIVER', b: 'Les intitulés de plats en italique, les prix en Montserrat alignés à droite : une carte lisible à la bougie.' }
         ];
         var i;
@@ -79095,7 +79091,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         'Startup · Poppins + IBM Plex Sans': { bg: '#ffffff', ink: '#101418', body: '#484f58', accent: '#7c3aed' },
         'Données · IBM Plex Sans + IBM Plex Mono': { bg: '#ffffff', ink: '#101418', body: '#454b52', accent: '#0b5c4a' },
         'Contraste · Playfair Display + Poppins': { bg: '#f6f1ea', ink: '#171310', body: '#453f38', accent: '#b3122c' },
-        'Code · JetBrains Mono + Roboto': { bg: '#0f172a', ink: '#e6edf3', body: 'rgba(230,237,243,0.8)', accent: '#38bdf8' },
+        'Code · IBM Plex Mono + Roboto': { bg: '#0f172a', ink: '#e6edf3', body: 'rgba(230,237,243,0.8)', accent: '#38bdf8' },
         'Gastronomie · Playfair Display + Montserrat': { bg: '#fffdf8', ink: '#1d1a15', body: '#4a443c', accent: '#b23a25' }
     };
     var _spTypoApercus = [];
@@ -94941,7 +94937,7 @@ function _spIsKnownFontFamily(family) {
     try {
         const integrated = [
             'Open Sans', 'Montserrat', 'Roboto', 'Lato', 'Poppins', 'Playfair Display',
-            'Bebas Neue', 'IBM Plex Mono', 'IBM Plex Sans', 'JetBrains Mono', 'Fira Code',
+            'Bebas Neue', 'IBM Plex Mono', 'IBM Plex Sans', 'Fira Code',
             'Space Mono', 'Noto Sans JP', 'Noto Sans', 'Times', 'Arial', 'Helvetica', 'Times New Roman',
             'Georgia', 'Courier New', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Impact',
             'Comic Sans MS', 'Palatino', 'Garamond', 'Bookman', 'Avant Garde', 'sans-serif',
@@ -97460,7 +97456,7 @@ function initObjectRightClickMenu() {
                 fams = Array.from(mainSel.options).map(o => o.value).filter(Boolean);
             }
             if (!fams.length && typeof getAllAvailableFontFamilies === 'function') { try { fams = getAllAvailableFontFamilies(); } catch (_) {} }
-            if (!fams.length) fams = ['Open Sans', 'Poppins', 'Playfair Display', 'Bebas Neue', 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Space Mono'];
+            if (!fams.length) fams = ['Open Sans', 'Poppins', 'Playfair Display', 'Bebas Neue', 'IBM Plex Mono', 'Fira Code', 'Space Mono'];
             const seen = new Set();
             fams = fams.filter(f => (seen.has(f) ? false : (seen.add(f), true)));
             fams.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; fontSel.appendChild(o); });

@@ -782,8 +782,8 @@ async function main() {
      version du SITE, pour écrire le journal du `.deb`. La faute ne se voyait
      pas tant que les deux numéros étaient égaux : elle n'était juste que par
      COÏNCIDENCE. Depuis que la version de bureau vit sa propre vie (1.7.618,
-     quand le web reste 1.7.617), le paquet aurait annoncé 1.7.618 dans son nom
-     et 1.7.617 dans `/usr/share/doc/<paquet>/changelog.gz`.
+     quand le web reste 1.7.619), le paquet aurait annoncé 1.7.618 dans son nom
+     et 1.7.619 dans `/usr/share/doc/<paquet>/changelog.gz`.
      La source juste est celle que ce script IMPOSE déjà partout — « la version
      doit rester dans tauri.conf.json, pas ici » (voir `verifierSurcouches`) :
      c'est la version de l'application empaquetée, donc celle du `.deb`. */

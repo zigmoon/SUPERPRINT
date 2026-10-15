@@ -26,7 +26,7 @@ these upstream licenses is superseded by it for the parts they cover.
 ## Fonts
 
 Bundled and Google Fonts–served typefaces (Open Sans, Montserrat, Roboto, Lato, Poppins,
-Playfair Display, Bebas Neue, IBM Plex Mono/Sans, JetBrains Mono, Fira Code, Space Mono,
+Playfair Display, Bebas Neue, IBM Plex Mono/Sans, Fira Code, Space Mono,
 Noto Sans JP) are distributed under the SIL Open Font License (OFL) or Apache-2.0 by their
 respective foundries, independently of SuperPrint's own license.
 

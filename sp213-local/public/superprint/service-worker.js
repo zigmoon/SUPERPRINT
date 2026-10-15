@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.617-regles-20px-decales';
+const CACHE_NAME = 'superprint-shell-v1.7.619-polices-allegees';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -61,10 +61,6 @@ const APP_SHELL = [
   './CSS/fonts/IBMPlexMono-400-italic-latin-ext.woff2',
   './CSS/fonts/IBMPlexMono-400-normal-latin.woff2',
   './CSS/fonts/IBMPlexMono-400-normal-latin-ext.woff2',
-  './CSS/fonts/JetBrainsMono-400-italic-latin.woff2',
-  './CSS/fonts/JetBrainsMono-400-italic-latin-ext.woff2',
-  './CSS/fonts/JetBrainsMono-400-normal-latin.woff2',
-  './CSS/fonts/JetBrainsMono-400-normal-latin-ext.woff2',
   './CSS/fonts/Lato-400-italic-latin.woff2',
   './CSS/fonts/Lato-400-italic-latin-ext.woff2',
   './CSS/fonts/Lato-400-normal-latin.woff2',
