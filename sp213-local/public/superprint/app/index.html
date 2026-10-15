@@ -4809,6 +4809,45 @@
                             <button class="btn btn-secondary" onclick="spOuvrirStudioIALien()" data-translate="settingsAiOuvrirStudio">Ouvrir le Studio SP213</button>
                         </div>
                     </section>
+                    <!-- Reglages de l'assistant : ils vivaient dans la BOITE DE PROMPT, ou ils
+                         n'avaient rien a faire — on y prompte, on ne s'y configure pas. Tout ce
+                         qui se REGLE est desormais ici, ce qui laisse la boite de prompt a ce
+                         qu'elle fait de mieux. -->
+
+                    <div class="ai-block-head" style="margin: 18px 0 10px;">
+                        <h3 data-translate="settingsAiReglages">Reglages de l'assistant</h3>
+                    </div>
+
+                    <label class="ai-switch" for="aiFooterBarToggle">
+                        <input type="checkbox" id="aiFooterBarToggle" onchange="aiToggleFooterBar(this.checked)">
+                        <span class="ai-switch-track" aria-hidden="true"></span>
+                        <span class="ai-switch-txt">
+                            <strong data-translate="aiFooterBarToggle">Barre de prompt IA en pied de page</strong>
+                            <em data-translate="aiFooterBarHelp">Un champ de saisie apparaît sous la page : vous relancez l’IA sans rouvrir cette fenêtre.</em>
+                        </span>
+                    </label>
+
+                    <!-- Moteur de generation : c'est un REGLAGE, donc il vit ici et non
+                         dans la boite de prompt. Replie par defaut, comme le Journal. -->
+                    <details class="ai-acc">
+                        <summary>
+                            <span class="ai-acc-title" data-translate="aiSectionEngine">Moteur de génération</span>
+                            <span class="ai-acc-badge">SP213</span>
+                        </summary>
+                        <div class="ai-acc-body">
+                            <div class="sp213-box" style="margin-bottom:0;">
+                                <input type="checkbox" id="aiSp213Toggle" onchange="aiToggleSp213(this.checked)">
+                                <div class="sp213-box-body">
+                                    <label for="aiSp213Toggle" data-translate="aiSp213Toggle">SP213 — Modèle layout &amp; canevas</label>
+                                    <div data-translate="aiSp213Desc">Moteur dédié aux grilles, à la structure des pages et aux canevas SuperPrint. Recommandé pour les mises en page complexes.</div>
+                                    <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                                        <button type="button" class="btn" onclick="openSp213Studio()" data-translate="aiSp213OpenStudio">Ouvrir le studio SP213</button>
+                                        <button type="button" class="btn" onclick="openCurrentInStudio()" data-translate="aiSp213OpenCurrent">Maquette actuelle → studio</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
                 </div>
                 <!-- Tab 3: Shortcuts -->
                 <div id="shortcutsTabContent" class="settings-tab-content" style="display: none;">
@@ -4996,7 +5035,7 @@
                     avec une grille propre, votre palette et vos textes.
                 </p>
 
-                <!-- ═══════════ 2. LA MAQUETTE ═══════════ -->
+                <!-- ═══════════ 1. LA MAQUETTE ═══════════ -->
                 <section class="ai-block">
                     <div class="ai-block-head">
                         <span class="ai-step">1</span>
@@ -5032,17 +5071,9 @@
                         <button class="btn btn-primary ai-create" onclick="aiCustomPrompt()" data-translate="aiBtnCreate">Créer la maquette</button>
                     </div>
 
-                    <label class="ai-switch" for="aiFooterBarToggle">
-                        <input type="checkbox" id="aiFooterBarToggle" onchange="aiToggleFooterBar(this.checked)">
-                        <span class="ai-switch-track" aria-hidden="true"></span>
-                        <span class="ai-switch-txt">
-                            <strong data-translate="aiFooterBarToggle">Barre de prompt IA en pied de page</strong>
-                            <em data-translate="aiFooterBarHelp">Un champ de saisie apparaît sous la page : vous relancez l’IA sans rouvrir cette fenêtre.</em>
-                        </span>
-                    </label>
                 </section>
 
-                <!-- ═══════════ 3. EXEMPLES (ONGLETS) ═══════════ -->
+                <!-- ═══════════ 2. EXEMPLES (ONGLETS) ═══════════ -->
                 <section class="ai-block" id="aiExamplesBlock">
                     <div class="ai-block-head">
                         <span class="ai-step">2</span>
@@ -5053,26 +5084,6 @@
                     <div class="ai-panels" id="aiExamplePanels"></div>
                 </section>
 
-                <!-- ═══════════ 4. RÉGLAGES AVANCÉS (repliés) ═══════════ -->
-                <details class="ai-acc">
-                    <summary>
-                        <span class="ai-acc-title" data-translate="aiSectionEngine">Moteur de génération</span>
-                        <span class="ai-acc-badge">SP213</span>
-                    </summary>
-                    <div class="ai-acc-body">
-                        <div class="sp213-box" style="margin-bottom:0;">
-                            <input type="checkbox" id="aiSp213Toggle" onchange="aiToggleSp213(this.checked)">
-                            <div class="sp213-box-body">
-                                <label for="aiSp213Toggle" data-translate="aiSp213Toggle">SP213 — Modèle layout &amp; canevas</label>
-                                <div data-translate="aiSp213Desc">Moteur dédié aux grilles, à la structure des pages et aux canevas SuperPrint. Recommandé pour les mises en page complexes.</div>
-                                <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
-                                    <button type="button" class="btn" onclick="openSp213Studio()" data-translate="aiSp213OpenStudio">Ouvrir le studio SP213</button>
-                                    <button type="button" class="btn" onclick="openCurrentInStudio()" data-translate="aiSp213OpenCurrent">Maquette actuelle → studio</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </details>
 
 </div>
         </div>

@@ -69664,6 +69664,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
            Préférences, plus celles de la bannière de la boîte de prompt. */
         settingsAiOk: "Une clé est enregistrée.",
         settingsAiAucune: "Aucune clé enregistrée.",
+        settingsAiReglages: "Réglages de l'assistant",
         settingsAiOuvrirPanneau: "Ouvrir l'assistant IA",
         settingsAiOuvrirStudio: "Ouvrir le Studio SP213",
         aiSetupTitle: "L'assistant IA n'est pas encore configuré",
@@ -70628,6 +70629,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiAssistantTitle: "AI assistant — compose a layout",
         settingsAiOk: "A key is saved.",
         settingsAiAucune: "No key saved.",
+        settingsAiReglages: "Assistant settings",
         settingsAiOuvrirPanneau: "Open the AI assistant",
         settingsAiOuvrirStudio: "Open the SP213 Studio",
         aiSetupTitle: "The AI assistant is not configured yet",
@@ -71591,6 +71593,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiAssistantTitle: "AIアシスタント — レイアウトを作成",
         settingsAiOk: "キーが保存されています。",
         settingsAiAucune: "キーが保存されていません。",
+        settingsAiReglages: "アシスタントの設定",
         settingsAiOuvrirPanneau: "AIアシスタントを開く",
         settingsAiOuvrirStudio: "SP213スタジオを開く",
         aiSetupTitle: "AIアシスタントはまだ設定されていません",
