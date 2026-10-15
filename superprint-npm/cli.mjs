@@ -25,35 +25,36 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
 //    version is invalid or older than the online version ».
 //    La version du paquet npm, elle, vit dans package.json.
-// 📌 Dernier plancher avancé : 1.7.617 — mais ce plancher N'EST PAS ENCORE PUBLIÉ.
-//    ⚠️ VÉRIFIÉ LE 15/10/2026, ET LA VÉRIFICATION PRÉCÉDENTE ÉTAIT FAUSSE. Elle
-//    affirmait « zip 1.7.617 en ligne (56 459 564 octets, sha256 EAB82EEA…8B951) ».
-//    La taille et l'empreinte étaient exactes… pour le zip de la version
-//    PRÉCÉDENTE : le fichier déployé avait été retéléchargé et HACHÉ, jamais
-//    OUVERT. Or il contient `public/superprint/version.txt` = 1.7.614, et son
-//    module 3D porte encore l'empreinte `?v=20261014-v616-orbite-bornee`.
-//    LEÇON : on ne conclut pas une version sur une empreinte — on lit la version
-//    DANS le fichier.
-//    ÉTAT MESURÉ le 15/10/2026 :
-//      · superprint.cc/version.txt         = 1.7.614
-//      · app.zigmoon.com/sp213-local.zip   = 1.7.614 (version.txt lu dans l'archive)
-//      · npm `superprint@1.0.112`, qui était en ligne, avait MIN_APP_VERSION = 1.7.614
-//        — c'est CETTE publication (1.0.113) qui l'avance à 1.7.617.
-//    → le parcours `npx superprint` est COHÉRENT aujourd'hui : il sert 1.7.614.
-//    ⚠️ ORDRE OBLIGATOIRE AVANT DE PUBLIER CETTE VERSION : téléverser le zip sur
-//    app.zigmoon.com ET `version.txt` sur superprint.cc **d'abord**. Sinon
-//    `onlineVersion` = max(1.7.614, 1.7.617) = 1.7.617, le zip servi est 1.7.614,
-//    et l'étape 3/4 échoue sur « Downloaded application version is invalid or
-//    older than the online version » — pour TOUTE nouvelle installation.
-//    ⚠️ Pourquoi ce bump était nécessaire : à version ÉGALE, l'étape 1/4 ne rejoue
-//    rien (voir plus bas) — rester en 1.7.614 n'aurait servi qu'aux nouvelles
-//    installations, les autres gardant l'ancienne application sans que rien ne le
-//    signale. Or 1.7.615→617 apportent l'outil Tableau, des règles au bord de
-//    l'aperçu, un calque 3D qui ne délave plus la typo, et le sous-menu Papier
-//    ramené à une ligne. Le cache est bumpé avec la version (empreinte
-//    `JS/main.js?v=…` et `superprint-shell-v1.7.617-…`), sans quoi un navigateur
-//    déjà venu aurait continué de servir l'ancien `main.js`.
-const MIN_APP_VERSION = '1.7.617';
+// 📌 Dernier plancher avancé : 1.7.620.
+//    ⚠️ RÈGLE APPRISE À LA DURE, ET QUI A DÉJÀ SERVI : on ne conclut pas une
+//    version sur une empreinte. Le 15/10/2026, « zip 1.7.617 en ligne (56 459 564
+//    octets, sha256 EAB82EEA…8B951) » était exact — pour le zip de la version
+//    PRÉCÉDENTE. Le fichier déployé avait été retéléchargé et HACHÉ, jamais OUVERT.
+//    LEÇON : on lit la version DANS l'archive.
+//    ÉTAT MESURÉ le 15/10/2026, après dépôt :
+//      · app.zigmoon.com/sp213-local.zip = 1.7.620 — déduit du `version.txt`, du
+//        badge et du `CACHE_NAME` lus DANS l'archive, pas d'une empreinte
+//        (sha256 D4204F68…D16891, 55 807 980 octets, identique octet pour octet
+//        à la copie locale ; les quatre documents de licence y sont).
+//      · superprint.cc/version.txt = 1.7.619 — RESTÉ EN ARRIÈRE. Ce fichier se
+//        téléverse à la main. Il ne bloque rien : `onlineVersion` prend le PLUS
+//        GRAND des deux, donc ce plancher le corrige et c'est désormais 1.7.620
+//        qui s'affiche à l'étape 1/4.
+//      · npm `superprint@1.0.112`, encore en ligne, a MIN_APP_VERSION = 1.7.614.
+//    → l'étape 3/4 compare la version EXTRAITE du zip (`package.json` = 1.7.620) à
+//      `onlineVersion` = max(1.7.619, 1.7.620) = 1.7.620 : ÉGALE, donc pas plus
+//      ancienne, donc l'installation passe. Avancer le plancher est SÛR ici.
+//    ⚠️ ORDRE À RESPECTER LA PROCHAINE FOIS : téléverser le zip sur app.zigmoon.com
+//    ET `version.txt` sur superprint.cc **d'abord**.
+//    ⚠️ Pourquoi ce bump : à version ÉGALE, l'étape 1/4 ne rejoue rien (voir plus
+//    bas) — rester en arrière n'aurait servi qu'aux nouvelles installations, les
+//    autres gardant l'ancienne application sans que rien ne le signale. Or
+//    1.7.618→620 apportent la désinstallation depuis l'application, les licences
+//    dans le .rpm et le .dmg, le nettoyage Linux au retrait du paquet, et un zip
+//    qui ne perd plus ses documents de licence. Le cache est bumpé avec la version
+//    (empreinte `JS/main.js?v=…` et `superprint-shell-v1.7.620-…`), sans quoi un
+//    navigateur déjà venu aurait continué de servir l'ancien `main.js`.
+const MIN_APP_VERSION = '1.7.620';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');
