@@ -467,6 +467,17 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-soft);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* 🆕 LA VERSION, SOUS LE NOM DE CHAQUE APPLICATION.
+   L'utilisateur voulait « le numéro de version en cours sur chaque soft ». Il est
+   EMPILÉ sous le nom, et ce n'est pas un détail de goût : posée à côté, la version
+   élargit chaque colonne de 46 px — le panneau réclamait 1009 px là où il en
+   dispose de 940, soit 55 px de débordement. Empilée, elle ne coûte AUCUNE
+   largeur : les colonnes mesurées en « min-content » font 222 / 310 / 304 px,
+   contre 884 px de contenu disponible. Rien à élargir, rien à déplacer.
+   Le pied de la boîte garde son unique entrée, « Ouvrir en ligne » : c'est là que
+   l'utilisateur ne voulait PAS de version. */
+.nav-dd-app-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.nav-dd-app-ver { font-family: var(--f-mono); font-size: 9px; letter-spacing: .06em; color: var(--muted); }
 /* 🆕 v1.7.627 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
@@ -479,6 +490,13 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 }
 .nav-dd-app-fmt a {
   display: inline-block; padding: 1px 6px;
+  /* ⚠️ LA TAILLE AUSSI EST HÉRITÉE, ET ELLE L'ÉTAIT MAL. « .nav-links a » impose
+     11 px et 600 à tout lien de la barre, et cette règle-là vise le <a> lui-même,
+     donc elle bat le conteneur « .nav-dd-app-fmt » qui porte 9,5 px : les gélules
+     se dessinaient à 11 px. Mesuré, avant/après : 46,8 × 18,7 px -> 42,2 × 16,6 px.
+     Le poids était déjà remis à zéro deux lignes plus bas ; la taille avait été
+     oubliée. C'est la seule ligne qui manquait. */
+  font-size: 9.5px;
   border: 1px solid var(--line-strong); border-radius: 999px;
   color: var(--muted); text-decoration: none; line-height: 1.4;
   /* Le poids est herite de « .nav-links a » (600) : sans cette remise a zero,
@@ -2357,15 +2375,15 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
               <span class="nav-dd-os">PC — Windows</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-nom">SuperPrint</span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.627</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-nom">Studio IA</span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.627</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-nom">SuperTyPo</span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.627</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
               </span>
@@ -2378,15 +2396,15 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
               <span class="nav-dd-os">MAC — macOS</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-nom">SuperPrint</span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.627</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-nom">Studio IA</span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.627</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-nom">SuperTyPo</span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.627</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
               </span>
@@ -2399,15 +2417,15 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
               <span class="nav-dd-os">LINUX</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-nom">SuperPrint</span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.627</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-nom">Studio IA</span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.627</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-nom">SuperTyPo</span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.627</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
               </span>

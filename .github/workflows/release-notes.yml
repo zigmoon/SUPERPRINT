@@ -1,0 +1,81 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  PAGE DE VERSION GITHUB — le texte de « desktop-latest », sans reconstruire.
+#
+#  POURQUOI CE WORKFLOW EXISTE. Le texte de la page de telechargement vit dans
+#  `.github/release-notes-desktop-latest.md` (anglais, puis francais). Or
+#  `build-desktop.yml` compile et publie VINGT ET UN binaires : le declencher pour
+#  corriger une phrase coute dix minutes de construction pour trois lignes de
+#  texte. Ici, la meme edition se fait en quelques secondes, sur un seul job.
+#
+#  ⚠️ CE QU'IL REPARE, MESURE LE 15 OCTOBRE 2026. La page
+#  https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest portait
+#  encore le texte ecrit a sa CREATION, le 13 octobre : une phrase francaise sans
+#  lien, sans version, sans adresse de contact. La cause n'etait pas l'oubli mais
+#  l'ordre des commandes — `gh release view ... || gh release create ...` ne pose
+#  le texte qu'une fois, jamais plus. L'edition est desormais inconditionnelle
+#  dans les deux workflows, et ce fichier est la seule source du texte.
+#
+#  DEUX ENTREES : le bouton « Run workflow » d'Actions, et toute modification du
+#  fichier de texte poussee sur main — corriger une phrase suffit donc a la
+#  publier, sans rien d'autre a faire.
+# ══════════════════════════════════════════════════════════════════════════════
+name: Page de version GitHub
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/release-notes-desktop-latest.md'
+
+permissions:
+  contents: write
+
+jobs:
+  rafraichir:
+    name: Rafraichir la page « desktop-latest »
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Mettre a jour le titre et le texte
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+
+          # La version vient du fichier qui fait foi cote web — le meme que celui
+          # que le plan de bump ecrit. Aucune copie a tenir a jour ici.
+          version="$(tr -d ' \r\n' < superprint/version.txt)"
+          case "$version" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::version illisible dans superprint/version.txt : « $version »"; exit 1 ;;
+          esac
+          echo "version lue : $version"
+
+          sed "s/@VERSION@/$version/g" .github/release-notes-desktop-latest.md > /tmp/notes.md
+          if grep -q '@VERSION@' /tmp/notes.md; then
+            echo "::error::un @VERSION@ subsiste dans le texte (le remplacement a echoue)"
+            exit 1
+          fi
+          # Controle de longueur seulement : le rendu Markdown est celui de GitHub.
+          echo "texte : $(wc -c < /tmp/notes.md) octets"
+
+          # La release peut ne pas exister (depot neuf) : on la cree, on ne la
+          # remplit pas — le titre et le texte sont poses juste apres, dans tous
+          # les cas.
+          gh release view desktop-latest >/dev/null 2>&1 || \
+            gh release create desktop-latest --latest=false
+
+          gh release edit desktop-latest \
+            --title "SuperPrint $version — desktop applications / applications de bureau" \
+            --notes-file /tmp/notes.md
+
+          # Le badge « Latest » doit rester sur desktop-latest : c'est elle que le
+          # site presente, et `releases/latest/download/...` en depend. On le
+          # reaffirme ici plutot que de le supposer.
+          gh release edit desktop-latest --latest
+
+          gh release view desktop-latest --json name,url,isLatest \
+            --jq '"  page : " + .name + "  " + .url + "  (Latest: " + (.isLatest|tostring) + ")"'

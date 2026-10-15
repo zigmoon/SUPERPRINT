@@ -317,11 +317,33 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
+          version="$(tr -d ' \r\n' < superprint/version.txt)"
+
+          # ── LE TEXTE DE LA PAGE VIT DANS UN FICHIER, PAS DANS CE YAML ────────
+          # `.github/release-notes-desktop-latest.md` est la SEULE source du titre
+          # et du texte : bilingue (anglais puis francais), avec la version, les
+          # liens du site et l'adresse de contact. Le workflow « Page de version
+          # GitHub » relit le meme fichier pour rafraichir la page sans rien
+          # reconstruire — deux copies divergeraient, donc il n'y en a qu'une.
+          sed "s/@VERSION@/$version/g" .github/release-notes-desktop-latest.md > notes-desktop-latest.md
+          if grep -q '@VERSION@' notes-desktop-latest.md; then
+            echo "::error::un @VERSION@ subsiste dans le texte de la page"
+            exit 1
+          fi
+
           gh release view desktop-latest >/dev/null 2>&1 || \
-            gh release create desktop-latest \
-              --title "SuperPrint — applications de bureau" \
-              --notes "Les trois applications de bureau, pour Windows, macOS et Linux : SuperPrint (editeur de PAO), Studio IA (mise en page assistee par IA) et SuperTyPo (decomposition de caracteres). Les noms de fichiers sont fixes : les liens de telechargement du site pointent toujours sur la version la plus recente." \
-              --latest=false
+            gh release create desktop-latest --latest=false
+
+          # ⚠️ L'ÉDITION EST INCONDITIONNELLE, ET C'EST LA CORRECTION DU JOUR.
+          # `gh release view ... || gh release create ... --notes ...` ne pose le
+          # texte qu'UNE fois : la page du 15 octobre portait donc encore le texte
+          # écrit à sa création, le 13 — une phrase française, sans version, sans
+          # lien, sans contact. Un texte de page est une donnée VIVANTE : il se
+          # réécrit à chaque passage.
+          gh release edit desktop-latest \
+            --title "SuperPrint $version — desktop applications / applications de bureau" \
+            --notes-file notes-desktop-latest.md
+
           gh release upload desktop-latest livraison/* --clobber
 
       # ── ARCHIVE VERSIONNÉE ──────────────────────────────────────────────────
@@ -375,10 +397,20 @@ jobs:
           ( cd livraison && sha256sum * > ../SHA256SUMS )
           cat SHA256SUMS
 
+          # ⚠️ Le texte de l'archive vit dans un fichier, LUI AUSSI. Écrit dans ce
+          # YAML, il contenait des « deux-points espace » sur une ligne de
+          # continuation — et l'analyseur YAML refuse ça (« mapping values are not
+          # allowed here »), ce qui aurait rendu le workflow entier illisible.
+          sed "s/@VERSION@/$version/g" .github/release-notes-archive.md > notes-archive.md
+          if grep -q '@VERSION@' notes-archive.md; then
+            echo "::error::un @VERSION@ subsiste dans le texte de l'archive"
+            exit 1
+          fi
+
           gh release view "$tag" >/dev/null 2>&1 || \
             gh release create "$tag" \
-              --title "SuperPrint $version — applications de bureau" \
-              --notes "Archive figee de la version $version. Les memes 21 fichiers que desktop-latest, mais qui ne seront plus jamais remplaces : c'est ici qu'on garde cette version. Le fichier SHA256SUMS donne l'empreinte de chacun. Notes de version detaillees : release.html." \
+              --title "SuperPrint $version — desktop applications / applications de bureau" \
+              --notes-file notes-archive.md \
               --latest=false
           gh release upload "$tag" livraison/* SHA256SUMS --clobber
           echo "archive $tag publiee"
