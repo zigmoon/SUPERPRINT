@@ -74,8 +74,17 @@ jobs:
 
           # Le badge « Latest » doit rester sur desktop-latest : c'est elle que le
           # site presente, et `releases/latest/download/...` en depend. On le
-          # reaffirme ici plutot que de le supposer.
+          # reaffirme, puis on le VERIFIE — `gh release view` n'expose pas
+          # `isLatest` (erreur mesuree le 15 octobre : « Unknown JSON field », qui
+          # a fait echouer ce job alors que la page, elle, etait bien mise a jour),
+          # donc on interroge l'API qui, elle, repond la question.
           gh release edit desktop-latest --latest
+          latest="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name)"
+          if [ "$latest" != "desktop-latest" ]; then
+            echo "::error::le badge Latest est sur « $latest » et non sur desktop-latest"
+            exit 1
+          fi
 
-          gh release view desktop-latest --json name,url,isLatest \
-            --jq '"  page : " + .name + "  " + .url + "  (Latest: " + (.isLatest|tostring) + ")"'
+          gh release view desktop-latest --json name,url,updatedAt \
+            --jq '"  page : " + .name + "  " + .url + "  (mise a jour : " + .updatedAt + ")"'
+          echo "  badge Latest : $latest"
