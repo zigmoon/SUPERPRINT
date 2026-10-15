@@ -13,6 +13,10 @@ Three applications, **three systems, one version number**:
 **Free · no account · fully offline once installed.** The desktop builds are in **beta**:
 complete and usable, still young.
 
+**Sizes** — around **32 MB** per installer for SuperPrint and Studio IA, **2 MB** for SuperTyPo.
+The Linux `.AppImage` is larger (**107 MB**, **77 MB** for SuperTyPo): it carries its own runtime
+so that it runs everywhere without installing anything.
+
 ## ⚠️ The file names never change
 
 This is the **living** release: its files are **replaced at every build**. That is exactly
@@ -88,6 +92,10 @@ Trois applications, **trois systèmes, un seul numéro de version** :
 
 **Gratuit · sans compte · entièrement hors ligne une fois installé.** Les versions de bureau
 sont en **beta** : complètes et utilisables, mais encore jeunes.
+
+**Tailles** — environ **32 Mo** par installeur pour SuperPrint et Studio IA, **2 Mo** pour
+SuperTyPo. L'`.AppImage` Linux est plus gros (**107 Mo**, **77 Mo** pour SuperTyPo) : il
+embarque son propre moteur d'exécution, ce qui lui permet de tourner partout sans rien installer.
 
 ## ⚠️ Les noms de fichiers ne changent jamais
 
