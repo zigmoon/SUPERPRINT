@@ -37,7 +37,8 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    ÉTAT MESURÉ le 15/10/2026 :
 //      · superprint.cc/version.txt         = 1.7.614
 //      · app.zigmoon.com/sp213-local.zip   = 1.7.614 (version.txt lu dans l'archive)
-//      · npm `superprint@1.0.112` (publié) a MIN_APP_VERSION = 1.7.614
+//      · npm `superprint@1.0.112`, qui était en ligne, avait MIN_APP_VERSION = 1.7.614
+//        — c'est CETTE publication (1.0.113) qui l'avance à 1.7.617.
 //    → le parcours `npx superprint` est COHÉRENT aujourd'hui : il sert 1.7.614.
 //    ⚠️ ORDRE OBLIGATOIRE AVANT DE PUBLIER CETTE VERSION : téléverser le zip sur
 //    app.zigmoon.com ET `version.txt` sur superprint.cc **d'abord**. Sinon
