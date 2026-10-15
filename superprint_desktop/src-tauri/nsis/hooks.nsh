@@ -76,11 +76,15 @@
     Sleep 800
   ${EndIf}
 
-  ; ── Dernier contrôle, par une MESURE et non par une supposition : un `.exe`
-  ;    en cours d'exécution ne peut pas être supprimé. On essaie donc de le
-  ;    supprimer ; si Windows refuse, un processus le tient encore.
+  ; ── Dernier contrôle, par une MESURE et non par une supposition. On ne
+  ;    SUPPRIME PAS le binaire pour voir : le supprimer le détruirait pour de
+  ;    bon, et si l'installation échouait ensuite (disque plein, processus tué),
+  ;    l'application resterait cassée. On l'OUVRE EN ÉCRITURE, ce que Windows
+  ;    refuse tant qu'un processus exécute l'image (« violation de partage ») :
+  ;    c'est le même verdict, sans rien détruire. Le fichier existe déjà (gardé
+  ;    plus haut par `IfFileExists`) : l'ouverture ne peut donc pas le créer.
   ClearErrors
-  Delete "$INSTDIR\${MAINBINARYNAME}.exe"
+  FileOpen $R9 "$INSTDIR\${MAINBINARYNAME}.exe" a
   ${If} ${Errors}
     ${If} $LANGUAGE = ${LANG_FRENCH}
       StrCpy $R8 "${PRODUCTNAME} est en cours d'execution.$\r$\n$\r$\nL'installation doit le fermer pour pouvoir remplacer ses fichiers.$\r$\nFermez ${PRODUCTNAME}, puis relancez l'installation."
@@ -93,6 +97,7 @@
     StrCpy $R5 1
     Goto sp_app_fin
   ${EndIf}
+  FileClose $R9
 
   StrCpy $R5 0
   Goto sp_app_fin
