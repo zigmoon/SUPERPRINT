@@ -25,36 +25,40 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
 //    version is invalid or older than the online version ».
 //    La version du paquet npm, elle, vit dans package.json.
-// 📌 Dernier plancher avancé : 1.7.620.
+// 📌 Dernier plancher avancé : 1.7.621.
 //    ⚠️ RÈGLE APPRISE À LA DURE, ET QUI A DÉJÀ SERVI : on ne conclut pas une
 //    version sur une empreinte. Le 15/10/2026, « zip 1.7.617 en ligne (56 459 564
 //    octets, sha256 EAB82EEA…8B951) » était exact — pour le zip de la version
 //    PRÉCÉDENTE. Le fichier déployé avait été retéléchargé et HACHÉ, jamais OUVERT.
 //    LEÇON : on lit la version DANS l'archive.
-//    ÉTAT MESURÉ le 15/10/2026, après dépôt :
-//      · app.zigmoon.com/sp213-local.zip = 1.7.620 — déduit du `version.txt`, du
-//        badge et du `CACHE_NAME` lus DANS l'archive, pas d'une empreinte
-//        (sha256 D4204F68…D16891, 55 807 980 octets, identique octet pour octet
-//        à la copie locale ; les quatre documents de licence y sont).
-//      · superprint.cc/version.txt = 1.7.619 — RESTÉ EN ARRIÈRE. Ce fichier se
-//        téléverse à la main. Il ne bloque rien : `onlineVersion` prend le PLUS
-//        GRAND des deux, donc ce plancher le corrige et c'est désormais 1.7.620
-//        qui s'affiche à l'étape 1/4.
-//      · npm `superprint@1.0.112`, encore en ligne, a MIN_APP_VERSION = 1.7.614.
-//    → l'étape 3/4 compare la version EXTRAITE du zip (`package.json` = 1.7.620) à
-//      `onlineVersion` = max(1.7.619, 1.7.620) = 1.7.620 : ÉGALE, donc pas plus
+//    ÉTAT MESURÉ le 15/10/2026, après le dépôt de 1.7.621 :
+//      · app.zigmoon.com/sp213-local.zip = 1.7.621 — lu DANS l'archive (831
+//        entrées, marqueur final atteint) : `version.txt` ET le `package.json`
+//        interne annoncent 1.7.621, et le `CACHE_NAME` du service worker est
+//        `superprint-shell-v1.7.621-tableau-cellules-et-exporteurs`. La copie en
+//        ligne est identique octet pour octet à la copie locale (sha256
+//        FC86AE1E…4EFE3DB, 55 820 797 octets) : les cellules de tableau
+//        indépendantes, les exporteurs HTML et EPUB et le seuil `MINI = 6` sont
+//        donc bien dans ce qui est servi.
+//      · superprint.cc/version.txt = 1.7.621 — À JOUR cette fois (c'est ce fichier
+//        qui était resté à 1.7.619 au passage précédent).
+//      · Index_app/release.html déployé = identique caractère pour caractère à la
+//        copie locale, une fois les fins de ligne ramenées de CRLF à LF (10 460
+//        octets d'écart, et c'est tout) : le billet 1.7.621 y est bien.
+//      · npm `superprint@1.0.112`, encore en ligne, a MIN_APP_VERSION = 1.7.620.
+//        La version locale du paquet est 1.0.113, jamais publiée.
+//    → l'étape 3/4 compare la version EXTRAITE du zip (`package.json` = 1.7.621) à
+//      `onlineVersion` = max(1.7.621, 1.7.621) = 1.7.621 : ÉGALE, donc pas plus
 //      ancienne, donc l'installation passe. Avancer le plancher est SÛR ici.
-//    ⚠️ ORDRE À RESPECTER LA PROCHAINE FOIS : téléverser le zip sur app.zigmoon.com
-//    ET `version.txt` sur superprint.cc **d'abord**.
 //    ⚠️ Pourquoi ce bump : à version ÉGALE, l'étape 1/4 ne rejoue rien (voir plus
 //    bas) — rester en arrière n'aurait servi qu'aux nouvelles installations, les
-//    autres gardant l'ancienne application sans que rien ne le signale. Or
-//    1.7.618→620 apportent la désinstallation depuis l'application, les licences
-//    dans le .rpm et le .dmg, le nettoyage Linux au retrait du paquet, et un zip
-//    qui ne perd plus ses documents de licence. Le cache est bumpé avec la version
-//    (empreinte `JS/main.js?v=…` et `superprint-shell-v1.7.620-…`), sans quoi un
-//    navigateur déjà venu aurait continué de servir l'ancien `main.js`.
-const MIN_APP_VERSION = '1.7.620';
+//    autres gardant l'ancienne application sans que rien ne le signale. Or 1.7.621
+//    rend chaque cellule de tableau indépendante, agrandit d'un seul facteur,
+//    exporte en HTML et en EPUB, corrige un glissement court qui échouait en
+//    SILENCE, et fait entrer le désinstalleur macOS dans l'image disque. Le cache
+//    est bumpé avec la version, sans quoi un navigateur déjà venu aurait continué
+//    de servir l'ancien `main.js`.
+const MIN_APP_VERSION = '1.7.621';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');
