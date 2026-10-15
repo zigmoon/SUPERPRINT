@@ -1,4 +1,4 @@
-﻿* {
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -2147,8 +2147,13 @@ textarea[data-fabric-hiddentextarea] {
     background: transparent !important;
     border: 0 !important;
 }
-.ruler-horizontal { position: absolute; top: -20px; left: 0; height: 20px; background: #f0f0f0; border-bottom: 1px solid #ccc; cursor: crosshair; z-index: 100; }
-.ruler-vertical { position: absolute; left: -20px; top: 0; width: 20px; background: #f0f0f0; border-right: 1px solid #ccc; cursor: crosshair; z-index: 100; }
+/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.622). Elles étaient en #f0f0f0, à peine
+   plus clair que le plan de travail (#e8e8e8) : elles s'y fondaient, et on ne
+   voyait plus où commençait la graduation. #fafafa est nettement plus clair,
+   reste distinct du blanc de la page, et garde les graduations (#333/#666)
+   parfaitement lisibles. */
+.ruler-horizontal { position: absolute; top: -20px; left: 0; height: 20px; background: #fafafa; border-bottom: 1px solid #ccc; cursor: crosshair; z-index: 100; }
+.ruler-vertical { position: absolute; left: -20px; top: 0; width: 20px; background: #fafafa; border-right: 1px solid #ccc; cursor: crosshair; z-index: 100; }
 .guide-line { position: absolute; background: #ff00ff; pointer-events: auto; z-index: 99; }
 .guide-line.horizontal { height: 1px; width: 100%; left: 0; cursor: ns-resize; }
 .guide-line.vertical { width: 1px; height: 100%; top: 0; cursor: ew-resize; }

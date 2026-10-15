@@ -51014,7 +51014,7 @@ https://superprint.app
 
             const coin = document.createElement('div');
             coin.style.cssText = 'position:absolute;top:0;left:0;width:' + SP_REGLE_TAILLE + 'px;height:' +
-                SP_REGLE_TAILLE + 'px;background:#f0f0f0;border-right:1px solid #ccc;' +
+                SP_REGLE_TAILLE + 'px;background:#fafafa;border-right:1px solid #ccc;' +
                 'border-bottom:1px solid #ccc;pointer-events:auto;';
 
             conteneur.appendChild(coin);
