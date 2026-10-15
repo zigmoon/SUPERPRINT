@@ -88,6 +88,9 @@ import * as THREE from './three.module.min.js';
     var overlay = null, canvasEl = null, renderer = null, scene = null, camera = null;
     var rafId = 0, clock = null;
     var texes = [], paperTex = null, floorTex = null, bgTex = null, bgImageTex = null;
+    /* _SP3D_CALQUE_616 — la couche « ENCRE SEULE » des pages en calque, une entrée
+       par page (null quand la page n'est pas un calque). Voir `appliquerPapierAuFeuillet`. */
+    var texesEncre = [];
     var pageW = 1.414, geoPlane = null;
     var bookGroup = null, leafL = null, leafR = null, flipper = null;
     var flipFrontMat = null, flipBackMat = null;
@@ -432,6 +435,43 @@ import * as THREE from './three.module.min.js';
                 }
                 return '';
             };
+            /**
+             * Ajoute UNE page (image + plan de recapture) — et, si son papier est
+             * un CALQUE, sa couche « ENCRE SEULE ».
+             *
+             * ⚠️ POURQUOI DEUX CAPTURES, ET POURQUOI SEULEMENT POUR LES CALQUES.
+             * MESURÉ : l'image de page est BLANCHE OPAQUE (255/255/255/255 aux
+             * quatre coins) — l'encre et le support y sont les MÊMES pixels. On ne
+             * peut donc pas rendre la feuille translucide sans délaver
+             * l'impression. Mais avec `backgroundColor = null` le coin de page
+             * devient rgba(0,0,0,0) alors que l'objet GARDE ses valeurs : une
+             * couche « encre seule », transparente là où rien n'est imprimé,
+             * existe donc bel et bien. Elle n'est capturée que pour les pages qui
+             * en ont besoin — une capture double coûte cher, et un document sans
+             * calque ne doit rien payer.
+             */
+            var ajouter = function (left, width) {
+                var iPage = pages.length;                  // l'index de page EST la longueur
+                var url = shot(left, width);
+                var pl = plan(left, width);
+                pages.push(url);
+                capPlan.push(pl);
+                var papier = papierDeLaPage(iPage);
+                if (papier && (papier.calque || papier.transparent)) {
+                    var fond = c.backgroundColor, encre = '';
+                    try {
+                        c.backgroundColor = null;
+                        c.renderAll();
+                        encre = shot(left, width);
+                    } catch (e2) {
+                        console.warn('[SP-3D] capture encre :', e2);
+                    } finally {
+                        try { c.backgroundColor = fond; c.renderAll(); } catch (_) {}
+                    }
+                    pl.encre = encre;
+                }
+                return pl;
+            };
             try {
                 c.getObjects().forEach(function (o) {
                     if (!o) return;
@@ -442,10 +482,10 @@ import * as THREE from './three.module.min.js';
                 });
                 if (bi.isSpread) {
                     var hw = cw / 2;
-                    pages.push(shot(px, hw));       capPlan.push(plan(px, hw));
-                    pages.push(shot(px + hw, hw));  capPlan.push(plan(px + hw, hw));
+                    ajouter(px, hw);
+                    ajouter(px + hw, hw);
                 } else {
-                    pages.push(shot(px, cw));       capPlan.push(plan(px, cw));
+                    ajouter(px, cw);
                 }
             } catch (e) {
                 console.warn('[SP-3D] capture planche :', e);
@@ -1375,6 +1415,28 @@ import * as THREE from './three.module.min.js';
     }
 
     /**
+     * Charge la couche « encre seule » des pages en calque, puis réapplique la vue.
+     *
+     * On la charge EN UNE FOIS, avant l'affichage, et non à la demande : un
+     * `THREE.TextureLoader` est ASYNCHRONE, donc charger au premier affichage
+     * d'une page en calque produirait un clignotement — la page apparaîtrait
+     * opaque, puis se dégagerait. Une seule application de vue après le
+     * chargement suffit, et `applyView` est idempotent.
+     */
+    function preparerEncre() {
+        var idx = [];
+        for (var i = 0; i < capPlan.length; i++) {
+            if (capPlan[i] && capPlan[i].encre && !texesEncre[i]) idx.push(i);
+        }
+        if (!idx.length) return Promise.resolve(false);
+        return loadTextures(idx.map(function (k) { return capPlan[k].encre; })).then(function (arr) {
+            idx.forEach(function (k, j) { texesEncre[k] = arr[j] || null; });
+            if (open) applyView();
+            return true;
+        }).catch(function () { return false; });
+    }
+
+    /**
      * Le grain du papier, en texture three.js. SYNCHRONE : le module rend un
      * canevas déjà dessiné (`spPapiers.grain`), on n'attend donc aucun
      * chargement — le papier est visible dès la première image, sans clignoter.
@@ -1465,20 +1527,84 @@ import * as THREE from './three.module.min.js';
         var opacite = (p && p.transparent) ? clamp(1 - p.transparent, 0.15, 1) : 1;
         var translucide = opacite < 0.999;
 
-        // ── Teinte + transparence, sur les DEUX faces de la feuille.
-        [u.front, u.back].forEach(function (mesh) {
-            if (!mesh || !mesh.material) return;
-            mesh.material.color.copy(teinte);
-            mesh.material.transparent = translucide;
-            mesh.material.opacity = opacite;
+        /* ⚠️ _SP3D_CALQUE_616 — UN CALQUE NE SE REND PAS COMME UNE PAGE OPAQUE.
+           MESURÉ : l'image de page capturée est BLANCHE OPAQUE (255/255/255/255
+           aux quatre coins). L'encre et le support y sont donc les MÊMES pixels :
+           rendre la feuille translucide revient à MÉLANGER L'IMPRESSION AVEC LE
+           FOND DU LIVRE — le texte pâlit, et c'est le défaut signalé (une typo de
+           la page 3 disparaissait sous un calque posé sur les pages 1 et 2).
+           Le remède ne se devine pas, il se mesure : avec `backgroundColor = null`
+           le coin de page devient rgba(0,0,0,0) alors que l'objet GARDE exactement
+           ses valeurs — on peut donc capturer une couche « ENCRE SEULE »,
+           transparente là où rien n'est imprimé. D'où un rendu en DEUX ÉPAISSEURS :
+             · la FEUILLE (le papier : teinte × opacité) juste derrière ;
+             · l'ENCRE par-dessus, NON TEINTÉE et NON DÉLAVÉE (opacité 1).
+           Le calque se voit au travers — le fond, et la page d'en face — ET le
+           texte reste net : les deux exigences tenues ensemble, au lieu d'une
+           seule, ce qui était exactement le compromis demandé. */
+        var estCalque = !!(p && (p.calque || p.transparent));
+        var texEncre = estCalque ? (texesEncre[idx] || null) : null;
+
+        // ── Le VERSO : toujours le papier (teinte + translucidité).
+        if (u.back && u.back.material) {
+            u.back.material.color.copy(teinte);
+            u.back.material.transparent = translucide;
+            u.back.material.opacity = opacite;
             /* ⚠️ CALQUE = TRANSPARENT, et il faut aller jusqu'au bout : `depthWrite`
                doit être COUPÉ sur une feuille translucide. Sinon la feuille écrit
                dans le tampon de profondeur et MASQUE ce qui est derrière elle :
                mesuré, la page d'en face et le fond ne se voyaient pas au travers —
                donc « calque » ne se lisait pas comme un calque. */
-            mesh.material.depthWrite = !translucide;
-            mesh.material.needsUpdate = true;
-        });
+            u.back.material.depthWrite = !translucide;
+            u.back.material.needsUpdate = true;
+        }
+
+        // ── La FACE : l'encre par-dessus la feuille, ou la page telle quelle.
+        if (texEncre && u.front && u.front.material) {
+            setMat(u.front, texEncre);
+            u.front.material.color.setRGB(1, 1, 1);      // l'encre n'est pas teintée
+            u.front.material.transparent = true;         // les vides de l'encre le restent
+            u.front.material.opacity = 1;                // et l'encre n'est PAS délavée
+            u.front.material.depthWrite = false;
+            u.front.material.needsUpdate = true;
+
+            if (!u.feuille) {
+                var fm = new THREE.MeshBasicMaterial({ map: paperTex, side: THREE.FrontSide });
+                fm.toneMapped = false; fm.fog = false;
+                u.feuille = new THREE.Mesh(geoPlane, fm);
+                /* Juste DERRIÈRE l'encre (0,0015) et devant le verso (-0,0015) :
+                   c'est l'épaisseur du papier. Deux maillages transparents, donc
+                   l'ordre de peinture suit la distance à la caméra — aucun
+                   `renderOrder` à imposer, et rien à reclasser si la caméra tourne. */
+                u.feuille.position.z = 0.0008;
+                group.add(u.feuille);
+            }
+            var fmc = u.feuille.material;
+            fmc.map = paperTex;
+            fmc.color.copy(teinte);
+            fmc.transparent = true;
+            fmc.opacity = opacite;
+            fmc.depthWrite = false;
+            fmc.needsUpdate = true;
+            if (u.feuille.geometry !== geoPlane) u.feuille.geometry = geoPlane;
+            u.feuille.position.x = u.front.position.x;
+            u.feuille.visible = true;
+        } else {
+            if (u.feuille) u.feuille.visible = false;
+            if (u.front && u.front.material) {
+                /* ⚠️ ON REMET LA PAGE APLATIE, et ce n'est pas redondant :
+                   `appliquerPapierAuFeuillet` est rappelée à CHAQUE changement de
+                   vue, donc passer d'une page en calque à une page opaque doit
+                   rendre sa texture à la face. Sans cette remise, la page opaque
+                   suivante garderait l'encre seule de la précédente. */
+                setMat(u.front, leafTexture(idx));
+                u.front.material.color.copy(teinte);
+                u.front.material.transparent = translucide;
+                u.front.material.opacity = opacite;
+                u.front.material.depthWrite = !translucide;
+                u.front.material.needsUpdate = true;
+            }
+        }
 
         // ── Le GRAIN : un calque devant la page, créé une fois par feuille.
         if (!u.grain) {
@@ -1983,6 +2109,7 @@ import * as THREE from './three.module.min.js';
         return loadTextures(urls).then(function (arr) {
             if (!open) return false;
             var ok = appliquerTextures(arr, false);
+            preparerEncre();                       // _SP3D_CALQUE_616 — les calques ont pu changer
             if (motif === 'document') retenterLesPagesVides(arr);
             return ok;
         }).catch(function (e) {
@@ -2045,6 +2172,11 @@ import * as THREE from './three.module.min.js';
                couverture (première et dernière planches) étaient les plus exposés. */
             retenterLesPagesVides(arr);
 
+            /* _SP3D_CALQUE_616 — la couche « encre seule » des pages en calque.
+               Chargée AVANT la première image (voir `preparerEncre`) : on ne fait
+               donc jamais apparaître une page opaque qui se dégagerait ensuite. */
+            preparerEncre();
+
             /* _SP3D_STABLE_713 — et on continue de surveiller le document. */
             surveillerLeDocument();
 
@@ -2082,6 +2214,10 @@ import * as THREE from './three.module.min.js';
         foldMats.forEach(function (m) { try { if (m.map) m.map.dispose(); m.dispose(); } catch (_) {} });
         foldMats = [];
         texes.forEach(function (t) { try { t && t.dispose(); } catch (_) {} });
+        /* _SP3D_CALQUE_616 — les couches « encre seule » sont à nous aussi : les
+           garder ferait fuir la mémoire GPU à chaque ouverture/fermeture. */
+        texesEncre.forEach(function (t) { try { t && t.dispose(); } catch (_) {} });
+        texesEncre = [];
         // _SP3D_PAPIER_714 — les textures de papier (grain, reflet) sont à nous.
         texturesDePapier.forEach(function (t) { try { t && t.dispose(); } catch (_) {} });
         texturesDePapier = []; cacheGrainTex = {}; cacheSheenTex = null;
@@ -2168,6 +2304,7 @@ import * as THREE from './three.module.min.js';
                 recording: recording, settingsOpen: settingsOpen,
                 flipping: !!flipAnim,
                 texCount: texes.length,
+                texEncreCount: texesEncre.filter(Boolean).length,
                 views: views.map(function (v) { return (v.l + 1) + '/' + (v.r + 1); }),
                 leafL: leafInfo(leafL), leafR: leafInfo(leafR), flip: leafInfo(flipper),
                 bookX: bookGroup ? +bookGroup.position.x.toFixed(3) : null,
@@ -2198,6 +2335,17 @@ import * as THREE from './three.module.min.js';
                                 ? +g.userData.grain.position.x.toFixed(3) : null,
                             faceX: +g.userData.front.position.x.toFixed(3),
                             reflet: !!(g.userData.reflet && g.userData.reflet.visible),
+                            /* _SP3D_CALQUE_616 — le calque se vérifie ici, et pas à
+                               l'œil sur une image : la face porte-t-elle la couche
+                               ENCRE (et non la page aplatie), et la feuille de
+                               papier est-elle bien DERRIÈRE elle ? */
+                            encre: !!(m && m.map && texesEncre.indexOf(m.map) >= 0),
+                            feuille: !!(g.userData.feuille && g.userData.feuille.visible),
+                            feuilleOpacite: (g.userData.feuille && g.userData.feuille.visible)
+                                ? +(g.userData.feuille.material.opacity).toFixed(3) : null,
+                            feuilleTeinte: (g.userData.feuille && g.userData.feuille.visible
+                                && g.userData.feuille.material.color)
+                                ? '#' + g.userData.feuille.material.color.getHexString() : null,
                         });
                     });
                     return out;
