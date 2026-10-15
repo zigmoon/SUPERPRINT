@@ -63166,9 +63166,114 @@ function alignSelectedObjects(direction) {
     localStorage.setItem(CTRL_S_SAVE_MODE_KEY, value);
         }
 
+        /* ── DÉSINSTALLATION ─────────────────────────────────────────────────────
+           La page web n'a rien à désinstaller : c'est le SYSTÈME qui possède les
+           fichiers. On demande donc l'action à la coquille native, qui seule sait
+           ce que chaque plateforme permet — et qui le DIT, parce que les trois ne
+           se valent pas :
+
+             · Windows — l'installeur NSIS a laissé un `uninstall.exe` et une
+               entrée dans « Applications et fonctionnalités ». On le lance.
+             · macOS   — le paquet `.app` part à la Corbeille, et les dossiers de
+               données de la webview avec lui. C'est le seul endroit où
+               l'utilisateur n'avait AUCUN geste explicite de désinstallation.
+             · Linux   — l'AppImage est un fichier, donc supprimable ; un `.deb`
+               ou un `.rpm` demande les droits d'administration, que l'application
+               ne s'arroge pas : elle donne la commande exacte à exécuter.
+
+           ⚠️ LE MESSAGE EST CONSTRUIT AVEC DES NŒUDS, PAS AVEC `innerHTML`. Les
+           chemins rendus par le natif sont des chaînes du système : les insérer
+           en HTML demanderait de les échapper, et un oubli se paierait cher. */
+        const SP_JETON_DESINSTALLATION = 'desinstaller-superprint';
+
+        function spEstBureau() {
+            return !!(window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke);
+        }
+
+        /* Le panneau n'est montré que là où il peut agir. Sur le site, il
+           resterait un bouton sans effet. */
+        function spDesinstallationInit() {
+            const section = document.getElementById('sectionDesinstallation');
+            if (section) section.style.display = spEstBureau() ? 'block' : 'none';
+        }
+
+        const SP_MESSAGES_DESINSTALLATION = {
+            'nsis-lance': 'uninstNsis',
+            'nsis-absent': 'uninstNsisAbsent',
+            'bundle-corbeille': 'uninstCorbeille',
+            'bundle-non-deplacable': 'uninstCorbeilleNon',
+            'bundle-introuvable': 'uninstCorbeilleNon',
+            'paquet-deb': 'uninstPaquet',
+            'paquet-rpm': 'uninstPaquet',
+            'paquet-inconnu': 'uninstPaquet',
+            'appimage-supprime': 'uninstAppImage',
+            'appimage-non-supprimable': 'uninstPaquet',
+            'refuse': 'uninstErreur',
+            'erreur': 'uninstErreur'
+        };
+
+        function spAfficherRapportDesinstallation(rapport) {
+            const sortie = document.getElementById('desinstSortie');
+            if (!sortie) return;
+            sortie.textContent = '';
+
+            const code = (rapport && rapport.code) ? rapport.code : 'erreur';
+            const cle = SP_MESSAGES_DESINSTALLATION[code] || 'uninstErreur';
+
+            const phrase = document.createElement('div');
+            phrase.textContent = translate(cle);
+            sortie.appendChild(phrase);
+
+            const chemins = (rapport && Array.isArray(rapport.chemins)) ? rapport.chemins : [];
+            if (chemins.length) {
+                const titre = document.createElement('div');
+                titre.style.marginTop = '8px';
+                titre.style.fontWeight = '700';
+                titre.textContent = translate('settingsUninstChemins');
+                sortie.appendChild(titre);
+
+                const liste = document.createElement('ul');
+                liste.style.margin = '4px 0 0 0';
+                liste.style.paddingLeft = '18px';
+                liste.style.fontFamily = "'IBM Plex Mono', monospace";
+                chemins.forEach(function (c) {
+                    const item = document.createElement('li');
+                    item.textContent = String(c);
+                    liste.appendChild(item);
+                });
+                sortie.appendChild(liste);
+            }
+        }
+
+        async function spDesinstaller() {
+            if (!spEstBureau()) return;
+            if (!window.confirm(translate('settingsUninstConfirm'))) return;
+
+            const bouton = document.getElementById('desinstBtn');
+            const sortie = document.getElementById('desinstSortie');
+            if (bouton) bouton.disabled = true;
+            if (sortie) sortie.textContent = '';
+
+            try {
+                const rapport = await window.__TAURI__.core.invoke('desinstaller', {
+                    confirmation: SP_JETON_DESINSTALLATION
+                });
+                spAfficherRapportDesinstallation(rapport);
+                /* Le bouton n'est réactivé que si l'application SURVIT : les cas
+                   « paquet à retirer soi-même » et « copie non installée » ne
+                   ferment rien, et un bouton resté grisé n'aurait alors plus
+                   aucune explication visible. */
+                if (bouton && !(rapport && rapport.fermer)) bouton.disabled = false;
+            } catch (e) {
+                spAfficherRapportDesinstallation({ code: 'erreur', chemins: [] });
+                if (bouton) bouton.disabled = false;
+            }
+        }
+
         // Settings modal controls
         function openSettings() {
     const modal = document.getElementById('settingsModal');
+    spDesinstallationInit();
     
     // Synchroniser les sélecteurs
     document.getElementById('settingsLang').value = currentLanguage;
@@ -69388,6 +69493,19 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         settingsOldAiTitle: "Assistant IA (ancien panneau)",
         settingsOldAiDesc: "Le bouton IA de la barre du haut ouvre désormais le Studio SP213, l'atelier de composition par IA. Cet ancien panneau (choix du moteur, clés API, exemples de prompts) reste disponible ici.",
         settingsOldAiBtn: "Ouvrir l'ancien panneau IA",
+        // === Désinstallation (application de bureau seulement) ===
+        settingsUninstTitle: "Désinstallation",
+        settingsUninstDesc: "Retire SuperPrint de cet ordinateur. Ce qui suit est exécuté par le système, et non par la page web : les fichiers du programme sont retirés, puis les données de l'application. Cette action ne peut pas être annulée.",
+        settingsUninstBtn: "Désinstaller SuperPrint",
+        settingsUninstConfirm: "Désinstaller SuperPrint de cet ordinateur ?\n\nLes fichiers du programme et les données de l'application seront retirés. Cette action ne peut pas être annulée.",
+        settingsUninstChemins: "Chemins traités",
+        uninstNsis: "Le désinstalleur de Windows a été lancé. L'application va se fermer pour lui laisser la place.",
+        uninstNsisAbsent: "Cette copie n'est pas une installation : il n'y a donc rien à désinstaller. Pour retirer un SuperPrint installé, passez par « Applications > Applications et fonctionnalités », ou par son entrée « Désinstaller ».",
+        uninstCorbeille: "L'application a été placée dans la Corbeille. Vous pouvez la rétablir tant que vous ne l'avez pas vidée.",
+        uninstCorbeilleNon: "L'application n'a pas pu être déplacée automatiquement — c'est le cas lorsqu'elle est dans « Applications » sans droits d'administration. Glissez-la vous-même dans la Corbeille.",
+        uninstPaquet: "Les données de l'application ont été supprimées. Retirer le programme demande les droits d'administration : exécutez la commande ci-dessous dans un terminal.",
+        uninstAppImage: "Le fichier AppImage a été supprimé, ainsi que les données de l'application.",
+        uninstErreur: "La désinstallation n'a pas pu être menée à bien. Rien n'a été supprimé.",
         // === AI modal ===
         aiModalTitle: "Assistant IA",
         aiBannerTitle: "Mode Création IA",
@@ -70330,6 +70448,19 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         settingsOldAiTitle: "AI assistant (legacy panel)",
         settingsOldAiDesc: "The IA button in the top bar now opens the SP213 Studio, the AI layout workshop. This legacy panel (engine choice, API keys, prompt examples) remains available here.",
         settingsOldAiBtn: "Open the legacy AI panel",
+        // === Uninstall (desktop application only) ===
+        settingsUninstTitle: "Uninstall",
+        settingsUninstDesc: "Removes SuperPrint from this computer. What follows is done by the system, not by the web page: the program files are removed, then the application data. This action cannot be undone.",
+        settingsUninstBtn: "Uninstall SuperPrint",
+        settingsUninstConfirm: "Uninstall SuperPrint from this computer?\n\nThe program files and the application data will be removed. This action cannot be undone.",
+        settingsUninstChemins: "Paths handled",
+        uninstNsis: "The Windows uninstaller has been launched. The application will close to let it work.",
+        uninstNsisAbsent: "This copy is not an installation, so there is nothing to uninstall. To remove an installed SuperPrint, use “Apps > Installed apps”, or its “Uninstall” entry.",
+        uninstCorbeille: "The application has been moved to the Trash. You can restore it until you empty the Trash.",
+        uninstCorbeilleNon: "The application could not be moved automatically — this happens when it sits in “Applications” without administrator rights. Drag it to the Trash yourself.",
+        uninstPaquet: "The application data has been removed. Removing the program itself requires administrator rights: run the command below in a terminal.",
+        uninstAppImage: "The AppImage file has been removed, along with the application data.",
+        uninstErreur: "The uninstallation could not be completed. Nothing was removed.",
         // === AI modal ===
         aiModalTitle: "AI Assistant",
         aiBannerTitle: "AI Creation Mode",
@@ -71271,6 +71402,19 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         settingsOldAiTitle: "AIアシスタント（旧パネル）",
         settingsOldAiDesc: "上部バーの「IA」ボタンはSP213スタジオ（AIによるレイアウト作成）を開くようになりました。この旧パネル（エンジン選択、APIキー、プロンプト例）はここから利用できます。",
         settingsOldAiBtn: "旧AIパネルを開く",
+        // === アンインストール（デスクトップ版のみ） ===
+        settingsUninstTitle: "アンインストール",
+        settingsUninstDesc: "このコンピューターから SuperPrint を削除します。以下はウェブページではなくシステムが実行します。プログラムのファイルを削除し、続いてアプリのデータを削除します。この操作は取り消せません。",
+        settingsUninstBtn: "SuperPrint をアンインストール",
+        settingsUninstConfirm: "このコンピューターから SuperPrint をアンインストールしますか？\n\nプログラムのファイルとアプリのデータが削除されます。この操作は取り消せません。",
+        settingsUninstChemins: "処理したパス",
+        uninstNsis: "Windows のアンインストーラーを起動しました。処理のためにアプリを終了します。",
+        uninstNsisAbsent: "このコピーはインストールされていないため、アンインストールするものはありません。インストール済みの SuperPrint を削除するには「アプリ > インストールされているアプリ」か、その「アンインストール」をご利用ください。",
+        uninstCorbeille: "アプリをごみ箱に移動しました。ごみ箱を空にするまでは元に戻せます。",
+        uninstCorbeilleNon: "アプリを自動で移動できませんでした。「アプリケーション」にあり管理者権限がない場合に起こります。ごみ箱へ手動でドラッグしてください。",
+        uninstPaquet: "アプリのデータを削除しました。プログラム本体の削除には管理者権限が必要です。ターミナルで次のコマンドを実行してください。",
+        uninstAppImage: "AppImage ファイルとアプリのデータを削除しました。",
+        uninstErreur: "アンインストールを完了できませんでした。削除されたものはありません。",
         // === AI modal ===
         aiModalTitle: "AIアシスタント",
         aiBannerTitle: "AI作成モード",

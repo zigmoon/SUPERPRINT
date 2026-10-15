@@ -53,7 +53,9 @@
     "cli.mjs",
     "scripts/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE.md",
+    "TRADEMARKS.md"
   ],
   "repository": {
     "type": "git",

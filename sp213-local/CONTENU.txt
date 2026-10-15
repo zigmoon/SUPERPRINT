@@ -55,4 +55,4 @@ INSTALLATION
 
 Telecharge le paquet, installe les dependances et lance le serveur local.
 
-SuperPrint 1.7.620 - 4 octobre 2026 - https://superprint.cc
+SuperPrint 1.7.620 - 15 octobre 2026 - https://superprint.cc

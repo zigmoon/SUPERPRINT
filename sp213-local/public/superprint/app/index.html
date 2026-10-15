@@ -4707,6 +4707,19 @@
                         <button class="btn btn-secondary" onclick="closeSettings(); openAIModal();" data-translate="settingsOldAiBtn">Ouvrir l'ancien panneau IA</button>
                     </div>
 
+                    <!-- 🗑️ DÉSINSTALLATION — visible UNIQUEMENT dans l'application de
+                         bureau : sur le site, il n'y a rien à désinstaller. C'est
+                         spDesinstallationInit() qui la révèle, quand la coquille
+                         native répond. -->
+                    <div class="modal-section" id="sectionDesinstallation" style="display: none; background: #fff; padding: 16px; border-radius: 4px; margin-bottom: 16px; border: 1px solid #e0e0e0;">
+                        <div class="modal-section-title" data-translate="settingsUninstTitle">Désinstallation</div>
+                        <p style="font-size: 11px; color: #666; line-height: 1.55; margin: 0 0 10px;" data-translate="settingsUninstDesc">
+                            Retire SuperPrint de cet ordinateur. Ce qui suit est exécuté par le système, et non par la page web.
+                        </p>
+                        <button class="btn btn-secondary" id="desinstBtn" onclick="spDesinstaller()" data-translate="settingsUninstBtn">Désinstaller SuperPrint</button>
+                        <div id="desinstSortie" style="font-size: 11px; color: #444; line-height: 1.55; margin-top: 10px;"></div>
+                    </div>
+
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
                         SuperPrint v1.7.620 — 15 octobre 2026
                     </div>
