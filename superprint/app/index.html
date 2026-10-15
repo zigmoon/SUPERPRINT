@@ -2035,7 +2035,7 @@
                          (spOuvrirIA) ; la clé et le fournisseur se règlent dans les
                          Préférences, onglet IA, où cette boîte renvoie si rien n'est
                          configuré. -->
-                    <button class="btn" id="openAIBtn" title="Assistant IA" aria-label="Assistant IA" data-translate-title="aiAssistantTitle" style="pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; height: 32px;" onclick="spOuvrirIA()">
+                    <button class="btn" id="openAIBtn" title="Prompt IA" aria-label="Prompt IA" data-translate-title="aiAssistantTitle" style="pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; height: 32px;" onclick="spOuvrirIA()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M10.1 3.9l1.8 4.4 4.4 1.8-4.4 1.8-1.8 4.4-1.8-4.4-4.4-1.8 4.4-1.8z"/>
                             <path d="M17.7 13.2l1 2.3 2.3 1-2.3 1-1 2.3-1-2.3-2.3-1 2.3-1z"/>
@@ -2591,6 +2591,25 @@
                         #aiFooterBar .ai-header-label.sp-key-off::before { background:#f59e0b; }
                         #aiFooterBar .ai-close-btn { padding:2px 8px; background:transparent; border:none; border-radius:6px; font-size:16px; cursor:pointer; line-height:1; color:rgba(0,0,0,0.35); }
                         .theme-dark #aiFooterBar .ai-close-btn { color:rgba(255,255,255,0.5); }
+
+                        /* 🔔 RIEN N'EST CONFIGURÉ — le message vit DANS la barre.
+                           Retour utilisateur : « si pas de clef alors un message
+                           dans la boîte de prompt et là on pourra ouvrir les
+                           préférences ». Sans clé la barre ne peut rien générer :
+                           on le dit ici, et le lien mène aux Préférences, onglet IA.
+                           La pastille du titre ne suffisait pas — un point ambre ne
+                           dit ni ce qui manque ni où le régler. */
+                        #aiFooterNoKey {
+                            display:none; align-items:flex-start; gap:9px; padding:9px 11px;
+                            border-radius:8px; font-size:11px; line-height:1.45; color:#6b5400;
+                            background:#fff8e1; border:1px solid #f0d68a; position:relative; z-index:7;
+                        }
+                        #aiFooterNoKey strong { display:block; font-size:11.5px; margin-bottom:2px; }
+                        #aiFooterNoKey a { display:inline-block; margin-top:4px; font-weight:700; color:#1a1a1a; text-decoration:underline; }
+                        .theme-dark #aiFooterNoKey {
+                            background:rgba(245,158,11,0.14); border-color:rgba(245,158,11,0.42); color:#f3d9a4;
+                        }
+                        .theme-dark #aiFooterNoKey a { color:#ffffff; }
                         #aiFooterInput {
                             width:100%; padding:9px 12px; border-radius:8px; font-size:12.5px; font-family:inherit;
                             outline:none; resize:none; line-height:1.5;
@@ -2768,6 +2787,18 @@
                                  (classe sp-key-on / sp-key-off posee par _aiFooterSyncKeyDot). -->
                             <span class="ai-header-label" id="aiFooterKeyDot"><span class="ai-key-lbl">Prompt IA</span></span>
                             <button type="button" class="ai-close-btn" title="Fermer" onclick="aiToggleFooterBar(false); var t=document.getElementById('aiFooterBarToggle'); if(t) t.checked=false;">×</button>
+                        </div>
+
+                        <!-- 🔔 Le message « aucune clé » vit DANS la barre de prompt.
+                             Il est révélé par spMajBanniereIA(), qui lit l'état réel
+                             de la clé — le même test que partout ailleurs. -->
+                        <div id="aiFooterNoKey">
+                            <span aria-hidden="true" style="flex:0 0 auto; font-size:14px; line-height:1.2;">🔑</span>
+                            <div>
+                                <strong data-translate="aiFooterNoKeyTitle">Aucune clé IA configurée</strong>
+                                <span data-translate="aiFooterNoKeyText">L'assistant ne peut pas encore composer de maquette : les réglages de l'IA se font dans les Préférences de SuperPrint.</span>
+                                <a href="#" onclick="return spOuvrirPrefsIA()" data-translate="aiFooterNoKeyLink">Ouvrir les Préférences, onglet IA →</a>
+                            </div>
                         </div>
                         <textarea id="aiFooterInput" data-translate-placeholder="aiFooterBarPlaceholder" placeholder="Décrivez la maquette de cette page…" rows="2"
                             onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();aiFooterGenerate();}"
@@ -4805,7 +4836,7 @@
                         </div>
 
                         <div class="ai-actions" style="margin-top: 12px;">
-                            <button class="btn btn-secondary" onclick="closeSettings(); spOuvrirIA();" data-translate="settingsAiOuvrirPanneau">Ouvrir l'assistant IA</button>
+                            <button class="btn btn-secondary" onclick="closeSettings(); spOuvrirPanneauIA();" data-translate="settingsAiOuvrirPanneau">Ouvrir l'assistant IA</button>
                             <button class="btn btn-secondary" onclick="spOuvrirStudioIALien()" data-translate="settingsAiOuvrirStudio">Ouvrir le Studio SP213</button>
                         </div>
                     </section>
@@ -5040,7 +5071,6 @@
 
                     <label class="ai-label" for="aiPromptModal" data-translate="aiPromptLabel">Décrivez la maquette souhaitée</label>
                     <textarea id="aiPromptModal" class="ai-textarea"
-                              onclick="return spPromptIAClic()"
                               data-translate-placeholder="aiPromptPlaceholder"
                               placeholder="Ex : double page magazine, photo panoramique en haut, texte sur deux colonnes, palette crème et bordeaux. Ou : livret 8 pages (couverture, sommaire, 5 pages contenu, contact)."></textarea>
 

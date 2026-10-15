@@ -69659,7 +69659,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         deletePageTitle: "Supprimer la page",
         groupTitle: "Grouper la sélection",
         ungroupTitle: "Dégrouper la sélection",
-        aiAssistantTitle: "Assistant IA — composer une maquette",
+        aiAssistantTitle: "Prompt IA — décrire une maquette",
         /* 🆕 Clés de la configuration IA, désormais dans l'ONGLET IA des
            Préférences, plus celles de la bannière de la boîte de prompt. */
         settingsAiOk: "Une clé est enregistrée.",
@@ -69671,6 +69671,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiSetupText: "Aucune clé n'est enregistrée : l'assistant ne peut pas encore composer de maquette. Les réglages de l'IA se font dans les Préférences.",
         aiSetupLink: "Configurer la clé dans les Préférences, onglet IA →",
         aiPromptSansCle: "Aucune clé configurée : cliquez ici pour ouvrir les Préférences de SuperPrint, onglet IA.",
+        aiFooterNoKeyTitle: "Aucune clé IA configurée",
+        aiFooterNoKeyText: "L'assistant ne peut pas encore composer de maquette : les réglages de l'IA se font dans les Préférences de SuperPrint.",
+        aiFooterNoKeyLink: "Ouvrir les Préférences, onglet IA →",
         saveExportTitle: "Exporter vers",
         exportAucunePage: "Aucune page à exporter.",
         exportHtmlOk: "Export HTML : {n} page(s).",
@@ -70627,7 +70630,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         deletePageTitle: "Delete page",
         groupTitle: "Group selection",
         ungroupTitle: "Ungroup selection",
-        aiAssistantTitle: "AI assistant — compose a layout",
+        aiAssistantTitle: "AI prompt — describe a layout",
         settingsAiOk: "A key is saved.",
         settingsAiAucune: "No key saved.",
         settingsAiReglages: "Assistant settings",
@@ -70637,6 +70640,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiSetupText: "No key is saved yet: the assistant cannot compose a layout. The AI settings live in Preferences.",
         aiSetupLink: "Set the key in Preferences, AI tab →",
         aiPromptSansCle: "No key configured: click here to open SuperPrint's Preferences, AI tab.",
+        aiFooterNoKeyTitle: "No AI key configured",
+        aiFooterNoKeyText: "The assistant cannot compose a layout yet: AI settings live in SuperPrint's Preferences.",
+        aiFooterNoKeyLink: "Open Preferences, AI tab →",
         saveExportTitle: "Export to",
         exportAucunePage: "No page to export.",
         exportHtmlOk: "HTML export: {n} page(s).",
@@ -71592,7 +71598,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         deletePageTitle: "ページを削除",
         groupTitle: "選択をグループ化",
         ungroupTitle: "グループ解除",
-        aiAssistantTitle: "AIアシスタント — レイアウトを作成",
+        aiAssistantTitle: "AIプロンプト — レイアウトを説明",
         settingsAiOk: "キーが保存されています。",
         settingsAiAucune: "キーが保存されていません。",
         settingsAiReglages: "アシスタントの設定",
@@ -71602,6 +71608,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiSetupText: "キーが未登録のため、アシスタントはまだレイアウトを作成できません。AIの設定は環境設定で行います。",
         aiSetupLink: "環境設定の「AI」タブでキーを設定 →",
         aiPromptSansCle: "キーが未設定です。ここをクリックしてSuperPrintの環境設定（AIタブ）を開きます。",
+        aiFooterNoKeyTitle: "AIキーが未設定です",
+        aiFooterNoKeyText: "アシスタントはまだレイアウトを作成できません。AIの設定はSuperPrintの環境設定で行います。",
+        aiFooterNoKeyLink: "環境設定の「AI」タブを開く →",
         saveExportTitle: "書き出し先",
         exportAucunePage: "書き出すページがありません。",
         exportHtmlOk: "HTML書き出し：{n}ページ。",
@@ -95053,34 +95062,55 @@ function spIAConfiguree() {
 }
 window.spIAConfiguree = spIAConfiguree;
 
-/** Met la banniere de configuration en accord avec l'etat reel — et le CHAMP
-    aussi : le message vit dans le champ principal, pas seulement au-dessus.
-    C'est plus direct, et c'est la demande : on clique la ou on allait ecrire,
-    et on arrive dans les Preferences, onglet IA (spPromptIAClic). */
+/** Met le message de configuration en accord avec l'etat reel — AUX DEUX
+    endroits ou l'utilisateur peut se trouver : la BARRE DE PROMPT en pied de
+    page (celle que l'icone ouvre) et la fenetre modale. Un seul test, donc
+    aucune divergence possible entre les deux. */
 function spMajBanniereIA() {
     var configure = spIAConfiguree();
     var b = document.getElementById('aiSetupBanner');
     if (b) b.style.display = configure ? 'none' : 'flex';
-    var champ = document.getElementById('aiPromptModal');
-    if (champ) {
-        /* ⚠️ translate() renvoie la CLE quand la traduction manque : on ne pose
-           donc le texte que s'il existe vraiment, sinon le champ afficherait un
-           identifiant technique au lieu d'une phrase. */
-        var cle = configure ? 'aiPromptPlaceholder' : 'aiPromptSansCle';
-        var texte = (typeof translate === 'function') ? translate(cle) : '';
-        if (texte && texte !== cle) champ.placeholder = texte;
+    var barre = document.getElementById('aiFooterNoKey');
+    if (barre) barre.style.display = configure ? 'none' : 'flex';
+    /* ⚠️ translate() renvoie la CLE quand la traduction manque : on ne pose donc
+       le texte que s'il existe vraiment, sinon le champ afficherait un
+       identifiant technique au lieu d'une phrase. */
+    var champModale = document.getElementById('aiPromptModal');
+    if (champModale) {
+        var t1 = (typeof translate === 'function') ? translate(configure ? 'aiPromptPlaceholder' : 'aiPromptSansCle') : '';
+        if (t1 && t1 !== (configure ? 'aiPromptPlaceholder' : 'aiPromptSansCle')) champModale.placeholder = t1;
+    }
+    var champBarre = document.getElementById('aiFooterInput');
+    if (champBarre) {
+        var t2 = (typeof translate === 'function') ? translate(configure ? 'aiFooterBarPlaceholder' : 'aiPromptSansCle') : '';
+        if (t2 && t2 !== (configure ? 'aiFooterBarPlaceholder' : 'aiPromptSansCle')) champBarre.placeholder = t2;
     }
 }
 window.spMajBanniereIA = spMajBanniereIA;
 
-/** Le bouton « IA » de la barre du haut : il mene DIRECTEMENT au prompt. */
+/** L'ICONE IA DE LA BARRE DU HAUT OUVRE LA BARRE DE PROMPT EN PIED DE PAGE.
+    ⚠️ C'est la demande, et elle a ete mal comprise plusieurs fois : « la boite
+    de prompting qu'on a dessinee et qui arrive en bas ». Le bouton ouvrait la
+    FENETRE MODALE, qui se lit comme un panneau d'assistant, pas comme un champ
+    de prompt. La fenetre modale reste accessible — depuis les Preferences,
+    bouton « Ouvrir l'assistant IA » (spOuvrirPanneauIA).
+    Sans cle, la barre affiche son message et le lien vers les Preferences. */
 window.spOuvrirIA = function () {
+    try { aiToggleFooterBar(true); } catch (e) { return false; }
+    spMajBanniereIA();
+    setTimeout(function () {
+        var ch = document.getElementById('aiFooterInput');
+        if (ch) { try { ch.focus(); } catch (_) {} }
+    }, 120);
+    return false;
+};
+
+/** La FENETRE MODALE de l'assistant : le panneau complet, avec les exemples et
+    la creation. Elle n'est plus exposee dans la barre du haut, mais reste
+    joignable depuis les Preferences. */
+window.spOuvrirPanneauIA = function () {
     try { openAIModal(); } catch (e) { return false; }
     spMajBanniereIA();
-    /* Le curseur se place dans le champ de saisie, sans quoi l'utilisateur doit
-       encore cliquer dedans apres avoir clique sur l'icone.
-       ⚠️ On ne le fait QUE si une cle existe : sinon le champ lui-meme renvoie
-       aux Preferences, et prendre le focus pour l'enlever aussitot se verrait. */
     if (spIAConfiguree()) {
         setTimeout(function () {
             var ch = document.getElementById('aiPromptModal');
@@ -95090,19 +95120,13 @@ window.spOuvrirIA = function () {
     return false;
 };
 
-/** Cliquer DANS la boite de prompt alors que rien n'est configure : sans cle,
-    le prompt ne peut rien faire. On renvoie donc aux Preferences, onglet IA,
-    au lieu d'offrir un formulaire qui echouerait a la soumission. */
-window.spPromptIAClic = function () {
-    if (spIAConfiguree()) return true;
-    try { window.spOuvrirPrefsIA(); } catch (_) {}
-    return false;
-};
-
 /** La banniere — et le champ de prompt quand rien n'est configure — renvoient
     aux Preferences, DANS LE BON ONGLET (IA) et non en bas d'un autre. */
 window.spOuvrirPrefsIA = function () {
     try { closeAIModal(); } catch (_) {}
+    /* La barre de prompt flotte au-dessus de la page : on la referme, sinon elle
+       resterait par-dessus les Preferences qu'on vient d'ouvrir. */
+    try { aiToggleFooterBar(false); } catch (_) {}
     try { openSettings(); } catch (_) {}
     try { switchSettingsTab('ai'); } catch (_) {}
     /* On remplit APRES avoir montre l'onglet : sans cela, le champ se remplirait
