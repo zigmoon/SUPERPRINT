@@ -2024,7 +2024,18 @@
                             <rect x="7" y="7" width="10" height="10" fill="currentColor" fill-opacity="0.15"></rect>
                         </svg>
                     </button>
-                    <button class="btn" id="openAIBtn" title="Studio IA — composer une maquette avec l'IA" style="pointer-events: auto;" onclick="spOuvrirStudioIA()">IA</button>
+                    <!-- 🆕 L'ICÔNE REMPLACE LE MOT « IA » : des étincelles, la convention
+                         des assistants. Le bouton ouvre désormais la BOÎTE DE PROMPT
+                         (spOuvrirIA) ; le Studio SP213 reste accessible depuis les
+                         Préférences, où il a sa place — c'est un atelier, pas l'action
+                         principale de la barre du haut. -->
+                    <button class="btn" id="openAIBtn" title="Assistant IA" aria-label="Assistant IA" data-translate-title="aiAssistantTitle" style="pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; height: 32px;" onclick="spOuvrirIA()">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M12 2.4l1.75 4.95 4.95 1.75-4.95 1.75L12 15.8l-1.75-4.95L5.3 9.1l4.95-1.75z"/>
+                            <path d="M18.9 13.5l.85 2.4 2.4.85-2.4.85-.85 2.4-.85-2.4-2.4-.85 2.4-.85z"/>
+                            <path d="M6.1 15.2l.65 1.85 1.85.65-1.85.65-.65 1.85-.65-1.85-1.85-.65 1.85-.65z"/>
+                        </svg>
+                    </button>
                     <button class="btn btn-square" id="openSearchTopBtn" title="Rechercher et remplacer (Ctrl+F)" aria-label="Rechercher et remplacer" onclick="openFindReplace(false)" style="pointer-events: auto; border: 0; color: #1a1a1a;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="10.5" cy="10.5" r="6.5"></circle>
@@ -4697,14 +4708,35 @@
                          STUDIO SP213 (l'atelier de composition par IA). Le panneau IA
                          historique reste utilisable, mais seulement depuis les réglages,
                          en bas du premier onglet — il n'est plus exposé dans la barre. -->
-                    <div class="modal-section" style="background: #fff; padding: 16px; border-radius: 4px; margin-bottom: 16px; border: 1px solid #e0e0e0;">
-                        <div class="modal-section-title" data-translate="settingsOldAiTitle">Assistant IA (ancien panneau)</div>
-                        <p style="font-size: 11px; color: #666; line-height: 1.55; margin: 0 0 10px;" data-translate="settingsOldAiDesc">
-                            Le bouton <strong>IA</strong> de la barre du haut ouvre désormais le <strong>Studio SP213</strong>,
-                            l'atelier de composition par IA. Cet ancien panneau (choix du moteur, clés API, exemples de prompts)
-                            reste disponible ici.
+                    <!-- 🆕 CONFIGURATION DE L'IA — c'est ICI que se règle la clé.
+                         Le bouton « IA » de la barre du haut ouvre la boîte de prompt ;
+                         quand aucune clé n'est enregistrée, cette boîte renvoie ici
+                         (`spOuvrirPrefsIA`). Les deux formulaires écrivent les MÊMES
+                         clés de stockage, donc ils ne peuvent pas diverger. -->
+                    <div class="modal-section" id="settingsAiSection" style="background: #fff; padding: 16px; border-radius: 4px; margin-bottom: 16px; border: 1px solid #e0e0e0;">
+                        <div class="modal-section-title" data-translate="settingsAiTitle">Assistant IA (clés et réglages)</div>
+                        <p style="font-size: 11px; color: #666; line-height: 1.55; margin: 0 0 12px;" data-translate="settingsAiDesc">
+                            Le bouton IA de la barre du haut ouvre la boîte de prompt. C'est ici que se règle la clé
+                            qu'elle utilise : elle reste dans ce navigateur et n'est envoyée qu'au fournisseur choisi.
                         </p>
-                        <button class="btn btn-secondary" onclick="closeSettings(); openAIModal();" data-translate="settingsOldAiBtn">Ouvrir l'ancien panneau IA</button>
+
+                        <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+                            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: #666;">
+                                <span data-translate="settingsAiProvider">Fournisseur</span>
+                                <select id="settingsAiProvider" style="height: 32px; min-width: 150px; padding: 0 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background: #fff;"></select>
+                            </label>
+                            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: #666; flex: 1; min-width: 200px;">
+                                <span data-translate="settingsAiCle">Clé API</span>
+                                <input type="password" id="settingsAiKey" autocomplete="off" spellcheck="false" placeholder="sk-…" style="height: 32px; padding: 0 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background: #fff;">
+                            </label>
+                            <button class="btn btn-primary" id="settingsAiSave" onclick="spPrefsIAEnregistrer()" data-translate="settingsAiEnregistrer">Enregistrer la clé</button>
+                        </div>
+                        <div id="settingsAiEtat" style="font-size: 11px; margin-top: 9px; font-weight: 600;"></div>
+
+                        <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" onclick="closeSettings(); spOuvrirIA();" data-translate="settingsAiOuvrirPanneau">Ouvrir l'assistant IA</button>
+                            <button class="btn btn-secondary" onclick="spOuvrirStudioIALien()" data-translate="settingsAiOuvrirStudio">Ouvrir le Studio SP213</button>
+                        </div>
                     </div>
 
                     <!-- 🗑️ DÉSINSTALLATION — visible UNIQUEMENT dans l'application de
@@ -4894,6 +4926,21 @@
                 <button class="modal-close sp-modal-close" onclick="closeAIModal()" style="position: absolute; right: 12px; top: 8px;">×</button>
             </div>
             <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 16px;">
+                <!-- 🆕 BANNIÈRE « RIEN N'EST CONFIGURÉ ». Elle reste cachée tant qu'une
+                     clé existe (c'est spMajBanniereIA() qui décide, à l'ouverture).
+                     Sans elle, l'utilisateur tombait sur un formulaire sans savoir
+                     qu'il lui manquait une clé, ni où la mettre. -->
+                <div id="aiSetupBanner" style="display: none; align-items: flex-start; gap: 11px; padding: 12px 14px; margin-bottom: 16px; background: #fff8e1; border: 1px solid #f0d68a; border-radius: 6px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#b8860b" aria-hidden="true" style="flex-shrink: 0; margin-top: 1px;">
+                        <path d="M12 2.4l1.75 4.95 4.95 1.75-4.95 1.75L12 15.8l-1.75-4.95L5.3 9.1l4.95-1.75z"/>
+                        <path d="M18.9 13.5l.85 2.4 2.4.85-2.4.85-.85 2.4-.85-2.4-2.4-.85 2.4-.85z"/>
+                    </svg>
+                    <div style="font-size: 11px; line-height: 1.55; color: #6b5400;">
+                        <strong style="display: block; margin-bottom: 3px; font-size: 12px;" data-translate="aiSetupTitle">L'assistant IA n'est pas encore configuré</strong>
+                        <span data-translate="aiSetupText">Ajoutez une clé pour que l'assistant puisse composer votre maquette.</span>
+                        <a href="#" onclick="return spOuvrirPrefsIA()" style="display: inline-block; margin-top: 6px; font-weight: 700; color: #1a1a1a; text-decoration: underline;" data-translate="aiSetupLink">Configurer la clé dans les Préférences →</a>
+                    </div>
+                </div>
                 <p class="ai-intro" data-translate="aiIntroNew">
                     Décrivez une maquette en une phrase : l’IA compose la page active (ou tout le document)
                     avec une grille propre, votre palette et vos textes.
@@ -6289,6 +6336,38 @@
                             <div style="text-align: left;">
                                 <div style="font-weight: 600; font-size: 13px; color: #666;">IPFS</div>
                                 <div style="font-size: 10px; color: #999; line-height: 1.3;">Stockage Web3</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 🆕 EXPORT HTML ET EPUB (demande utilisateur). Ce ne sont pas des
+                     formats de SAUVEGARDE mais de SORTIE : ils ne servent pas à
+                     reprendre le travail, mais à le publier. Les deux emportent la
+                     mise en page ET du vrai texte vectoriel (sélectionnable). -->
+                <div style="margin-top: 18px; border-top: 1px solid #eee; padding-top: 14px;">
+                    <div style="font-size: 11px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: #555; margin-bottom: 9px;" data-translate="saveExportTitle">Exporter vers</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="saveHTML" onclick="exporterHTML()" class="btn btn-secondary save-choice-btn" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid #ccc; background: white; cursor: pointer; flex: 1; border-radius: 8px;">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-3"></path>
+                                <path d="M10 3h4"></path>
+                                <path d="M9.5 10.5L7 13l2.5 2.5"></path>
+                                <path d="M14.5 10.5L17 13l-2.5 2.5"></path>
+                            </svg>
+                            <div style="text-align: left;">
+                                <div style="font-weight: 600; font-size: 13px; color: #666;">HTML</div>
+                                <div style="font-size: 10px; color: #999; line-height: 1.3;">Page web imprimable</div>
+                            </div>
+                        </button>
+                        <button id="saveEPUB" onclick="exporterEPUB()" class="btn btn-secondary save-choice-btn" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid #ccc; background: white; cursor: pointer; flex: 1; border-radius: 8px;">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                                <path d="M4 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4z"></path>
+                                <path d="M20 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z"></path>
+                            </svg>
+                            <div style="text-align: left;">
+                                <div style="font-weight: 600; font-size: 13px; color: #666;">EPUB</div>
+                                <div style="font-size: 10px; color: #999; line-height: 1.3;">Livre pour liseuse</div>
                             </div>
                         </button>
                     </div>

@@ -63436,6 +63436,11 @@ function alignSelectedObjects(direction) {
         function openSettings() {
     const modal = document.getElementById('settingsModal');
     spDesinstallationInit();
+
+    /* 🆕 Le formulaire IA des Préférences se remplit depuis le stockage réel à
+       chaque ouverture : sans cela, il montrerait l'état de la dernière fois
+       qu'on l'a ouvert, et non celui de maintenant. */
+    try { if (typeof window.spPrefsIARemplir === 'function') window.spPrefsIARemplir(); } catch (_) {}
     
     // Synchroniser les sélecteurs
     document.getElementById('settingsLang').value = currentLanguage;
@@ -69651,10 +69656,29 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         deletePageTitle: "Supprimer la page",
         groupTitle: "Grouper la sélection",
         ungroupTitle: "Dégrouper la sélection",
-        aiAssistantTitle: "Studio IA — composer une maquette avec l'IA",
+        aiAssistantTitle: "Assistant IA — composer une maquette",
         settingsOldAiTitle: "Assistant IA (ancien panneau)",
         settingsOldAiDesc: "Le bouton IA de la barre du haut ouvre désormais le Studio SP213, l'atelier de composition par IA. Cet ancien panneau (choix du moteur, clés API, exemples de prompts) reste disponible ici.",
         settingsOldAiBtn: "Ouvrir l'ancien panneau IA",
+        /* 🆕 Clés de la configuration IA dans les Préférences, de la bannière de
+           la boîte de prompt, et des deux exporteurs HTML / EPUB. */
+        settingsAiTitle: "Assistant IA (clés et réglages)",
+        settingsAiDesc: "Le bouton IA de la barre du haut ouvre la boîte de prompt. C'est ici que se règle la clé qu'elle utilise : elle reste dans ce navigateur et n'est envoyée qu'au fournisseur choisi.",
+        settingsAiProvider: "Fournisseur",
+        settingsAiCle: "Clé API",
+        settingsAiEnregistrer: "Enregistrer la clé",
+        settingsAiOk: "Une clé est enregistrée.",
+        settingsAiAucune: "Aucune clé enregistrée.",
+        settingsAiEnregistree: "Clé enregistrée.",
+        settingsAiOuvrirPanneau: "Ouvrir l'assistant IA",
+        settingsAiOuvrirStudio: "Ouvrir le Studio SP213",
+        aiSetupTitle: "L'assistant IA n'est pas encore configuré",
+        aiSetupText: "Ajoutez une clé pour que l'assistant puisse composer votre maquette.",
+        aiSetupLink: "Configurer la clé dans les Préférences →",
+        saveExportTitle: "Exporter vers",
+        exportAucunePage: "Aucune page à exporter.",
+        exportHtmlOk: "Export HTML : {n} page(s).",
+        exportEpubOk: "Export EPUB : {n} page(s).",
         // === Désinstallation (application de bureau seulement) ===
         settingsUninstTitle: "Désinstallation",
         settingsUninstDesc: "Retire SuperPrint de cet ordinateur. Ce qui suit est exécuté par le système, et non par la page web : les fichiers du programme sont retirés, puis les données de l'application. Cette action ne peut pas être annulée.",
@@ -70606,10 +70630,27 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         deletePageTitle: "Delete page",
         groupTitle: "Group selection",
         ungroupTitle: "Ungroup selection",
-        aiAssistantTitle: "AI Studio — compose a layout with AI",
+        aiAssistantTitle: "AI assistant — compose a layout",
         settingsOldAiTitle: "AI assistant (legacy panel)",
         settingsOldAiDesc: "The IA button in the top bar now opens the SP213 Studio, the AI layout workshop. This legacy panel (engine choice, API keys, prompt examples) remains available here.",
         settingsOldAiBtn: "Open the legacy AI panel",
+        settingsAiTitle: "AI assistant (keys and settings)",
+        settingsAiDesc: "The AI button in the top bar opens the prompt box. This is where the key it uses is set: it stays in this browser and is sent only to the provider you pick.",
+        settingsAiProvider: "Provider",
+        settingsAiCle: "API key",
+        settingsAiEnregistrer: "Save the key",
+        settingsAiOk: "A key is saved.",
+        settingsAiAucune: "No key saved.",
+        settingsAiEnregistree: "Key saved.",
+        settingsAiOuvrirPanneau: "Open the AI assistant",
+        settingsAiOuvrirStudio: "Open the SP213 Studio",
+        aiSetupTitle: "The AI assistant is not configured yet",
+        aiSetupText: "Add a key so the assistant can compose your layout.",
+        aiSetupLink: "Set the key in Preferences →",
+        saveExportTitle: "Export to",
+        exportAucunePage: "No page to export.",
+        exportHtmlOk: "HTML export: {n} page(s).",
+        exportEpubOk: "EPUB export: {n} page(s).",
         // === Uninstall (desktop application only) ===
         settingsUninstTitle: "Uninstall",
         settingsUninstDesc: "Removes SuperPrint from this computer. What follows is done by the system, not by the web page: the program files are removed, then the application data. This action cannot be undone.",
@@ -71560,10 +71601,27 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         deletePageTitle: "ページを削除",
         groupTitle: "選択をグループ化",
         ungroupTitle: "グループ解除",
-        aiAssistantTitle: "AIスタジオ — AIでレイアウトを作成",
+        aiAssistantTitle: "AIアシスタント — レイアウトを作成",
         settingsOldAiTitle: "AIアシスタント（旧パネル）",
         settingsOldAiDesc: "上部バーの「IA」ボタンはSP213スタジオ（AIによるレイアウト作成）を開くようになりました。この旧パネル（エンジン選択、APIキー、プロンプト例）はここから利用できます。",
         settingsOldAiBtn: "旧AIパネルを開く",
+        settingsAiTitle: "AIアシスタント（キーと設定）",
+        settingsAiDesc: "上部バーのAIボタンはプロンプト画面を開きます。使用するキーはここで設定します。キーはこのブラウザーに保存され、選択したプロバイダーにのみ送信されます。",
+        settingsAiProvider: "プロバイダー",
+        settingsAiCle: "APIキー",
+        settingsAiEnregistrer: "キーを保存",
+        settingsAiOk: "キーが保存されています。",
+        settingsAiAucune: "キーが保存されていません。",
+        settingsAiEnregistree: "キーを保存しました。",
+        settingsAiOuvrirPanneau: "AIアシスタントを開く",
+        settingsAiOuvrirStudio: "SP213スタジオを開く",
+        aiSetupTitle: "AIアシスタントはまだ設定されていません",
+        aiSetupText: "アシスタントがレイアウトを作成できるようにキーを追加してください。",
+        aiSetupLink: "設定でキーを登録 →",
+        saveExportTitle: "書き出し先",
+        exportAucunePage: "書き出すページがありません。",
+        exportHtmlOk: "HTML書き出し：{n}ページ。",
+        exportEpubOk: "EPUB書き出し：{n}ページ。",
         // === アンインストール（デスクトップ版のみ） ===
         settingsUninstTitle: "アンインストール",
         settingsUninstDesc: "このコンピューターから SuperPrint を削除します。以下はウェブページではなくシステムが実行します。プログラムのファイルを削除し、続いてアプリのデータを削除します。この操作は取り消せません。",
@@ -94161,6 +94219,317 @@ window.saveProjectLocal = function() {
     alert(translate('alertWeb3SaveOk'));
 };
 
+/* ══════════════════════════════════════════════════════════════════════════
+   EXPORT HTML ET EXPORT EPUB — deux formats de SORTIE, dans la pop-in
+   « Sauvegarder », a cote du format natif, du JSON et d'IPFS.
+
+   ⚠️ LES DEUX PASSENT PAR LE MEME RENDU, ET CE CHOIX COMPTE. Chaque page est
+   convertie en SVG par Fabric (`canvas.toSVG`, present dans la 5.1 embarquee),
+   puis ce SVG est EMBARQUE DANS LE FICHIER.
+
+   Pourquoi pas une capture d'ecran de chaque page ? Parce qu'une image perd
+   tout ce qui fait un document : le texte cesse d'etre du texte — impossible a
+   selectionner, a chercher, a lire par une synthese vocale, et illisible sur un
+   lecteur d'ebook qui adapte le zoom. Le SVG conserve la mise en page EXACTE
+   (donc un rendu fidele) ET du vrai texte vectoriel. C'est cette combinaison qui
+   rend les deux formats utiles plutot que decoratifs.
+
+   ⚠️ TROIS PIEGES TRAITES ICI :
+     1. La selection en cours ne doit pas partir dans le fichier : on la leve
+        avant de rendre, et on la remet apres.
+     2. Le SVG de Fabric commence par un prologue XML et un DOCTYPE. Insere tel
+        quel dans une page, il produit du HTML invalide : il est supprime
+        (`suppressPreamble`).
+     3. Une page en cours d'edition doit partir dans son ETAT COURANT, pas dans
+        celui de la derniere sauvegarde : la source est le canevas VIVANT.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** Le SVG d'une page, cadre sur la page elle-meme (hors fond perdu). */
+function spSvgDeLaPage(index) {
+    var cv = null;
+    try { cv = (typeof getCanvasForPageIndex === 'function') ? getCanvasForPageIndex(index) : null; } catch (_) {}
+    if (!cv) { try { cv = canvases[index]; } catch (_) {} }
+    if (!cv || typeof cv.toSVG !== 'function') return null;
+
+    /* La selection est visible sur le canevas, pas dans le document : on la
+       range le temps du rendu. `renderAll` n'est pas appele, donc rien ne
+       clignote a l'ecran. */
+    var actif = null;
+    try { actif = cv.getActiveObject ? cv.getActiveObject() : null; } catch (_) {}
+    if (actif) { try { cv.discardActiveObject(); } catch (_) {} }
+
+    var o = null;
+    try { o = (typeof getPageOrigin === 'function') ? getPageOrigin(cv, index) : null; } catch (_) {}
+    var w = (o && o.pageW) ? o.pageW : (cv.getWidth ? cv.getWidth() : 0);
+    var h = (o && o.pageH) ? o.pageH : (cv.getHeight ? cv.getHeight() : 0);
+    var x = (o && isFinite(o.x)) ? o.x : 0;
+    var y = (o && isFinite(o.y)) ? o.y : 0;
+
+    var svg = null;
+    try {
+        svg = cv.toSVG({ suppressPreamble: true, viewBox: { x: x, y: y, width: w, height: h } });
+    } catch (e) {
+        /* Repli : le SVG entier. Il vaut mieux une page entiere avec son fond
+           perdu que rien du tout, et le cadrage reste juste au pixel pres tant
+           que le document n'a pas de bavure. */
+        try { svg = cv.toSVG({ suppressPreamble: true }); } catch (e2) { svg = null; }
+    }
+
+    if (actif) { try { cv.setActiveObject(actif); cv.requestRenderAll(); } catch (_) {} }
+    if (!svg) return null;
+    return { svg: svg, w: w, h: h };
+}
+
+/** Le nom de base du document, nettoye de ce qu'un systeme de fichiers refuse. */
+function spNomBaseExport() {
+    var n = '';
+    try { n = (window._spProjectName || '').trim(); } catch (_) {}
+    if (!n) {
+        /* ⚠️ Sans nom de projet, `document.title` est le titre MARKETING de la
+           page (« SuperPrint — Online DTP Software | … ») : le prendre tel quel
+           donnerait un fichier au nom interminable. On retire donc la marque, et
+           si ce qui reste est encore long, c'est que ce n'etait pas un nom de
+           document — on prefere alors un nom neutre et court. */
+        try {
+            var t = (document.title || '').trim();
+            t = t.replace(/^\s*SuperPrint\s*[—\-|]\s*/i, '').trim();
+            t = t.replace(/\s*[—|]\s*SuperPrint.*$/i, '').trim();
+            if (t && t.length <= 40 && !/[|]/.test(t)) n = t;
+        } catch (_) {}
+    }
+    n = (n || 'superprint').replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '-');
+    return n || 'superprint';
+}
+
+/** Telecharge un contenu binaire ou texte. */
+function spTelecharger(nom, contenu, type) {
+    var blob = (contenu instanceof Blob) ? contenu : new Blob([contenu], { type: type });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = nom;
+    document.body.appendChild(a);
+    a.click();
+    try { document.body.removeChild(a); } catch (_) {}
+    /* Revoquer immediatement annulerait le telechargement dans certains
+       navigateurs : on laisse le temps au fichier de partir. */
+    setTimeout(function () { try { URL.revokeObjectURL(url); } catch (_) {} }, 30000);
+}
+
+/** Message a l'utilisateur, par le toast s'il existe. */
+function spDireExport(texte, genre) {
+    try {
+        if (typeof window.spShowToast === 'function') { window.spShowToast(texte, { kind: genre || 'info', duration: 6000 }); return; }
+    } catch (_) {}
+    try { alert(texte); } catch (_) {}
+}
+
+/** Le code de langue pour un fichier (balise lang / dc:language). */
+function spLangueExport() {
+    var l = 'fr';
+    try { l = currentLanguage || 'fr'; } catch (_) {}
+    if (l === 'en') return 'en';
+    if (l === 'ja' || l === 'jp') return 'ja';
+    return 'fr';
+}
+
+/** Echappe le texte destine a un contenu XML. */
+function spXml(t) {
+    return String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+/** Le nombre de pages du document. */
+function spNombreDePages() {
+    try { if (Array.isArray(pages)) return pages.length; } catch (_) {}
+    try { return canvases.length; } catch (_) {}
+    return 0;
+}
+
+/**
+ * EXPORT HTML — un fichier autonome, imprimable en PDF tel quel.
+ * ⚠️ Les pages sont posees dans un flux, avec un saut de page entre elles :
+ *    « Imprimer » depuis le navigateur redonne donc le document pagine.
+ */
+window.exporterHTML = async function () {
+    var n = spNombreDePages();
+    if (!n) { spDireExport(translate('exportAucunePage') || 'Aucune page a exporter.', 'error'); return; }
+
+    var rendues = 0, parties = [], i;
+    for (i = 0; i < n; i++) {
+        var p = spSvgDeLaPage(i);
+        var mmW = 210, mmH = 297;
+        try { mmW = pageFormat.width; mmH = pageFormat.height; } catch (_) {}
+        if (!p) {
+            parties.push('<section class="sp-page sp-page-vide"><p>Page ' + (i + 1) + ' — non rendue</p></section>');
+            continue;
+        }
+        rendues++;
+        parties.push(
+            '<section class="sp-page" style="width:' + mmW + 'mm;height:' + mmH + 'mm;">\n'
+            + p.svg + '\n'
+            + '</section>'
+        );
+    }
+
+    var lang = spLangueExport();
+    var titre = spNomBaseExport();
+    var html = '<!DOCTYPE html>\n'
+        + '<html lang="' + spXml(lang) + '">\n<head>\n<meta charset="utf-8">\n'
+        + '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        + '<title>' + spXml(titre) + '</title>\n'
+        + '<meta name="generator" content="SuperPrint — https://superprint.cc">\n'
+        + '<style>\n'
+        + '  html { background: #8a8a8a; }\n'
+        + '  body { margin: 0; padding: 24px 0; }\n'
+        + '  .sp-page { margin: 0 auto 24px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.35); overflow: hidden; position: relative; }\n'
+        + '  .sp-page > svg { display: block; width: 100%; height: 100%; }\n'
+        + '  .sp-page-vide { display: flex; align-items: center; justify-content: center; color: #999; font: 13px system-ui, sans-serif; }\n'
+        /* A l'impression : plus aucun habillage d'ecran, une page par feuille,
+           et la taille de page vient du document. */
+        + '  @media print {\n'
+        + '    html { background: #fff; }\n'
+        + '    body { padding: 0; }\n'
+        + '    .sp-page { margin: 0; box-shadow: none; width: auto !important; height: auto !important; page-break-after: always; break-after: page; }\n'
+        + '    .sp-page:last-child { page-break-after: auto; break-after: auto; }\n'
+        + '    @page { size: ' + (function () { try { return pageFormat.width + 'mm ' + pageFormat.height + 'mm'; } catch (_) { return 'A4'; } })() + '; margin: 0; }\n'
+        + '  }\n'
+        + '</style>\n</head>\n<body>\n'
+        + parties.join('\n')
+        + '\n</body>\n</html>\n';
+
+    spTelecharger(spNomBaseExport() + '.html', html, 'text/html;charset=utf-8');
+    try { if (typeof closeSaveModal === 'function') closeSaveModal(); } catch (_) {}
+    spDireExport((translate('exportHtmlOk') || 'Export HTML : {n} page(s).').replace('{n}', rendues), 'info');
+};
+
+/**
+ * EXPORT EPUB — EPUB 3 en mise en page FIXE.
+ * ⚠️ « Mise en page fixe » est un choix, et il est assume : un EPUB
+ *    redimensionnable devrait REFLUXER le texte, ce qui suppose de decouper les
+ *    blocs en paragraphes et de perdre la composition. Pour une maquette, le
+ *    lecteur doit voir la page telle qu'elle a ete composee. C'est ce que font
+ *    les exports EPUB d'InDesign, et ce que le standard nomme « pre-paginated ».
+ *    Le texte reste du TEXTE (SVG vectoriel), donc selectionnable et cherchable.
+ */
+window.exporterEPUB = async function () {
+    var n = spNombreDePages();
+    if (!n) { spDireExport(translate('exportAucunePage') || 'Aucune page a exporter.', 'error'); return; }
+
+    if (typeof ensureZipLib !== 'function') { spDireExport('Archiveur indisponible (JSZip).', 'error'); return; }
+    try { await ensureZipLib(); } catch (_) {}
+    if (!window.JSZip) { spDireExport('Archiveur indisponible (JSZip).', 'error'); return; }
+
+    var lang = spLangueExport();
+    var titre = spNomBaseExport();
+    var mmW = 210, mmH = 297;
+    try { mmW = pageFormat.width; mmH = pageFormat.height; } catch (_) {}
+
+    var identifiant = 'urn:uuid:';
+    try {
+        identifiant += (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+            : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+    } catch (_) { identifiant += '00000000-0000-4000-8000-000000000000'; }
+
+    var modifie = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+
+    var zip = new window.JSZip();
+
+    /* ⚠️ `mimetype` doit etre la PREMIERE entree de l'archive et ne doit PAS
+       etre compresse : c'est ainsi qu'un lecteur reconnait un EPUB sans avoir a
+       tout ouvrir. L'ordre d'insertion de JSZip est celui de l'ecriture, donc
+       ce fichier est ajoute avant tous les autres, avec un stockage brut. */
+    zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+
+    zip.file('META-INF/container.xml',
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">\n'
+        + '  <rootfiles>\n'
+        + '    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>\n'
+        + '  </rootfiles>\n</container>\n');
+
+    zip.file('OEBPS/style.css',
+        'html, body { margin: 0; padding: 0; height: 100%; }\n'
+        + 'body.sp-page { background: #fff; }\n'
+        + 'svg { display: block; width: 100%; height: 100%; }\n');
+
+    var articles = [], refs = [], rendues = 0, i;
+    for (i = 0; i < n; i++) {
+        var id = 'p' + (i + 1);
+        var nom = 'page-' + String(i + 1).padStart(4, '0') + '.xhtml';
+        var p = spSvgDeLaPage(i);
+        var corps;
+        if (p) {
+            rendues++;
+            corps = p.svg;
+        } else {
+            corps = '<p>Page ' + (i + 1) + ' — non rendue</p>';
+        }
+        /* ⚠️ Le SVG est INSERE DANS le XHTML plutot que reference en <img> : un
+           <img> aurait fait du texte une image, donc perdu la selection et la
+           recherche. Contrepartie assumee : le XHTML doit etre du XML
+           parfaitement forme. */
+        zip.file('OEBPS/' + nom,
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            + '<!DOCTYPE html>\n'
+            + '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="' + spXml(lang) + '" lang="' + spXml(lang) + '">\n'
+            + '<head>\n<meta charset="utf-8"/>\n<title>' + spXml(titre + ' — ' + (i + 1)) + '</title>\n'
+            + '<meta name="viewport" content="width=' + Math.round(mmW) + 'mm, height=' + Math.round(mmH) + 'mm"/>\n'
+            + '<link rel="stylesheet" type="text/css" href="style.css"/>\n'
+            + '</head>\n<body class="sp-page">\n' + corps + '\n</body>\n</html>\n');
+        articles.push('    <item id="' + id + '" href="' + nom + '" media-type="application/xhtml+xml"/>');
+        refs.push('    <itemref idref="' + id + '"/>');
+    }
+
+    zip.file('OEBPS/nav.xhtml',
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<!DOCTYPE html>\n'
+        + '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="' + spXml(lang) + '" lang="' + spXml(lang) + '">\n'
+        + '<head><meta charset="utf-8"/><title>' + spXml(titre) + '</title></head>\n'
+        + '<body>\n<nav epub:type="toc" id="toc">\n<h1>' + spXml(titre) + '</h1>\n<ol>\n'
+        + Array.from({ length: n }, function (_x, k) {
+            return '  <li><a href="page-' + String(k + 1).padStart(4, '0') + '.xhtml">Page ' + (k + 1) + '</a></li>';
+        }).join('\n')
+        + '\n</ol>\n</nav>\n</body>\n</html>\n');
+
+    zip.file('OEBPS/content.opf',
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id"'
+        + ' prefix="rendition: http://www.idpf.org/vocab/rendition/#">\n'
+        + '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
+        + '    <dc:identifier id="pub-id">' + spXml(identifiant) + '</dc:identifier>\n'
+        + '    <dc:title>' + spXml(titre) + '</dc:title>\n'
+        + '    <dc:language>' + spXml(lang) + '</dc:language>\n'
+        + '    <dc:publisher>SuperPrint — 2.13</dc:publisher>\n'
+        + '    <meta property="dcterms:modified">' + modifie + '</meta>\n'
+        + '    <meta property="rendition:layout">pre-paginated</meta>\n'
+        + '    <meta property="rendition:orientation">auto</meta>\n'
+        + '    <meta property="rendition:spread">auto</meta>\n'
+        + '  </metadata>\n'
+        + '  <manifest>\n'
+        + '    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>\n'
+        + '    <item id="css" href="style.css" media-type="text/css"/>\n'
+        + articles.join('\n') + '\n'
+        + '  </manifest>\n'
+        + '  <spine>\n' + refs.join('\n') + '\n  </spine>\n'
+        + '</package>\n');
+
+    var blob;
+    try {
+        blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip', compression: 'DEFLATE' });
+    } catch (e) {
+        spDireExport('Echec de la fabrication de l\'EPUB.', 'error');
+        return;
+    }
+    spTelecharger(spNomBaseExport() + '.epub', blob, 'application/epub+zip');
+    try { if (typeof closeSaveModal === 'function') closeSaveModal(); } catch (_) {}
+    spDireExport((translate('exportEpubOk') || 'Export EPUB : {n} page(s).').replace('{n}', rendues), 'info');
+};
+
 window.saveProjectWeb3 = async function() {
     const settings = loadWeb3Settings();
     const apiKey = String(settings.apiKey || '').trim();
@@ -94674,6 +95043,129 @@ window.spOuvrirStudioIA = function () {
         } catch (e) {}
     }
     return false;
+};
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BOUTON « IA » DE LA BARRE DU HAUT : LA BOITE DE PROMPT, ET RIEN D'AUTRE.
+
+   ⚠️ CE QUI CHANGE, ET POURQUOI. La v1.7.575 avait detourne ce bouton vers le
+   Studio SP213 et range le panneau IA dans les Reglages. Demande utilisateur :
+   le bouton doit ouvrir LA BOITE DE PROMPT de SuperPrint — celle qui compose la
+   maquette dans le document courant. Le Studio reste accessible, mais depuis les
+   Reglages, ou il a sa place : c'est un ATELIER, pas l'action principale.
+
+   ⚠️ ET QUAND RIEN N'EST CONFIGURE, ON NE LAISSE PAS L'UTILISATEUR DEVANT UN
+   FORMULAIRE MORT : la boite de prompt affiche alors une banniere qui dit ce qui
+   manque et ou le renseigner. C'est le seul cas ou l'utilisateur a besoin d'aide
+   a cet endroit precis.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** L'IA a-t-elle une cle utilisable ? La meme source que le reste de l'app. */
+function spIAConfiguree() {
+    try {
+        var p = localStorage.getItem('sp_ai_provider') || 'deepseek';
+        return !!getAIKeyFor(p);
+    } catch (_) { return false; }
+}
+window.spIAConfiguree = spIAConfiguree;
+
+/** Met la banniere de configuration en accord avec l'etat reel. */
+function spMajBanniereIA() {
+    var b = document.getElementById('aiSetupBanner');
+    if (!b) return;
+    b.style.display = spIAConfiguree() ? 'none' : 'flex';
+}
+window.spMajBanniereIA = spMajBanniereIA;
+
+/** Le bouton « IA » de la barre du haut. */
+window.spOuvrirIA = function () {
+    try { openAIModal(); } catch (e) { return false; }
+    spMajBanniereIA();
+    return false;
+};
+
+/** La banniere renvoie aux Preferences, ou la cle se renseigne. */
+window.spOuvrirPrefsIA = function () {
+    try { closeAIModal(); } catch (_) {}
+    try { openSettings(); } catch (_) {}
+    /* La section IA est en bas du premier onglet : on y amene la vue, sans quoi
+       l'utilisateur croirait que le lien n'a rien fait. */
+    setTimeout(function () {
+        var s = document.getElementById('settingsAiSection');
+        if (!s) return;
+        try { s.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) { try { s.scrollIntoView(); } catch (e) {} }
+        try { if (typeof window.spPrefsIARemplir === 'function') window.spPrefsIARemplir(); } catch (_) {}
+        var ch = document.getElementById('settingsAiKey');
+        if (ch) { try { ch.focus(); } catch (_) {} }
+    }, 120);
+    return false;
+};
+
+/** Remplit le formulaire IA des Preferences depuis le stockage reel. */
+window.spPrefsIARemplir = function () {
+    var sel = document.getElementById('settingsAiProvider');
+    var champ = document.getElementById('settingsAiKey');
+    var etat = document.getElementById('settingsAiEtat');
+    if (!sel || !champ) return;
+
+    /* La liste vient de AI_MODELS : une seule source, donc un fournisseur
+       ajoute ailleurs apparait ici sans qu'on y touche. */
+    try {
+        var fournisseurs = Object.keys(AI_MODELS);
+        var connu = Array.prototype.map.call(sel.options, function (o) { return o.value; });
+        var identique = connu.length === fournisseurs.length
+            && fournisseurs.every(function (f) { return connu.indexOf(f) >= 0; });
+        if (!identique) {
+            sel.innerHTML = fournisseurs.map(function (f) {
+                return '<option value="' + f + '">' + f + '</option>';
+            }).join('');
+        }
+        sel.value = localStorage.getItem('sp_ai_provider') || 'deepseek';
+        if (!sel.value || !AI_MODELS[sel.value]) sel.value = fournisseurs[0];
+    } catch (_) { sel.value = 'deepseek'; }
+
+    try { champ.value = getAIKeyFor(sel.value) || ''; } catch (_) { champ.value = ''; }
+    if (etat) {
+        etat.textContent = spIAConfiguree()
+            ? (translate('settingsAiOk') || 'Une clé est enregistrée.')
+            : (translate('settingsAiAucune') || 'Aucune clé enregistrée.');
+        etat.style.color = spIAConfiguree() ? '#2e7d32' : '#8a4b00';
+    }
+};
+
+/** Enregistre la cle IA depuis les Preferences, avec les MEMES cles de stockage
+    que le panneau IA — sinon les deux formulaires divergeraient. */
+window.spPrefsIAEnregistrer = function () {
+    var sel = document.getElementById('settingsAiProvider');
+    var champ = document.getElementById('settingsAiKey');
+    var etat = document.getElementById('settingsAiEtat');
+    if (!sel || !champ) return;
+    var provider = sel.value || 'deepseek';
+    var cle = (champ.value || '').trim();
+    try {
+        localStorage.setItem('sp_ai_provider', provider);
+        if (cle) {
+            localStorage.setItem('sp_ai_key', cle);
+            localStorage.setItem('sp_ai_key_' + provider, cle);
+            var studio = (typeof AI_STUDIO_KEY_MAP !== 'undefined') ? AI_STUDIO_KEY_MAP[provider] : null;
+            if (studio) localStorage.setItem(studio, cle);
+            var m = document.getElementById('settingsAiModel');
+            if (m && m.value) localStorage.setItem('sp_ai_model', m.value);
+        }
+    } catch (_) {}
+    if (etat) {
+        etat.textContent = cle ? (translate('settingsAiEnregistree') || 'Clé enregistrée.')
+                               : (translate('settingsAiAucune') || 'Aucune clé enregistrée.');
+        etat.style.color = cle ? '#2e7d32' : '#8a4b00';
+    }
+    try { if (typeof window._aiFooterSyncKeyDot === 'function') window._aiFooterSyncKeyDot(); } catch (_) {}
+    try { if (typeof window.spShowToast === 'function') window.spShowToast(translate('settingsAiEnregistree') || 'Clé enregistrée.', { kind: 'success' }); } catch (_) {}
+};
+
+/** Le Studio SP213 : conserve, mais range dans les Reglages. */
+window.spOuvrirStudioIALien = function () {
+    try { closeSettings(); } catch (_) {}
+    return window.spOuvrirStudioIA();
 };
 
 /**
