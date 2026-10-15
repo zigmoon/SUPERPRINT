@@ -2024,20 +2024,21 @@
                             <rect x="7" y="7" width="10" height="10" fill="currentColor" fill-opacity="0.15"></rect>
                         </svg>
                     </button>
-                    <!-- 🆕 ICÔNE D'ASSISTANT (tête de robot) plutôt que le mot « IA ».
+                    <!-- 🆕 ICÔNE D'ÉTOILES plutôt que le mot « IA », puis plutôt qu'une
+                         tête d'assistant : c'est le dessin que les utilisateurs
+                         reconnaissent pour l'IA, et il évoque le studio.
                          ⚠️ Dessinée en CONTOUR (`fill="none" stroke`), comme TOUTES les
                          autres icônes de cette zone (gomme, recherche, collab, imprimante,
-                         lecture) : une icône PLEINE a la même couleur mais huit fois plus
-                         d'encre, donc elle paraissait beaucoup plus sombre que ses
-                         voisines. Le bouton ouvre la BOÎTE DE PROMPT (spOuvrirIA) ; le
-                         Studio SP213 reste accessible depuis les Préférences. -->
+                         lecture) : une icône PLEINE a la même couleur mais beaucoup plus
+                         d'encre, donc elle paraîtrait beaucoup plus sombre que ses
+                         voisines. Le bouton ouvre DIRECTEMENT la BOÎTE DE PROMPT
+                         (spOuvrirIA) ; la clé et le fournisseur se règlent dans les
+                         Préférences, onglet IA, où cette boîte renvoie si rien n'est
+                         configuré. -->
                     <button class="btn" id="openAIBtn" title="Assistant IA" aria-label="Assistant IA" data-translate-title="aiAssistantTitle" style="pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; height: 32px;" onclick="spOuvrirIA()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="4" y="7.6" width="16" height="11.4" rx="3.2"/>
-                            <path d="M12 7.6V4.9"/>
-                            <circle cx="12" cy="3.7" r="1.15"/>
-                            <circle cx="9.3" cy="13.3" r="1.25" fill="currentColor" stroke="none"/>
-                            <circle cx="14.7" cy="13.3" r="1.25" fill="currentColor" stroke="none"/>
+                            <path d="M10.1 3.9l1.8 4.4 4.4 1.8-4.4 1.8-1.8 4.4-1.8-4.4-4.4-1.8 4.4-1.8z"/>
+                            <path d="M17.7 13.2l1 2.3 2.3 1-2.3 1-1 2.3-1-2.3-2.3-1 2.3-1z"/>
                         </svg>
                     </button>
                     <button class="btn btn-square" id="openSearchTopBtn" title="Rechercher et remplacer (Ctrl+F)" aria-label="Rechercher et remplacer" onclick="openFindReplace(false)" style="pointer-events: auto; border: 0; color: #1a1a1a;">
@@ -2081,7 +2082,7 @@
                     </button>
                 </div>
                 <div class="toolbar-right">
-                    <button class="btn" id="exportPDF" title="Exporter (PDF, PNG, JPG, IDML, .sp)" aria-label="Exporter" data-translate-title="export" style="pointer-events: auto;">EXPORT</button>
+                    <button class="btn" id="exportPDF" title="Exporter (PDF, PNG, JPG, IDML, .sp)" aria-label="Exporter" data-translate-title="export" style="pointer-events: auto;">PDF</button>
                     <button class="btn btn-secondary btn-square" id="topbarSettingsBtn" title="Préférences" data-translate-title="settings" onclick="openSettings()" style="font-size: 14px; line-height: 1;">⚙</button>
                 </div>
             </div>
@@ -2164,11 +2165,8 @@
                     </button>
                     <button class="mobile-menu-item" id="mobileAI">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="4" y="7.6" width="16" height="11.4" rx="3.2"/>
-                            <path d="M12 7.6V4.9"/>
-                            <circle cx="12" cy="3.7" r="1.15"/>
-                            <circle cx="9.3" cy="13.3" r="1.25" fill="currentColor" stroke="none"/>
-                            <circle cx="14.7" cy="13.3" r="1.25" fill="currentColor" stroke="none"/>
+                            <path d="M10.1 3.9l1.8 4.4 4.4 1.8-4.4 1.8-1.8 4.4-1.8-4.4-4.4-1.8 4.4-1.8z"/>
+                            <path d="M17.7 13.2l1 2.3 2.3 1-2.3 1-1 2.3-1-2.3-2.3-1 2.3-1z"/>
                         </svg>
                         <span>Assistant IA</span>
                     </button>
@@ -4613,6 +4611,7 @@
             <!-- Tabs -->
             <div style="display: flex; border-bottom: 1px solid #e0e0e0; flex-shrink: 0;">
                 <button class="settings-tab active" data-tab="settings" style="flex: 1; padding: 11px 12px; background: transparent; border: none; border-bottom: 2px solid #1a1a1a; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; cursor: pointer;" onclick="switchSettingsTab('settings')" data-translate="settingsTabLabel">Réglages</button>
+                <button class="settings-tab" data-tab="ai" style="flex: 1; padding: 11px 12px; background: transparent; border: none; border-bottom: 2px solid transparent; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; cursor: pointer; opacity: 0.6;" onclick="switchSettingsTab('ai')" data-translate="aiTabLabel">IA</button>
                 <button class="settings-tab" data-tab="shortcuts" style="flex: 1; padding: 11px 12px; background: transparent; border: none; border-bottom: 2px solid transparent; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; cursor: pointer; opacity: 0.6;" onclick="switchSettingsTab('shortcuts')" data-translate="shortcutsTabLabel">Raccourcis</button>
                 <button class="settings-tab" data-tab="faq" style="flex: 1; padding: 11px 12px; background: transparent; border: none; border-bottom: 2px solid transparent; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; cursor: pointer; opacity: 0.6;" onclick="switchSettingsTab('faq')" data-translate="faqTabLabel">FAQ</button>
                 <button class="settings-tab" data-tab="contact" style="flex: 1; padding: 11px 12px; background: transparent; border: none; border-bottom: 2px solid transparent; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; cursor: pointer; opacity: 0.6;" onclick="switchSettingsTab('contact')" data-translate="contactTabLabel">Contact</button>
@@ -4720,37 +4719,6 @@
                          STUDIO SP213 (l'atelier de composition par IA). Le panneau IA
                          historique reste utilisable, mais seulement depuis les réglages,
                          en bas du premier onglet — il n'est plus exposé dans la barre. -->
-                    <!-- 🆕 CONFIGURATION DE L'IA — c'est ICI que se règle la clé.
-                         Le bouton « IA » de la barre du haut ouvre la boîte de prompt ;
-                         quand aucune clé n'est enregistrée, cette boîte renvoie ici
-                         (`spOuvrirPrefsIA`). Les deux formulaires écrivent les MÊMES
-                         clés de stockage, donc ils ne peuvent pas diverger. -->
-                    <div class="modal-section" id="settingsAiSection" style="background: #fff; padding: 16px; border-radius: 4px; margin-bottom: 16px; border: 1px solid #e0e0e0;">
-                        <div class="modal-section-title" data-translate="settingsAiTitle">Assistant IA (clés et réglages)</div>
-                        <p style="font-size: 11px; color: #666; line-height: 1.55; margin: 0 0 12px;" data-translate="settingsAiDesc">
-                            Le bouton IA de la barre du haut ouvre la boîte de prompt. C'est ici que se règle la clé
-                            qu'elle utilise : elle reste dans ce navigateur et n'est envoyée qu'au fournisseur choisi.
-                        </p>
-
-                        <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
-                            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: #666;">
-                                <span data-translate="settingsAiProvider">Fournisseur</span>
-                                <select id="settingsAiProvider" style="height: 32px; min-width: 150px; padding: 0 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background: #fff;"></select>
-                            </label>
-                            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: #666; flex: 1; min-width: 200px;">
-                                <span data-translate="settingsAiCle">Clé API</span>
-                                <input type="password" id="settingsAiKey" autocomplete="off" spellcheck="false" placeholder="sk-…" style="height: 32px; padding: 0 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background: #fff;">
-                            </label>
-                            <button class="btn btn-primary" id="settingsAiSave" onclick="spPrefsIAEnregistrer()" data-translate="settingsAiEnregistrer">Enregistrer la clé</button>
-                        </div>
-                        <div id="settingsAiEtat" style="font-size: 11px; margin-top: 9px; font-weight: 600;"></div>
-
-                        <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-                            <button class="btn btn-secondary" onclick="closeSettings(); spOuvrirIA();" data-translate="settingsAiOuvrirPanneau">Ouvrir l'assistant IA</button>
-                            <button class="btn btn-secondary" onclick="spOuvrirStudioIALien()" data-translate="settingsAiOuvrirStudio">Ouvrir le Studio SP213</button>
-                        </div>
-                    </div>
-
                     <!-- 🗑️ DÉSINSTALLATION — visible UNIQUEMENT dans l'application de
                          bureau : sur le site, il n'y a rien à désinstaller. C'est
                          spDesinstallationInit() qui la révèle, quand la coquille
@@ -4772,7 +4740,77 @@
                         <button class="btn btn-primary" onclick="applySettings()" style="font-weight: 600;">Appliquer</button>
                     </div>
                 </div>
-                <!-- Tab 2: Shortcuts -->
+                <!-- Tab 2: IA — la configuration de l'assistant -->
+                <!-- Onglet IA : la configuration de l'assistant (fournisseur,
+                     modele, cle, journal) vivait DANS la boite de prompt, ce qui
+                     melangeait deux gestes : se connecter, et demander une maquette.
+                     Elle est ici a sa place ; la boite de prompt ne garde que ce
+                     qui sert a prompter, et y renvoie quand rien n'est configure
+                     (spOuvrirPrefsIA -> switchSettingsTab('ai')). -->
+                <div id="aiTabContent" class="settings-tab-content" style="display: none;">
+                    <!-- Cle et fournisseur de l'assistant. -->
+                    <section class="ai-block">
+                        <div class="ai-block-head">
+                            <h3 data-translate="aiSectionConfig">Connexion</h3>
+                            <span class="ai-status" id="aiKeyStatus"></span>
+                        </div>
+                        <p class="ai-block-hint" data-translate="aiConnectHint">Choisissez un fournisseur, collez votre clé : elle reste dans ce navigateur et n’est envoyée qu’au fournisseur choisi.</p>
+
+                        <div class="ai-providers" id="aiProviderCards"></div>
+                        <!-- champ réellement lu par le JavaScript (piloté par les cartes ci-dessus) -->
+                        <input type="hidden" id="aiProvider" value="deepseek">
+
+                        <div class="ai-row">
+                            <label class="ai-label" for="aiModel" data-translate="aiLabelModel">Modèle</label>
+                            <div class="ai-field">
+                                <select id="aiModel" class="ai-input"></select>
+                                <span class="ai-help" id="aiModelHelp" data-translate-title="aiModelHelpTitle" title="Choisissez le modèle utilisé pour composer la maquette.">ⓘ</span>
+                            </div>
+                        </div>
+
+                        <div class="ai-row">
+                            <label class="ai-label" for="aiApiKey" data-translate="aiLabelApiKey">Clé API</label>
+                            <div class="ai-field">
+                                <input id="aiApiKey" type="password" class="ai-input" autocomplete="off"
+                                       placeholder="sk-...">
+                                <button type="button" class="ai-mini" onclick="aiToggleKeyVisible(this)" data-translate-title="aiShowKeyTitle" title="Afficher / masquer la clé">👁</button>
+                                <a class="ai-link" id="aiKeyLink" href="#" target="_blank" rel="noopener"
+                                   data-translate="aiGetKey" data-translate-title="aiGetKeyTitle"
+                                   title="Ouvrir la page officielle de création de clé">Obtenir une clé ↗</a>
+                            </div>
+                        </div>
+
+                        <div class="ai-actions">
+                            <button class="btn btn-primary" onclick="testAI()" data-translate="aiBtnTest">Tester la connexion</button>
+                            <button class="btn btn-secondary" onclick="saveAISettings()" data-translate="aiBtnSave">Enregistrer</button>
+                        </div>
+
+                        <!-- 🆕 v1.7.454 — le journal vit désormais DANS la configuration, sous le test -->
+                    <details class="ai-acc">
+                        <summary>
+                            <span class="ai-acc-title" data-translate="aiSectionLog">Journal</span>
+                            <span class="ai-acc-badge" id="aiLogBadge">—</span>
+                        </summary>
+                        <div class="ai-acc-body">
+                            <p class="ai-block-hint" data-translate="aiLogHint">Historique des demandes et des réponses : utile pour comprendre une erreur.</p>
+                            <textarea id="aiLog" readonly class="ai-input ai-log" data-translate-placeholder="aiLogPlaceholder" placeholder="Les échanges avec l’IA s’affichent ici."></textarea>
+                        </div>
+                    </details>
+
+                        <!-- 🆕 v1.7.454 — aide « Où trouver ma clé ? » : TOUT À LA FIN de la
+                             rubrique Configuration, sous le Journal, en BLOC EN COULEUR. -->
+                        <div id="aiKeyHint" class="ai-note ai-note-key">
+                            <strong data-translate="aiHowKeyTitle">Où trouver ma clé ?</strong>
+                            <span data-translate="aiHowKeyText">Ouvrez le lien « Obtenir une clé », créez une clé, copiez-la ici : elle est mémorisée automatiquement dès le premier test ou la première génération.</span>
+                        </div>
+
+                        <div class="ai-actions" style="margin-top: 12px;">
+                            <button class="btn btn-secondary" onclick="closeSettings(); spOuvrirIA();" data-translate="settingsAiOuvrirPanneau">Ouvrir l'assistant IA</button>
+                            <button class="btn btn-secondary" onclick="spOuvrirStudioIALien()" data-translate="settingsAiOuvrirStudio">Ouvrir le Studio SP213</button>
+                        </div>
+                    </section>
+                </div>
+                <!-- Tab 3: Shortcuts -->
                 <div id="shortcutsTabContent" class="settings-tab-content" style="display: none;">
                     <div id="shortcutsInnerContent">
                     <!-- Section: Texte -->
@@ -4958,68 +4996,10 @@
                     avec une grille propre, votre palette et vos textes.
                 </p>
 
-                <!-- ═══════════ 1. CONNEXION ═══════════ -->
-                <section class="ai-block">
-                    <div class="ai-block-head">
-                        <span class="ai-step">1</span>
-                        <h3 data-translate="aiSectionConfig">Connexion</h3>
-                        <span class="ai-status" id="aiKeyStatus"></span>
-                    </div>
-                    <p class="ai-block-hint" data-translate="aiConnectHint">Choisissez un fournisseur, collez votre clé : elle reste dans ce navigateur et n’est envoyée qu’au fournisseur choisi.</p>
-
-                    <div class="ai-providers" id="aiProviderCards"></div>
-                    <!-- champ réellement lu par le JavaScript (piloté par les cartes ci-dessus) -->
-                    <input type="hidden" id="aiProvider" value="deepseek">
-
-                    <div class="ai-row">
-                        <label class="ai-label" for="aiModel" data-translate="aiLabelModel">Modèle</label>
-                        <div class="ai-field">
-                            <select id="aiModel" class="ai-input"></select>
-                            <span class="ai-help" id="aiModelHelp" data-translate-title="aiModelHelpTitle" title="Choisissez le modèle utilisé pour composer la maquette.">ⓘ</span>
-                        </div>
-                    </div>
-
-                    <div class="ai-row">
-                        <label class="ai-label" for="aiApiKey" data-translate="aiLabelApiKey">Clé API</label>
-                        <div class="ai-field">
-                            <input id="aiApiKey" type="password" class="ai-input" autocomplete="off"
-                                   placeholder="sk-...">
-                            <button type="button" class="ai-mini" onclick="aiToggleKeyVisible(this)" data-translate-title="aiShowKeyTitle" title="Afficher / masquer la clé">👁</button>
-                            <a class="ai-link" id="aiKeyLink" href="#" target="_blank" rel="noopener"
-                               data-translate="aiGetKey" data-translate-title="aiGetKeyTitle"
-                               title="Ouvrir la page officielle de création de clé">Obtenir une clé ↗</a>
-                        </div>
-                    </div>
-
-                    <div class="ai-actions">
-                        <button class="btn btn-primary" onclick="testAI()" data-translate="aiBtnTest">Tester la connexion</button>
-                        <button class="btn btn-secondary" onclick="saveAISettings()" data-translate="aiBtnSave">Enregistrer</button>
-                    </div>
-
-                    <!-- 🆕 v1.7.454 — le journal vit désormais DANS la configuration, sous le test -->
-                <details class="ai-acc">
-                    <summary>
-                        <span class="ai-acc-title" data-translate="aiSectionLog">Journal</span>
-                        <span class="ai-acc-badge" id="aiLogBadge">—</span>
-                    </summary>
-                    <div class="ai-acc-body">
-                        <p class="ai-block-hint" data-translate="aiLogHint">Historique des demandes et des réponses : utile pour comprendre une erreur.</p>
-                        <textarea id="aiLog" readonly class="ai-input ai-log" data-translate-placeholder="aiLogPlaceholder" placeholder="Les échanges avec l’IA s’affichent ici."></textarea>
-                    </div>
-                </details>
-
-                    <!-- 🆕 v1.7.454 — aide « Où trouver ma clé ? » : TOUT À LA FIN de la
-                         rubrique Configuration, sous le Journal, en BLOC EN COULEUR. -->
-                    <div id="aiKeyHint" class="ai-note ai-note-key">
-                        <strong data-translate="aiHowKeyTitle">Où trouver ma clé ?</strong>
-                        <span data-translate="aiHowKeyText">Ouvrez le lien « Obtenir une clé », créez une clé, copiez-la ici : elle est mémorisée automatiquement dès le premier test ou la première génération.</span>
-                    </div>
-                </section>
-
                 <!-- ═══════════ 2. LA MAQUETTE ═══════════ -->
                 <section class="ai-block">
                     <div class="ai-block-head">
-                        <span class="ai-step">2</span>
+                        <span class="ai-step">1</span>
                         <h3 data-translate="aiSectionCreate">Décrire la maquette</h3>
                     </div>
 
@@ -5040,6 +5020,7 @@
 
                     <label class="ai-label" for="aiPromptModal" data-translate="aiPromptLabel">Décrivez la maquette souhaitée</label>
                     <textarea id="aiPromptModal" class="ai-textarea"
+                              onclick="return spPromptIAClic()"
                               data-translate-placeholder="aiPromptPlaceholder"
                               placeholder="Ex : double page magazine, photo panoramique en haut, texte sur deux colonnes, palette crème et bordeaux. Ou : livret 8 pages (couverture, sommaire, 5 pages contenu, contact)."></textarea>
 
@@ -5064,10 +5045,10 @@
                 <!-- ═══════════ 3. EXEMPLES (ONGLETS) ═══════════ -->
                 <section class="ai-block" id="aiExamplesBlock">
                     <div class="ai-block-head">
-                        <span class="ai-step">3</span>
+                        <span class="ai-step">2</span>
                         <h3 data-translate="aiSectionExamples">Exemples prêts à l’emploi</h3>
                     </div>
-                    <p class="ai-block-hint" data-translate="aiExamplesHint">Cliquez sur « Utiliser » : le texte est placé dans la zone de l’étape 2, il ne reste qu’à lancer la création.</p>
+                    <p class="ai-block-hint" data-translate="aiExamplesHint">Cliquez sur « Utiliser » : le texte est placé dans la zone de l’étape 1, il ne reste qu’à lancer la création.</p>
                     <div class="ai-tabs" id="aiExampleTabs" role="tablist"></div>
                     <div class="ai-panels" id="aiExamplePanels"></div>
                 </section>

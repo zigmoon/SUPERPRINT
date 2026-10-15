@@ -63300,6 +63300,8 @@ function alignSelectedObjects(direction) {
     // Show selected tab content
     if (tabName === 'settings') {
         document.getElementById('settingsTabContent').style.display = 'block';
+    } else if (tabName === 'ai') {
+        document.getElementById('aiTabContent').style.display = 'block';
     } else if (tabName === 'shortcuts') {
         document.getElementById('shortcutsTabContent').style.display = 'block';
     } else if (tabName === 'faq') {
@@ -69556,6 +69558,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         faqQ8: "Grouper et dégrouper rapidement",
         faqA8: "<div><b>Grouper</b> : sélectionnez plusieurs blocs, puis <b>Ctrl + Shift + G</b> ou l'icône <b>[+]</b>.</div><div><b>Dégrouper</b> : sélectionnez un groupe, puis <b>Ctrl + Shift + U</b> ou l'icône <b>[−]</b>.</div>",
         settingsTabLabel: "Réglages",
+        aiTabLabel: "IA",
         shortcutsTabLabel: "Raccourcis",
         faqTabLabel: "FAQ",
         contactTabLabel: "Contact",
@@ -69657,19 +69660,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         groupTitle: "Grouper la sélection",
         ungroupTitle: "Dégrouper la sélection",
         aiAssistantTitle: "Assistant IA — composer une maquette",
-        settingsOldAiTitle: "Assistant IA (ancien panneau)",
-        settingsOldAiDesc: "Le bouton IA de la barre du haut ouvre désormais le Studio SP213, l'atelier de composition par IA. Cet ancien panneau (choix du moteur, clés API, exemples de prompts) reste disponible ici.",
-        settingsOldAiBtn: "Ouvrir l'ancien panneau IA",
-        /* 🆕 Clés de la configuration IA dans les Préférences, de la bannière de
-           la boîte de prompt, et des deux exporteurs HTML / EPUB. */
-        settingsAiTitle: "Assistant IA (clés et réglages)",
-        settingsAiDesc: "Le bouton IA de la barre du haut ouvre la boîte de prompt. C'est ici que se règle la clé qu'elle utilise : elle reste dans ce navigateur et n'est envoyée qu'au fournisseur choisi.",
-        settingsAiProvider: "Fournisseur",
-        settingsAiCle: "Clé API",
-        settingsAiEnregistrer: "Enregistrer la clé",
+        /* 🆕 Clés de la configuration IA, désormais dans l'ONGLET IA des
+           Préférences, plus celles de la bannière de la boîte de prompt. */
         settingsAiOk: "Une clé est enregistrée.",
         settingsAiAucune: "Aucune clé enregistrée.",
-        settingsAiEnregistree: "Clé enregistrée.",
         settingsAiOuvrirPanneau: "Ouvrir l'assistant IA",
         settingsAiOuvrirStudio: "Ouvrir le Studio SP213",
         aiSetupTitle: "L'assistant IA n'est pas encore configuré",
@@ -69726,7 +69720,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiHowKeyTitle: "Où trouver ma clé ?",
         aiHowKeyText: "Cliquez sur le lien « clé ↗ » du fournisseur : la page officielle de création s’ouvre dans un nouvel onglet. Créez la clé, copiez-la, collez-la ici, puis cliquez sur Test.",
         aiFooterBarHelp: "Affiche une barre de saisie sous la page : décrivez votre besoin sans ouvrir cette fenêtre.",
-        aiExamplesHint: "Cliquez sur « Utiliser » : le texte est placé dans la zone de l’étape 2, il ne reste qu’à lancer la création.",
+        aiExamplesHint: "Cliquez sur « Utiliser » : le texte est placé dans la zone de l’étape 1, il ne reste qu’à lancer la création.",
         frTitle: "Rechercher & remplacer",
         frFind: "Rechercher",
         frFindPh: "Texte à trouver…",
@@ -70531,6 +70525,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         faqQ8: "Group and Ungroup quickly",
         faqA8: "<div><b>Group</b>: select multiple blocks, then <b>Ctrl + Shift + G</b> or the <b>[+]</b> icon.</div><div><b>Ungroup</b>: select a group, then <b>Ctrl + Shift + U</b> or the <b>[−]</b> icon.</div>",
         settingsTabLabel: "Settings",
+        aiTabLabel: "AI",
         shortcutsTabLabel: "Shortcuts",
         faqTabLabel: "FAQ",
         contactTabLabel: "Contact",
@@ -70631,17 +70626,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         groupTitle: "Group selection",
         ungroupTitle: "Ungroup selection",
         aiAssistantTitle: "AI assistant — compose a layout",
-        settingsOldAiTitle: "AI assistant (legacy panel)",
-        settingsOldAiDesc: "The IA button in the top bar now opens the SP213 Studio, the AI layout workshop. This legacy panel (engine choice, API keys, prompt examples) remains available here.",
-        settingsOldAiBtn: "Open the legacy AI panel",
-        settingsAiTitle: "AI assistant (keys and settings)",
-        settingsAiDesc: "The AI button in the top bar opens the prompt box. This is where the key it uses is set: it stays in this browser and is sent only to the provider you pick.",
-        settingsAiProvider: "Provider",
-        settingsAiCle: "API key",
-        settingsAiEnregistrer: "Save the key",
         settingsAiOk: "A key is saved.",
         settingsAiAucune: "No key saved.",
-        settingsAiEnregistree: "Key saved.",
         settingsAiOuvrirPanneau: "Open the AI assistant",
         settingsAiOuvrirStudio: "Open the SP213 Studio",
         aiSetupTitle: "The AI assistant is not configured yet",
@@ -70698,7 +70684,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiHowKeyTitle: "Where do I get a key?",
         aiHowKeyText: "Click the provider’s « clé ↗ » link: the official key page opens in a new tab. Create the key, copy it, paste it here, then press Test.",
         aiFooterBarHelp: "Shows an input bar under the page: describe what you need without opening this window.",
-        aiExamplesHint: "Click « Utiliser »: the text goes into the step 2 box, all that is left is to start the creation.",
+        aiExamplesHint: "Click « Utiliser »: the text goes into the step 1 box, all that is left is to start the creation.",
         frTitle: "Find & replace",
         frFind: "Find",
         frFindPh: "Text to find…",
@@ -71502,6 +71488,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         faqQ8: "素早くグループ化・解除するには",
         faqA8: "<div><b>グループ化</b>：複数ブロックを選択し、<b>Ctrl + Shift + G</b> または <b>[+]</b> アイコン。</div><div><b>グループ解除</b>：グループを選択し、<b>Ctrl + Shift + U</b> または <b>[−]</b> アイコン。</div>",
         settingsTabLabel: "設定",
+        aiTabLabel: "AI",
         shortcutsTabLabel: "ショートカット",
         faqTabLabel: "FAQ",
         contactTabLabel: "お問い合わせ",
@@ -71602,17 +71589,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         groupTitle: "選択をグループ化",
         ungroupTitle: "グループ解除",
         aiAssistantTitle: "AIアシスタント — レイアウトを作成",
-        settingsOldAiTitle: "AIアシスタント（旧パネル）",
-        settingsOldAiDesc: "上部バーの「IA」ボタンはSP213スタジオ（AIによるレイアウト作成）を開くようになりました。この旧パネル（エンジン選択、APIキー、プロンプト例）はここから利用できます。",
-        settingsOldAiBtn: "旧AIパネルを開く",
-        settingsAiTitle: "AIアシスタント（キーと設定）",
-        settingsAiDesc: "上部バーのAIボタンはプロンプト画面を開きます。使用するキーはここで設定します。キーはこのブラウザーに保存され、選択したプロバイダーにのみ送信されます。",
-        settingsAiProvider: "プロバイダー",
-        settingsAiCle: "APIキー",
-        settingsAiEnregistrer: "キーを保存",
         settingsAiOk: "キーが保存されています。",
         settingsAiAucune: "キーが保存されていません。",
-        settingsAiEnregistree: "キーを保存しました。",
         settingsAiOuvrirPanneau: "AIアシスタントを開く",
         settingsAiOuvrirStudio: "SP213スタジオを開く",
         aiSetupTitle: "AIアシスタントはまだ設定されていません",
@@ -71669,7 +71647,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiHowKeyTitle: "キーはどこで取得できますか？",
         aiHowKeyText: "プロバイダーの「clé ↗」リンクをクリックすると、公式のキー発行ページが新しいタブで開きます。キーを作成してコピーし、ここに貼り付けてから Test を押してください。",
         aiFooterBarHelp: "ページの下に入力バーを表示します。この画面を開かずに指示を書けます。",
-        aiExamplesHint: "「Utiliser」をクリックすると、テキストが手順 2 の欄に入ります。あとは作成を実行するだけです。",
+        aiExamplesHint: "「Utiliser」をクリックすると、テキストが手順 1 の欄に入ります。あとは作成を実行するだけです。",
         frTitle: "検索と置換",
         frFind: "検索",
         frFindPh: "検索するテキスト…",
@@ -95077,54 +95055,90 @@ function spMajBanniereIA() {
 }
 window.spMajBanniereIA = spMajBanniereIA;
 
-/** Le bouton « IA » de la barre du haut. */
+/** Le bouton « IA » de la barre du haut : il mene DIRECTEMENT au prompt. */
 window.spOuvrirIA = function () {
     try { openAIModal(); } catch (e) { return false; }
     spMajBanniereIA();
+    /* Le curseur se place dans le champ de saisie, sans quoi l'utilisateur doit
+       encore cliquer dedans apres avoir clique sur l'icone.
+       ⚠️ On ne le fait QUE si une cle existe : sinon le champ lui-meme renvoie
+       aux Preferences, et prendre le focus pour l'enlever aussitot se verrait. */
+    if (spIAConfiguree()) {
+        setTimeout(function () {
+            var ch = document.getElementById('aiPromptModal');
+            if (ch) { try { ch.focus(); } catch (_) {} }
+        }, 120);
+    }
     return false;
 };
 
-/** La banniere renvoie aux Preferences, ou la cle se renseigne. */
+/** Cliquer DANS la boite de prompt alors que rien n'est configure : sans cle,
+    le prompt ne peut rien faire. On renvoie donc aux Preferences, onglet IA,
+    au lieu d'offrir un formulaire qui echouerait a la soumission. */
+window.spPromptIAClic = function () {
+    if (spIAConfiguree()) return true;
+    try { window.spOuvrirPrefsIA(); } catch (_) {}
+    return false;
+};
+
+/** La banniere — et le champ de prompt quand rien n'est configure — renvoient
+    aux Preferences, DANS LE BON ONGLET (IA) et non en bas d'un autre. */
 window.spOuvrirPrefsIA = function () {
     try { closeAIModal(); } catch (_) {}
     try { openSettings(); } catch (_) {}
-    /* La section IA est en bas du premier onglet : on y amene la vue, sans quoi
-       l'utilisateur croirait que le lien n'a rien fait. */
+    try { switchSettingsTab('ai'); } catch (_) {}
+    /* On remplit APRES avoir montre l'onglet : sans cela, le champ se remplirait
+       pendant que sa section est encore en display:none. */
     setTimeout(function () {
-        var s = document.getElementById('settingsAiSection');
-        if (!s) return;
-        try { s.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) { try { s.scrollIntoView(); } catch (e) {} }
         try { if (typeof window.spPrefsIARemplir === 'function') window.spPrefsIARemplir(); } catch (_) {}
-        var ch = document.getElementById('settingsAiKey');
-        if (ch) { try { ch.focus(); } catch (_) {} }
+        var ch = document.getElementById('aiApiKey');
+        if (ch) {
+            try { ch.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) { try { ch.scrollIntoView(); } catch (e) {} }
+            try { ch.focus(); } catch (_) {}
+        }
     }, 120);
     return false;
 };
 
-/** Remplit le formulaire IA des Preferences depuis le stockage reel. */
+/** Remplit l'onglet IA des Preferences depuis le stockage reel.
+    ⚠️ Le formulaire vit desormais DANS les Preferences (onglet IA) : c'est lui
+    qui pilote la cle. La boite de prompt n'en garde aucune copie, donc les deux
+    ne peuvent plus diverger — c'est la raison du deplacement. */
 window.spPrefsIARemplir = function () {
-    var sel = document.getElementById('settingsAiProvider');
-    var champ = document.getElementById('settingsAiKey');
-    var etat = document.getElementById('settingsAiEtat');
-    if (!sel || !champ) return;
+    var champ = document.getElementById('aiApiKey');
+    var prov = document.getElementById('aiProvider');
+    var etat = document.getElementById('aiKeyStatus');
+    if (!champ || !prov) return;
 
-    /* La liste vient de AI_MODELS : une seule source, donc un fournisseur
-       ajoute ailleurs apparait ici sans qu'on y touche. */
+    /* Les cartes de fournisseur sont construites au chargement de la page. On
+       verifie qu'elles sont bien la : un onglet vide est un onglet mort. */
+    try {
+        var zone = document.getElementById('aiProviderCards');
+        if (zone && !zone.children.length && typeof window.spAiBuildProviders === 'function') window.spAiBuildProviders();
+    } catch (_) {}
+
+    var p = 'deepseek';
     try {
         var fournisseurs = Object.keys(AI_MODELS);
-        var connu = Array.prototype.map.call(sel.options, function (o) { return o.value; });
-        var identique = connu.length === fournisseurs.length
-            && fournisseurs.every(function (f) { return connu.indexOf(f) >= 0; });
-        if (!identique) {
-            sel.innerHTML = fournisseurs.map(function (f) {
-                return '<option value="' + f + '">' + f + '</option>';
-            }).join('');
-        }
-        sel.value = localStorage.getItem('sp_ai_provider') || 'deepseek';
-        if (!sel.value || !AI_MODELS[sel.value]) sel.value = fournisseurs[0];
-    } catch (_) { sel.value = 'deepseek'; }
+        p = localStorage.getItem('sp_ai_provider') || 'deepseek';
+        if (fournisseurs.indexOf(p) < 0) p = fournisseurs[0];
+    } catch (_) {}
 
-    try { champ.value = getAIKeyFor(sel.value) || ''; } catch (_) { champ.value = ''; }
+    /* L'ORDRE COMPTE : le fournisseur d'abord, car updateAIKeyField() lit
+       #aiProvider pour savoir quelle cle afficher et quel lien proposer. */
+    prov.value = p;
+    try { if (typeof window.aiPickProvider === 'function') window.aiPickProvider(p); } catch (_) {}
+    try { if (typeof window.updateAIModelDropdown === 'function') window.updateAIModelDropdown(p); } catch (_) {}
+    try { if (typeof window.updateAIKeyField === 'function') window.updateAIKeyField(); } catch (_) {}
+
+    /* Le modele enregistre, s'il fait partie de ceux du fournisseur choisi :
+       sinon on laisse le premier de la liste, deja selectionne par le menu. */
+    try {
+        var modele = localStorage.getItem('sp_ai_model');
+        var liste = document.getElementById('aiModel');
+        if (liste && modele && AI_MODELS[p] && AI_MODELS[p].indexOf(modele) >= 0) liste.value = modele;
+    } catch (_) {}
+
     if (etat) {
         etat.textContent = spIAConfiguree()
             ? (translate('settingsAiOk') || 'Une clé est enregistrée.')
@@ -95133,36 +95147,18 @@ window.spPrefsIARemplir = function () {
     }
 };
 
-/** Enregistre la cle IA depuis les Preferences, avec les MEMES cles de stockage
-    que le panneau IA — sinon les deux formulaires divergeraient. */
+/** Enregistre la cle IA depuis les Preferences.
+    ⚠️ Delegue a saveAISettings(), qui lit les MEMES champs (#aiProvider,
+    #aiApiKey, #aiModel) : deux ecritures paralleles finiraient par diverger.
+    Conservee car d'anciens appels peuvent encore la nommer. */
 window.spPrefsIAEnregistrer = function () {
-    var sel = document.getElementById('settingsAiProvider');
-    var champ = document.getElementById('settingsAiKey');
-    var etat = document.getElementById('settingsAiEtat');
-    if (!sel || !champ) return;
-    var provider = sel.value || 'deepseek';
-    var cle = (champ.value || '').trim();
     try {
-        localStorage.setItem('sp_ai_provider', provider);
-        if (cle) {
-            localStorage.setItem('sp_ai_key', cle);
-            localStorage.setItem('sp_ai_key_' + provider, cle);
-            var studio = (typeof AI_STUDIO_KEY_MAP !== 'undefined') ? AI_STUDIO_KEY_MAP[provider] : null;
-            if (studio) localStorage.setItem(studio, cle);
-            var m = document.getElementById('settingsAiModel');
-            if (m && m.value) localStorage.setItem('sp_ai_model', m.value);
-        }
+        if (typeof saveAISettings === 'function') saveAISettings();
     } catch (_) {}
-    if (etat) {
-        etat.textContent = cle ? (translate('settingsAiEnregistree') || 'Clé enregistrée.')
-                               : (translate('settingsAiAucune') || 'Aucune clé enregistrée.');
-        etat.style.color = cle ? '#2e7d32' : '#8a4b00';
-    }
-    try { if (typeof window._aiFooterSyncKeyDot === 'function') window._aiFooterSyncKeyDot(); } catch (_) {}
-    try { if (typeof window.spShowToast === 'function') window.spShowToast(translate('settingsAiEnregistree') || 'Clé enregistrée.', { kind: 'success' }); } catch (_) {}
+    try { if (typeof window.spPrefsIARemplir === 'function') window.spPrefsIARemplir(); } catch (_) {}
 };
 
-/** Le Studio SP213 : conserve, mais range dans les Reglages. */
+/** Le Studio SP213 : conserve, mais accessible depuis l'onglet IA des Preferences. */
 window.spOuvrirStudioIALien = function () {
     try { closeSettings(); } catch (_) {}
     return window.spOuvrirStudioIA();

@@ -5440,6 +5440,44 @@ input[type=number] {
 .theme-dark #aiModal .btn-secondary { background: transparent; color: #ddd; border-color: var(--sp-dark-line, #333); }
 .theme-dark #aiModal .btn-secondary:hover { background: #2a2a2e; border-color: #444; }
 
+/* 🆕 L'ONGLET IA DES PRÉFÉRENCES. La configuration de l'assistant (fournisseur,
+   modèle, clé, journal) a QUITTÉ la boîte de prompt pour les Préférences, où
+   elle forme désormais un onglet à part. Ce sont les mêmes classes .ai-* et les
+   mêmes identifiants — mais le sélecteur ci-dessus vise #aiModal, qui ne les
+   contient plus : sans les règles suivantes, l'onglet resterait blanc en thème
+   sombre, au milieu d'une fenêtre sombre. */
+.theme-dark #settingsModal #aiTabContent .ai-block,
+.theme-dark #settingsModal #aiTabContent .ai-acc {
+    background: var(--sp-dark-raised, #1c1c1e);
+    border-color: var(--sp-dark-line, #333);
+}
+.theme-dark #settingsModal #aiTabContent .ai-block-head h3,
+.theme-dark #settingsModal #aiTabContent .ai-acc > summary { color: #eaeaea; }
+.theme-dark #settingsModal #aiTabContent .ai-block-hint { color: #9a9a9a; }
+.theme-dark #settingsModal #aiTabContent .ai-label { color: #cfcfcf; }
+.theme-dark #settingsModal #aiTabContent .ai-input,
+.theme-dark #settingsModal #aiTabContent select,
+.theme-dark #settingsModal #aiTabContent input[type="password"],
+.theme-dark #settingsModal #aiTabContent input[type="text"],
+.theme-dark #settingsModal #aiTabContent textarea {
+    background: #111;
+    color: #eaeaea;
+    border-color: var(--sp-dark-line, #333);
+}
+.theme-dark #settingsModal #aiTabContent .ai-prov-wrap { border-color: var(--sp-dark-line, #333); background: transparent; }
+.theme-dark #settingsModal #aiTabContent .ai-prov { color: #eaeaea; }
+.theme-dark #settingsModal #aiTabContent .ai-prov-wrap:has(.ai-prov.active) { border-color: #8a8a8a; background: #232326; }
+.theme-dark #settingsModal #aiTabContent .ai-prov-key { color: #9a9a9a; border-left-color: var(--sp-dark-line, #333); }
+.theme-dark #settingsModal #aiTabContent .ai-note {
+    background: rgba(59, 130, 196, 0.12);
+    border-color: rgba(59, 130, 196, 0.35);
+    border-left-color: #3b82c4;
+    color: #c9c9c9;
+}
+.theme-dark #settingsModal #aiTabContent .ai-note strong { color: #9fc3e0; }
+.theme-dark #settingsModal #aiTabContent .btn-secondary { background: transparent; color: #ddd; border-color: var(--sp-dark-line, #333); }
+.theme-dark #settingsModal #aiTabContent .btn-secondary:hover { background: #2a2a2e; border-color: #444; }
+
 /* ==================== MOBILE WIDGET RELOCATION ==================== */
 /* 🛡️ 2026-05-06 (v4) : ANCIEN bloc @media(max-width:800px) supprime.
    Il transformait les widgets en sections de sidebar (position:static,
