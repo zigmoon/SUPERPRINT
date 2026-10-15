@@ -2147,7 +2147,7 @@ textarea[data-fabric-hiddentextarea] {
     background: transparent !important;
     border: 0 !important;
 }
-/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.623). Elles étaient en #f0f0f0, à peine
+/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.624). Elles étaient en #f0f0f0, à peine
    plus clair que le plan de travail (#e8e8e8) : elles s'y fondaient, et on ne
    voyait plus où commençait la graduation. #fafafa est nettement plus clair,
    reste distinct du blanc de la page, et garde les graduations (#333/#666)
