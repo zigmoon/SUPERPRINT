@@ -9,6 +9,34 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.617] — 2026-10-15
+
+_Le calque se voit au travers sans délaver la typo_
+
+> **Pourquoi cette version existe.** 1.7.616 a été **construite et publiée** (release `desktop-v1.7.616`, 22 fichiers) avant que ce correctif n'arrive : ses binaires ne le contiennent donc pas, et **deux codes différents ne peuvent pas porter le même numéro** — c'est la règle qui avait déjà produit 1.7.616. Le suffixe n'est pas une coquetterie : un lanceur npm compare la version en ligne au `version.txt` installé, et une version ÉGALE ne rejoue **aucune** mise à jour.
+
+### Fixed — un calque posé sur une page faisait disparaître la typo de cette page
+
+- **La cause, établie par MESURE et non par hypothèse.** L'image de page capturée par l'aperçu 3D est **blanche opaque** — vérifié : `rgba(255,255,255,255)` aux quatre coins. L'encre et le support y sont donc **les mêmes pixels**. Or l'ancien rendu appliquait la teinte **et** l'opacité du papier à l'image entière, sur les deux faces : rendre la feuille translucide **mélangeait l'impression avec le fond du livre**. Mesuré : opacité de 0,38 pour un calque à 62 % — la typo perdait 62 % de son contraste.
+- **Le remède se mesure lui aussi.** Avec `backgroundColor = null`, le coin de page devient `rgba(0,0,0,0)` **alors que l'objet garde exactement ses valeurs** (mesuré : coin 255/255/255/255 → 0/0/0/0, objet `rgba(0,160,90,255)` inchangé). Une couche **« encre seule »**, transparente là où rien n'est imprimé, existe donc bel et bien. D'où un rendu en **deux épaisseurs** : la **feuille** (le papier, teinte × opacité) juste derrière, et l'**encre** par-dessus, non teintée et **non délavée**.
+- **Aucun délavage n'est possible, et c'est arithmétique** : avec une opacité de 1, le mélange donne `src × 1 + fond × 0 = src`. L'encre est *exactement* la couleur de la texture. Le calque se voit au travers — le fond, et la page d'en face — **et** le texte reste net : les deux exigences tenues ensemble, ce qui était précisément le compromis demandé.
+- **La couche encre n'est capturée que pour les pages en calque.** Une capture double coûte cher, et un document sans calque ne doit rien payer : mesuré, `texEncreCount = 0` sur un papier opaque comme sur aucun papier.
+- **Vérifié, point par point** (page 1 : bloc vert, typo noire, calque) : `texEncreCount = 1` · face → encre (`encre: true`) · **opacité de la face = 1** (et non 0,38) · `feuille: true` · teinte de la feuille `#fbfbf7` · opacité de la feuille `0,38 = 1 − 0,62`, la valeur du catalogue.
+- **Non-régression vérifiée** sur les cas qui partagent le même chemin : `kraft` → `encre=false feuille=false`, teinte sur la face `#cbb08a`, opacité 1 ; `aucun` → `encre=false feuille=false`, `#ffffff`, opacité 1. Le retour d'un calque vers une page opaque **restitue bien la page aplatie** — sinon la page suivante aurait gardé l'encre seule de la précédente.
+
+### Fixed — troisième empreinte de cache oubliée, et la leçon finit par être une règle
+
+- ⚠️ `sp-3d-preview.js` est chargé avec **sa propre** version en `?v=`. Inchangée, la correction n'aurait **jamais** atteint un visiteur déjà venu : son navigateur aurait servi l'ancien module. Le fait a été vu **en mesurant** — `_debug()` répondait `encre: undefined` alors que le fichier sur disque portait bien le nouveau champ.
+- C'est donc la **troisième** empreinte de ce train de livraison (`main.js`, `main.css`, `sp-3d-preview.js`). La règle à retenir, et elle vaut pour la suite : **tout fichier chargé avec un `?v=` doit être relevé quand son contenu change** ; le service worker ne suffit pas, et une empreinte oubliée est un correctif **invisible**.
+
+### Changed — ce que la mesure a corrigé dans nos propres affirmations
+
+- J'avais écrit que, sans BOM UTF-8, `makensis` lirait la greffe en ANSI et rendrait les messages japonais illisibles. **C'est faux** : compilé avec et sans BOM, `makensis` 3.11 annonce `(UTF8)` dans les deux cas — il lit l'UTF-8 par défaut. Le BOM est **conservé** (inoffensif, identique à celui des fichiers que Tauri génère, et il protège d'un futur `makensis` dont le défaut changerait), mais **il ne corrige rien**. Une affirmation non mesurée qui se révèle fausse se retire ; elle ne reste pas dans le dossier.
+- **La greffe NSIS a été compilée pour de vrai, localement**, avec le `makensis` 3.11 que Tauri télécharge lui-même : zéro avertissement, en reproduisant exactement le motif d'appel du gabarit. Les quatre greffes apparaissaient une à une dans la trace, `Abort` compris — ce qui remplace « ça devrait compiler » par « ça compile ».
+- **La clé de configuration est vérifiée dans la source de Tauri** (`tauri-utils-2.10.1/src/config.rs`) : `#[serde(rename_all = "camelCase", deny_unknown_fields)] pub struct NsisConfig { … pub installer_hooks: Option<PathBuf> }`. Le `deny_unknown_fields` tranche : une clé inexistante ferait **échouer** la construction, or elle a réussi.
+
+> ⚠️ **Reste ouvert.** L'**aperçu 3D** ne traite la couche encre que sur la face **avant** d'une feuille : la face arrière de la feuille qui tourne (visible une demi-seconde pendant le feuilletage) garde la page aplatie. C'est une limite **antérieure** à ce correctif — cette face n'a jamais reçu de papier — mais elle se voit. Les notes de version de `release.html` racontent toujours 1.7.604 → 1.7.614. `.rpm` et `.dmg` ne portent toujours aucun fichier de licence.
+
 ## [1.7.616] — 2026-10-15
 
 _Les règles deux fois plus fines, le sous-menu Papier à une ligne, et une désinstallation Windows qui ne bloque plus_
@@ -31,7 +59,11 @@ _Les règles deux fois plus fines, le sous-menu Papier à une ligne, et une dés
 - Le gabarit NSIS de Tauri lance l'ancien désinstalleur pour remplacer une version en place ; **dès que l'application tourne**, Windows verrouille le `.exe`, le désinstalleur échoue, le gabarit affiche `unableToUninstall` et appelle `Abort`. L'utilisateur restait **sans issue**, sans même savoir qu'il suffisait de fermer le logiciel.
 - La correction **n'est pas** un gabarit recopié : un gabarit recopié devrait suivre chaque mise à jour de `tauri-cli`, et une divergence se paierait par un installeur cassé. Vérifié dans le gabarit **généré** : Tauri appelle quatre greffes officielles (`NSIS_HOOK_PREINSTALL` / `POSTINSTALL` / `PREUNINSTALL` / `POSTUNINSTALL`). On ajoute donc `src-tauri/nsis/hooks.nsh`, branché par `bundle.windows.nsis.installerHooks` — **fermeture propre puis forcée** de l'application, la présence n'étant pas devinée (`taskkill` la dit par son code de retour) mais **mesurée** (`Delete` échoue exactement quand un processus tient le fichier), avec une consigne claire dans la langue de l'assistant si elle résiste. La greffe est posée sur `PREINSTALL` **et** `PREUNINSTALL`, pour que la désinstallation manuelle fonctionne aussi.
 - ⚠️ La fusion des surcouches `apps/*.json` est **récursive** — prouvé par l'artefact : la surcouche ne contient que `installerIcon`, or les installeurs générés ont bien les 3 langues du socle. `installerHooks` sera donc hérité par les trois applications.
-- ⚠️ `makensis` n'est pas installé sur le poste : la compilation NSIS n'est vérifiée **que par la CI**. Une erreur de compilation échouerait bruyamment — elle ne livrerait pas un installeur cassé en silence.
+- ⚠️ **Ce qui est prouvé, et comment — plutôt qu'une affirmation.** Trois vérifications, chacune indépendante :
+  1. **La greffe est compilée par NSIS, pour de vrai.** Tauri télécharge NSIS 3.11 depuis une URL publique : on l'a récupéré et `makensis` a compilé la greffe, **zéro avertissement**, en reproduisant exactement le motif d'appel du gabarit (`!ifmacrodef` … `!insertmacro`). Les quatre greffes apparaissaient une par une dans la trace de compilation, `Abort` compris.
+  2. **La clé de configuration est la bonne.** Lu dans la source de Tauri elle-même (`tauri-utils-2.10.1/src/config.rs`) : `#[serde(rename_all = "camelCase", deny_unknown_fields)] pub struct NsisConfig { … pub installer_hooks: Option<PathBuf> }`. Le `deny_unknown_fields` tranche la question : une clé inexistante ferait **échouer** la compilation, or elle a réussi. Et la documentation du champ nomme les quatre greffes, dont `NSIS_HOOK_PREUNINSTALL` — « runs before removing any files, registry keys and shortcuts », c'est-à-dire exactement le moment qui nous intéresse.
+  3. **Le chemin est au bon endroit.** Le chemin est résolu depuis le dossier de `tauri.conf.json` : la preuve est déjà dans le projet, `licenseFile` vaut `"../LICENSE"` et désigne `superprint_desktop/LICENSE`. `nsis/hooks.nsh` désigne donc `src-tauri/nsis/hooks.nsh`. Un chemin faux ferait échouer la compilation, pas un silence.
+- ⚠️ **Un point corrigé, contre mon propre premier diagnostic.** J'avais écrit que, sans BOM UTF-8, `makensis` lirait la greffe dans la page de codes ANSI et rendrait les messages japonais illisibles. **C'est faux, et la mesure le dit** : compilé avec et sans BOM, `makensis` 3.11 annonce `(UTF8)` dans les deux cas — il lit l'UTF-8 par défaut. Le BOM est donc **conservé** (il est inoffensif, il est identique à celui des fichiers que Tauri génère lui-même, et il protège d'un futur `makensis` dont le défaut changerait), mais il ne corrige rien. Une affirmation non mesurée qui se révèle fausse doit être retirée, pas laissée dans le dossier.
 
 ### Fixed — deux empreintes de cache relevées, dont une oubliée
 
