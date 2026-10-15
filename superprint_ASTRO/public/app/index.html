@@ -2024,16 +2024,20 @@
                             <rect x="7" y="7" width="10" height="10" fill="currentColor" fill-opacity="0.15"></rect>
                         </svg>
                     </button>
-                    <!-- 🆕 L'ICÔNE REMPLACE LE MOT « IA » : des étincelles, la convention
-                         des assistants. Le bouton ouvre désormais la BOÎTE DE PROMPT
-                         (spOuvrirIA) ; le Studio SP213 reste accessible depuis les
-                         Préférences, où il a sa place — c'est un atelier, pas l'action
-                         principale de la barre du haut. -->
+                    <!-- 🆕 ICÔNE D'ASSISTANT (tête de robot) plutôt que le mot « IA ».
+                         ⚠️ Dessinée en CONTOUR (`fill="none" stroke`), comme TOUTES les
+                         autres icônes de cette zone (gomme, recherche, collab, imprimante,
+                         lecture) : une icône PLEINE a la même couleur mais huit fois plus
+                         d'encre, donc elle paraissait beaucoup plus sombre que ses
+                         voisines. Le bouton ouvre la BOÎTE DE PROMPT (spOuvrirIA) ; le
+                         Studio SP213 reste accessible depuis les Préférences. -->
                     <button class="btn" id="openAIBtn" title="Assistant IA" aria-label="Assistant IA" data-translate-title="aiAssistantTitle" style="pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; height: 32px;" onclick="spOuvrirIA()">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M12 2.4l1.75 4.95 4.95 1.75-4.95 1.75L12 15.8l-1.75-4.95L5.3 9.1l4.95-1.75z"/>
-                            <path d="M18.9 13.5l.85 2.4 2.4.85-2.4.85-.85 2.4-.85-2.4-2.4-.85 2.4-.85z"/>
-                            <path d="M6.1 15.2l.65 1.85 1.85.65-1.85.65-.65 1.85-.65-1.85-1.85-.65 1.85-.65z"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="4" y="7.6" width="16" height="11.4" rx="3.2"/>
+                            <path d="M12 7.6V4.9"/>
+                            <circle cx="12" cy="3.7" r="1.15"/>
+                            <circle cx="9.3" cy="13.3" r="1.25" fill="currentColor" stroke="none"/>
+                            <circle cx="14.7" cy="13.3" r="1.25" fill="currentColor" stroke="none"/>
                         </svg>
                     </button>
                     <button class="btn btn-square" id="openSearchTopBtn" title="Rechercher et remplacer (Ctrl+F)" aria-label="Rechercher et remplacer" onclick="openFindReplace(false)" style="pointer-events: auto; border: 0; color: #1a1a1a;">
@@ -2061,9 +2065,11 @@
                             <rect x="6" y="14" width="12" height="8"></rect>
                         </svg>
                     </button>
-                    <!-- 🆕 Aperçu 3D (three.js) : feuilleter la maquette simple/double page dans un studio 3D -->
+                    <!-- 🆕 Aperçu 3D (three.js) : feuilleter la maquette simple/double page dans un studio 3D.
+                         ⚠️ Triangle en CONTOUR et non plein : un aplat de la même couleur que
+                         les icônes voisines paraissait bien plus sombre qu'elles. -->
                     <button id="sp3dPlayBtn" title="Aperçu 3D — feuilleter la maquette" aria-label="Aperçu 3D" onclick="if(window.SP3DPreview){window.SP3DPreview.open();}else if(typeof window.spShowToast==='function'){window.spShowToast('Aperçu 3D indisponible (three.js non chargé).');}else{console.warn('[SP-3D] module non chargé');}" style="pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; margin: 0; padding: 0 10px; color: #1a1a1a; height: 32px;">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.2 5.4 L18.4 12 L8.2 18.6 Z"/></svg>
                     </button>
                     <button class="btn" id="saveProject" title="Sauvegarder" style="pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
                         <span style="letter-spacing: 0.6px; font-weight: 700; font-size: 11px;">SAVE</span>
@@ -2157,7 +2163,13 @@
                         <span>Exporter</span>
                     </button>
                     <button class="mobile-menu-item" id="mobileAI">
-                        <span class="mobile-menu-icon">✨</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="4" y="7.6" width="16" height="11.4" rx="3.2"/>
+                            <path d="M12 7.6V4.9"/>
+                            <circle cx="12" cy="3.7" r="1.15"/>
+                            <circle cx="9.3" cy="13.3" r="1.25" fill="currentColor" stroke="none"/>
+                            <circle cx="14.7" cy="13.3" r="1.25" fill="currentColor" stroke="none"/>
+                        </svg>
                         <span>Assistant IA</span>
                     </button>
                     <button class="mobile-menu-item" id="mobileCollab">
@@ -6348,7 +6360,7 @@
                 <div style="margin-top: 18px; border-top: 1px solid #eee; padding-top: 14px;">
                     <div style="font-size: 11px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: #555; margin-bottom: 9px;" data-translate="saveExportTitle">Exporter vers</div>
                     <div style="display: flex; gap: 10px;">
-                        <button id="saveHTML" onclick="exporterHTML()" class="btn btn-secondary save-choice-btn" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid #ccc; background: white; cursor: pointer; flex: 1; border-radius: 8px;">
+                        <button id="saveHTML" onclick="exporterHTML()" class="btn btn-secondary save-choice-btn" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; height: auto; min-height: 65px; box-sizing: border-box; border: 1px solid #ccc; background: white; cursor: pointer; flex: 1; border-radius: 8px;">
                             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
                                 <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-3"></path>
                                 <path d="M10 3h4"></path>
@@ -6360,7 +6372,7 @@
                                 <div style="font-size: 10px; color: #999; line-height: 1.3;">Page web imprimable</div>
                             </div>
                         </button>
-                        <button id="saveEPUB" onclick="exporterEPUB()" class="btn btn-secondary save-choice-btn" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid #ccc; background: white; cursor: pointer; flex: 1; border-radius: 8px;">
+                        <button id="saveEPUB" onclick="exporterEPUB()" class="btn btn-secondary save-choice-btn" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; height: auto; min-height: 65px; box-sizing: border-box; border: 1px solid #ccc; background: white; cursor: pointer; flex: 1; border-radius: 8px;">
                             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
                                 <path d="M4 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4z"></path>
                                 <path d="M20 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z"></path>
