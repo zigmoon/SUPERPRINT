@@ -13,7 +13,7 @@
 | Version app (affichée) | `1.7.617` |
 | Pastille du colophon (`index.html` **et** `price.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
 | Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.617-ordre-des-calques` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261015-v617-tableau-regles-fines-calque-3d` (JS) · `?v=20261015-v617-regles-fines-tableau` (CSS) · `?v=20261015-v617-calque-encre` (module 3D) |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261015-v617-regles-20px-decales` (JS) · `?v=20261015-v617-regles-20px-decales` (CSS) · `?v=20261015-v617-calque-encre` (module 3D) |
 | Badge preview (`spVersionBadge`) | `v1.7.617` — 5 marqueurs : commentaire, `title` (`JS v604`), `data-sp-js="v604"`, `data-sp-sw`, texte |
 | Splash screen | `1.7.617` |
 | Onboarding | `LAYOUT EDITOR — V 1.7.617` + `V 1.7.617 \| 09 2026` |

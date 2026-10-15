@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.617-tableau-regles-calque-3d';
+const CACHE_NAME = 'superprint-shell-v1.7.617-regles-20px-decales';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

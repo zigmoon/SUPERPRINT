@@ -50638,6 +50638,12 @@ https://superprint.app
         try { if (_spCadreExistant.__spRegles615.surDefilement) _spCadreExistant.__spRegles615.surDefilement.retirer(); } catch (_) {}
         try { if (_spCadreExistant.__spRegles615.surRedimensionnement) window.removeEventListener('resize', _spCadreExistant.__spRegles615.surRedimensionnement); } catch (_) {}
         try { if (_spCadreExistant.__spRegles615.surveiller) clearInterval(_spCadreExistant.__spRegles615.surveiller); } catch (_) {}
+        /* On rend au cadre TOUT son espace : le badge de version, le badge
+           « Local » et les widgets reprennent leur place d'origine. */
+        try {
+            _spCadreExistant.style.setProperty('--sp-regle-haut', '0px');
+            _spCadreExistant.style.setProperty('--sp-regle-gauche', '0px');
+        } catch (_) {}
         _spCadreExistant.__spRegles615 = null;
     }
     
@@ -50696,13 +50702,15 @@ https://superprint.app
        Les deux changent au zoom ET au défilement. On ne crée que les
        graduations de la fenêtre visible : sur un format de 2000 mm à 400 %, tout
        dessiner ferait des dizaines de milliers de traits. */
-    /* ⚠️ ÉPAISSEUR DES RÈGLES : 10 px, MOITIÉ DE CE QU'ELLES ÉTAIENT (20 px).
-       La barre X comme la barre Y, et le carré d'angle qui en découle : elles
-       mangeaient 20 px de la fenêtre d'aperçu sur deux côtés, et ce n'est pas
-       leur rôle — une règle est un repère, pas un bandeau. La taille est UNE
-       SEULE constante : le carré d'angle, le décalage de la barre Y et l'origine
-       de ses graduations s'en déduisent, donc rien ne peut se désaligner. */
-    const SP_REGLE_TAILLE = 10;
+    /* ⚠️ ÉPAISSEUR DES RÈGLES : 20 px — l'épaisseur d'ORIGINE, rétablie.
+       Le passage à 10 px a été demandé puis annulé : on revient donc aux valeurs
+       d'origine, exactement (barre 20 px, traits 8/5 px, chiffres 9,6 px), et la
+       disposition verticale des chiffres de la barre Y — nécessaire à 10 px de
+       large — n'a plus lieu d'être, 20 px accueillant trois chiffres à l'endroit.
+       La taille reste UNE SEULE constante : le carré d'angle, le décalage de la
+       barre Y et l'origine de ses graduations s'en déduisent, donc rien ne peut
+       se désaligner. */
+    const SP_REGLE_TAILLE = 20;
     const _spWrapper = canvasInner.closest('.canvas-wrapper') || canvasInner.parentElement;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
@@ -50742,20 +50750,18 @@ https://superprint.app
                 const majeur = (mm % 50 === 0);
                 const t = document.createElement('div');
                 t.className = 'ruler-tick' + (majeur ? ' major' : '');
-                /* ⚠️ LES TRAITS SUIVENT L'ÉPAISSEUR DE LA RÈGLE. À 10 px, un trait
-                   majeur de 8 px et un mineur de 5 px auraient rempli la barre et
-                   écrasé les chiffres : ils mesurent maintenant 5 px et 2,5 px,
-                   c'est-à-dire la moitié — proportionnellement identiques. */
+                /* Traits d'ORIGINE : 8 px pour un majeur, 5 px pour un mineur —
+                   rétablis avec l'épaisseur de 20 px. */
                 if (horizontal) {
                     t.style.left = pos + 'px';
                     t.style.bottom = '0';
                     t.style.width = (majeur ? '1px' : '0.5px');
-                    t.style.height = (majeur ? 5 : 2.5) + 'px';
+                    t.style.height = (majeur ? 8 : 5) + 'px';
                 } else {
                     t.style.top = pos + 'px';
                     t.style.right = '0';
                     t.style.height = (majeur ? '1px' : '0.5px');
-                    t.style.width = (majeur ? 5 : 2.5) + 'px';
+                    t.style.width = (majeur ? 8 : 5) + 'px';
                 }
                 t.style.position = 'absolute';
                 regle.appendChild(t);
@@ -50763,18 +50769,14 @@ https://superprint.app
                     const lab = document.createElement('div');
                     lab.className = 'ruler-label';
                     lab.textContent = mm;
-                    /* ⚠️ LA BARRE Y COUCHE SES CHIFFRES, LA BARRE X NON — et ce
-                       n'est pas une coquetterie. Étalonné à 10 px de large, trois
-                       chiffres ne tiennent PAS horizontalement : « 200 » à 7 px
-                       d'IBM Plex Mono mesure ≈ 12,6 px, soit 3 px de débordement
-                       sur le canevas. La barre Y écrit donc ses nombres dans le
-                       SENS VERTICAL (`writing-mode`, voir `.ruler-vertical
-                       .ruler-label`) — la convention des règles verticales en PAO
-                       (InDesign, Photoshop) — et le chiffre reste ENTIER dans la
-                       barre. La barre X, elle, garde ses nombres à l'endroit :
-                       elle a toute la largeur de la fenêtre pour les porter. */
-                    if (horizontal) { lab.style.left = (pos + 1) + 'px'; lab.style.top = '1px'; }
-                    else { lab.style.left = '1px'; lab.style.top = (pos + 1) + 'px'; }
+                    /* ⚠️ LES CHIFFRES SE REMETTENT À L'ENDROIT, dans les DEUX
+                       barres. La barre Y les couchait (`writing-mode`) parce que
+                       10 px de large ne contenaient pas « 250 » à l'endroit : à
+                       20 px, trois chiffres en 9,6 px tiennent sans déborder.
+                       Une précaution devenue inutile doit disparaître, sinon elle
+                       se lit plus tard comme une intention. */
+                    if (horizontal) { lab.style.left = (pos + 2) + 'px'; lab.style.top = '2px'; }
+                    else { lab.style.left = '2px'; lab.style.top = (pos + 2) + 'px'; }
                     lab.style.position = 'absolute';
                     regle.appendChild(lab);
                 }
@@ -50794,7 +50796,7 @@ https://superprint.app
                 c.style.left = pli + 'px';
                 c.style.bottom = '0';
                 c.style.width = '2px';
-                c.style.height = '6px';
+                c.style.height = '12px';
                 c.style.background = '#ff4444';
                 c.style.opacity = '0.7';
                 etat.hRuler.appendChild(c);
@@ -50812,6 +50814,23 @@ https://superprint.app
         const conteneur = dejaLa
             ? _spWrapper.__spRegles615.conteneur
             : document.createElement('div');
+
+        /* ── LES ÉLÉMENTS FLOTTANTS CÈDENT LA PLACE À LA RÈGLE ────────────────
+           MESURÉ, et c'est ce qui a motivé ce bloc : le badge de version est posé
+           à `top:8px` et le badge « Local » à `top:30px` dans le cadre, les
+           widgets à `left:16px`. Avec une bande de règle de 20 px, le premier
+           tombait DEDANS — cadre de 57 à 1047, règle de 57 à 77, badge de 65 à 84,
+           soit 12 px de recouvrement — et les widgets mordaient sur la barre
+           verticale de 4 px.
+           On ne décale pas chaque élément à la main : trois valeurs recopiées
+           divergeraient à la première retouche. On publie UNE variable sur le
+           cadre, et le CSS s'en sert. Chaque élément garde donc son écart
+           d'origine (8 px, 30 px, 16 px), mesuré depuis la RÈGLE quand elle est
+           là, depuis le bord du cadre sinon. */
+        try {
+            _spWrapper.style.setProperty('--sp-regle-haut', SP_REGLE_TAILLE + 'px');
+            _spWrapper.style.setProperty('--sp-regle-gauche', SP_REGLE_TAILLE + 'px');
+        } catch (_) {}
 
         if (!dejaLa) {
             conteneur.id = 'spRegles615';
