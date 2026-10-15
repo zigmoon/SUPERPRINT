@@ -24532,11 +24532,30 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     // Nettoyer (commun avec le safety net)
     finishDrawingSimpleTextBoxSafe();
     
-    // Si trop petit, ne rien créer (minimum 30x30 pixels)
-    if (width < 30 || height < 30) {
-        return;
+    /* ⚠️ ICI SE TROUVAIT UN DÉFAUT RÉEL, ET IL A ÉTÉ MESURÉ AVANT D'ÊTRE CORRIGÉ.
+       Un glisser de moins de 30 px ne créait RIEN, et le faisait EN SILENCE :
+       aucun message, aucun bloc. L'utilisateur voyait le rectangle bleu pointillé
+       pendant le glisser, puis plus rien — d'où le signalement « le bloc texte
+       simple ne marche pas bien » sur macOS.
+
+       MESURE (WebKit ET Chromium, écran 1x et 2x, résultats identiques) :
+         glisser 20 px -> 19,99 px reçus -> 0 bloc
+         glisser 28 px -> 27,99 px reçus -> 0 bloc
+         glisser 40 px -> 39,98 px reçus -> 1 bloc
+       La moitié des petits glissers étaient donc perdus sans un mot. Le facteur
+       d'échelle de l'écran n'y change rien : le seuil, lui, est exprimé dans
+       l'espace DOCUMENT, où 1 px vaut 1 point — il refusait tout bloc de moins de
+       10,6 mm, ce qui est une taille parfaitement normale pour une légende.
+
+       Désormais on NE REFUSE PLUS JAMAIS : un vrai glisser est respecté tel quel,
+       et un simple clic crée un bloc de taille par défaut — le comportement
+       attendu d'un outil texte, et celui d'InDesign. */
+    var MINI = 6;   // en dessous, c'est un clic et non un glisser
+    if (width < MINI || height < MINI) {
+        width = mmToPx(60);   // 60 x 20 mm : de quoi écrire une légende
+        height = mmToPx(20);
     }
-    
+
     // Créer le bloc texte avec les dimensions dessinées
     createSimpleTextBox(canvas, left, top, width, height);
         }
