@@ -24618,17 +24618,44 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d;
             }
 
-            /* Un taquet par frontiere de colonne : les cellules s'alignent dessus. */
-            function taquets(largeurPx, colonnes) {
-                var stops = [], i;
-                for (i = 1; i < colonnes; i++) stops.push({ pos: (largeurPx * i) / colonnes, type: 'left' });
-                return { active: stops.length > 0, step: mmVersPx(12.7), stops: stops };
-            }
-            function contenu(lignes, colonnes) {
-                var vide = [], out = [], i;
-                for (i = 0; i < colonnes; i++) vide.push('');
-                for (i = 0; i < lignes; i++) out.push(vide.join('\t'));
-                return out.join('\n');
+            /* ⚠️ CE QUI A CHANGE, ET POURQUOI. Avant, le tableau n'etait qu'UN SEUL
+               bloc de texte : une ligne par rangee, une TABULATION entre les colonnes,
+               des taquets calcules sur la largeur de colonne. Les outils de
+               typographie s'y appliquaient sans code supplementaire, mais les cellules
+               n'etaient PAS independantes : un texte long dans une cellule poussait le
+               suivant, et rien ne bornait une cellule a sa colonne.
+
+               Desormais CHAQUE CELLULE EST SON PROPRE BLOC DE TEXTE. Le gain est
+               reel : le texte d'une cellule n'a aucun effet sur les autres, et chaque
+               cellule reste un vrai bloc — donc les outils de typographie continuent
+               de s'y appliquer, comme avant.
+
+               ⚠️ Le prix, et il faut le dire : il n'y a plus de « tableau » unique a
+               selectionner. Le regroupement est donc porte par un DESCRIPTEUR PARTAGE,
+               pose par reference sur chaque cellule, et les evenements d'une cellule
+               (deplacement, redimensionnement) sont reportes sur ses soeurs. C'est ce
+               qui fait qu'un tableau se comporte « comme une image » : on tire une
+               poignee, tout suit.
+
+               ⚠️ Le lien n'est PAS serialise (Fabric n'ecrit pas les proprietes
+               prefixees). C'est le comportement qui existait deja : apres
+               enregistrement puis reouverture, un tableau redevient des blocs de texte
+               independants poses sur un groupe de filets — visuellement identique. */
+
+            var compteurTableaux = 0;   // identifie chaque tableau sans ambiguite
+
+            /* Geometrie de reference : ou doit se trouver chaque cellule pour un
+               tableau de (largeurPx x hauteurPx). Sert a la creation ET au
+               redimensionnement, pour que les deux ne puissent pas diverger. */
+            function geometrie(x0, y0, largeurPx, hauteurPx, colonnes, lignes) {
+                var cellules = [], l, c;
+                var lw = largeurPx / colonnes, lh = hauteurPx / lignes;
+                for (l = 0; l < lignes; l++) {
+                    for (c = 0; c < colonnes; c++) {
+                        cellules.push({ ligne: l, colonne: c, x: x0 + c * lw, y: y0 + l * lh, w: lw, h: lh });
+                    }
+                }
+                return cellules;
             }
 
             /* Filets : (lignes+1) horizontales + (colonnes+1) verticales, en coordonnees
@@ -24655,45 +24682,137 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 return g;
             }
 
-            /* Le groupe copie la transformation du bloc : deplacement, redimensionnement,
-               rotation et inclinaison suivent, sans groupement du texte lui-meme. */
-            function synchroniser(tb) {
-                var inf = tb._spTableauGrille;
-                if (!inf || !inf.filets || !tb.canvas) return;
-                var g = inf.filets;
-                var w = (typeof tb.width === 'number' && tb.width > 0) ? tb.width : inf.filets._spLargeurBase;
-                var h = (typeof tb.height === 'number' && tb.height > 0) ? tb.height : inf.filets._spHauteurBase;
+            /* Place le groupe de filets sur la boite courante du tableau. */
+            function synchroniserFilets(desc) {
+                if (!desc || !desc.filets) return;
+                var g = desc.filets;
+                if (!g._spLargeurBase || !g._spHauteurBase) return;
                 g.set({
-                    left: tb.left, top: tb.top,
-                    scaleX: w / g._spLargeurBase, scaleY: h / g._spHauteurBase,
-                    angle: tb.angle || 0, skewX: tb.skewX || 0, skewY: tb.skewY || 0,
+                    left: desc.x, top: desc.y,
+                    scaleX: desc.largeur / g._spLargeurBase,
+                    scaleY: desc.hauteur / g._spHauteurBase,
                     originX: 'left', originY: 'top'
                 });
                 g.setCoords();
             }
 
-            function brancherSuivi(tb, cv) {
-                var inf = tb._spTableauGrille;
-                var suivre = function () {
-                    /* Redimensionnement : la largeur des colonnes et les taquets suivent. */
-                    if (typeof tb.width === 'number' && tb.width > 0 && inf.largeur !== tb.width) {
-                        inf.largeur = tb.width;
-                        tb._spTabs = taquets(tb.width, inf.colonnes);
-                        if (typeof window.spTabRafraichir === 'function') { try { window.spTabRafraichir(tb); } catch (_) {} }
-                    }
-                    synchroniser(tb);
+            /* Les cellules vivantes d'un tableau : on repart de la liste tenue par
+               le descripteur, en ecartant celles qui ont ete supprimees. */
+            function cellulesVivantes(desc, cv) {
+                if (!desc || !desc.cellules) return [];
+                return desc.cellules.filter(function (o) {
+                    return o && (!cv || cv.contains(o));
+                });
+            }
+
+            /* Applique a TOUTES les cellules la geometrie de reference multipliee
+               par `f`, le coin superieur gauche du tableau etant (x, y). Une seule
+               fonction, donc aucune divergence possible entre deplacement et
+               redimensionnement. */
+            function appliquerGeometrie(desc, f, x, y) {
+                desc.x = x; desc.y = y;
+                desc.largeur = desc.refLargeur * f;
+                desc.hauteur = desc.refHauteur * f;
+                cellulesVivantes(desc).forEach(function (o) {
+                    var m = o._spTabCellule;
+                    if (!m) return;
+                    var lw = m.rw * f, lh = m.rh * f;
+                    /* ⚠️ Les dimensions fixes sont posees AVANT le `set` : l'override
+                       d'initDimensions de l'application les relit, et dans l'autre
+                       ordre il remettrait l'ancienne hauteur par-dessus la nouvelle. */
+                    o._fixedWidth = lw;
+                    o._fixedHeight = lh;
+                    o.set({
+                        left: x + m.rx * f, top: y + m.ry * f,
+                        scaleX: 1, scaleY: 1,
+                        fontSize: Math.max(1, m.refCorps * f)
+                    });
+                    if (typeof o.initDimensions === 'function') o.initDimensions();
+                    /* ⚠️ MESURE, ET C'EST ELLE QUI A CORRIGE LE CODE : Fabric
+                       recalcule la largeur d'un Textbox dans initDimensions et
+                       ramenait la cellule a sa largeur d'origine — le tableau
+                       s'allongeait en HAUTEUR mais pas en LARGEUR (94,49 px au lieu
+                       de 188,98 apres un facteur 2). Les deux dimensions sont donc
+                       reaffirmees APRES le recalcul, jamais avant. */
+                    o.width = lw;
+                    o.height = lh;
+                    if (typeof applyTextboxClipPath === 'function') { try { applyTextboxClipPath(o); } catch (_) {} }
+                    o.setCoords();
+                });
+                synchroniserFilets(desc);
+            }
+
+            /* Deplacement : on reporte le delta sur les soeurs et sur les filets.
+               `deja` empeche la propagation en cascade (chaque soeur emit 'moving'
+               a son tour). */
+            function brancherTableau(tb, cv, desc) {
+                var suivreDeplacement = function () {
+                    if (desc.enCours) return;
+                    var m = tb._spTabCellule;
+                    if (!m) return;
+                    desc.enCours = true;
+                    var dx = tb.left - (desc.x + m.rx * (desc.largeur / desc.refLargeur));
+                    var dy = tb.top - (desc.y + m.ry * (desc.hauteur / desc.refHauteur));
+                    desc.x += dx; desc.y += dy;
+                    cellulesVivantes(desc).forEach(function (o) {
+                        if (o === tb) return;
+                        o.set({ left: o.left + dx, top: o.top + dy });
+                        o.setCoords();
+                    });
+                    synchroniserFilets(desc);
+                    desc.enCours = false;
                 };
-                tb.on('moving', suivre);
-                tb.on('scaling', suivre);
-                tb.on('rotating', suivre);
-                tb.on('skewing', suivre);
-                tb.on('modified', function () { suivre(); if (typeof scheduleRender === 'function') scheduleRender(cv); });
-                /* Supprimer le bloc supprime ses filets. */
+
+                var suivreEchelle = function () {
+                    if (desc.enCours) return;
+                    var m = tb._spTabCellule;
+                    if (!m || !m.rw || !m.rh) return;
+                    desc.enCours = true;
+                    var lw = (tb.width || 0) * (tb.scaleX || 1);
+                    var lh = (tb.height || 0) * (tb.scaleY || 1);
+                    var fx = lw / m.rw, fy = lh / m.rh;
+                    /* ⚠️ « Comme une image, en conservant ses proportions » : UN
+                       seul facteur, pris sur l'axe qui a le plus bouge. Sans cela,
+                       tirer un bord etirerait le tableau dans un sens et le texte
+                       resterait a sa taille — deux defauts visibles d'un coup. */
+                    var f = (Math.abs(fx - 1) >= Math.abs(fy - 1)) ? fx : fy;
+                    if (!isFinite(f) || f <= 0.05) f = 0.05;
+                    appliquerGeometrie(desc, f, tb.left - m.rx * f, tb.top - m.ry * f);
+                    desc.enCours = false;
+                };
+
+                tb.on('moving', suivreDeplacement);
+                tb.on('scaling', suivreEchelle);
+                tb.on('modified', function () {
+                    if (desc.enCours) return;
+                    desc.enCours = true;
+                    /* Apres un redimensionnement, Fabric a laisse scaleX/scaleY ;
+                       on remet a 1 puisque la taille est desormais portee par les
+                       cellules elles-memes. */
+                    var m = tb._spTabCellule;
+                    if (m && (tb.scaleX !== 1 || tb.scaleY !== 1)) {
+                        var lw = (tb.width || 0) * (tb.scaleX || 1);
+                        var f = lw / m.rw;
+                        if (isFinite(f) && f > 0.05) {
+                            appliquerGeometrie(desc, f, tb.left - m.rx * f, tb.top - m.ry * f);
+                        }
+                    }
+                    desc.enCours = false;
+                    if (typeof scheduleRender === 'function') scheduleRender(cv);
+                });
+
+                /* Supprimer UNE cellule ne doit pas laisser un trou : on la vide et
+                   on garde la grille. Supprimer le DERNIER morceau retire les filets. */
                 cv.on('object:removed', function (ev) {
-                    if (ev && ev.target === tb && inf.filets) {
-                        var g = inf.filets;
-                        inf.filets = null;
-                        tb._spTableauGrille = null;
+                    if (!ev || !ev.target) return;
+                    var cible = ev.target;
+                    if (cible === desc.filets) return;
+                    var idx = desc.cellules.indexOf(cible);
+                    if (idx < 0) return;
+                    desc.cellules.splice(idx, 1);
+                    if (desc.cellules.length === 0 && desc.filets) {
+                        var g = desc.filets;
+                        desc.filets = null;
                         try { cv.remove(g); } catch (_) {}
                     }
                 });
@@ -24732,41 +24851,60 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                     }
                 } catch (_) {}
 
-                createSimpleTextBox(cv, x, y, largeurPx, hauteurTot);
-                var tb = cv.getActiveObject();
-                if (!tb || tb.type !== 'textbox') return false;
+                var desc = {
+                    id: ++compteurTableaux,
+                    colonnes: cfg.colonnes, lignes: cfg.lignes,
+                    x: x, y: y,
+                    refLargeur: largeurPx, refHauteur: hauteurTot,
+                    largeur: largeurPx, hauteur: hauteurTot,
+                    filets: null, cellules: [], enCours: false
+                };
 
-                tb.set({
-                    text: contenu(cfg.lignes, cfg.colonnes),
-                    /* 1 mm = 72/25,4 px dans cet espace document, donc 1 px document = 1 pt :
-                       le corps se transmet tel quel. */
-                    fontSize: cfg.corps,
-                    fontFamily: 'Open Sans',
-                    fill: '#000000',
-                    textAlign: 'left',
-                    lineHeight: 1,
-                    charSpacing: 0
-                });
-                tb._fixedWidth = largeurPx;
-                tb._fixedHeight = hauteurTot;
-                tb._spTabs = taquets(largeurPx, cfg.colonnes);
-                tb._spTableauGrille = { colonnes: cfg.colonnes, lignes: cfg.lignes, largeur: largeurPx, filets: null };
-
-                if (typeof tb._clearCache === 'function') tb._clearCache();
-                tb.initDimensions();
-                tb.setCoords();
+                var cases = geometrie(x, y, largeurPx, hauteurTot, cfg.colonnes, cfg.lignes);
+                for (var i = 0; i < cases.length; i++) {
+                    var g = cases[i];
+                    createSimpleTextBox(cv, g.x, g.y, g.w, g.h);
+                    var cell = cv.getActiveObject();
+                    if (!cell || cell.type !== 'textbox') continue;
+                    cell.set({
+                        text: '',
+                        /* 1 mm = 72/25,4 px dans cet espace document, donc 1 px document = 1 pt :
+                           le corps se transmet tel quel. */
+                        fontSize: cfg.corps,
+                        fontFamily: 'Open Sans',
+                        fill: '#000000',
+                        textAlign: 'left',
+                        lineHeight: 1,
+                        charSpacing: 0,
+                        /* ⚠️ L'application pose minWidth/minHeight a 20 mm pour un bloc
+                           ordinaire : c'est PLUS GRAND que la cellule elle-meme, donc
+                           le minimum empecherait de reduire le tableau. */
+                        minWidth: 1, minHeight: 1
+                    });
+                    cell._fixedWidth = g.w;
+                    cell._fixedHeight = g.h;
+                    cell._spTabCellule = {
+                        desc: desc, ligne: g.ligne, colonne: g.colonne,
+                        rx: g.x - x, ry: g.y - y, rw: g.w, rh: g.h, refCorps: cfg.corps
+                    };
+                    if (typeof cell._clearCache === 'function') cell._clearCache();
+                    cell.initDimensions();
+                    cell.setCoords();
+                    if (typeof applyTextboxClipPath === 'function') applyTextboxClipPath(cell);
+                    desc.cellules.push(cell);
+                    brancherTableau(cell, cv, desc);
+                }
+                if (!desc.cellules.length) return false;
 
                 var filets = creerFilets(largeurPx, hauteurTot, cfg.colonnes, cfg.lignes);
                 if (filets) {
-                    tb._spTableauGrille.filets = filets;
+                    desc.filets = filets;
                     cv.add(filets);
                     cv.sendToBack(filets);
-                    synchroniser(tb);
-                    brancherSuivi(tb, cv);
+                    synchroniserFilets(desc);
                 }
-                if (typeof applyTextboxClipPath === 'function') applyTextboxClipPath(tb);
-                if (typeof window.spTabRafraichir === 'function') { try { window.spTabRafraichir(tb); } catch (_) {} }
-                cv.setActiveObject(tb);
+
+                cv.setActiveObject(desc.cellules[0]);
                 cv.requestRenderAll();
                 if (typeof saveState === 'function') saveState('Tableau insere');
                 return true;
@@ -24978,6 +25116,11 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     
     // 🔒 Event 'scaling' : convertir le scaling en redimensionnement (stable, sans “blancs”)
     text.on('scaling', function() {
+        /* 🆕 Cellule de tableau : c'est `brancherTableau` qui pilote l'echelle, et
+           il a besoin de lire scaleX/scaleY AVANT conversion. Sans cette sortie,
+           ce gestionnaire remettait les echelles a 1 en premier et le facteur du
+           tableau valait toujours 1 : la grille ne suivait pas. */
+        if (this._spTabCellule) return;
         const corner = this.__corner; // ml/mr/mt/mb/tl/tr/bl/br
         const scaledW = this.getScaledWidth();
         const scaledH = this.getScaledHeight();

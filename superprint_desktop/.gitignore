@@ -19,6 +19,7 @@ src-tauri/copyright-*
 # eux aussi, un par application et par format : ils portent l'identifiant de
 # l'application, qui n'est pas le même dans les trois paquets.
 src-tauri/postremove-*.sh
+src-tauri/desinstaller-macos-*.command
 
 # Artefacts de distribution
 dist/

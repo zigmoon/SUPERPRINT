@@ -612,9 +612,78 @@ done
 exit 0
 `;
 
+    /* ⚠️ macOS n'a PAS de gestionnaire de paquets : il n'existe aucun script de
+       retrait à proprement parler. Ce que l'on fabrique ici est le fichier que
+       l'utilisateur trouvera DANS l'image disque, à côté de l'application.
+
+       ⚠️ Un « .command » téléchargé est marqué par Gatekeeper : au premier
+       double-clic, macOS demandera une confirmation (clic droit → Ouvrir). Le
+       script le dit lui-même à l'écran, plutôt que de laisser l'utilisateur
+       croire à une panne. */
+    const macos = `#!/bin/bash
+# ${app.nom} — désinstallation. Placé dans l'image disque par la construction.
+#
+# FABRIQUÉ par scripts/prepare-bundle.mjs : ne pas modifier à la main, la
+# prochaine construction l'écraserait.
+#
+# ⚠️ Il ne touche JAMAIS aux documents de l'utilisateur : il retire
+# l'application et ses données internes, rien d'autre.
+
+set -u
+
+NOM="${app.nom}"
+ID="${id}"
+
+echo "Désinstallation de « $NOM »"
+echo ""
+
+# 1. L'application, dans les deux emplacements habituels.
+trouve=0
+for dossier in /Applications "$HOME/Applications"; do
+  cible="$dossier/$NOM.app"
+  if [ -d "$cible" ]; then
+    trouve=1
+    if osascript -e "tell application \\"Finder\\" to delete POSIX file \\"$cible\\"" >/dev/null 2>&1; then
+      echo "Application placée dans la Corbeille : $cible"
+    elif rm -rf "$cible" 2>/dev/null; then
+      echo "Application supprimée : $cible"
+    else
+      echo "Attention : $cible n'a pas pu être supprimée."
+      echo "           Déplacez-la vous-même vers la Corbeille."
+    fi
+  fi
+done
+if [ "$trouve" -eq 0 ]; then
+  echo "Application introuvable dans /Applications ni dans ~/Applications."
+fi
+
+# 2. Les données internes laissées derrière.
+for d in \\
+  "$HOME/Library/Application Support/$ID" \\
+  "$HOME/Library/Caches/$ID" \\
+  "$HOME/Library/WebKit/$ID" \\
+  "$HOME/Library/HTTPStorages/$ID" \\
+  "$HOME/Library/Saved Application State/$ID.savedState" \\
+  "$HOME/Library/Preferences/$ID.plist" \\
+  "$HOME/Library/Logs/$ID"
+do
+  if [ -e "$d" ]; then
+    rm -rf "$d" 2>/dev/null && echo "Données supprimées : $d"
+  fi
+done
+
+echo ""
+echo "Désinstallation terminée."
+echo ""
+read -n 1 -s -r -p "Appuyez sur une touche pour fermer..."
+echo ""
+exit 0
+`;
+
     for (const [nom, texte] of [
       [`postremove-deb-${cle}.sh`, deb],
       [`postremove-rpm-${cle}.sh`, rpm],
+      [`desinstaller-macos-${cle}.command`, macos],
     ]) {
       const cible = path.join(srcTauri, nom);
       await fs.writeFile(cible, texte, 'utf8');

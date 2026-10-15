@@ -160,6 +160,80 @@ jobs:
             --config src-tauri/apps/${{ matrix.app }}.json
             ${{ matrix.target != '' && format('--target {0}', matrix.target) || '' }}
 
+      # ── macOS : poser le désinstalleur DANS l'image disque ──────────────────
+      #
+      # ⚠️ POURQUOI UNE ÉTAPE SÉPARÉE, ET PAS DE LA CONFIGURATION. Le `.dmg` ne
+      # peut pas recevoir de fichier par configuration : le schéma de Tauri
+      # n'accepte, pour le DMG, que des clés de MISE EN PAGE (fond, taille et
+      # position de la fenêtre, position des icônes) — vérifié sur le schéma de
+      # @tauri-apps/cli 2.12.2. Le seul moyen d'y poser un fichier est donc de
+      # ROUVRIR l'image après sa création.
+      #
+      # ⚠️ CETTE ÉTAPE NE DOIT JAMAIS FAIRE ÉCHOUER LA COMPILATION. Une image
+      # disque ratee vaut mieux qu'une livraison sans macOS du tout. On
+      # reconstruit une image, on la REMONTE pour vérifier qu'elle contient
+      # toujours l'application ET le script, et on ne remplace l'original que si
+      # les deux sont là. Sinon l'image d'origine est conservée intacte.
+      - name: macOS — désinstalleur dans l'image disque
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        working-directory: superprint_desktop
+        run: |
+          set -u
+          nom="$(node -p "require('./src-tauri/apps/${{ matrix.app }}.json').productName")"
+          source="src-tauri/desinstaller-macos-${{ matrix.app }}.command"
+          if [ ! -f "$source" ]; then
+            echo "::warning::$source absent — image disque laissée telle quelle."
+            exit 0
+          fi
+
+          trouve=0
+          for dmg in src-tauri/target/*/release/bundle/dmg/*.dmg src-tauri/target/release/bundle/dmg/*.dmg; do
+            [ -f "$dmg" ] || continue
+            trouve=1
+            travail="$(mktemp -d)"
+            rw="$travail/rw.dmg"
+            mnt="$travail/mnt"
+            neuf="$travail/neuf.dmg"
+            mkdir -p "$mnt"
+
+            if ! hdiutil convert "$dmg" -format UDRW -o "$rw" >/dev/null 2>&1; then
+              echo "::warning::conversion de $dmg impossible — image laissée telle quelle."
+              rm -rf "$travail"; continue
+            fi
+            if ! hdiutil attach "$rw" -mountpoint "$mnt" -nobrowse -quiet; then
+              echo "::warning::montage de $dmg impossible — image laissée telle quelle."
+              rm -rf "$travail"; continue
+            fi
+
+            cp "$source" "$mnt/Désinstaller $nom.command"
+            chmod +x "$mnt/Désinstaller $nom.command"
+            hdiutil detach "$mnt" -quiet || true
+
+            if ! hdiutil convert "$rw" -format UDZO -imagekey zlib-level=9 -o "$neuf" >/dev/null 2>&1; then
+              echo "::warning::recompression de $dmg impossible — image laissée telle quelle."
+              rm -rf "$travail"; continue
+            fi
+
+            # CONTRÔLE : on remonte l'image produite et on exige les DEUX entrées.
+            controle="$(mktemp -d)"
+            ok=0
+            if hdiutil attach "$neuf" -mountpoint "$controle" -nobrowse -quiet; then
+              if [ -d "$controle/$nom.app" ] && [ -f "$controle/Désinstaller $nom.command" ]; then ok=1; fi
+              hdiutil detach "$controle" -quiet || true
+            fi
+            rmdir "$controle" 2>/dev/null || true
+
+            if [ "$ok" -eq 1 ]; then
+              mv "$neuf" "$dmg"
+              echo "$dmg : « Désinstaller $nom.command » ajouté ($(stat -f%z "$dmg") octets)."
+            else
+              echo "::warning::$dmg : le contrôle a échoué — image ORIGINALE conservée."
+            fi
+            rm -rf "$travail"
+          done
+          [ "$trouve" -eq 1 ] || echo "::warning::aucune image disque trouvée."
+
       - name: Téléverser les paquets
         uses: actions/upload-artifact@v6
         with:
