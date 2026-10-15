@@ -9,6 +9,53 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.621] — 2026-10-15
+
+_Chaque cellule de tableau est un texte indépendant, un glissement court crée enfin un bloc, et deux exporteurs arrivent_
+
+> **Pourquoi cette version existe.** Cinq gestes du quotidien ne se comportaient pas comme leur nom le promettait : les cellules d'un tableau ne partageaient qu'**un seul** texte, les poignées l'étiraient sans respecter ses proportions, un glissement un peu court ne créait **rien** en le disant à personne, la boîte Enregistrer n'exportait ni HTML ni EPUB, et le bouton IA ouvrait un autre écran que sa boîte de prompt. Ce qui suit a été **mesuré** — dans WebKit comme dans Chromium, à deux densités d'écran — et non déduit.
+
+### Added — un tableau dont chaque cellule porte son propre texte
+
+- **Ce que c'était.** Le tableau entier n'était qu'**un seul bloc de texte** : une ligne par rang, des tabulations entre les colonnes, des taquets d'alignement. Écrire dans une cellule, c'était écrire *dans le tableau* ; élargir une colonne déplaçait le texte de toutes les autres.
+- **Ce que c'est.** Chaque cellule est un **vrai bloc de texte** — son texte, son corps, son alignement — et les cellules sont reliées par un descripteur commun portant la géométrie de référence. `geometrie`, `cellulesVivantes`, `appliquerGeometrie`, `synchroniserFilets`, `brancherTableau` remplacent une logique par taquets. **Mesuré** : écrire `ALPHA` dans une cellule laisse les cinq autres sur `BETA`.
+- **Les poignées agrandissent le tableau *entier*, d'un seul facteur** — jamais deux, sinon les proportions ne tiennent pas. **Mesuré** sur six cellules avec un facteur de 2 : **188,98 × 68,03 px** (contre 94,49 × 34,02), corps de 10 à **20**, échelles revenues à 1, filets alignés. Réduire à l'échelle 1 retrouve la taille d'origine.
+- ⚠️ **Deux pièges de Fabric trouvés en mesurant, pas en relisant.** (1) `createSimpleTextBox` installe un gestionnaire `scaling` qui convertit l'échelle en largeur et hauteur puis **remet les échelles à 1** : le facteur valait donc *toujours* 1 et l'agrandissement ne faisait rien — corrigé par une sortie immédiate pour les cellules. (2) Fabric **recalcule la largeur** d'un `Textbox` dans `initDimensions` : la largeur devait être réaffirmée *après* ce recalcul — mesuré 94,49 px au lieu de 188,98. Les deux seraient passés pour du code correct.
+
+### Added — exporteurs HTML et EPUB, et le bouton IA fait ce que son nom dit
+
+- **Deux boutons de plus dans la boîte Enregistrer** : `#saveHTML` et `#saveEPUB` → `exporterHTML()` et `exporterEPUB()`. Le texte est du **vrai texte** : chaque page est rendue en **SVG** (`canvas.toSVG`), donc sélectionnable et indexable — **pas** une capture d'écran déguisée en document.
+- **EPUB à mise en page fixe et pré-paginée** — le choix d'un export InDesign, et le seul qui préserve une maquette d'imprimeur. Le fichier `mimetype` est la **première entrée** de l'archive et reste **non compressé** : sans ces deux conditions beaucoup de lecteurs refusent le fichier. Vérifié en **extrayant l'archive** et en analysant son XML par un vrai analyseur.
+- **Le bouton IA ouvre enfin sa boîte de prompt.** Il appelait `spOuvrirStudioIA` (un autre écran) ; il appelle `spOuvrirIA()`. Sans clef configurée, la boîte le **dit** (`#aiSetupBanner`) et propose un lien qui ouvre les **Préférences** (`spOuvrirPrefsIA()`), où la saisie des clefs vit vraiment — l'utilisateur les croyait ailleurs, et rien ne le contredisait.
+- **18 clefs trilingues** ajoutées (FR / EN / JA). `translate()` renvoie la **clef** quand une traduction manque, donc une absence se voit au lieu de passer inaperçue.
+
+### Added — le désinstalleur macOS entre dans l'image disque
+
+- ⚠️ **Le problème énoncé la dernière fois, résolu cette fois.** La configuration DMG de Tauri n'accepte **que** des clefs de mise en page : aucun fichier ne peut être posé à côté de l'application *par configuration*. L'étape « macOS — désinstalleur dans l'image disque » de `.github/workflows/build-desktop.yml` le fait donc elle-même : après empaquetage elle **rouvre le `.dmg`** (`hdiutil convert` en UDRW, `attach`), y copie `Désinstaller <nom>.command`, le rend exécutable, puis **remonte l'image finie** pour vérifier que l'application *et* le script sont présents. Si l'un des deux manque, l'originale est conservée et un avertissement est publié — **cette étape ne fait jamais échouer la construction**.
+- **Vérifié sur les fichiers publiés** : le journal du job `superprint · macOS-ARM` affiche `SuperPrint_1.7.621_aarch64.dmg : « Désinstaller SuperPrint.command » ajouté (33763310 octets)`, et l'image ARM publiée pèse **33 763 310 octets** — *exactement* la taille annoncée **après** injection. L'image Intel a été **entièrement reconstruite** depuis l'archive publiée et le fichier y a été trouvé.
+
+### Fixed — un glissement court ne créait rien, et ne le disait pas
+
+- **Le symptôme, tel que l'utilisateur l'a décrit** : le bouton est visible, on clique, on glisse, le **rectangle bleu en pointillés apparaît**… et rien n'est créé. Sur macOS seulement, disait-il, et il avait raison de le signaler.
+- ⚠️ **Sept hypothèses éliminées par la mesure avant de trouver** : paquets macOS périmés (tous du même build), `withGlobalTauri` manquant (présent, configuration bien fusionnée), polices absentes (476 fichiers des deux côtés), polices qui ne se chargent pas (le texte resterait visible), rendu WebKit (identique), application de bureau contre web (le frontal testé *dans* WebKit — identique), bouton de la barre hors écran (atteignable de 1600 à 900 px). Aucune n'était la cause.
+- **La cause, et elle était muette.** `finishDrawingSimpleTextBox` refusait de créer quoi que ce soit dès que la largeur ou la hauteur descendait sous **30 px**, sans rien dire. Matrice mesurée : **20 px → 0 bloc**, **28 px → 0**, **40 px → 1**, **80 px → 1** — soit **8 glissements perdus sur 16**, à l'identique en WebKit et en Chromium et aux deux densités. Pire : le seuil était exprimé en **espace document** (1 px = 1 pt), donc il refusait tout ce qui mesure moins de **10,6 mm**. Un utilisateur dessinant au jugé avait une chance sur deux de n'obtenir **aucun message**.
+- **Corrigé puis remesuré** : le seuil devient `MINI = 6` — un glissement réel est honoré *à toute taille*, et un simple clic crée un bloc de **60 × 20 mm**, une taille utile plutôt qu'une taille minimale. Après correction : **16 glissements sur 16 créent un bloc**.
+
+### Fixed — les marges des boutons d'export, et deux icônes alignées
+
+- **Les boutons HTML et EPUB retrouvent leurs marges.** `.btn` fixe une hauteur de **32 px** qui *absorbait* le remplissage vertical : les deux nouveaux mesuraient **32 px** là où JSON et IPFS en mesuraient **65**. Corrigé par `height: auto` et `min-height: 65px` → **65 px, 20 px au-dessus et 20 px en dessous**.
+- **Les icônes IA et Play étaient les deux seules remplies** d'une zone entièrement en contour, et paraissaient donc plus sombres. Redessinées en trait — tête d'assistant avec antenne et deux yeux pour l'IA, triangle en contour pour Play — y compris dans le menu mobile.
+
+### Verified — et une assertion retirée plutôt qu'un instrument arrangé
+
+- ⚠️ **Le piège de construction du bump.** `superprint_desktop/frontend/` est **généré et ignoré par git**, et le bump de version (`_dev/scripts/_bump_621.cjs`) ne réécrit que les fichiers **suivis** : l'application de bureau serait restée en 1.7.620 et l'archive aurait embarqué une application en retard d'une version, *sans que rien ne le signale*. Régénérée par `prepare-bundle.mjs` pour les trois applications, puis comparée **ligne à ligne** avec le web : **0 ligne propre au web**, **29 lignes propres au frontal**, toutes dans le bloc injecté qui purge le service worker.
+- ⚠️ **Un piège de mesure sur les noms macOS.** Dans l'image publiée, `sinstalle` renvoie **2** occurrences et `.command` en renvoie **2**… mais `Désinstaller` avec un **« é » précomposé renvoie 0**. De quoi conclure à tort à une absence. La raison : **HFS+ stocke les noms décomposés** — un `e` suivi de U+0301 — et non la lettre précomposée. Le fichier est bien là, `Désinstaller SuperPrint.command`, vu deux fois à côté de `.DS_Store`. **Une recherche accentuée sur un nom macOS peut donc prouver une absence qui n'existe pas.**
+- **Les mesures portent sur les fichiers publiés, pas sur les sources.** Le `.deb` téléchargé déclare `Version: 1.7.621` et contient bien son `postrm` tolérant à l'échec ; le `setup.exe` Windows porte `ProductVersion 1.7.621` dans sa ressource PE ; et l'archive versionnée n'est publiée par la chaîne d'intégration **que si** l'étiquette est égale à la version déclarée dans `tauri.conf.json` — elle refuse de publier un désaccord au lieu de le signaler après coup.
+- ⚠️ **Une assertion retirée, délibérément.** En corrigeant les deux icônes, j'ai voulu *prouver* que l'icône pleine était plus sombre. Le mesureur s'est trompé **deux fois** : d'abord il comptait les pixels **transparents** du bouton comme de l'encre (100 % partout) ; ensuite il mesurait la **plus longue trace**, c'est-à-dire une longueur de trait, et désignait l'imprimante (86 px). Le résultat honnête est que **l'ancien triangle plein n'était pas plus lourd** que ses voisins (masse 1 232 contre **2 458** de moyenne). L'assertion a donc été **supprimée** au lieu d'être ajustée à ma conclusion : la correction visuelle reste, la mesure qui ne disait rien s'en va. **19 assertions sur 19 restent vertes.**
+- **Le billet est écrit en trois langues dans les deux journaux** : `release.html` (suivi par git, sous-ensemble SuperPrint) et `Index_app/release.html` (la page publiée, complète). Chacun à sa propre ancre. Vérifié par analyse du HTML dans **Chromium** : 26 assertions vertes, dont le fait que le nouveau billet ne porte **aucun** élément sans ses trois langues.
+
+---
+
 ## [1.7.620] — 2026-10-15
 
 _Un désinstalleur qui manquait sur macOS, des licences qui manquaient dans deux formats, et une date qui n'avait jamais suivi_
