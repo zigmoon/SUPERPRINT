@@ -13,12 +13,20 @@ Une seule commande pour l'utilisateur final : **`npx superprint`** (identique Ma
 Ouvre un terminal **dans le dossier `superprint-npm/`** :
 
 ```bash
-cd superprint-npm
-npm login
+npm login --auth-type=web
 ```
 
-> Saisis ton **username**, ton **email**, puis ton **password** (il ne s'affiche pas, c'est normal).
-> Vérifie l'OTP/2FA si tu l'as activé.
+> 🔴 **MESURÉ LE 15/10/2026 — LE COMPTE `zigmoon` NE SAISIT NI NOM NI MOT DE PASSE.**
+> `npm login --auth-type=web` n'affiche **aucun** champ « Username » / « Password » utilisable : il imprime une
+> URL `https://www.npmjs.com/login?next=/login/cli/<identifiant>` et **attend**, en laissant la connexion
+> ouverte côté npm. Il faut ouvrir cette URL dans un navigateur **où la session npmjs.com est déjà active**, et
+> valider. npm écrit alors `Logged in on https://registry.npmjs.org/.` et **remplace le jeton de `~/.npmrc`**.
+>   · Le contrôle qui ne trompe pas est `npm whoami` → il doit répondre `zigmoon`, et non `E401`.
+>   · ⚠️ Un `npm login` **interrompu** (Ctrl-C, ou un prompt « Username: » collé puis abandonné) **laisse le
+>     `.npmrc` intact** — donc l'ancien jeton, probablement expiré. **La date de `~/.npmrc` est le contrôle** :
+>     si elle n'a pas bougé, la connexion n'a pas eu lieu, quoi qu'ait affiché le terminal.
+>   · ⚠️ Et un lien de connexion **appartient à UNE session** : l'URL d'un `npm login` déjà terminé ne connecte
+>     rien. Il faut celle de la session en cours — le processus doit tourner pendant la validation.
 
 ## 3. Publier (la 1ʳᵉ fois)
 
@@ -27,6 +35,28 @@ npm publish
 ```
 
 C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.113**).
+
+> 🔑 **MESURÉ LE 15/10/2026 — LA PUBLICATION EXIGE UNE CLÉ DE SÉCURITÉ, ET UN CODE DE 16 CHIFFRES.**
+> Ce compte a une 2FA de type **clé de sécurité** (WebAuthn), **pas** un code TOTP à 6 chiffres : `npm publish`
+> échoue donc en `EOTP`, et **aucun code à 6 chiffres ne marchera**, même frais — essayé pour rien trois fois.
+> Le message de npm parle vaguement d'« authenticator » ; c'est le **registre** qui dit la vérité, dans un
+> en-tête de sa réponse 401 : `npm-notice: Open https://www.npmjs.com/login/<uuid> to use your security key for
+> authentication`. Ouvrir cette URL, valider avec la clé : la page affiche **« Use the following one-time
+> password in your terminal »** suivi d'un code de **16 chiffres**, à passer ensuite en
+> `npm publish --otp=<16 chiffres>`.
+>
+> ⚠️ **npm MASQUE CETTE URL QUAND IL N'Y A PAS DE TERMINAL INTERACTIF** : il imprime
+> `https://www.npmjs.com/auth/cli/***`, et le `***` est **littéral** — il est **aussi** dans le journal de
+> débogage, donc le chercher là ne sert à rien. Pour la retrouver malgré tout, on interroge le registre
+> directement (l'en-tête `npm-notice` accompagne un `PUT` refusé) :
+>
+> ```bash
+> curl -sS -i -X PUT -H "Authorization: Bearer <jeton de ~/.npmrc>" \
+>      -H "Content-Type: application/json" --data '{}' \
+>      https://registry.npmjs.org/superprint | grep -i npm-notice
+> ```
+>
+> Un `PUT` à corps vide ne peut **rien** publier : c'est une sonde sans effet, faite exprès.
 
 > ⚠️ **npm 12 et preuve de présence (2FA)** : si `npm publish` affiche « Authenticate your account at … Press ENTER to open in the browser… », la publication est **staged** (préparée mais non publiée) et attend une approbation dans le navigateur — ou un code : `npm publish --otp=XXXXXX`. Ne pas relancer `npm publish` tel quel : npm répond **E409 « Cannot publish over previously staged version »**. Dans ce cas, bumper (`npm version patch --no-git-tag-version`) puis republier, ou approuver le stage (`npm stage list`, `npm stage approve <stage-id>`).
 
@@ -63,13 +93,15 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.617`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `version.txt` | Version en ligne (`1.7.621`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 
 > 📦 Le zip est régénéré par **`node tools/make-release-zip.mjs`** (depuis la racine du repo : il crée `superprint/sp213-local.zip` puis contrôle le résultat). ⚠️ Le script est **suivi par git** — celui-ci et non un script de `_dev/`, qui est ignoré et n'existerait pas sur une autre machine. Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
-> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.617**, aligné sur ce qui est EN LIGNE (zip **1.7.617**, 56 459 564 octets vérifiés le 14/10/2026 sur app.zigmoon.com — le fichier a été **retéléchargé et haché**, sha256 `EAB82EEA…8B951`, identique octet pour octet au zip local, donc l'archive est complète —, et `version.txt` = **1.7.617** sur superprint.cc).
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.621**, aligné sur ce qui est EN LIGNE, et **vérifié le 15/10/2026** : zip `1.7.621`, **55 820 797 octets**, sha256 `FC86AE1E…4EFE3DB`, **identique octet pour octet** au zip local ; `version.txt` = **1.7.621** sur superprint.cc.
+>
+> 🔴 **ET LA LEÇON SUR LES EMPREINTES, À NE PAS OUBLIER** : le chiffre qui figurait ici avant, « zip 1.7.617, 56 459 564 octets, sha256 `EAB82EEA…8B951` », était **exact** — mais pour le zip de la version **PRÉCÉDENTE**. Le fichier déployé avait été retéléchargé et **haché**, jamais **ouvert**. Une empreinte prouve qu'un fichier est intact, **pas** qu'il est le bon. La lecture qui fait foi est **DANS l'archive** : `version.txt` et le `package.json` interne, plus le `CACHE_NAME` du service worker (`superprint-shell-v1.7.621-tableau-cellules-et-exporteurs` pour cette version).
 
 > ⚠️ **Une version ÉGALE ne déclenche AUCUNE mise à jour.** L'étape 1/4 compare `version.txt` en ligne à la version installée : si elles sont égales, rien n'est rejoué. Relever le zip sans changer de version ne sert donc qu'aux nouvelles installations — les autres gardent l'ancienne application, sans que rien ne le signale. C'est la raison du passage à 1.7.617 : le correctif de l'ordre des calques vit dans `app/JS/main.js`, et l'application charge ce fichier avec une empreinte **figée sur la version** (`JS/main.js?v=…-v617-…`) et le met en cache sous un nom qui la porte aussi (`superprint-shell-v1.7.617-…`). Déployer le fichier sans relever ces deux chaînes n'aurait rien livré.
 
