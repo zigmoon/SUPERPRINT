@@ -42,7 +42,7 @@
   'use strict';
 
   /** Version de ce branchement (sert aussi de paramètre `?v=` dans `index.html`). */
-  var VERSION = '20261011-v625-rust-eps';
+  var VERSION = '20261011-v626-rust-eps';
 
   /** URL du module, relative à la page. */
   var URL_NOYAU = 'JS/superprint_eps.wasm';

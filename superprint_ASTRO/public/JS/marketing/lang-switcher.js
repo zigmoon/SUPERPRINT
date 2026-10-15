@@ -125,7 +125,7 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 
 // ── Zone « Nos logiciels · Nos versions » : le bouton ouvre le menu de la barre ──
-/* 🆕 v1.7.625 — Le bouton de la zone du bas ne recopie pas les sept adresses de
+/* 🆕 v1.7.626 — Le bouton de la zone du bas ne recopie pas les sept adresses de
    fichiers : il ouvre le menu de la barre, qui reste la seule liste du site.
    Deux pièges, tous les deux traités ici :
    1. Le menu se referme au moindre clic hors de lui (écouteur sur `document`).

@@ -65662,9 +65662,13 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             var nom = moteurs[provider] || provider;
             var t = el.querySelector('.ai-key-lbl');
             var txt = 'Prompt IA';
+            /* ⚠️ L'infobulle disait « Ouvrez le panneau IA (bouton IA) » : c'etait
+               vrai quand le bouton ouvrait le PANNEAU. Il ouvre desormais la barre
+               elle-meme, et la cle se saisit dans les Preferences, onglet IA. Une
+               infobulle qui envoie au mauvais endroit est pire que pas d'infobulle. */
             el.title = aCle
                 ? (txt + ' — clé ' + nom + ' active. L\'IA peut composer et retoucher.')
-                : (txt + ' — aucune clé pour ' + nom + '. Ouvrez le panneau IA (bouton IA) pour la saisir.');
+                : (txt + ' — aucune clé pour ' + nom + '. Les réglages de l\'IA se font dans les Préférences, onglet IA.');
             if (t) t.title = el.title;
         }
         window._aiFooterSyncKeyDot = _aiFooterSyncKeyDot;
