@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.624`** — 15 octobre 2026
+> **Dernière version : `1.7.625`** — 15 octobre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,20 +10,20 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.624` |
+| Version app (affichée) | `1.7.625` |
 | Pastille du colophon (`index.html` **et** `price.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
-| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.624-polices-allegees` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261015-v624-polices-allegees` (JS) · `?v=20261015-v624-regles-20px-decales` (CSS) · `?v=20261015-v624-calque-encre` (module 3D) |
-| ⚠️ `fonts.css` — **empreinte SANS numéro de version** | `?v=20261015-v624-polices-allegees` |
-| Badge preview (`spVersionBadge`) | `v1.7.624` — 5 marqueurs : commentaire, `title` (`JS v624`), `data-sp-js="v624"`, `data-sp-sw="v1.7.624"`, texte |
-| Splash screen | `1.7.624` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.624` + `V 1.7.624 \| 10 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `app/index.html` **seulement**) | `1.7.624` — ⚠️ `landing.html` n'a **aucun** JSON-LD (c'est une page de redirection, son `v1.7.468` est une note de provenance) et `app/landing.html` **n'existe pas** |
-| Documentation (racine **et** `app/`) | `v1.7.624` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.624` |
-| `version.txt` | `1.7.624` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.624 (October 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.624` |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.625-polices-allegees` |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261015-v625-polices-allegees` (JS) · `?v=20261015-v625-regles-20px-decales` (CSS) · `?v=20261015-v625-calque-encre` (module 3D) |
+| ⚠️ `fonts.css` — **empreinte SANS numéro de version** | `?v=20261015-v625-polices-allegees` |
+| Badge preview (`spVersionBadge`) | `v1.7.625` — 5 marqueurs : commentaire, `title` (`JS v625`), `data-sp-js="v625"`, `data-sp-sw="v1.7.625"`, texte |
+| Splash screen | `1.7.625` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.625` + `V 1.7.625 \| 10 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `app/index.html` **seulement**) | `1.7.625` — ⚠️ `landing.html` n'a **aucun** JSON-LD (c'est une page de redirection, son `v1.7.468` est une note de provenance) et `app/landing.html` **n'existe pas** |
+| Documentation (racine **et** `app/`) | `v1.7.625` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.625` |
+| `version.txt` | `1.7.625` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.625 (October 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.625` |
 | Lanceur npm (`superprint-npm/package.json`) | `1.0.113` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
