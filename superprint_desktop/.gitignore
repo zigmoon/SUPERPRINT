@@ -15,5 +15,10 @@ src-tauri/gen/
 src-tauri/changelog-*.gz
 src-tauri/copyright-*
 
+# Scripts de retrait des paquets Linux (postrm Debian, postun RPM) — FABRIQUÉS
+# eux aussi, un par application et par format : ils portent l'identifiant de
+# l'application, qui n'est pas le même dans les trois paquets.
+src-tauri/postremove-*.sh
+
 # Artefacts de distribution
 dist/

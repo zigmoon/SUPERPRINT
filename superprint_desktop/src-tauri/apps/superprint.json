@@ -45,7 +45,25 @@
           "/usr/share/doc/super-print/changelog.gz": "changelog-superprint.gz",
           "/usr/share/doc/super-print/NOTICE.md": "../NOTICE.md",
           "/usr/share/doc/super-print/TRADEMARKS.md": "../TRADEMARKS.md"
-        }
+        },
+        "postRemoveScript": "postremove-deb-superprint.sh"
+      },
+      "rpm": {
+        "files": {
+          "/usr/share/doc/super-print/copyright": "copyright-superprint",
+          "/usr/share/doc/super-print/changelog.gz": "changelog-superprint.gz",
+          "/usr/share/doc/super-print/NOTICE.md": "../NOTICE.md",
+          "/usr/share/doc/super-print/TRADEMARKS.md": "../TRADEMARKS.md"
+        },
+        "postRemoveScript": "postremove-rpm-superprint.sh"
+      }
+    },
+    "macOS": {
+      "files": {
+        "Resources/LICENSE": "../LICENSE",
+        "Resources/COPYRIGHT": "copyright-superprint",
+        "Resources/NOTICE.md": "../NOTICE.md",
+        "Resources/TRADEMARKS.md": "../TRADEMARKS.md"
       }
     }
   }

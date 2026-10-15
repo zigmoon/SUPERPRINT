@@ -9,6 +9,53 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.620] — 2026-10-15
+
+_Un désinstalleur qui manquait sur macOS, des licences qui manquaient dans deux formats, et une date qui n'avait jamais suivi_
+
+> **Pourquoi cette version existe.** Une question simple — « j'ai bien le désinstalleur sous Mac, PC et Linux ? » — ne pouvait pas se répondre de mémoire, parce que la réponse n'est pas la même selon la plateforme. Elle ne l'était pas du tout : le tableau ci-dessous est le résultat de la mesure, pas d'un raisonnement.
+
+### Added — un désinstalleur dans l'application, pour les trois systèmes
+
+- **Ce qui manquait, mesuré plateforme par plateforme.** Windows : l'installeur NSIS écrit un `uninstall.exe` à côté du binaire et l'enregistre dans « Ajout/Suppression de programmes » — vérifié sur la machine réelle (83 185 octets, entrée de registre avec son `UninstallString`). Linux : le `.deb` et le `.rpm` se retirent par le gestionnaire de paquets, l'`.AppImage` en supprimant le fichier — l'inventaire du `.rpm` a été extrait de sa charge utile gzip, cinq entrées, **aucune scriptlet**, et le `control.tar.gz` du `.deb` ne contient que `control` et `md5sums`. **macOS : aucun désinstalleur**, et c'était le seul système où l'utilisateur n'avait pas de geste explicite.
+- ⚠️ **Et cette absence a été établie en DÉCOMPRESSANT l'image disque, pas en le supposant.** Le `.dmg` UDIF a été reconstruit tranche par tranche (11 tranches zlib, 30 brutes, **0 ratée** sur 36 664 832 octets), puis l'image a été fouillée : elle contient `SuperPrint.app` et un lien vers `Applications`, et **zéro** occurrence de « uninstall », « .command » ou « PkgInfo » — ni en UTF-16 (les noms HFS+) ni en ASCII. Une absence dans un fichier comprimé ne prouve rien ; une absence dans le contenu décompressé, si.
+- **La commande native `desinstaller`** donne le même geste aux trois systèmes. Elle renvoie un **code stable** — jamais une phrase : les traductions vivent dans l'interface, qui parle trois langues, et le natif ne peut pas les connaître. Elle renvoie aussi **la liste des chemins qu'elle a réellement traités**, ce qui permet de MONTRER ce qui a été fait au lieu de l'affirmer.
+- **Ce que fait chaque système** : Windows → lance le désinstalleur NSIS puis se ferme pour lui laisser la place ; macOS → déplace le paquet `.app` vers la Corbeille puis se ferme ; Linux → supprime l'AppImage si c'en est une, et sinon **donne la commande exacte** (`sudo apt remove super-print` ou `sudo dnf remove super-print`), parce que retirer un paquet demande des droits qu'une application ne s'arroge pas.
+- **Les données sont purgées, et pas seulement celles que Tauri connaît.** `app_data_dir`, `app_local_data_dir`, `app_config_dir`, `app_cache_dir`, `app_log_dir` — plus, **sur macOS seulement**, `~/Library/WebKit/<identifiant>`, `~/Library/HTTPStorages/<identifiant>`, `~/Library/Saved Application State/<identifiant>.savedState` et `~/Library/Preferences/<identifiant>.plist`. Ces quatre-là ne sont PAS dans les dossiers de Tauri : sans eux, une « désinstallation » laisse le cache et l'état de session derrière elle.
+- ⚠️ **Quatre garde-fous, parce que la commande est destructive.** Un **jeton de confirmation** exigé par le natif (un `invoke` égaré ne suffit pas) ; une **confirmation explicite** dans l'interface ; un **refus de deviner** — la remontée d'un binaire à son paquet `.app` exige que le dossier se termine par `.app`, sans quoi rien n'est déplacé ; et une **Corbeille qui n'écrase jamais un homonyme** (un second `SuperPrint.app` y arrive horodaté, sinon ce serait une perte de données déguisée en désinstallation).
+
+### Fixed — le `.rpm` et le `.dmg` ne portaient aucune licence
+
+- ⚠️ **Constat de la mesure** : le `.deb` embarque cinq fichiers — `copyright`, `changelog.gz`, `NOTICE.md`, `TRADEMARKS.md` — et le `.rpm`, **aucun**. La charge utile extraite du `.rpm` ne contenait que cinq entrées : le binaire, le `.desktop` et trois icônes. La raison est dans la configuration : les documents n'étaient déclarés que sous `bundle.linux.deb.files`, et nulle part ailleurs.
+- **Corrigé pour les deux formats** : les mêmes quatre documents sont maintenant déclarés pour le `.rpm`, et pour macOS ils entrent dans le paquet, à `Contents/Resources/` — c'est ce que documente le schéma de la CLI (« relative to the Contents directory »). Le nom de Clémence Brunet et la licence propriétaire accompagnent donc désormais **les trois paquets et les cinq formats**.
+- **Vérifié après écriture** : les trois surcouches sont du JSON valide, et les clés employées sont acceptées par le schéma de la CLI **2.12.2** — celui que la CI utilise, et qu'elle refuse les clés inconnues (`additionalProperties: false`) rend l'acceptation significative.
+
+### Added — des scripts de nettoyage pour les paquets Linux
+
+- **Ils n'existaient pas, et cela se voyait** : retirer un paquet laissait l'entrée de menu et l'icône affichées jusqu'à la prochaine session, faute de rafraîchissement du cache du bureau. Six scripts sont désormais générés — un `postrm` Debian et un `postun` RPM par application — avec l'identifiant **de chaque application** substitué, puisqu'il diffère dans les trois paquets.
+- ⚠️ **RÈGLE ABSOLUE : ils ne doivent JAMAIS faire échouer une désinstallation.** `apt` et `dnf` refusent de terminer si un script de retrait rend un code non nul — un nettoyage raté **bloquerait la désinstallation elle-même**, ce qui est bien pire que de laisser un dossier de cache. La règle a été **exécutée, pas affirmée** : les six scripts ont été lancés avec **huit arguments chacun** (`upgrade`, `remove`, `purge`, `failed-upgrade`, `abort-install`, `0`, `1`, aucun) et **les quarante-huit exécutions rendent 0**.
+- ⚠️ **Et ils ne touchent à rien pendant une MISE À JOUR.** Le premier argument d'un `postrm` vaut `upgrade` pendant une mise à jour, et celui d'un `postun` est le nombre de paquets restants — 0 seul signifie un retrait définitif. Sans cette distinction, **installer une nouvelle version aurait effacé les données de l'utilisateur**.
+- Les données ne partent qu'à bon escient : sur `purge` côté Debian (la politique demande de les **conserver** sur un simple `remove`), et sur retrait définitif côté RPM, qui ne distingue pas les deux.
+
+### Fixed — la date du pied de page était fausse depuis sept livraisons
+
+- ⚠️ Le panneau Préférences affiche « SuperPrint vX.Y.Z — **13 octobre 2026** ». Cette date avait été posée juste, pour **1.7.612** ; les bumps suivants ne remplaçaient que le **numéro**, parce qu'un script de version ne touche qu'aux chiffres qu'on lui demande. `VERSIONING.md` liste pourtant explicitement « Préférences (bas de page) » parmi les endroits qui portent la version.
+- Le script de bump de cette livraison remplace aussi **la date**, avec la date de livraison. C'est la seule façon d'empêcher la dérive de recommencer : la corriger une fois ne suffit pas, il faut que le mécanisme la suive. Vérifié : « SuperPrint v1.7.620 — 15 octobre 2026 ».
+
+### Changed — comment la logique native a été vérifiée, malgré une machine sans éditeur de liens
+
+- ⚠️ **Le contexte, parce qu'il change la valeur de ce qui suit** : sur ce poste, Rust **ne peut pas se lier**. Visual Studio est absent, et la chaîne GNU réclame `libgcc` / `libgcc_eh` que LLVM-MinGW ne fournit pas — le message est formel : `lld: error: unable to find library -lgcc_eh`. Un `cargo check` est donc impossible dès qu'un *build script* doit être lié, c'est-à-dire toujours. Le code natif **n'a pas pu être validé localement** par la voie habituelle.
+- **La partie risquée a donc été isolée** dans un module sans dépendance — `desinstallation_chemins.rs` : remontée d'un binaire à son paquet, non-écrasement dans la Corbeille, choix de la commande de paquet, liste des dossiers de la webview. Ces calculs ne dépendent ni de Tauri ni du système, et se trompent **silencieusement**.
+- **Ils sont exécutés pour de vrai** : `_dev/scripts/verif_desinstallation.mjs` inclut le module **tel quel** — empreinte de la copie de compilation comparée à celle de la source, `IDENTIQUES` — le compile pour `wasm32-wasip1` (dont l'éditeur de liens est fourni par rustc) et le lance sous Node. **21 assertions sur 21 passent**, dont les cas limites : un binaire hors paquet ne remonte à rien, une extension `.app2` est refusée, un nom sans `.app` est horodaté sans extension, et l'identifiant d'une AUTRE application ne colle pas.
+- **Ce qui n'est PAS vérifié par ce harnais, et il faut le dire** : les appels système eux-mêmes — déplacer vers la Corbeille, lancer `uninstall.exe`, supprimer un AppImage — et toute la partie Tauri. Ceux-là ne s'exécutent que sur leur système. Leur code est court et a été relu ligne à ligne ; il ne peut pas être mieux garanti ici, et il est préférable de l'écrire que de le taire.
+- **Vérifié dans le navigateur, sur l'application réelle** : la section reste **invisible sur le web** (`display: none`, `spEstBureau()` rend `false`, `window.__TAURI__` absent) ; en simulant la coquille native elle **se révèle** (`display: block`) ; les chemins sont rendus en nœuds de texte, et un chemin contenant une balise HTML est resté **du texte échappé — zéro balise créée** ; un code inconnu et un rapport absent affichent tous deux le message d'erreur au lieu de laisser un vide. Le jeton de confirmation est **le même des deux côtés** (`desinstaller-superprint`), vérifié par comparaison des deux fichiers.
+
+> ⚠️ **Reste ouvert.**
+> · **La publication npm n'est pas faite** : `superprint@1.0.113` est prêt, mais le jeton de `~/.npmrc` est expiré, et `MIN_APP_VERSION` doit rester à **1.7.617** tant que le nouveau paquet n'est pas déposé — l'avancer ferait échouer toutes les installations `npx`.
+> · **Les notes de version publiques s'arrêtent à 1.7.619.** Aucun billet n'a été écrit pour 1.7.620 : `release.html` est **exclu** du remplacement automatique, parce qu'il contient de la prose qui cite des numéros, et qu'un remplacement global y avait déjà rendu une phrase fausse en 1.7.619. Ses métadonnées décrivent donc ce qu'elles doivent décrire — la dernière version RACONTÉE.
+> · **`desinstallation.rs` (la partie Tauri) n'a pas été compilée ici** : la machine n'a pas d'éditeur de liens. Sa compilation sera la première chose que la CI fera.
+> · L'**aperçu 3D** ne traite toujours la couche encre que sur la face **avant** d'une feuille. `_dev/sorties` pèse toujours **1,5 Go** de sorties jetables, aucun suivi par git.
+
 ## [1.7.619] — 2026-10-15
 
 _La police « JetBrains Mono » quitte le projet, trois images s'allègent — et deux pièges de livraison trouvés en vérifiant_

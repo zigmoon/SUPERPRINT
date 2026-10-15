@@ -45,7 +45,25 @@
           "/usr/share/doc/super-ty-po/changelog.gz": "changelog-supertypo.gz",
           "/usr/share/doc/super-ty-po/NOTICE.md": "../NOTICE.md",
           "/usr/share/doc/super-ty-po/TRADEMARKS.md": "../TRADEMARKS.md"
-        }
+        },
+        "postRemoveScript": "postremove-deb-supertypo.sh"
+      },
+      "rpm": {
+        "files": {
+          "/usr/share/doc/super-ty-po/copyright": "copyright-supertypo",
+          "/usr/share/doc/super-ty-po/changelog.gz": "changelog-supertypo.gz",
+          "/usr/share/doc/super-ty-po/NOTICE.md": "../NOTICE.md",
+          "/usr/share/doc/super-ty-po/TRADEMARKS.md": "../TRADEMARKS.md"
+        },
+        "postRemoveScript": "postremove-rpm-supertypo.sh"
+      }
+    },
+    "macOS": {
+      "files": {
+        "Resources/LICENSE": "../LICENSE",
+        "Resources/COPYRIGHT": "copyright-supertypo",
+        "Resources/NOTICE.md": "../NOTICE.md",
+        "Resources/TRADEMARKS.md": "../TRADEMARKS.md"
       }
     }
   }

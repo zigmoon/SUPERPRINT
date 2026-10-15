@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.619-polices-allegees';
+const CACHE_NAME = 'superprint-shell-v1.7.620-desinstallation';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

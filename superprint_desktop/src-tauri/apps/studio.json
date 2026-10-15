@@ -45,7 +45,25 @@
           "/usr/share/doc/studio-ia/changelog.gz": "changelog-studio.gz",
           "/usr/share/doc/studio-ia/NOTICE.md": "../NOTICE.md",
           "/usr/share/doc/studio-ia/TRADEMARKS.md": "../TRADEMARKS.md"
-        }
+        },
+        "postRemoveScript": "postremove-deb-studio.sh"
+      },
+      "rpm": {
+        "files": {
+          "/usr/share/doc/studio-ia/copyright": "copyright-studio",
+          "/usr/share/doc/studio-ia/changelog.gz": "changelog-studio.gz",
+          "/usr/share/doc/studio-ia/NOTICE.md": "../NOTICE.md",
+          "/usr/share/doc/studio-ia/TRADEMARKS.md": "../TRADEMARKS.md"
+        },
+        "postRemoveScript": "postremove-rpm-studio.sh"
+      }
+    },
+    "macOS": {
+      "files": {
+        "Resources/LICENSE": "../LICENSE",
+        "Resources/COPYRIGHT": "copyright-studio",
+        "Resources/NOTICE.md": "../NOTICE.md",
+        "Resources/TRADEMARKS.md": "../TRADEMARKS.md"
       }
     }
   }

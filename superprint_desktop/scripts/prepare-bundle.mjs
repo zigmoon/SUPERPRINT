@@ -167,6 +167,7 @@ const APPLICATIONS = {
   superprint: {
     nom: 'SuperPrint',
     binaire: 'superprint',
+    identifiant: 'cc.superprint.desktop',
     /*
      * L'ÉDITEUR EMBARQUE LES DEUX AUTRES, ET POUR LA MÊME RAISON QUE LE STUDIO.
      * Ses deux boutons — « envoyé au studio SP213 » et l'onglet SuperTyPo du
@@ -197,6 +198,7 @@ const APPLICATIONS = {
   studio: {
     nom: 'Studio IA',
     binaire: 'studio-ia',
+    identifiant: 'cc.superprint.studio',
     /*
      * LE STUDIO EMBARQUE L'ÉDITEUR, ET C'EST UNE EXCEPTION ASSUMÉE.
      *
@@ -229,6 +231,7 @@ const APPLICATIONS = {
   supertypo: {
     nom: 'SuperTyPo',
     binaire: 'supertypo',
+    identifiant: 'cc.superprint.supertypo',
     pages: ['supertypo/index.html'],
     perimetre: 'SuperTyPo et ses ressources',
     contenu: 'SuperTyPo, embarqué hors-ligne',
@@ -517,6 +520,109 @@ async function ecrireCopyrightsDebian() {
   }
 }
 
+/**
+ * Fabrique les scripts de RETRAIT — un pour Debian, un pour RPM.
+ *
+ * POURQUOI ILS EXISTENT. Retirer un paquet laissait deux choses derrière lui :
+ * l'entrée de menu et l'icône pouvaient rester affichées jusqu'à la prochaine
+ * session (le cache du bureau n'était pas rafraîchi), et les données de
+ * l'application restaient dans le dossier de chaque utilisateur. Ni le `.deb` ni
+ * le `.rpm` ne portaient le moindre script de maintenance — vérifié en
+ * DÉCOMPRESSANT les deux : `control.tar.gz` ne contient que `control` et
+ * `md5sums`, et la charge utile du `.rpm` cinq entrées, aucune scriptlet.
+ *
+ * ⚠️ RÈGLE ABSOLUE : CES SCRIPTS NE DOIVENT JAMAIS FAIRE ÉCHOUER UNE
+ * DÉSINSTALLATION. `apt` et `dnf` refusent de terminer si un script de retrait
+ * rend un code non nul — un nettoyage raté bloquerait alors la désinstallation
+ * elle-même, ce qui est bien pire que de laisser un dossier de cache. Chaque
+ * commande est donc tolérante à l'échec, et le script sort TOUJOURS par 0.
+ *
+ * ⚠️ ET ILS NE DOIVENT RIEN FAIRE PENDANT UNE MISE À JOUR. Le premier argument
+ * d'un `postrm` Debian vaut `remove`, `purge`, `upgrade`… et celui d'un `postun`
+ * RPM est le NOMBRE de paquets restants après l'opération (0 = retrait
+ * définitif). On ne touche donc aux données que sur un retrait, jamais sur une
+ * mise à jour — sinon installer une nouvelle version effacerait les documents
+ * de l'utilisateur.
+ */
+async function ecrireScriptsDeRetrait() {
+  const enTete = (paquet, langue) => `#!/bin/sh
+# ${paquet} — nettoyage après retrait (${langue}).
+#
+# FABRIQUÉ par scripts/prepare-bundle.mjs : ne pas modifier à la main, la
+# prochaine construction l'écraserait.
+#
+# ⚠️ Ce script ne doit JAMAIS faire échouer une désinstallation : toutes les
+# commandes sont tolérantes à l'échec et le script sort toujours par 0.
+`;
+
+  for (const [cle, app] of Object.entries(APPLICATIONS)) {
+    const paquet = nomDePaquet(app.nom);
+    const id = app.identifiant;
+
+    const deb = `${enTete(paquet, 'Debian')}
+# « upgrade » et « abort-* » : ce n'est pas un retrait, on ne touche à rien.
+case "$1" in
+  remove|purge) ;;
+  *) exit 0 ;;
+esac
+
+# Rafraîchir le menu et le cache d'icônes : sans cela, l'entrée supprimée peut
+# rester visible jusqu'à la prochaine session.
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database -q /usr/share/applications >/dev/null 2>&1 || true
+fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+  gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor >/dev/null 2>&1 || true
+fi
+
+# Les données de chaque utilisateur. On les retire sur « purge », et SEULEMENT
+# là : la politique Debian demande de les conserver sur un simple « remove ».
+if [ "$1" = "purge" ]; then
+  for base in /root /home/*; do
+    [ -d "$base" ] || continue
+    rm -rf "$base/.local/share/${id}" "$base/.cache/${id}" "$base/.config/${id}" 2>/dev/null || true
+  done
+fi
+
+exit 0
+`;
+
+    const rpm = `${enTete(paquet, 'RPM')}
+# Le premier argument d'un « postun » est le nombre de paquets restants : 0
+# signifie un retrait définitif. Au-delà, c'est une mise à jour.
+case "$1" in
+  0) ;;
+  *) exit 0 ;;
+esac
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database -q /usr/share/applications >/dev/null 2>&1 || true
+fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+  gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor >/dev/null 2>&1 || true
+fi
+
+# RPM ne distingue pas « remove » de « purge » : un retrait définitif est le
+# seul moment où l'utilisateur a demandé la disparition.
+for base in /root /home/*; do
+  [ -d "$base" ] || continue
+  rm -rf "$base/.local/share/${id}" "$base/.cache/${id}" "$base/.config/${id}" 2>/dev/null || true
+done
+
+exit 0
+`;
+
+    for (const [nom, texte] of [
+      [`postremove-deb-${cle}.sh`, deb],
+      [`postremove-rpm-${cle}.sh`, rpm],
+    ]) {
+      const cible = path.join(srcTauri, nom);
+      await fs.writeFile(cible, texte, 'utf8');
+      log(`retrait ${paquet} : ${nom} (${(await fs.stat(cible)).size} octets)`);
+    }
+  }
+}
+
 async function mesurer(dossier) {
   let octets = 0;
   let fichiers = 0;
@@ -782,8 +888,8 @@ async function main() {
      version du SITE, pour écrire le journal du `.deb`. La faute ne se voyait
      pas tant que les deux numéros étaient égaux : elle n'était juste que par
      COÏNCIDENCE. Depuis que la version de bureau vit sa propre vie (1.7.618,
-     quand le web reste 1.7.619), le paquet aurait annoncé 1.7.618 dans son nom
-     et 1.7.619 dans `/usr/share/doc/<paquet>/changelog.gz`.
+     quand le web reste 1.7.620), le paquet aurait annoncé 1.7.618 dans son nom
+     et 1.7.620 dans `/usr/share/doc/<paquet>/changelog.gz`.
      La source juste est celle que ce script IMPOSE déjà partout — « la version
      doit rester dans tauri.conf.json, pas ici » (voir `verifierSurcouches`) :
      c'est la version de l'application empaquetée, donc celle du `.deb`. */
@@ -792,6 +898,7 @@ async function main() {
   ).version;
   await compresserJournauxDebian(versionDuProduit);
   await ecrireCopyrightsDebian();
+  await ecrireScriptsDeRetrait();
 }
 
 await main();
