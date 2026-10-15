@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.620 — Zigmoon
+         SuperPrint 1.7.621 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.620 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.621 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.620",
+          "softwareVersion": "1.7.621",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -571,8 +571,8 @@
          déjà AVANT son propre Hypher (lignes 5201 et 11462). Si le noyau ne se
          charge pas, la césure continue avec Hypher : aucun changement visible.
          Retirer ces deux lignes remet l'application à l'identique. -->
-    <script src="JS/superprint-core.js?v=20261011-v620-rust-couleurs" defer></script>
-    <script src="JS/superprint-branchement.js?v=20261011-v620-rust-couleurs" defer></script>
+    <script src="JS/superprint-core.js?v=20261011-v621-rust-couleurs" defer></script>
+    <script src="JS/superprint-branchement.js?v=20261011-v621-rust-couleurs" defer></script>
     <!-- 🦀 Import PostScript/EPS branché sur son PROPRE noyau Rust.
          Deuxième module, et c'est délibéré : le noyau de césure/couleurs/montage
          (superprint_core.wasm, 406 Ko) est téléchargé par tout le monde, alors
@@ -583,7 +583,7 @@
          jusque-là, `main.js` charge `JS/sp-eps-import.js` comme avant. Si le
          noyau ne se charge pas, rien ne change pour l'utilisateur.
          Retirer cette ligne remet l'application à l'identique. -->
-    <script src="JS/superprint-eps.js?v=20261011-v620-rust-eps" defer></script>
+    <script src="JS/superprint-eps.js?v=20261011-v621-rust-eps" defer></script>
     <!-- 🦀 Export PDF IMPOSÉ branché sur le noyau Rust.
          Le bouton de la modale d'imposition fait déjà, dans `index.html` :
          `window._spGuardExport(this, window.exportImposedPDF || exportImposedPDF)`.
@@ -594,7 +594,7 @@
          appelle l'export vectoriel du produit, qui reste en place. Aucune ligne
          de main.js n'est touchée. Retirer cette ligne remet l'application à
          l'identique. -->
-    <script src="JS/superprint-montage.js?v=20261012-v620-rust-montage" defer></script>
+    <script src="JS/superprint-montage.js?v=20261012-v621-rust-montage" defer></script>
     <!-- 🦀 Import de DOCUMENTS branché sur son PROPRE noyau Rust (le troisième).
          406,5 Ko (césure, couleurs, montage) + 324,8 Ko (EPS) + 290,1 Ko
          (documents) : les trois modules sont séparés pour que personne ne paie
@@ -619,7 +619,7 @@
          croire que tout a été vu, et elle ne dit rien plutôt que de deviner
          quand un objet ne peut pas être décrit. Aucune ligne de main.js n'est
          touchée. Retirer cette ligne remet l'application à l'identique. -->
-    <script src="JS/superprint-prepresse.js?v=20261013-v620-rust-prepresse" defer></script>
+    <script src="JS/superprint-prepresse.js?v=20261013-v621-rust-prepresse" defer></script>
     <!-- ═══════════════════════════════════════════════════════════════════════
          PAPIERS — catalogue, dépôt, matière. Les entrées se rangent dans le
          SOUS-MENU DE L'ICÔNE IMAGE (après « SVG »), et le dépôt sur une page pose
@@ -638,7 +638,7 @@
          Open Sans, Montserrat, Roboto, Lato, Poppins, Playfair Display, Bebas Neue,
          IBM Plex Mono, IBM Plex Sans, Fira Code, Space Mono, Noto Sans JP.
          100% self-hosted — RGPD-friendly + offline-ready. Aucun appel CDN. -->
-    <link rel="stylesheet" href="CSS/fonts.css?v=20261015-v620-polices-allegees">
+    <link rel="stylesheet" href="CSS/fonts.css?v=20261015-v621-polices-allegees">
 
     <!-- 🛡️ Force-load Open Sans (used as default for new text blocks). Without this,
          Chrome Windows falls back to Times when fabric draws on canvas because
@@ -698,7 +698,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20261015-v620-regles-20px-decales">
+    <link rel="stylesheet" href="CSS/main.css?v=20261015-v621-regles-20px-decales">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1283,7 +1283,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.620</div>
+                <div class="splash-version">1.7.621</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1385,7 +1385,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.620</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.621</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1481,7 +1481,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.620 | 10 2026<br>
+                V 1.7.621 | 10 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -2248,12 +2248,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.620). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.621). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.620 — internal cache tag: JS v620 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.621 — internal cache tag: JS v621 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: calc(8px + var(--sp-regle-haut, 0px)); display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v620"
-                      data-sp-sw="v1.7.620">v1.7.620</span>
+                      data-sp-js="v621"
+                      data-sp-sw="v1.7.621">v1.7.621</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -4765,7 +4765,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.620 — 15 octobre 2026
+                        SuperPrint v1.7.621 — 15 octobre 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -6675,7 +6675,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20261015-v620-desinstallation" defer></script>
+    <script src="JS/main.js?v=20261015-v621-tableau-cellules-et-exporteurs" defer></script>
     <!-- 🎨 v1.7.525 — _SP_NUANCIERS_525 : nuanciers (accordéons) + import .ase.
          Chargé APRÈS main.js : il réutilise le gestionnaire `change` de
          #spotColorSelect au lieu de le réécrire. -->
@@ -6687,7 +6687,7 @@
     <!-- 🆕 Aperçu 3D (three.js) : module ES autonome, expose window.SP3DPreview.
          Si three.js n'est pas disponible (ex. ouverture via file://), le bouton
          PLAY reste inerte et n'impacte pas le reste de l'app. -->
-    <script type="module" src="JS/sp-3d-preview.js?v=20261015-v620-calque-encre"></script>
+    <script type="module" src="JS/sp-3d-preview.js?v=20261015-v621-calque-encre"></script>
 
     <!-- ── Startup session pop-in (Resume / Open / New) ───────────────────────── -->
     <div id="sp-startup-overlay" role="dialog" aria-modal="true" aria-labelledby="sp-startup-title" hidden>

@@ -16666,7 +16666,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         //   empilés. Le bringToFront est fait UNE fois au début du drag
         //   (pas à chaque frame) pour éviter de perturber l'ordre des
         //   calques à chaque micro-mouvement.
-        //   ⚠️ DÉPLACÉ EN v1.7.620 EN TÊTE DE CE GESTIONNAIRE, AVANT le retour
+        //   ⚠️ DÉPLACÉ EN v1.7.621 EN TÊTE DE CE GESTIONNAIRE, AVANT le retour
         //   anticipé des textbox en édition : placé ici, il ne s'exécutait JAMAIS
         //   pour un bloc texte qu'on venait d'ouvrir (voir le commentaire plus haut).
 
@@ -50788,7 +50788,7 @@ https://superprint.app
     const oldVRuler = canvasInner.querySelector('.ruler-vertical');
     if (oldHRuler) oldHRuler.remove();
     if (oldVRuler) oldVRuler.remove();
-    /* v1.7.620 — les règles ne vivent plus DANS la page mais dans le cadre. Ce
+    /* v1.7.621 — les règles ne vivent plus DANS la page mais dans le cadre. Ce
        nettoyage reste : il enlève les règles laissées par une version antérieure
        ou par un rendu interrompu, et retire le cadre quand on masque les règles. */
     const _spCadreExistant = canvasInner.closest('.canvas-wrapper');
@@ -50845,7 +50845,7 @@ https://superprint.app
     const finalWidth = isSpreadCanvas ? (pageFormat.width * 2) : pageFormat.width;
     const finalHeight = pageFormat.height;
 
-    // ── v1.7.620 — LES RÈGLES SONT CELLES DU CADRE, PAS CELLES DE LA PAGE ──
+    // ── v1.7.621 — LES RÈGLES SONT CELLES DU CADRE, PAS CELLES DE LA PAGE ──
     /* MESURÉ AVANT : les règles étaient ajoutées à `.canvas-inner` — la PAGE —
        donc dessinées au bord du document et seulement sur la largeur du format.
        Pire : `.canvas-inner` est dans `#pagesContainer`, qui porte
@@ -50968,7 +50968,7 @@ https://superprint.app
        `.canvas-wrapper`. On réutilise donc le cadre existant et on ne recrée que
        s'il a disparu (changement de page, re-rendu). */
     if (!_spWrapper) {
-        console.warn('[Règles v620] cadre de prévisualisation introuvable');
+        console.warn('[Règles v621] cadre de prévisualisation introuvable');
     } else {
         const dejaLa = _spWrapper.__spRegles615 && document.contains(_spWrapper.__spRegles615.conteneur);
         const conteneur = dejaLa
@@ -64351,7 +64351,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             return null;
         }
 
-        /* ══════════════ 🆕 v1.7.620 — OUVRIR UNE APPLICATION SŒUR, ET LUI PARLER ══════════════
+        /* ══════════════ 🆕 v1.7.621 — OUVRIR UNE APPLICATION SŒUR, ET LUI PARLER ══════════════
 
            DANS L'APPLICATION DE BUREAU, `window.open` N'OUVRE RIEN. La coquille
            refuse par défaut toute création de fenêtre demandée par la page : les
