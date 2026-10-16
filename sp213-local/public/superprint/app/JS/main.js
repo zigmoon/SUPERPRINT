@@ -813,8 +813,25 @@ function syncZoomWidgetWithRightSidebar() {
     const zoomWidget = document.getElementById('zoomWidget');
     if (!rightSidebar || !zoomWidget) return;
 
+    /* ⚠️ v1.7.631 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
+       Cette fonction place le widget de zoom juste à gauche de la barre latérale
+       droite. Or la trappe est un PANNEAU FIXE qui, lui aussi, occupe le bord
+       droit : sans cette ligne, le widget tombait PAR-DESSUS elle et interceptait
+       les clics destinés à « Valider » et « Annuler ». Mesuré : Playwright
+       refusait le clic en nommant précisément l'élément fautif — « #zoomWidget
+       from .canvas-container subtree intercepts pointer events ». C'est le genre de
+       défaut qu'aucune relecture ne trouve : les deux éléments sont corrects
+       séparément, c'est leur superposition qui casse.
+
+       On passe par une VARIABLE CSS plutôt que par une largeur en dur : la trappe
+       publie `--sp-maquette-l`, et le widget la suit. Une largeur recopiée ici
+       divergerait le jour où la trappe change de taille. Quand la trappe est
+       fermée la variable vaut 0px, donc le calcul redonne EXACTEMENT la valeur
+       d'avant (280px + 16px, ou 56px + 16px repliée) : rien ne bouge.
+       ⚠️ Le widget ne l'affiche que si `#mainApp` porte la variable — la trappe
+       publie donc sur `#mainApp`, qui contient le widget comme la trappe. */
     const rightVal = rightSidebar.classList.contains('collapsed')
-        ? 'calc(56px + 16px)' : 'calc(280px + 16px)';
+        ? 'calc(56px + var(--sp-maquette-l, 0px) + 16px)' : 'calc(280px + var(--sp-maquette-l, 0px) + 16px)';
     zoomWidget.style.right = rightVal;
 }
 
@@ -4329,7 +4346,7 @@ if (window._spGpuEnabled) {
         };
     }
 
-    /* ══ v1.7.630 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+    /* ══ v1.7.631 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
 
        `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
        WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
@@ -4766,7 +4783,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.630 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.631 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5365,7 +5382,7 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        /* ══ v1.7.630 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
+        /* ══ v1.7.631 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
            RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
            bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
@@ -51119,7 +51136,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.630 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.631 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -51267,7 +51284,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.630) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.631) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
@@ -70208,6 +70225,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         groupTitle: "Grouper la sélection",
         ungroupTitle: "Dégrouper la sélection",
         aiAssistantTitle: "Prompt IA — décrire une maquette",
+        maquetteTitle: "Réglages de la maquette",
         /* 🆕 Clés de la configuration IA, désormais dans l'ONGLET IA des
            Préférences, plus celles de la bannière de la boîte de prompt. */
         settingsAiOk: "Une clé est enregistrée.",
@@ -71174,6 +71192,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         groupTitle: "Group selection",
         ungroupTitle: "Ungroup selection",
         aiAssistantTitle: "AI prompt — describe a layout",
+        maquetteTitle: "Layout settings",
         settingsAiOk: "A key is saved.",
         settingsAiAucune: "No key saved.",
         settingsAiReglages: "Assistant settings",
@@ -72137,6 +72156,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         groupTitle: "選択をグループ化",
         ungroupTitle: "グループ解除",
         aiAssistantTitle: "AIプロンプト — レイアウトを説明",
+        maquetteTitle: "レイアウト設定",
         settingsAiOk: "キーが保存されています。",
         settingsAiAucune: "キーが保存されていません。",
         settingsAiReglages: "アシスタントの設定",
@@ -101173,4 +101193,739 @@ function initObjectRightClickMenu() {
 })();
 /* _SP_PATH_EDITOR_500_FIN */
 
+/* ══ _SP_MAQUETTE_631 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct) ══
 
+   Demande utilisateur : l'outil de refactorisation en direct existe dans le Studio
+   IA (pop-in « Réglages de la maquette », moteur SP213 rock 1.0). On le veut dans
+   SuperPrint, ouvert depuis une icône de la barre d'outils, dans une TRAPPE qui se
+   pose APRÈS la barre latérale droite et POUSSE l'interface — et « sans rien
+   toucher casser ».
+
+   ⚠️ POURQUOI CE MODULE N'EST PAS UNE COPIE DU STUDIO. `sp213-studio.html` pèse
+   1,99 Mo et ne charge qu'un seul script externe : tout son code, moteur compris,
+   est EN LIGNE dans la page. Ce moteur n'est donc pas partagé avec l'app, et le
+   pop-in du Studio agit sur un document qu'il a lui-même composé. Ici, le document
+   est celui de l'utilisateur : objets posés page par page. On ne transpose pas le
+   moteur, on pilote les réglages de document que SuperPrint possède DÉJÀ.
+
+   ⚠️ COMMENT CE MODULE ATTEINT LES API SANS RIEN MODIFIER. Une analyse par
+   analyseur syntaxique réel (acorn) a établi la portée de chaque nom nécessaire :
+     13 d'entre eux sont en PORTÉE PROGRAMME — pageFormat, spSetMargesMm, spMargesMm,
+     spRedessinerReperesMarges, clampObjectsToCurrentFormat,
+     clampPagesDataToCurrentFormat, updateCanvasSize, saveAllPages, saveState,
+     saveStateFromPages, restoreState, history, historyStep, _spClone, margin, bleed,
+     viewMode, masterPages, pageMasterAssignments, getActiveCanvas, applyPageNumbering,
+     pageNumberingSettings ;
+     les autres ne sont atteignables que par `window` — spPoserColonnes,
+     spColGridAppliquer, rebuildGridAll, spSnapHeightToLines.
+   Le module vit donc à la FIN du fichier, en portée programme : il voit les premiers
+   par leur nom, les seconds par window. Aucune ligne existante n'est touchée.
+
+   ⚠️ UNE SEULE ENTRÉE D'HISTORIQUE, ET VOICI COMMENT. Les gestionnaires existants
+   (champ de format, champs de marge, champ de fond perdu) terminent tous par
+   `saveStateFromPages(...)`. Si le tiroir les pilotait tels quels, CHAQUE cran de
+   tirette empilerait un état : cinquante réglages effaceraient tout l'historique de
+   l'utilisateur (la pile est plafonnée à 50, et le dépassement jette les plus
+   anciens). On neutralise donc l'enregistrement PENDANT l'aperçu — `saveState` et
+   `saveStateFromPages` deviennent inertes — et on rend les fonctions d'origine à la
+   fermeture, quoi qu'il arrive (validation, annulation, erreur, déchargement de la
+   page). « Annuler » restaure l'état d'historique qui était courant à l'ouverture ;
+   « Valider » n'écrit qu'une entrée. C'est ce qui rend le tiroir sûr : l'utilisateur
+   retrouve TOUJOURS son document d'avant, avec Ctrl+Z ou par le bouton.
+
+   ⚠️ ON PILOTE LES CHAMPS EXISTANTS PLUTÔT QUE DE RECOPIER LEUR LOGIQUE. Mettre à
+   jour `#pageWidth` puis émettre `change` fait faire le travail au code de l'app —
+   un seul chemin, donc aucune divergence possible entre le tiroir et le panneau
+   d'origine. C'est la même raison qui fait lire la liste des polices dans
+   `#fontFamily` au lieu d'en écrire une seconde. */
+(function () {
+    'use strict';
+    if (window._SP_MAQUETTE_631) return;
+    window._SP_MAQUETTE_631 = true;
+
+    var $ = function (id) { return document.getElementById(id); };
+    var lister = function (sel, racine) { return Array.prototype.slice.call((racine || document).querySelectorAll(sel)); };
+    var nb = function (v, repli) { var n = parseFloat(v); return isFinite(n) ? n : repli; };
+    var arrondi = function (v, d) { var p = Math.pow(10, d || 1); return Math.round(v * p) / p; };
+
+    /* ── LA TRAPPE PUBLIE SA LARGEUR ───────────────────────────────────────
+       ⚠️ ET CE N'EST PAS UNE ÉLÉGANCE : c'est une correction mesurée. Le widget de
+       zoom est en `position: fixed`, ancré à 296 px du bord droit. Comme la trappe
+       occupe elle aussi le bord droit, le widget tombait PAR-DESSUS elle — mesuré,
+       Playwright refusait de cliquer « Valider » et nommait l'élément fautif :
+       « #zoomWidget from .canvas-container subtree intercepts pointer events ».
+       Les deux éléments étaient corrects séparément ; c'est leur SUPERPOSITION qui
+       cassait, et rien dans le code ne les reliait.
+
+       On publie donc la largeur sur `#mainApp`, ancêtre commun de la trappe ET du
+       widget (une variable CSS se propage par le DOM, pas par le positionnement :
+       un élément `fixed` la reçoit donc). Fermée, elle vaut 0px : le widget
+       retrouve exactement sa place d'avant.
+
+       ⚠️ LA LARGEUR PUBLIÉE EST LA LARGEUR CIBLE, PAS LA LARGEUR MESURÉE. Juste
+       après `classList.add('ouvert')`, `getBoundingClientRect()` renvoie encore la
+       largeur de DÉPART — la transition de 260 ms n'a pas commencé — soit 0 px, et
+       le widget ne bougerait jamais. On lit donc la valeur dans la FEUILLE DE
+       STYLE (`max-width`, qui donne la cible indépendamment de l'animation), avec
+       un repli explicite. Le test, lui, compare cette valeur publiée à la largeur
+       réellement mesurée une fois la transition finie : une divergence entre le CSS
+       et ce que le module annonce ferait donc ÉCHOUER la suite, au lieu de se
+       traduire par un widget à la mauvaise place. */
+    function largeurCible(t) {
+        try {
+            var mw = parseFloat(getComputedStyle(t).maxWidth);
+            if (isFinite(mw) && mw > 0) return mw;
+        } catch (_) {}
+        return 340;
+    }
+
+    function publierLargeur(px) {
+        var app = $('mainApp');
+        if (!app) return;
+        try { app.style.setProperty('--sp-maquette-l', (px || 0) + 'px'); } catch (_) {}
+    }
+
+    /* ── ÉTAT DU TIROIR ─────────────────────────────────────────────────────
+       `histoAvant` est l'index d'historique courant à l'ouverture : c'est l'état
+       auquel « Annuler » revient, et il vaut aussi la garantie qu'aucune entrée
+       n'a été ajoutée pendant l'aperçu. */
+    var ouvert = false;
+    var histoAvant = -1;
+    var origineSaveState = null;
+    var origineSaveStateFromPages = null;
+    var minuteur = null;
+    var etat = {};
+
+    /* ── ÉCRITURE DIFFÉRÉE ──────────────────────────────────────────────────
+       Le fond perdu et le format RECONSTRUISENT les pages (`renderAllPages`), ce qui
+       coûte cher. On attend donc que la tirette se repose 140 ms avant d'appliquer :
+       l'aperçu reste « en direct » à l'œil, sans reconstruire à chaque pixel. */
+    function differer(fn) {
+        if (minuteur) clearTimeout(minuteur);
+        minuteur = setTimeout(function () { minuteur = null; try { fn(); } catch (e) { etatMessage('Erreur : ' + (e && e.message ? e.message : e)); } }, 140);
+    }
+
+    function etatMessage(txt) {
+        var z = $('maquetteEtat');
+        if (z) z.textContent = txt || '';
+    }
+
+    /* ══ 1. NEUTRALISER L'HISTORIQUE PENDANT L'APERÇU ══ */
+    function suspendreHistorique() {
+        try {
+            if (!origineSaveStateFromPages) {
+                origineSaveStateFromPages = saveStateFromPages;
+                origineSaveState = saveState;
+                saveStateFromPages = function () { return undefined; };
+                saveState = function () { return undefined; };
+            }
+        } catch (_) {}
+    }
+    function rendreHistorique() {
+        try {
+            if (origineSaveStateFromPages) { saveStateFromPages = origineSaveStateFromPages; origineSaveStateFromPages = null; }
+            if (origineSaveState) { saveState = origineSaveState; origineSaveState = null; }
+        } catch (_) {}
+    }
+
+    /* ══ 2. LES BLOCS DE TEXTE DU DOCUMENT ══
+       On écarte les décorations de la page — marges, fond perdu, traits de coupe —
+       que l'app marque explicitement : elles ne font pas partie de la maquette et
+       les restyler abîmerait des repères d'imprimeur. */
+    function blocsTexte() {
+        var out = [];
+        var listes = [];
+        try { if (typeof canvases !== 'undefined' && canvases) listes.push(canvases); } catch (_) {}
+        try { if (window.spCanvases && window.spCanvases.length) listes.push(window.spCanvases); } catch (_) {}
+        listes.forEach(function (liste) {
+            liste.forEach(function (cv) {
+                if (!cv || typeof cv.getObjects !== 'function') return;
+                cv.getObjects().forEach(function (o) {
+                    if (!o || (o.type !== 'textbox' && o.type !== 'text')) return;
+                    if (o.isMargin || o.isBleed || o.isTrimBox || o.excludeFromExport) return;
+                    out.push({ obj: o, canvas: cv });
+                });
+            });
+        });
+        return out;
+    }
+
+    /* ══ 3. LA GÉOMÉTRIE DES COLONNES ══
+       On calcule la zone de composition de CHAQUE page à partir du format, du fond
+       perdu et des marges — en tenant compte du miroir : sur une double page, la
+       marge intérieure est à droite pour la page de gauche et à gauche pour celle de
+       droite. Sans cela, les blocs se recaleraient du mauvais côté sur les pages
+       paires, ce qui est exactement le genre de dégât qu'on veut éviter. */
+    function geometrieColonnes() {
+        var n = nb(etat.colonnes, 0);
+        if (!n) return null;
+        var gouttiere = nb(etat.gouttiere, 5);
+        var m = (typeof spMargesMm === 'function') ? spMargesMm() : { top: 20, bottom: 20, inner: 20, outer: 20 };
+        return { n: n, gouttiere: gouttiere, marge: m };
+    }
+
+    /* Zone de composition d'UNE page, en pixels DOCUMENT.
+       `cote` vaut 'gauche', 'droite' ou 'seule'. */
+    function zonePage(cv, cote) {
+        var m = (typeof spMargesMm === 'function') ? spMargesMm() : null;
+        if (!m) return null;
+        var f = (typeof mmToPx === 'function') ? mmToPx : function (x) { return x * 72 / 25.4; };
+        var larg = (typeof pageFormat !== 'undefined') ? pageFormat.width : 210;
+        var haut = (typeof pageFormat !== 'undefined') ? pageFormat.height : 297;
+        var interne = (cote === 'droite') ? m.outer : m.inner;
+        var externe = (cote === 'droite') ? m.inner : m.outer;
+        var x = f(interne);
+        var y = f(m.top);
+        var w = f(larg) - f(interne) - f(externe);
+        var h = f(haut) - f(m.top) - f(m.bottom);
+        if (!(w > 8) || !(h > 8)) return null;
+        return { x: x, y: y, w: w, h: h };
+    }
+
+    /* Les colonnes d'une zone : n intervalles égaux séparés par la gouttière. */
+    function colonnesDe(zone, gouttiere) {
+        var f = (typeof mmToPx === 'function') ? mmToPx : function (x) { return x * 72 / 25.4; };
+        var g = f(gouttiere);
+        var largeur = (zone.w - g * (etat.colonnes - 1)) / etat.colonnes;
+        if (!(largeur > 4)) return [];
+        var out = [];
+        for (var i = 0; i < etat.colonnes; i++) out.push({ x: zone.x + i * (largeur + g), w: largeur });
+        return out;
+    }
+
+    /* À quelle page appartient un objet, dans un canvas qui peut en porter deux ? */
+    function cotesDuCanvas(cv) {
+        var info = cv && cv.bleedInfo ? cv.bleedInfo : null;
+        var f = (typeof mmToPx === 'function') ? mmToPx : function (x) { return x * 72 / 25.4; };
+        var larg = (typeof pageFormat !== 'undefined') ? pageFormat.width : 210;
+        if (info && info.isSpread) {
+            return [
+                { cote: 'gauche', decalage: 0, zone: zonePage(cv, 'gauche') },
+                { cote: 'droite', decalage: f(larg), zone: zonePage(cv, 'droite') },
+            ];
+        }
+        return [{ cote: 'seule', decalage: 0, zone: zonePage(cv, 'seule') }];
+    }
+
+    /* ══ 4. LA REFONTE ══
+       « Refactoriser » veut dire RECOMPOSER : on ne pose pas seulement des réglages,
+       on replace les blocs sur la nouvelle grille et on réapplique la typographie,
+       puis on laisse le moteur de texte refaire couler les lignes. */
+    function refonte() {
+        var fait = { blocs: 0, recales: 0, cadres: 0 };
+        var blocs = blocsTexte();
+
+        /* ── 4a. Typographie ── */
+        var typo = etat.typo || {};
+        var changeTypo = typo.police || (typo.corps !== null && typo.corps !== undefined) ||
+            (typo.interligne !== null && typo.interligne !== undefined) || typo.couleur ||
+            (typo.alignement && typo.alignement !== '');
+        blocs.forEach(function (entree) {
+            var o = entree.obj;
+            var touche = false;
+            if (typo.police && o.fontFamily !== typo.police) { o.set('fontFamily', typo.police); touche = true; }
+            if (typo.corps > 0 && o.fontSize !== typo.corps) { o.set('fontSize', typo.corps); touche = true; }
+            if (typo.interligne > 0 && o.lineHeight !== typo.interligne) { o.set('lineHeight', typo.interligne); touche = true; }
+            if (typo.couleur && o.fill !== typo.couleur) { o.set('fill', typo.couleur); touche = true; }
+            if (typo.alignement && o.textAlign !== typo.alignement) { o.set('textAlign', typo.alignement); touche = true; }
+            if (touche) {
+                fait.blocs++;
+                /* Le moteur de texte refait couler les lignes à la nouvelle mesure :
+                   c'est ici que « le texte se répartit » réellement. */
+                try { if (typeof o._clearCache === 'function') o._clearCache(); } catch (_) {}
+                try { if (typeof o.initDimensions === 'function') o.initDimensions(); } catch (_) {}
+            }
+        });
+
+        /* ── 4b. Recale sur la grille de colonnes ── */
+        var geo = geometrieColonnes();
+        if (geo && etat.recalerColonnes) {
+            blocs.forEach(function (entree) {
+                var o = entree.obj, cv = entree.canvas;
+                var cotes = cotesDuCanvas(cv);
+                if (!cotes.length) return;
+                /* La page de l'objet se déduit de son CENTRE : un bloc qui chevauche
+                   le pli ne peut pas appartenir aux deux, et se fier à son bord
+                   gauche le rangerait du mauvais côté dès qu'il déborde un peu. */
+                var centre = (o.left || 0) + (o.getScaledWidth ? o.getScaledWidth() : o.width) / 2;
+                var page = cotes[0];
+                for (var i = 0; i < cotes.length; i++) {
+                    var c = cotes[i];
+                    var fin = c.decalage + (c.zone ? c.zone.w + ((typeof mmToPx === 'function' ? mmToPx : function (x) { return x * 72 / 25.4; })((typeof spMargesMm === 'function' ? spMargesMm() : { inner: 20, outer: 20 }).inner + (typeof spMargesMm === 'function' ? spMargesMm() : { inner: 20, outer: 20 }).outer)) : Infinity);
+                    if (i === 0 && centre < c.decalage + 1e6 && (cotes.length === 1 || centre < cotes[1].decalage)) { page = c; break; }
+                }
+                if (!page || !page.zone) return;
+                var cols = colonnesDe(page.zone, geo.gouttiere);
+                if (!cols.length) return;
+                var local = (o.left || 0) - page.decalage;
+                var centreLocal = local + (o.getScaledWidth ? o.getScaledWidth() : o.width) / 2;
+                /* la colonne qui contient le centre, bornée */
+                var k = Math.floor((centreLocal - page.zone.x) / (cols[0].w + (typeof mmToPx === 'function' ? mmToPx : function (x) { return x * 72 / 25.4; })(geo.gouttiere)));
+                k = Math.max(0, Math.min(cols.length - 1, k));
+                o.set('left', page.decalage + cols[k].x);
+                o.set('width', cols[k].w);
+                try { if (typeof o.setCoords === 'function') o.setCoords(); } catch (_) {}
+                fait.recales++;
+            });
+        }
+
+        /* ── 4c. Hauteur des cadres ── */
+        blocs.forEach(function (entree) {
+            var o = entree.obj;
+            if (etat.hauteurAuto) {
+                /* Le cadre suit son texte : on relâche la hauteur fixe AVANT de
+                   recalculer, sinon la règle du prototype la réimposerait (elle est
+                   la garde qui empêche un cadre de se contracter). */
+                try { o._fixedHeight = 0; o.height = 0; } catch (_) {}
+                try { if (typeof o.initDimensions === 'function') o.initDimensions(); } catch (_) {}
+                try { o._fixedHeight = o.height; } catch (_) {}
+                fait.cadres++;
+            }
+            try { if (typeof applyTextboxClipPath === 'function') applyTextboxClipPath(o); } catch (_) {}
+            try { if (typeof updateOverflowIndicator === 'function') updateOverflowIndicator(o, entree.canvas); } catch (_) {}
+        });
+
+        /* ── 4d. Redessiner ── */
+        try {
+            if (window._spGridVisible || window._spColonnesActives) { if (typeof rebuildGridAll === 'function') rebuildGridAll(); }
+            else if (typeof window.rebuildGridAll === 'function') window.rebuildGridAll();
+        } catch (_) {}
+        var l = [];
+        try { if (typeof canvases !== 'undefined' && canvases) l.push(canvases); } catch (_) {}
+        l.forEach(function (liste) { liste.forEach(function (cv) { try { if (cv && cv.requestRenderAll) cv.requestRenderAll(); } catch (_) {} }); });
+
+        etatMessage(fait.blocs + ' bloc(s) typographié(s) · ' + fait.recales + ' recalé(s) · ' + fait.cadres + ' cadre(s)');
+        return fait;
+    }
+
+    /* ══ 5. LES RÉGLAGES DE DOCUMENT ══
+       On passe par les CHAMPS EXISTANTS : mettre la valeur puis émettre `change`
+       laisse l'application faire son travail, donc un seul chemin de code. */
+    function ecrireChamp(id, valeur) {
+        var el = $(id);
+        if (!el) return false;
+        el.value = String(valeur);
+        try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
+        try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {}
+        return true;
+    }
+
+    function appliquerFormat() {
+        if (etat.format && etat.format.w > 0 && etat.format.h > 0) {
+            var fw = (typeof spPageMmVersUnite === 'function') ? spPageMmVersUnite(etat.format.w) : etat.format.w;
+            var fh = (typeof spPageMmVersUnite === 'function') ? spPageMmVersUnite(etat.format.h) : etat.format.h;
+            ecrireChamp('pageWidth', fw);
+            ecrireChamp('pageHeight', fh);
+        }
+        if (etat.fondPerdu !== null && etat.fondPerdu !== undefined) {
+            var b = (typeof spPageMmVersUnite === 'function') ? spPageMmVersUnite(etat.fondPerdu) : etat.fondPerdu;
+            ecrireChamp('bleed', b);
+        }
+    }
+
+    function appliquerMarges() {
+        var m = etat.marges;
+        if (!m) return;
+        var conv = function (mm) { return (typeof spPageMmVersUnite === 'function') ? spPageMmVersUnite(mm) : mm; };
+        /* Les quatre champs écrivent CHACUN leur côté : on renseigne donc les quatre
+           avant d'émettre, pour que le dernier `change` parte d'un état complet. */
+        ecrireChamp('marginTop', conv(m.top));
+        ecrireChamp('marginBottom', conv(m.bottom));
+        ecrireChamp('marginLeft', conv(m.inner));
+        ecrireChamp('marginRight', conv(m.outer));
+    }
+
+    function appliquerColonnes() {
+        try {
+            if (typeof window.spPoserColonnes === 'function') window.spPoserColonnes(nb(etat.colonnes, 0));
+        } catch (_) {}
+    }
+
+    function appliquerPagination() {
+        /* On écrit `pageNumberingSettings` — source unique lue par le moteur — puis on
+           demande son application à la fonction de l'app. */
+        try {
+            if (typeof pageNumberingSettings !== 'object' || !pageNumberingSettings) return;
+            var p = etat.pagination;
+            pageNumberingSettings.enabled = !!p.actif;
+            if (p.position) pageNumberingSettings.position = p.position;
+            if (p.style) pageNumberingSettings.style = p.style;
+            if (p.police) pageNumberingSettings.fontFamily = p.police;
+            if (p.corps > 0) pageNumberingSettings.fontSize = p.corps;
+            if (p.couleur) pageNumberingSettings.fontColor = p.couleur;
+            if (typeof applyPageNumbering === 'function') applyPageNumbering();
+        } catch (_) {}
+    }
+
+    function appliquerPalette() {
+        var pal = etat.palette;
+        if (!pal) return;
+        var blocs = blocsTexte();
+        if (pal.texte) blocs.forEach(function (e) { try { e.obj.set('fill', pal.texte); } catch (_) {} });
+        if (pal.accent) {
+            var listes = [];
+            try { if (typeof canvases !== 'undefined' && canvases) listes.push(canvases); } catch (_) {}
+            listes.forEach(function (liste) {
+                liste.forEach(function (cv) {
+                    if (!cv || typeof cv.getObjects !== 'function') return;
+                    cv.getObjects().forEach(function (o) {
+                        if (!o || o.type === 'textbox' || o.type === 'text' || o.type === 'image' || o.type === 'group') return;
+                        if (o.isMargin || o.isBleed || o.isTrimBox || o.excludeFromExport) return;
+                        try { if (o.stroke) o.set('stroke', pal.accent); } catch (_) {}
+                    });
+                    try { if (cv.requestRenderAll) cv.requestRenderAll(); } catch (_) {}
+                });
+            });
+        }
+        etatMessage('Palette appliquée');
+    }
+
+    /* ══ 6. LE PANNEAU ══
+       Texte sobre : des libellés, aucune explication. Ce qui n'est pas évident porte
+       une infobulle, et rien de plus. */
+    var FORMATS = [
+        ['A4', 210, 297], ['A4 P', 297, 210], ['A3', 297, 420], ['A5', 148, 210],
+        ['Letter', 216, 279], ['Carré', 210, 210]
+    ];
+    var COLONNES = [0, 2, 3, 4, 6, 12];
+    var POSITIONS = [
+        ['bottom-center', 'Bas · centre'], ['bottom-left', 'Bas · gauche'], ['bottom-right', 'Bas · droite'],
+        ['bottom-exterior', 'Bas · extérieur'], ['top-center', 'Haut · centre'], ['top-left', 'Haut · gauche'],
+        ['top-right', 'Haut · droite'], ['top-exterior', 'Haut · extérieur']
+    ];
+    var STYLES = [['decimal', '1, 2, 3'], ['roman', 'I, II, III'], ['alpha', 'A, B, C']];
+    var PALETTES = [
+        ['Encre', '#111111', '#111111'],
+        ['Ardoise', '#334155', '#64748b'],
+        ['Bordeaux', '#7f1d1d', '#b45309'],
+        ['Encre douce', '#374151', '#9ca3af'],
+        ['Nuit', '#1e293b', '#0ea5e9']
+    ];
+
+    function chips(items, actif, attr) {
+        return items.map(function (it) {
+            var on = (String(it[0]) === String(actif)) ? ' on' : '';
+            return '<button type="button" class="mq-chip' + on + '" ' + attr + '="' + it[0] + '">' + it[1] + '</button>';
+        }).join('');
+    }
+    function ligne(id, libelle, valeur, min, max, pas, suffixe, titre) {
+        return '<div class="mq-ligne"><label for="' + id + '" title="' + (titre || libelle) + '">' + libelle + '</label>' +
+            '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + pas + '" value="' + valeur + '">' +
+            '<b class="mq-v" id="' + id + '_v">' + valeur + (suffixe || '') + '</b></div>';
+    }
+    function champ(id, libelle, valeur, min, max, pas, suffixe) {
+        return '<div class="mq-ligne"><label for="' + id + '">' + libelle + '</label>' +
+            '<input type="number" id="' + id + '" min="' + min + '" max="' + max + '" step="' + pas + '" value="' + valeur + '">' +
+            '<b class="mq-v">' + (suffixe || '') + '</b></div>';
+    }
+    function case_(id, libelle, coche, titre) {
+        return '<label class="mq-case" title="' + (titre || libelle) + '"><input type="checkbox" id="' + id + '"' + (coche ? ' checked' : '') + '><span>' + libelle + '</span></label>';
+    }
+
+    function panneau() {
+        var m = (typeof spMargesMm === 'function') ? spMargesMm() : { top: 20, bottom: 20, inner: 20, outer: 20 };
+        var pn = (typeof pageNumberingSettings === 'object' && pageNumberingSettings) ? pageNumberingSettings : {};
+        var cols = 0;
+        try { if (typeof window.spColGridEtat === 'function') cols = nb(window.spColGridEtat().cols, 0); } catch (_) {}
+        var pol = polices();
+        var h = '';
+
+        /* FORMAT */
+        h += '<section class="mq-sec"><h4>Format</h4>';
+        h += '<div class="mq-chips" id="mqFormats">' + chips(FORMATS.map(function (f) { return [f[1] + 'x' + f[2], f[0]]; }), '') + '</div>';
+        h += champ('mqW', 'Largeur', arrondi(pageFormat.width, 1), 20, 600, 0.5, ' mm');
+        h += champ('mqH', 'Hauteur', arrondi(pageFormat.height, 1), 20, 600, 0.5, ' mm');
+        h += ligne('mqBleed', 'Fond perdu', arrondi(bleed, 1), 0, 10, 0.5, ' mm');
+        h += '</section>';
+
+        /* MARGES */
+        h += '<section class="mq-sec"><h4>Marges</h4>';
+        h += champ('mqMT', 'Haut', arrondi(m.top, 1), 0, 120, 1, ' mm');
+        h += champ('mqMB', 'Bas', arrondi(m.bottom, 1), 0, 120, 1, ' mm');
+        h += champ('mqMI', 'Intérieur', arrondi(m.inner, 1), 0, 120, 1, ' mm');
+        h += champ('mqMO', 'Extérieur', arrondi(m.outer, 1), 0, 120, 1, ' mm');
+        h += '</section>';
+
+        /* COLONNES */
+        h += '<section class="mq-sec"><h4>Colonnes</h4>';
+        h += '<div class="mq-chips" id="mqCols">' + chips(COLONNES.map(function (n) { return [n, (n === 0 ? 'Aucune' : String(n))]; }), cols) + '</div>';
+        h += ligne('mqGouttiere', 'Gouttière', 5, 1, 20, 0.5, ' mm');
+        h += '</section>';
+
+        /* PAGINATION */
+        h += '<section class="mq-sec"><h4>Pagination</h4>';
+        h += case_('mqPnActif', 'Numéroter les pages', !!pn.enabled);
+        h += '<div class="mq-ligne"><label for="mqPnPos">Position</label><select id="mqPnPos">' +
+            POSITIONS.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === pn.position ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+            '</select></div>';
+        h += '<div class="mq-ligne"><label for="mqPnStyle">Style</label><select id="mqPnStyle">' +
+            STYLES.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === pn.style ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+            '</select></div>';
+        h += '<div class="mq-ligne"><label for="mqPnPolice">Police</label><select id="mqPnPolice">' +
+            pol.map(function (f) { return '<option value="' + f + '"' + (f === pn.fontFamily ? ' selected' : '') + '>' + f + '</option>'; }).join('') +
+            '</select></div>';
+        h += ligne('mqPnCorps', 'Corps', nb(pn.fontSize, 10), 5, 32, 1, ' pt');
+        h += '<div class="mq-ligne"><label for="mqPnCouleur">Couleur</label><input type="color" id="mqPnCouleur" value="' + (pn.fontColor || '#333333') + '"><b class="mq-v"></b></div>';
+        h += '</section>';
+
+        /* TYPOGRAPHIE */
+        h += '<section class="mq-sec"><h4>Typographie</h4>';
+        h += '<div class="mq-ligne"><label for="mqPolice">Police</label><select id="mqPolice">' +
+            pol.map(function (f) { return '<option value="' + f + '">' + f + '</option>'; }).join('') +
+            '</select></div>';
+        h += ligne('mqCorps', 'Corps', 0, 0, 72, 1, ' pt');
+        h += ligne('mqInterligne', 'Interligne', 0, 0, 3, 0.05, '');
+        h += '<div class="mq-ligne"><label for="mqCouleurTexte">Couleur</label><input type="color" id="mqCouleurTexte" value="#111111"><b class="mq-v"></b></div>';
+        h += '<div class="mq-ligne"><label>Alignement</label><div class="mq-chips" id="mqAlign">' +
+            chips([['left', 'Gauche'], ['center', 'Centré'], ['right', 'Droite'], ['justify', 'Justifié']], '') + '</div></div>';
+        h += '</section>';
+
+        /* PALETTE */
+        h += '<section class="mq-sec"><h4>Palette</h4>';
+        h += '<div class="mq-chips" id="mqPalettes">' + PALETTES.map(function (p) { return '<button type="button" class="mq-chip mq-chip-pal" data-pal="' + p[0] + '"><i style="background:' + p[1] + '"></i>' + p[0] + '</button>'; }).join('') + '</div>';
+        h += '<div class="mq-ligne"><label for="mqPalTexte">Texte</label><input type="color" id="mqPalTexte" value="#111111"><b class="mq-v"></b></div>';
+        h += '<div class="mq-ligne"><label for="mqPalAccent">Accent</label><input type="color" id="mqPalAccent" value="#111111"><b class="mq-v"></b></div>';
+        h += '<button type="button" class="btn btn-secondary mq-large" id="mqPalAppliquer">Appliquer la palette</button>';
+        h += '</section>';
+
+        /* REFONTE */
+        h += '<section class="mq-sec"><h4>Refonte</h4>';
+        h += case_('mqRecaler', 'Recaler les blocs sur les colonnes', true, 'Replace chaque bloc dans la colonne où se trouve son centre, et l\'élargit à cette colonne');
+        h += case_('mqHauteur', 'Cadres ajustés au texte', false, 'La hauteur des cadres suit leur contenu au lieu de rester fixe');
+        h += '<button type="button" class="btn btn-secondary mq-large" id="mqRefaire">Refaire la maquette</button>';
+        h += '</section>';
+
+        return h;
+    }
+
+    function polices() {
+        var sel = $('fontFamily');
+        if (sel) {
+            var l = lister('option', sel).map(function (o) { return o.value; }).filter(Boolean);
+            if (l.length) return l;
+        }
+        return ['Open Sans', 'Montserrat', 'Roboto', 'Lato', 'Poppins', 'Playfair Display'];
+    }
+
+    /* ══ 7. LECTURE DES CONTRÔLES ══ */
+    function lireControles() {
+        var val = function (id, repli) { var e = $(id); return e ? e.value : repli; };
+        var coche = function (id) { var e = $(id); return e ? !!e.checked : false; };
+        etat.format = { w: nb(val('mqW', pageFormat.width), pageFormat.width), h: nb(val('mqH', pageFormat.height), pageFormat.height) };
+        etat.fondPerdu = nb(val('mqBleed', bleed), bleed);
+        etat.marges = {
+            top: nb(val('mqMT', 20), 20), bottom: nb(val('mqMB', 20), 20),
+            inner: nb(val('mqMI', 20), 20), outer: nb(val('mqMO', 20), 20)
+        };
+        etat.colonnes = nb(etat.colonnes, 0);
+        etat.gouttiere = nb(val('mqGouttiere', 5), 5);
+        etat.pagination = {
+            actif: coche('mqPnActif'), position: val('mqPnPos', ''), style: val('mqPnStyle', ''),
+            police: val('mqPnPolice', ''), corps: nb(val('mqPnCorps', 0), 0), couleur: val('mqPnCouleur', '')
+        };
+        etat.typo = {
+            police: val('mqPolice', ''), corps: nb(val('mqCorps', 0), 0),
+            interligne: nb(val('mqInterligne', 0), 0), couleur: (nb(val('mqCorps', 0), 0) > 0 ? val('mqCouleurTexte', '') : ''),
+            alignement: etat.alignement || ''
+        };
+        etat.palette = { texte: val('mqPalTexte', ''), accent: val('mqPalAccent', '') };
+        etat.recalerColonnes = coche('mqRecaler');
+        etat.hauteurAuto = coche('mqHauteur');
+    }
+
+    /* ══ 8. OUVERTURE / FERMETURE ══ */
+    function ouvrir() {
+        if (ouvert) return;
+        var t = $('maquettePanel');
+        if (!t) return;
+        ouvert = true;
+        histoAvant = (typeof historyStep === 'number') ? historyStep : -1;
+        /* On fige la config avant de neutraliser l'historique : `saveAllPages` peut
+           vouloir enregistrer, et il serait dommage de le rendre inerte trop tôt. */
+        try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
+        suspendreHistorique();
+        var corps = $('maquetteBody');
+        if (corps && !corps.__mqRempli) { corps.innerHTML = panneau(); corps.__mqRempli = true; brancher(); }
+        t.classList.add('ouvert');
+        t.setAttribute('aria-hidden', 'false');
+        // La trappe pousse l'interface : sa largeur CIBLE est publiée pour que le
+        // widget de zoom (position: fixed) glisse avec elle au lieu de la recouvrir.
+        publierLargeur(largeurCible(t));
+        var b = $('maquetteToggle');
+        if (b) b.classList.add('active');
+        etatMessage('Aperçu en direct');
+    }
+
+    function fermer(valider) {
+        if (!ouvert) return;
+        ouvert = false;
+        if (minuteur) { clearTimeout(minuteur); minuteur = null; }
+        rendreHistorique();
+        var t = $('maquettePanel');
+        if (t) { t.classList.remove('ouvert'); t.setAttribute('aria-hidden', 'true'); }
+        // La trappe ne prend plus de place : le widget de zoom revient à sa position.
+        publierLargeur(0);
+        var b = $('maquetteToggle');
+        if (b) b.classList.remove('active');
+        if (valider) {
+            /* ⚠️ UNE SEULE ENTRÉE, ET LA BONNE — c'est mesuré, pas supposé.
+               Le module appelait `saveStateFromPages` PUIS `saveState`. Deux
+               conséquences, toutes deux mesurées :
+                 · l'historique passait de 0 à 2 sur une seule validation, alors
+                   que ce module annonce « Valider n'écrit qu'une entrée » — il
+                   fallait donc DEUX Ctrl+Z pour revenir, pas un ;
+                 · et la première des deux, `saveStateFromPages`, lit `pages` TEL
+                   QUEL. Or `pages` n'est synchronisé avec les canvas qu'au moment
+                   de `saveAllPages()`. Pendant l'aperçu, ce sont les CANVAS que
+                   `refonte()` modifie : la première entrée figeait donc un
+                   document PÉRIMÉ, et le premier Ctrl+Z restaurait autre chose que
+                   ce que l'utilisateur venait de voir. Lire `saveStateFromPages`
+                   suppose qu'un `saveAllPages()` a déjà eu lieu — la convention des
+                   gestionnaires de l'app, qui le font juste avant.
+               `saveState`, lui, COMMENCE par `saveAllPages()` : il synchronise puis
+               fige. C'est donc le seul appel correct ici, et il suffit. */
+            try { if (typeof saveState === 'function') saveState('Refonte de la maquette'); } catch (_) {}
+            etatMessage('');
+        } else {
+            /* Retour exact à l'état d'avant : c'est l'entrée d'historique qui était
+               courante à l'ouverture, et comme l'aperçu n'en a ajouté aucune, c'est
+               bien le document d'origine. */
+            try {
+                if (histoAvant >= 0 && typeof restoreState === 'function' && history[histoAvant]) restoreState(history[histoAvant]);
+                else if (typeof renderAllPages === 'function') renderAllPages();
+            } catch (_) {}
+            etatMessage('');
+        }
+    }
+
+    function basculer() { if (ouvert) fermer(false); else ouvrir(); }
+
+    /* ══ 9. BRANCHEMENTS ══ */
+    function brancher() {
+        var corps = $('maquetteBody');
+        if (!corps) return;
+
+        /* Format : pastilles */
+        var zf = $('mqFormats');
+        if (zf) zf.addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('.mq-chip') : null;
+            if (!b) return;
+            var d = b.getAttribute('data-pal') === null ? b.textContent : null;
+            lister('.mq-chip', zf).forEach(function (x) { x.classList.remove('on'); });
+            b.classList.add('on');
+            var found = FORMATS.filter(function (f) { return f[0] === b.textContent; })[0];
+            if (found) { ecrireChamp('mqW', found[1]); ecrireChamp('mqH', found[2]); differer(function () { lireControles(); appliquerFormat(); refonte(); }); }
+        });
+
+        /* Colonnes : pastilles */
+        var zc = $('mqCols');
+        if (zc) zc.addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('.mq-chip') : null;
+            if (!b) return;
+            lister('.mq-chip', zc).forEach(function (x) { x.classList.remove('on'); });
+            b.classList.add('on');
+            etat.colonnes = nb(b.textContent === 'Aucune' ? 0 : b.textContent, 0);
+            differer(function () { appliquerColonnes(); lireControles(); refonte(); });
+        });
+
+        /* Alignement : pastilles */
+        var za = $('mqAlign');
+        if (za) za.addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('.mq-chip') : null;
+            if (!b) return;
+            lister('.mq-chip', za).forEach(function (x) { x.classList.remove('on'); });
+            b.classList.add('on');
+            etat.alignement = b.textContent.toLowerCase();
+            var map = { 'gauche': 'left', 'centré': 'center', 'droite': 'right', 'justifié': 'justify' };
+            etat.alignement = map[b.textContent.toLowerCase()] || 'left';
+            differer(function () { lireControles(); refonte(); });
+        });
+
+        /* Palette : pastilles */
+        var zp = $('mqPalettes');
+        if (zp) zp.addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('.mq-chip') : null;
+            if (!b) return;
+            lister('.mq-chip', zp).forEach(function (x) { x.classList.remove('on'); });
+            b.classList.add('on');
+            var nom = b.getAttribute('data-pal');
+            var p = PALETTES.filter(function (x) { return x[0] === nom; })[0];
+            if (p) {
+                ecrireChamp('mqPalTexte', p[1]);
+                ecrireChamp('mqPalAccent', p[2]);
+                differer(function () { lireControles(); appliquerPalette(); });
+            }
+        });
+
+        /* Champs numériques : format, marges */
+        ['mqW', 'mqH', 'mqBleed'].forEach(function (id) {
+            var el = $(id); if (!el) return;
+            el.addEventListener('change', function () { differer(function () { lireControles(); appliquerFormat(); refonte(); }); });
+        });
+        ['mqMT', 'mqMB', 'mqMI', 'mqMO'].forEach(function (id) {
+            var el = $(id); if (!el) return;
+            el.addEventListener('change', function () { differer(function () { lireControles(); appliquerMarges(); refonte(); }); });
+        });
+
+        /* Gouttière */
+        var g = $('mqGouttiere');
+        if (g) g.addEventListener('input', function () {
+            var v = $('mqGouttiere_v'); if (v) v.textContent = g.value + ' mm';
+            differer(function () { lireControles(); refonte(); });
+        });
+
+        /* Pagination */
+        ['mqPnActif', 'mqPnPos', 'mqPnStyle', 'mqPnPolice', 'mqPnCorps', 'mqPnCouleur'].forEach(function (id) {
+            var el = $(id); if (!el) return;
+            el.addEventListener('change', function () { differer(function () { lireControles(); appliquerPagination(); }); });
+            el.addEventListener('input', function () { differer(function () { lireControles(); appliquerPagination(); }); });
+        });
+
+        /* Typographie */
+        var pol = $('mqPolice');
+        if (pol) pol.addEventListener('change', function () { differer(function () { lireControles(); refonte(); }); });
+        [['mqCorps', ' pt'], ['mqInterligne', '']].forEach(function (paire) {
+            var el = $(paire[0]); if (!el) return;
+            el.addEventListener('input', function () {
+                var v = $(paire[0] + '_v'); if (v) v.textContent = el.value + paire[1];
+                differer(function () { lireControles(); refonte(); });
+            });
+        });
+        var ct = $('mqCouleurTexte');
+        if (ct) ct.addEventListener('input', function () { differer(function () { lireControles(); refonte(); }); });
+
+        /* Actions */
+        var pa = $('mqPalAppliquer');
+        if (pa) pa.addEventListener('click', function () { differer(function () { lireControles(); appliquerPalette(); }); });
+        var rf = $('mqRefaire');
+        if (rf) rf.addEventListener('click', function () { differer(function () { lireControles(); refonte(); }); });
+        ['mqRecaler', 'mqHauteur'].forEach(function (id) {
+            var el = $(id); if (!el) return;
+            el.addEventListener('change', function () { differer(function () { lireControles(); refonte(); }); });
+        });
+
+        /* Barre du bas */
+        var va = $('maquetteValider'); if (va) va.addEventListener('click', function () { fermer(true); });
+        var an = $('maquetteAnnuler'); if (an) an.addEventListener('click', function () { fermer(false); });
+    }
+
+    function installer() {
+        var b = $('maquetteToggle');
+        if (b) b.addEventListener('click', basculer);
+        var c = $('maquetteClose');
+        if (c) c.addEventListener('click', function () { fermer(false); });
+        /* Échap ferme sans valider : le même geste que partout ailleurs. */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && ouvert) { e.stopPropagation(); fermer(false); }
+        }, true);
+        /* Filet : si la page se décharge pendant l'aperçu, on rend les fonctions
+           d'origine — laisser un `saveState` inerte après coup perdrait l'historique
+           de toute la suite de la session. */
+        window.addEventListener('beforeunload', rendreHistorique);
+        window._spMaquette = { ouvrir: ouvrir, fermer: fermer, basculer: basculer, refonte: refonte, estOuvert: function () { return ouvert; } };
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installer);
+    else installer();
+})();
+/* _SP_MAQUETTE_631_FIN */

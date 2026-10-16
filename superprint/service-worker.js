@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.630-bloc-texte-vieux-webkit';
+const CACHE_NAME = 'superprint-shell-v1.7.631-trappe-reglages-maquette';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

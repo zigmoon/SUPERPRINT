@@ -9,6 +9,34 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.631] — 2026-10-16
+
+_La trappe « Réglages de la maquette » s'ouvre après la barre latérale de droite et **pousse** l'interface — elle ne la recouvre pas_
+
+> **Pourquoi cette version existe.** L'icône de refactorisation des maquettes était dans la barre d'outils, l'outil existait dans le studio IA, et rien ne s'ouvrait : le module chargé de le faire cherchait **sept éléments** qui n'existaient nulle part dans la page. Ce qui suit a été **mesuré** — chaque affirmation vient d'une suite qui clique, lit l'historique et compare des pixels — et non déduit.
+
+### Added — une trappe qui pousse, elle ne recouvre pas
+
+- **Ce qui manquait n'était pas la logique, c'était le balisage.** Le module `_SP_MAQUETTE_631` — 678 lignes de JavaScript et 194 lignes de CSS — cherchait `#maquetteToggle`, `#maquettePanel`, `#maquetteBody`, `#maquetteClose`, `#maquetteValider`, `#maquetteAnnuler` et `#maquetteEtat`. **Aucun n'existait** : le module ne fabrique lui-même que les sections internes du corps. Sans balisage, il n'a rien à remplir — donc rien à ouvrir.
+- ⚠️ **Les points d'insertion ont été déterminés par un vrai analyseur** — `parse5` muni de `sourceCodeLocationInfo`, qui donne des numéros de ligne exacts — et non en comptant des balises à la main dans un fichier de 7 000 lignes. Verdict : `#mainApp` est un conteneur **flex**, et pour que la trappe *pousse* au lieu de recouvrir, elle doit en être le **dernier enfant**. C'est sa position dans le flux qui décide, pas son style.
+- **Mesuré** : à l'ouverture, la zone de travail perd **exactement 340 px** et les récupère à la fermeture (1 588 px). Le `min-width: 0` de `.mq-trappe` est indispensable — un élément flex refuse de descendre sous la largeur de son contenu, et la trappe s'élargirait toute seule.
+- **7 sections, 22 champs**, remplis **une seule fois** : après fermeture puis réouverture, aucun identifiant n'est en double. Le titre du bouton est traduit dans les **trois langues** de l'application, comme le reste de l'interface.
+- **Le réglage est en direct** : toucher un champ change le *document* (marge haute 20 → 27 mm). « Annuler » le rend tel qu'il était (27 → 20 mm) sans empiler **aucune** entrée d'historique ; « Valider » en écrit **exactement une**, si bien qu'une seule annulation ramène à l'état d'avant l'aperçu. La touche **Échap** referme la trappe — vérifié, pas supposé.
+
+### Fixed — deux défauts qui ne se voyaient pas à l'ouverture
+
+- ⚠️ **Le widget de zoom recouvrait la trappe et volait les clics.** Il est en `position: fixed` à droite de la barre latérale : trappe ouverte, il passait par-dessus elle et interceptait le clic sur « Valider » et sur « Annuler » — c'est Playwright qui a **nommé l'intercepteur**. Remède : `#mainApp` publie la variable CSS `--sp-maquette-l`, que consomment la feuille de style et `syncZoomWidgetWithRightSidebar()`. C'est l'héritage CSS qui le permet malgré `fixed` : il suit le DOM, pas la mise en page. **Mesuré** : le widget glisse à gauche de la trappe (bord gauche 1 072 px, trappe à 1 360 px) et, trappe fermée, il retrouve **exactement** sa position d'origine — c'est désormais une assertion de non-régression.
+- ⚠️ **La trappe écrivait deux entrées d'historique, et la première figeait un document périmé.** Le module appelait `saveStateFromPages` **puis** `saveState`. La raison est précise : `saveStateFromPages` lit `pages` tel quel, alors que `saveState` commence par appeler `saveAllPages()`. L'appel fautif a été retiré ; **mesuré**, l'historique passe de 0 à **1**, et une seule annulation ramène à l'état d'avant l'aperçu.
+- **Aucun des deux ne se voyait en ouvrant la trappe** : elle s'ouvrait, se remplissait et se fermait correctement. Il fallait vérifier *qui reçoit réellement le clic* et *ce que l'historique a gagné*.
+
+### Note — un piège d'instrument, et une réparation collatérale
+
+- ⚠️ `getBoundingClientRect()` appelé juste après l'ajout de la classe renvoie la largeur **d'avant la transition** — zéro. La cible doit être lue dans `max-width`, sinon on conclut tranquillement que la trappe mesure 0 pixel.
+- `.github/workflows/macos-compat.yml` était sur le disque à **0 octet** alors que git en portait **123 lignes** — même signature que les fichiers vides déjà rencontrés, une écriture interrompue. Restauré depuis git. Une icône de 0 octet, `app/icons/maquette.svg`, traînait sans être référencée nulle part : supprimée.
+- **Vérification** : **68 assertions** pour la suite de la trappe, et **13 suites sur 13 vertes — 456 assertions, 0 échec, 0 erreur de page**. Les **trois copies du site** — la source, la distribution locale et le site Astro — ont été resynchronisées : elles divergeaient exactement des trois fichiers de la trappe et disent désormais la même chose, octet pour octet — 749 + 476 + 19 fichiers examinés, **0 divergence**.
+
+---
+
 ## [1.7.621] — 2026-10-15
 
 _Chaque cellule de tableau est un texte indépendant, un glissement court crée enfin un bloc, et deux exporteurs arrivent_

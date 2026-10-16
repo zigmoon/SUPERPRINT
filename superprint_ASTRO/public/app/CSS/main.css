@@ -2147,7 +2147,7 @@ textarea[data-fabric-hiddentextarea] {
     background: transparent !important;
     border: 0 !important;
 }
-/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.630). Elles étaient en #f0f0f0, à peine
+/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.631). Elles étaient en #f0f0f0, à peine
    plus clair que le plan de travail (#e8e8e8) : elles s'y fondaient, et on ne
    voyait plus où commençait la graduation. #fafafa est nettement plus clair,
    reste distinct du blanc de la page, et garde les graduations (#333/#666)
@@ -4152,7 +4152,14 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
 /* ==================== ZOOM WIDGET (Bottom Right) ==================== */
 .zoom-widget {
     position: fixed;
-    right: calc(280px + 16px); /* Distance de la rightbar (280px) + marge */
+    /* ⚠️ v1.7.631 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
+       « Réglages de la maquette » quand elle est ouverte. Sans elle, le widget
+       restait ancré à 296 px du bord droit et se retrouvait PAR-DESSUS la trappe,
+       où il interceptait les clics sur « Valider » et « Annuler » (mesuré). La
+       variable vaut 0px quand la trappe est fermée : le calcul redonne alors
+       exactement la valeur d'origine. Elle est publiée sur #mainApp par le module
+       _SP_MAQUETTE_631, et relue par syncZoomWidgetWithRightSidebar(). */
+    right: calc(280px + var(--sp-maquette-l, 0px) + 16px); /* Distance de la rightbar (280px) + trappe + marge */
     bottom: 16px;
     z-index: 100;
     background: rgba(255, 255, 255, 0.96);
@@ -5911,3 +5918,197 @@ input[type=number] {
    ligne l'emporte sur TOUTE règle de feuille de style. Ne pas ajouter ici de
    règle `gap` : elle serait morte (mesuré : la règle existait, le gap calculé
    restait 8 px). Modifier l'attribut `style` du div `.toolbar-center`. */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   v1.7.631 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
+
+   Elle est le dernier enfant de `.app`, qui est un conteneur FLEX : sa largeur
+   s'ajoute donc à droite et POUSSE l'interface, au lieu de la recouvrir comme le
+   fait `#trappePanel` (la bibliothèque d'assets). Fermée, sa largeur vaut 0 et sa
+   bordure est retirée : elle ne prend aucune place et rien ne bouge.
+
+   ⚠️ `min-width: 0` SUR LA TRAPPE EST INDISPENSABLE : sans lui, un conteneur flex
+   refuse de descendre sous la largeur de son contenu, et la trappe « fermée »
+   garderait la largeur de son panneau — mesuré sur ce genre de panneau, la barre
+   restait ouverte de force.
+   ══════════════════════════════════════════════════════════════════════════════ */
+.mq-trappe {
+    flex: 0 0 auto;
+    width: 0;
+    min-width: 0;
+    max-width: 340px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fafafa;
+    border-left: 0 solid #e0e0e0;
+    transition: width var(--sp-sb-dur, 260ms) var(--sp-sb-ease, cubic-bezier(.2, .7, .2, 1)),
+                border-left-width var(--sp-sb-dur, 260ms) var(--sp-sb-ease, cubic-bezier(.2, .7, .2, 1));
+}
+.mq-trappe.ouvert {
+    width: 340px;
+    border-left-width: 1px;
+}
+
+.mq-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 10px;
+    height: 34px;
+    flex: 0 0 auto;
+    border-bottom: 1px solid #e0e0e0;
+    background: #f4f4f4;
+}
+.mq-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: #333;
+    white-space: nowrap;
+}
+.mq-close {
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    color: #666;
+    padding: 3px 5px;
+    border-radius: 3px;
+}
+.mq-close:hover { background: #e6e6e6; color: #111; }
+
+.mq-corps {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 0 10px;
+}
+
+/* ── Sections ── */
+.mq-sec { padding: 8px 10px 10px; border-bottom: 1px solid #ececec; }
+.mq-sec h4 {
+    margin: 0 0 7px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: #888;
+}
+
+/* ── Lignes ── */
+.mq-ligne {
+    display: grid;
+    grid-template-columns: 74px 1fr 44px;
+    align-items: center;
+    gap: 6px;
+    min-height: 22px;
+    margin-bottom: 4px;
+}
+.mq-ligne > label { font-size: 10px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mq-ligne > .mq-v { font-size: 9px; color: #888; font-weight: 600; text-align: right; font-family: ui-monospace, 'Consolas', monospace; }
+.mq-ligne input[type="number"],
+.mq-ligne select {
+    height: 22px;
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #d5d5d5;
+    border-radius: 3px;
+    background: #fff;
+    font-size: 10px;
+    padding: 0 4px;
+    color: #222;
+}
+.mq-ligne input[type="number"] { grid-column: 2 / 3; }
+.mq-ligne select { grid-column: 2 / 4; }
+.mq-ligne input[type="color"] {
+    grid-column: 2 / 3;
+    width: 100%;
+    height: 22px;
+    padding: 0;
+    border: 1px solid #d5d5d5;
+    border-radius: 3px;
+    background: #fff;
+    cursor: pointer;
+}
+.mq-ligne input[type="range"] {
+    grid-column: 2 / 3;
+    width: 100%;
+    min-width: 0;
+    accent-color: #111;
+    height: 18px;
+}
+
+/* ── Pastilles ── */
+.mq-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.mq-chip {
+    border: 1px solid #d5d5d5;
+    background: #fff;
+    color: #444;
+    border-radius: 3px;
+    font-size: 9px;
+    line-height: 1;
+    padding: 5px 7px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.mq-chip:hover { border-color: #aaa; color: #111; }
+.mq-chip.on { background: #111; border-color: #111; color: #fff; }
+.mq-chip i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
+
+/* ── Cases ── */
+.mq-case {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    color: #444;
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+.mq-case input { width: 14px; height: 14px; accent-color: #111; cursor: pointer; flex: 0 0 auto; }
+
+.mq-large { width: 100%; height: 26px; font-size: 9px; }
+
+/* ── Pied ── */
+.mq-pied {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-top: 1px solid #e0e0e0;
+    background: #f4f4f4;
+}
+.mq-etat {
+    flex: 1 1 auto;
+    font-size: 9px;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mq-pied .btn { height: 26px; padding: 0 12px; font-size: 9px; }
+
+/* ── Thème sombre ── */
+.theme-dark .mq-trappe { background: #1e1e1e; border-left-color: #333; }
+.theme-dark .mq-head,
+.theme-dark .mq-pied { background: #262626; border-color: #333; }
+.theme-dark .mq-title { color: #ddd; }
+.theme-dark .mq-close { color: #aaa; }
+.theme-dark .mq-close:hover { background: #333; color: #fff; }
+.theme-dark .mq-sec { border-bottom-color: #2c2c2c; }
+.theme-dark .mq-sec h4 { color: #888; }
+.theme-dark .mq-ligne > label,
+.theme-dark .mq-case { color: #bbb; }
+.theme-dark .mq-ligne input[type="number"],
+.theme-dark .mq-ligne select { background: #2a2a2a; border-color: #3a3a3a; color: #eee; }
+.theme-dark .mq-chip { background: #2a2a2a; border-color: #3a3a3a; color: #bbb; }
+.theme-dark .mq-chip.on { background: #eee; border-color: #eee; color: #111; }
+.theme-dark .mq-etat { color: #888; }
