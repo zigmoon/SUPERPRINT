@@ -1,6 +1,6 @@
 {
   "name": "superprint",
-  "version": "1.7.631",
+  "version": "1.7.632",
   "private": true,
   "type": "module",
   "description": "SuperPrint — logiciel PAO en ligne + Studio IA SP213. Site statique généré par Astro.",

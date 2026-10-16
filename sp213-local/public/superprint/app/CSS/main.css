@@ -2147,7 +2147,7 @@ textarea[data-fabric-hiddentextarea] {
     background: transparent !important;
     border: 0 !important;
 }
-/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.631). Elles étaient en #f0f0f0, à peine
+/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.632). Elles étaient en #f0f0f0, à peine
    plus clair que le plan de travail (#e8e8e8) : elles s'y fondaient, et on ne
    voyait plus où commençait la graduation. #fafafa est nettement plus clair,
    reste distinct du blanc de la page, et garde les graduations (#333/#666)
@@ -4152,7 +4152,7 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
 /* ==================== ZOOM WIDGET (Bottom Right) ==================== */
 .zoom-widget {
     position: fixed;
-    /* ⚠️ v1.7.631 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
+    /* ⚠️ v1.7.632 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
        « Réglages de la maquette » quand elle est ouverte. Sans elle, le widget
        restait ancré à 296 px du bord droit et se retrouvait PAR-DESSUS la trappe,
        où il interceptait les clics sur « Valider » et « Annuler » (mesuré). La
@@ -5920,7 +5920,7 @@ input[type=number] {
    restait 8 px). Modifier l'attribut `style` du div `.toolbar-center`. */
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   v1.7.631 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
+   v1.7.632 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
 
    Elle est le dernier enfant de `.app`, qui est un conteneur FLEX : sa largeur
    s'ajoute donc à droite et POUSSE l'interface, au lieu de la recouvrir comme le

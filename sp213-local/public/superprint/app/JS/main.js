@@ -813,7 +813,7 @@ function syncZoomWidgetWithRightSidebar() {
     const zoomWidget = document.getElementById('zoomWidget');
     if (!rightSidebar || !zoomWidget) return;
 
-    /* ⚠️ v1.7.631 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
+    /* ⚠️ v1.7.632 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
        Cette fonction place le widget de zoom juste à gauche de la barre latérale
        droite. Or la trappe est un PANNEAU FIXE qui, lui aussi, occupe le bord
        droit : sans cette ligne, le widget tombait PAR-DESSUS elle et interceptait
@@ -4346,7 +4346,7 @@ if (window._spGpuEnabled) {
         };
     }
 
-    /* ══ v1.7.631 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+    /* ══ v1.7.632 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
 
        `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
        WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
@@ -4783,7 +4783,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.631 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.632 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5382,7 +5382,7 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        /* ══ v1.7.631 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
+        /* ══ v1.7.632 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
            RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
            bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
@@ -51136,7 +51136,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.631 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.632 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -51284,7 +51284,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.631) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.632) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
@@ -101295,6 +101295,29 @@ function initObjectRightClickMenu() {
     var origineSaveStateFromPages = null;
     var minuteur = null;
     var etat = {};
+    /* Vrai pendant que la trappe écrit ELLE-MÊME dans les champs de l'application :
+       le guetteur de format ne doit pas se prendre pour une modification venue de
+       l'extérieur et réafficher ce qu'on est en train d'écrire. */
+    var enEcriture = false;
+
+    /* ── LE PANNEAU SUIT LE DOCUMENT ────────────────────────────────────────
+       Le format peut aussi être changé depuis le panneau latéral de l'application,
+       la trappe restant ouverte. Sans cette réaffichage, le premier réglage touché
+       dans la trappe réécrirait l'ancien format — le défaut des champs périmés, par
+       une autre porte. On se contente donc de RÉAFFICHER la valeur du document, sans
+       émettre le moindre événement (en émettre relancerait l'application), et sans
+       conversion d'unité : les champs de la trappe sont TOUJOURS en millimètres,
+       c'est `appliquerFormat` qui convertit vers l'unité du document. */
+    function rafraichirFormat() {
+        try {
+            var w = $('mqW'), h = $('mqH'), b = $('mqBleed');
+            if (typeof pageFormat === 'undefined') return;
+            if (w) w.value = String(arrondi(pageFormat.width, 1));
+            if (h) h.value = String(arrondi(pageFormat.height, 1));
+            if (b && typeof bleed === 'number') b.value = String(arrondi(bleed, 1));
+            etat.format = { w: pageFormat.width, h: pageFormat.height };
+        } catch (_) {}
+    }
 
     /* ── ÉCRITURE DIFFÉRÉE ──────────────────────────────────────────────────
        Le fond perdu et le format RECONSTRUISENT les pages (`renderAllPages`), ce qui
@@ -101407,6 +101430,164 @@ function initObjectRightClickMenu() {
         return [{ cote: 'seule', decalage: 0, zone: zonePage(cv, 'seule') }];
     }
 
+    /* ══ 3bis. LA RECOMPOSITION AU FORMAT ══
+       Demande utilisateur : « dans studio IA je pouvais dans les réglages refactoriser la
+       largeur et la longueur du document ; je ne peux dans superprint actuellement, ça ne
+       refactorise pas quand je change de format en live ».
+
+       CE QUI ÉTAIT DÉJÀ JUSTE, ET CE QUI NE L'ÉTAIT PAS — MESURÉ AVANT D'ÉCRIRE.
+       Le format, lui, s'appliquait déjà : 210x297 -> 260x297, canvas 612 -> 754 sur
+       CHAQUE vue, sans une seule erreur JavaScript. Ce qui ne suivait pas, c'est le
+       CONTENU : un objet posé en (65,65) restait en (65,65) après le changement, sur
+       une page devenue 30 % plus petite. Dans le studio, `spRegAppliquer()` appelait
+       `spRegRecomposer()` : le document entier était recomposé au nouveau format, et
+       les corps de texte n'étaient PAS mis à l'échelle. C'est donc la recomposition
+       qui manquait ici, pas l'application du format.
+
+       ⚠️ ON SE SERT DU CANVAS COMME RAPPORT D'ÉCHELLE, PAS DU FORMAT EN MILLIMÈTRES.
+       Le canvas d'une vue vaut exactement « la page — ou la double page — plus le fond
+       perdu ». Son rapport d'échelle est donc le bon pour tout objet de cette vue, y
+       compris sur une double page et avec un fond perdu non nul, sans avoir à
+       reconstruire cette géométrie ici : c'est l'application qui la produit, donc on
+       ne peut pas se tromper. Le format en mm, lui, ne dirait rien du décalage du fond
+       perdu ni du fait qu'une vue porte deux pages.
+
+       ⚠️ LE DÉCLENCHEUR EST LE CHANGEMENT RÉEL DE `pageFormat`, jamais notre propre
+       état : un fond perdu modifié redimensionne lui aussi les canvas, et s'en servir
+       comme déclencheur recomposerait le contenu à tort. On prend donc l'instantané
+       des vues avant l'écriture des champs, et on ne recompose que si `pageFormat` a
+       vraiment bougé entre les deux. */
+
+    /* Les vues, SANS DOUBLON. `canvases` et `window.spCanvases` peuvent désigner la
+       même liste : sur une opération idempotente (appliquer une couleur) le doublon
+       est sans effet, mais ici il multiplierait deux fois les coordonnées. */
+    function vues() {
+        var out = [];
+        var ajoute = function (liste) {
+            if (!liste || !liste.length) return;
+            Array.prototype.forEach.call(liste, function (cv) {
+                if (!cv || typeof cv.getObjects !== 'function') return;
+                if (out.indexOf(cv) < 0) out.push(cv);
+            });
+        };
+        try { ajoute(canvases); } catch (_) {}
+        try { ajoute(window.spCanvases); } catch (_) {}
+        return out;
+    }
+
+    /* La décoration de page — fond perdu, marge, traits de coupe — n'appartient pas à
+       la maquette. et l'application la redimensionne DÉJÀ elle-même au changement de
+       format (mesuré : le rectangle de fond passe de 613 à 755 px de large tout seul).
+       La recomposer ici la mettrait à l'échelle une seconde fois. Sur une page neuve,
+       les trois seuls objets de la vue sont exactement ceux-là, marqués `isBleed`,
+       `isMargin`, `isTrimBox` et tous `excludeFromExport`. */
+    function estDecoration(o) {
+        return !!(o.isMargin || o.isBleed || o.isTrimBox || o.excludeFromExport || o._isUiHelper);
+    }
+    function estTexte(o) { return o.type === 'textbox' || o.type === 'text' || o.type === 'i-text'; }
+    /* « Cadres » : les rectangles et les images. Les tracés et les groupes restent en
+       dehors — c'est le périmètre demandé — et l'application les ramène déjà dans la
+       page par `clampObjectsToCurrentFormat()`. */
+    function estCadre(o) { return o.type === 'rect' || o.type === 'image'; }
+
+    function objetsMaquette(cv) {
+        if (!cv || typeof cv.getObjects !== 'function') return [];
+        return cv.getObjects().filter(function (o) {
+            return o && !estDecoration(o) && (estTexte(o) || estCadre(o));
+        });
+    }
+
+    /* Taille de chaque vue AVANT l'écriture du format.
+       ⚠️ CHAQUE VUE EST DÉSIGNÉE PAR L'IDENTIFIANT DE SON CANVAS, PAS PAR LA VUE
+       ELLE-MÊME — et ce n'est pas un détail : MESURÉ, `renderAllPages()` RECRÉE les
+       vues au changement de format (l'objet de la vue 0 n'est plus le même après, et
+       l'ancien ne porte plus aucun objet). Une référence gardée sur l'ancienne vue
+       recomposerait donc zéro objet, en silence — ce qui s'est produit au premier
+       essai : « Format recomposé (0 bloc(s), 0 cadre(s)) ». */
+    function mesurerVues() {
+        var out = [];
+        vues().forEach(function (cv) {
+            var el = cv.lowerCanvasEl;
+            if (!el || !el.width || !el.height) return;
+            out.push({ id: el.id || '', rang: out.length, w: el.width, h: el.height });
+        });
+        return out;
+    }
+
+    /* La vue d'aujourd'hui qui correspond à la mesure d'avant : par identifiant, et à
+       défaut par rang — un canvas sans identifiant ne doit pas priver sa vue de sa
+       recomposition. */
+    function retrouverVue(mesure) {
+        var liste = vues();
+        if (mesure.id) {
+            for (var i = 0; i < liste.length; i++) {
+                var el = liste[i].lowerCanvasEl;
+                if (el && el.id === mesure.id) return liste[i];
+            }
+        }
+        return liste[mesure.rang] || null;
+    }
+
+    /* ── LA RECOMPOSITION ──
+       Le contenu est reporté du format d'avant sur celui d'après, vue par vue :
+         · un BLOC TEXTE suit le format par sa MESURE (sa largeur, sa hauteur si elle
+           est fixée) puis laisse le moteur de texte refaire couler les lignes. Ni
+           `fontSize` ni `scaleX` ne sont touchés : agrandir les lettres est justement
+           ce que ce réglage ne doit pas faire, et c'est ce que faisait le studio ;
+         · un CADRE (rectangle, image) suit la page : position et fenêtre. Sur une image
+           à fenêtre de recadrage, c'est le cadrage qui suit le format, comme le studio
+           qui régénérait ses images à la nouvelle taille. */
+    function recomposerAuFormat(avant) {
+        var fait = { blocs: 0, cadres: 0 };
+        avant.forEach(function (mesure) {
+            /* La vue est RETROUVÉE : l'application a pu la recréer en appliquant le
+               format, et c'est la nouvelle qu'il faut recomposer. */
+            var cv = retrouverVue(mesure);
+            var el = cv && cv.lowerCanvasEl;
+            if (!el || !el.width || !el.height) return;
+            var rx = el.width / mesure.w;
+            var ry = el.height / mesure.h;
+            if (!isFinite(rx) || !isFinite(ry) || rx <= 0 || ry <= 0) return;
+            if (rx === 1 && ry === 1) return;
+            objetsMaquette(cv).forEach(function (o) {
+                var texte = estTexte(o);
+                /* ⚠️ `_fixedWidth` / `_fixedHeight` SONT LA RÉFÉRENCE, PAS `width`/`height`.
+                   Ce sont les miroirs que l'application tient à jour, et une synchro
+                   ultérieure repose `width` depuis eux. MESURÉ, en les laissant en
+                   arrière : la HAUTEUR du bloc suivait (129,87 -> 92,92 px) mais sa
+                   LARGEUR restait figée à 245,89 px — les deux traitées par le même
+                   code, mais `_fixedWidth` écrasait la largeur et `_fixedHeight`
+                   n'écrasait pas la hauteur. On pose donc les deux : la valeur et sa
+                   référence. */
+                var fw0 = (typeof o._fixedWidth === 'number' && o._fixedWidth > 0) ? o._fixedWidth : 0;
+                var fh0 = (typeof o._fixedHeight === 'number' && o._fixedHeight > 0) ? o._fixedHeight : 0;
+                if (o.width > 0) o.set('width', o.width * rx);
+                if (o.height > 0) o.set('height', o.height * ry);
+                if (fw0 > 0) o._fixedWidth = fw0 * rx;
+                if (fh0 > 0) o._fixedHeight = fh0 * ry;
+                o.set({ left: (o.left || 0) * rx, top: (o.top || 0) * ry });
+                try { if (typeof o.setCoords === 'function') o.setCoords(); } catch (_) {}
+                if (texte) {
+                    try { if (typeof o._clearCache === 'function') o._clearCache(); } catch (_) {}
+                    try { if (typeof o.initDimensions === 'function') o.initDimensions(); } catch (_) {}
+                    try { if (typeof applyTextboxClipPath === 'function') applyTextboxClipPath(o); } catch (_) {}
+                    try { if (typeof updateOverflowIndicator === 'function') updateOverflowIndicator(o, cv); } catch (_) {}
+                    fait.blocs++;
+                } else fait.cadres++;
+            });
+            try { if (cv.requestRenderAll) cv.requestRenderAll(); } catch (_) {}
+        });
+
+        /* Un bloc élargi au prorata peut dépasser le bord droit : on redemande le
+           ramenage dans la page, celui-là même que l'application applique au
+           changement de format. Il est idempotent, l'appeler deux fois est sans effet. */
+        try {
+            var ramener = (typeof clampObjectsToCurrentFormat === 'function') ? clampObjectsToCurrentFormat : window.clampObjectsToCurrentFormat;
+            if (typeof ramener === 'function') ramener();
+        } catch (_) {}
+        return fait;
+    }
+
     /* ══ 4. LA REFONTE ══
        « Refactoriser » veut dire RECOMPOSER : on ne pose pas seulement des réglages,
        on replace les blocs sur la nouvelle grille et on réapplique la typographie,
@@ -101494,7 +101675,16 @@ function initObjectRightClickMenu() {
         try { if (typeof canvases !== 'undefined' && canvases) l.push(canvases); } catch (_) {}
         l.forEach(function (liste) { liste.forEach(function (cv) { try { if (cv && cv.requestRenderAll) cv.requestRenderAll(); } catch (_) {} }); });
 
-        etatMessage(fait.blocs + ' bloc(s) typographié(s) · ' + fait.recales + ' recalé(s) · ' + fait.cadres + ' cadre(s)');
+        var msg = fait.blocs + ' bloc(s) typographié(s) · ' + fait.recales + ' recalé(s) · ' + fait.cadres + ' cadre(s)';
+        /* Le compte rendu de la recomposition au format, s'il vient d'y en avoir une.
+           On le lit et on l'efface : il ne concerne que le changement de format qui
+           vient d'être appliqué, pas les réglages suivants. */
+        if (etat.recompose) {
+            var rc = etat.recompose;
+            etat.recompose = null;
+            msg = 'Format recomposé (' + rc.blocs + ' bloc(s), ' + rc.cadres + ' cadre(s)) · ' + msg;
+        }
+        etatMessage(msg);
         return fait;
     }
 
@@ -101514,13 +101704,67 @@ function initObjectRightClickMenu() {
         if (etat.format && etat.format.w > 0 && etat.format.h > 0) {
             var fw = (typeof spPageMmVersUnite === 'function') ? spPageMmVersUnite(etat.format.w) : etat.format.w;
             var fh = (typeof spPageMmVersUnite === 'function') ? spPageMmVersUnite(etat.format.h) : etat.format.h;
-            ecrireChamp('pageWidth', fw);
-            ecrireChamp('pageHeight', fh);
+            enEcriture = true;
+            try {
+                ecrireChamp('pageWidth', fw);
+                ecrireChamp('pageHeight', fh);
+            } finally { enEcriture = false; }
         }
         if (etat.fondPerdu !== null && etat.fondPerdu !== undefined) {
             var b = (typeof spPageMmVersUnite === 'function') ? spPageMmVersUnite(etat.fondPerdu) : etat.fondPerdu;
             ecrireChamp('bleed', b);
         }
+    }
+
+    /* ══ 5bis. ATTENDRE QUE LES VUES REVIENNENT ══
+       ⚠️ CE DÉLAI EST MESURÉ, PAS UN CONFORT. Juste après l'écriture des champs,
+       l'application a VIDÉ `canvases` — relevé : `[]` — et elle les reconstruit AU TOUR
+       SUIVANT, aux nouvelles dimensions (relevé à +0 ms : la vue est revenue, 436 px).
+       Recomposer dans la foulée reviendrait donc à recomposer zéro objet, ce qui s'est
+       produit : « Format recomposé (0 bloc(s), 0 cadre(s)) » alors que le bloc était là
+       avant et après. On attend donc le retour des vues, en bornant l'attente pour
+       qu'un document vide conclue au lieu d'attendre indéfiniment. */
+    function attendreVues(fn, essais) {
+        if (!vues().length && (essais || 0) < 25) {
+            setTimeout(function () { attendreVues(fn, (essais || 0) + 1); }, 20);
+            return;
+        }
+        try { fn(); } catch (e) { etatMessage('Erreur : ' + (e && e.message ? e.message : e)); }
+    }
+
+    /* ══ 5ter. FORMAT, PUIS RECOMPOSITION, PUIS REFONTE ══
+       Les trois dans CET ordre, et au moment où les vues existent : la recomposition
+       replace les blocs pour le nouveau format, puis la refonte les recale sur la
+       grille de colonnes — recaler avant d'avoir reporté reviendrait à recaler des
+       blocs restés à l'échelle d'avant. C'est le seul chemin : les gestionnaires
+       n'appellent plus `appliquerFormat` et `refonte` côte à côte. */
+    function appliquerFormatEtRefonte() {
+        lireControles();
+        /* L'instantané AVANT : il donne à chaque vue son rapport d'échelle. */
+        var avant = mesurerVues();
+        var pfAvant = (typeof pageFormat !== 'undefined') ? { w: pageFormat.width, h: pageFormat.height } : null;
+        appliquerFormat();
+        var pfApres = (typeof pageFormat !== 'undefined') ? { w: pageFormat.width, h: pageFormat.height } : null;
+        /* Le déclencheur est le changement RÉEL de `pageFormat`, jamais notre état : le
+           fond perdu redimensionne lui aussi les vues, et s'en servir comme
+           déclencheur recomposerait le contenu à tort. */
+        var change = !!(pfAvant && pfApres &&
+            (Math.abs(pfApres.w - pfAvant.w) > 0.01 || Math.abs(pfApres.h - pfAvant.h) > 0.01));
+        if (!change) { refonte(); return; }
+        attendreVues(function () {
+            var fait = recomposerAuFormat(avant);
+            etat.recompose = fait;
+            /* ⚠️ ON RESYNCHRONISE LE MODÈLE. Les objets qu'on vient de recomposer sont
+               ceux que l'application a RECRÉÉS depuis `pages` ; le modèle porte donc
+               encore l'ancienne géométrie. Sans cette synchronisation, le prochain
+               rendu — et il y en a un à chaque réglage — remettrait tout à sa place
+               d'avant, ce qui donnerait exactement le symptôme « ça ne refactorise
+               pas ». `saveAllPages` ne prend aucune entrée d'historique. */
+            if (fait.blocs || fait.cadres) {
+                try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
+            }
+            refonte();
+        });
     }
 
     function appliquerMarges() {
@@ -101744,8 +101988,16 @@ function initObjectRightClickMenu() {
            vouloir enregistrer, et il serait dommage de le rendre inerte trop tôt. */
         try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
         suspendreHistorique();
+        /* ⚠️ LE PANNEAU EST RECONSTRUIT À CHAQUE OUVERTURE — correction mesurée.
+           Il n'était rempli qu'une fois (`__mqRempli`) et gardait donc, après un
+           « Annuler », les valeurs ABANDONNÉES : le réglage suivant les réécrivait.
+           MESURÉ : un Annuler ramenait le document en A4 (canvas 612 px), puis bouger
+           la SEULE tirette du fond perdu remettait la page en A5 — canvas 459 px, soit
+           exactement A5 (148 mm) + 7 mm de fond perdu de chaque côté. Le panneau doit
+           dire ce que dit le document, chaque fois qu'on l'ouvre. */
         var corps = $('maquetteBody');
-        if (corps && !corps.__mqRempli) { corps.innerHTML = panneau(); corps.__mqRempli = true; brancher(); }
+        if (corps) { corps.innerHTML = panneau(); corps.__mqRempli = true; brancher(); }
+        if (typeof lireControles === 'function') lireControles();
         t.classList.add('ouvert');
         t.setAttribute('aria-hidden', 'false');
         // La trappe pousse l'interface : sa largeur CIBLE est publiée pour que le
@@ -101814,7 +102066,7 @@ function initObjectRightClickMenu() {
             lister('.mq-chip', zf).forEach(function (x) { x.classList.remove('on'); });
             b.classList.add('on');
             var found = FORMATS.filter(function (f) { return f[0] === b.textContent; })[0];
-            if (found) { ecrireChamp('mqW', found[1]); ecrireChamp('mqH', found[2]); differer(function () { lireControles(); appliquerFormat(); refonte(); }); }
+            if (found) { ecrireChamp('mqW', found[1]); ecrireChamp('mqH', found[2]); differer(appliquerFormatEtRefonte); }
         });
 
         /* Colonnes : pastilles */
@@ -101860,7 +102112,7 @@ function initObjectRightClickMenu() {
         /* Champs numériques : format, marges */
         ['mqW', 'mqH', 'mqBleed'].forEach(function (id) {
             var el = $(id); if (!el) return;
-            el.addEventListener('change', function () { differer(function () { lireControles(); appliquerFormat(); refonte(); }); });
+            el.addEventListener('change', function () { differer(appliquerFormatEtRefonte); });
         });
         ['mqMT', 'mqMB', 'mqMI', 'mqMO'].forEach(function (id) {
             var el = $(id); if (!el) return;
@@ -101918,6 +102170,11 @@ function initObjectRightClickMenu() {
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && ouvert) { e.stopPropagation(); fermer(false); }
         }, true);
+        /* Le format peut aussi bouger depuis le panneau latéral, trappe ouverte. */
+        ['pageWidth', 'pageHeight', 'bleed'].forEach(function (id) {
+            var el = $(id);
+            if (el) el.addEventListener('change', function () { if (ouvert && !enEcriture) rafraichirFormat(); });
+        });
         /* Filet : si la page se décharge pendant l'aperçu, on rend les fonctions
            d'origine — laisser un `saveState` inerte après coup perdrait l'historique
            de toute la suite de la session. */

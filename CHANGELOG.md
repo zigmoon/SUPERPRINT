@@ -9,6 +9,38 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.632] — 2026-10-16
+
+_Le changement de format **recompose la maquette** — le format s'appliquait déjà, c'est le contenu qui ne suivait pas_
+
+> **Pourquoi cette version existe.** Retour utilisateur : « dans studio IA je pouvais dans les réglages refactoriser la largeur et la longueur du document ; je ne peux dans SuperPrint actuellement, ça ne refactorise pas quand je change de format en live. » Le diagnostic a changé en cours de route, **parce qu'il a été mesuré** : le format changeait bel et bien. Ce qui ne changeait pas, c'était le contenu.
+
+### Changed — le contenu suit désormais le format
+
+- **Ce qui marchait déjà, mesuré avant d'écrire une ligne** : `pageFormat` passe de 210×297 à 260×297 et les canvas de 612 à **754 px** sur **chaque vue**, sans une seule erreur JavaScript. Le format n'était donc pas en cause.
+- **Ce qui ne suivait pas** : le contenu. Un objet posé en `(65, 65)` restait en `(65, 65)` sur une page devenue 30 % plus petite. Dans le studio, `spRegAppliquer()` appelait `spRegRecomposer()` — le document entier était recomposé au nouveau format, et **les corps de texte n'étaient pas mis à l'échelle**.
+- **Mesuré, A4 → A5** : le bloc texte passe de `(91,1 ; 127,9)` à `(64,9 ; 91,2)` et sa mesure de `245,9` à `175,5` ; le cadre de `(108,5 ; 108,5)` en `141,7 × 85,0` à `(77,3 ; 77,4)` en `101,0 × 60,7`.
+- **La typographie ne bouge pas** : corps **14 pt** avant comme après, et aucun `scaleX`/`scaleY` touché. C'est la promesse du réglage : la *mesure* des blocs suit le format, pas la taille des lettres.
+- **Le fond perdu seul ne recompose pas** — il redimensionne pourtant les canvas lui aussi. Le déclencheur est le changement **réel** de `pageFormat`, jamais l'état interne du module.
+- **« Annuler » restitue la géométrie d'origine** (`91,1 / 245,89`), et **A4 → A5 → A4** revient aux mesures de départ.
+- Le compte rendu le dit dans la barre d'état de la trappe : « Format recomposé (1 bloc(s), 1 cadre(s)) · … ».
+
+### Fixed — quatre défauts réels, tous trouvés en mesurant, aucun à la lecture
+
+- ⚠️ **La recomposition arrivait trop tôt pour voir quoi que ce soit.** Juste après l'écriture du format, l'application **vide** `canvases` et reconstruit ses vues **au tour suivant** : relevé `[]` dans le gestionnaire, la vue revenue dès `+0 ms`. La première version annonçait donc, sans mentir, « Format recomposé (0 bloc(s), 0 cadre(s)) ».
+- ⚠️ **Les vues sont RECRÉÉES, pas seulement redimensionnées** — MESURÉ : l'objet canvas de la vue 0 n'est plus le même après, et l'ancien ne porte plus aucun objet. L'instantané conserve donc les **identifiants** des vues, jamais les objets, et chaque vue est retrouvée après coup.
+- ⚠️ **`_fixedWidth` et `_fixedHeight` sont la référence, pas `width`/`height`.** MESURÉ en les laissant en arrière : la **hauteur** du bloc suivait (`129,87 → 92,92 px`) mais sa **largeur** restait figée à `245,89` — les deux traitées par le même code, mais une synchro de l'application reposait la largeur depuis `_fixedWidth`. On pose désormais la valeur **et** sa référence.
+- ⚠️ **Après « Annuler », le panneau gardait les valeurs abandonnées** : le corps n'était rempli qu'une fois. MESURÉ : un « Annuler » ramenait le document en A4 (canvas 612 px), puis bouger la **seule** tirette du fond perdu remettait la page en A5 — canvas **459 px**, soit exactement A5 (148 mm) + 7 mm de fond perdu de chaque côté. Le panneau est maintenant reconstruit à chaque ouverture, et un guetteur réaffiche la valeur du document quand le format est changé depuis le panneau latéral, la trappe ouverte.
+- **La mesure resynchronise le modèle** (`saveAllPages`) : sans cela, le rendu suivant — il y en a un à chaque réglage — remettrait tout à sa place d'avant, ce qui redonnerait exactement le symptôme « ça ne refactorise pas ».
+
+### Verification
+
+- **Nouvelle suite `_verif_format_maquette.mjs` : 126 assertions, 0 échec, en TROIS moteurs** — Chromium, WebKit 26.6 et le **WebKit 16.0 de macOS Monterey**, celui qui a déjà révélé deux défauts invisibles ailleurs.
+- **Batterie complète : 14 suites sur 14 vertes, 616 assertions, 0 échec.**
+- **Deux assertions ont été corrigées parce qu'elles étaient fausses**, et la suite le dit : la première comparait la décoration de page à une grandeur que rien ne permet d'observer (l'application la reconstruit à chaque rendu) ; la seconde exigeait, sur une double page, que la position suive le rapport du format — or **l'application recadre elle-même l'objet avant** : relevé au chronomètre, `747,43 → 571,68 px` dès `+5 ms`, puis la recomposition à `+25 ms`. Ce qui est affirmé, c'est donc ce que ce module gouverne réellement : la **mesure**, le **corps**, et le fait que le bloc reste du bon côté du pli et entièrement dans sa page.
+
+---
+
 ## [1.7.631] — 2026-10-16
 
 _La trappe « Réglages de la maquette » s'ouvre après la barre latérale de droite et **pousse** l'interface — elle ne la recouvre pas_
