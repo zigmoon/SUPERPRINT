@@ -4329,6 +4329,29 @@ if (window._spGpuEnabled) {
         };
     }
 
+    /* ══ v1.7.630 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+
+       `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
+       WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
+       la méthode n'existe pas, et l'appel lève : MESURÉ dans un WebKit 16.0 dont on
+       a retiré la méthode, l'erreur exacte est
+           TypeError: ctx.roundRect is not a function.
+           (In 'ctx.roundRect(-width / 2, -height / 2, width, height, 2)')
+       Comme ces trois fonctions sont des rendus de POIGNÉES Fabric, elles sont
+       appelées à chaque dessin d'une sélection : l'exception interrompait donc le
+       rendu, et les poignées du bloc texte ne s'affichaient pas sur cette machine.
+
+       ⚠️ UNE MÉTHODE ABSENTE LÈVE, UNE PROPRIÉTÉ ABSENTE EST IGNORÉE — c'est toute
+       la différence, et c'est pourquoi ce défaut-ci ne pouvait pas passer inaperçu
+       (contrairement à `ctx.filter` ou `ctx.letterSpacing`, qui sont des
+       propriétés). On trace donc un rectangle simple quand `roundRect` manque :
+       à 3 px sur 12 px avec un rayon de 2 px, la différence est invisible, alors
+       que l'exception, elle, se voyait. */
+    function spTraceArrondi(ctx, x, y, largeur, hauteur, rayon) {
+        if (typeof ctx.roundRect === 'function') { ctx.roundRect(x, y, largeur, hauteur, rayon); return; }
+        ctx.rect(x, y, largeur, hauteur);
+    }
+
     // Poignée rectangulaire verticale pour gauche/droite (suit la rotation)
     function renderVerticalHandle(ctx, left, top, styleOverride, fabricObject) {
         ctx.save();
@@ -4348,7 +4371,7 @@ if (window._spGpuEnabled) {
         const width = 3;
         const height = 12;
         ctx.beginPath();
-        ctx.roundRect(-width / 2, -height / 2, width, height, 2);
+        spTraceArrondi(ctx, -width / 2, -height / 2, width, height, 2);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
@@ -4371,7 +4394,7 @@ if (window._spGpuEnabled) {
         const width = 12;
         const height = 3;
         ctx.beginPath();
-        ctx.roundRect(-width / 2, -height / 2, width, height, 2);
+        spTraceArrondi(ctx, -width / 2, -height / 2, width, height, 2);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
@@ -4394,7 +4417,7 @@ if (window._spGpuEnabled) {
 
         const size = 6;
         ctx.beginPath();
-        ctx.roundRect(-size / 2, -size / 2, size, size, 2);
+        spTraceArrondi(ctx, -size / 2, -size / 2, size, size, 2);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
@@ -4743,7 +4766,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.629 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.630 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5342,12 +5365,57 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        // SOLUTION DÉFINITIVE : Override de _wrapLine de Fabric.js
-        if (typeof fabric !== 'undefined') {
-    const originalWrapLine = fabric.Textbox && fabric.Textbox.prototype._wrapLine ? fabric.Textbox.prototype._wrapLine : null;
+        /* ══ v1.7.630 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
-    // Contexte de mesure partagé pour des mesures stables
+           RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
+           bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
+           récents, pas de bug. »
+
+           REPRODUIT DANS LE VRAI MOTEUR DE CETTE MACHINE. Playwright 1.24.2
+           embarque WebKit 16.0, celui de cette génération de macOS : la sonde y
+           reproduit EXACTEMENT le symptôme, avec l'erreur
+               ReferenceError: Can't find variable: measureCtx
+               at measureRawWithFont (main.js:5500)
+           Le glisser efface sa prévisualisation bleue, appelle
+           createSimpleTextBox, la mesure de texte lève, et il ne reste RIEN : c'est
+           mot pour mot ce que l'utilisateur décrit.
+
+           MESURÉ, ET PAS DÉDUIT : dans cette fonction, `typeof measureCtx` valait
+           `undefined` alors que la ligne de déclaration, DANS le même bloc, avait
+           bien tourné et que `typeof` y valait `object` (compteurs instrumentés :
+           bloc entré 1 fois, contexte initialisé 1 fois, objet non nul). Le binding
+           est donc INVISIBLE depuis la fonction, sans que la portée lexicale
+           l'explique : un analyseur syntaxique réel (acorn) confirme que la
+           déclaration et ses huit usages sont dans le MÊME bloc, et que les huit
+           usages « voient » la déclaration. C'est une défaillance du moteur, et
+           elle ne se déclenche pas sur un cas minimal : j'ai essayé huit
+           combinaisons (appel dans le bloc, hors du bloc, via une autre fonction,
+           avec `var`, avec une fonction affectée) — TOUTES passent dans le même
+           vieux WebKit. Ce qui la déclenche, c'est l'ÉCHELLE : ce bloc conditionnel
+           fait 7 600 lignes, et la fonction y est déclarée puis appelée depuis une
+           fonction imbriquée, elle-même installée sur un prototype.
+
+           LE REMÈDE, ET SA PREUVE. La déclaration est remontée HORS du bloc
+           conditionnel. Le contexte est alors résolu dans la portée supérieure, que
+           tout le fichier voit : mesuré, `typeof measureCtx` DANS la fonction passe
+           de `undefined` à `object`, l'identité est bien la même, l'erreur disparaît
+           et le bloc texte est créé (0 erreur, +58 pixels d'encre dessinés).
+
+           ⚠️ POURQUOI SORTIR LA DÉCLARATION PLUTÔT QUE RÉPARER L'APPEL : le défaut
+           n'est pas dans l'appel, il est dans la résolution du nom depuis une
+           fonction déclarée dans ce très grand bloc. Déplacer le nom hors du bloc
+           supprime la cause ; entourer l'appel d'un garde-fou n'aurait fait que
+           masquer l'erreur pendant que le texte serait mesuré avec un contexte nul.
+
+           ⚠️ ET LEÇON GÉNÉRALE : une variable déclarée dans un bloc conditionnel
+           géant, utilisée par des fonctions déclarées dans ce même bloc, est un
+           pari sur le moteur. On ne parie pas ici : le nom vit désormais dans la
+           portée supérieure, où rien ne peut le rendre invisible. */
     const measureCtx = document.createElement('canvas').getContext('2d');
+
+    // SOLUTION DÉFINITIVE : Override de _wrapLine de Fabric.js
+    if (typeof fabric !== 'undefined') {
+    const originalWrapLine = fabric.Textbox && fabric.Textbox.prototype._wrapLine ? fabric.Textbox.prototype._wrapLine : null;
 
     function spGraphemeSplit(str) {
         try {
@@ -51051,7 +51119,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.629 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.630 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -51199,7 +51267,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.629) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.630) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
