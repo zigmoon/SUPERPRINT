@@ -1,0 +1,123 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  COMPATIBILITÉ macOS DES INSTALLEURS PUBLIÉS — MESURE, PAS SUPPOSITION.
+#
+#  POURQUOI CE WORKFLOW EXISTE. `minimumSystemVersion` est déclaré dans
+#  `tauri.conf.json`, mais ce n'est qu'une chaîne écrite dans l'Info.plist. Ce que
+#  le NOYAU regarde avant de lancer un binaire, ce sont les commandes de chargement
+#  du Mach-O (`LC_BUILD_VERSION` / `LC_VERSION_MIN_MACOSX`), et elles viennent du
+#  SDK avec lequel le projet a été LINKÉ — pas de la configuration Tauri.
+#
+#  Or `MACOSX_DEPLOYMENT_TARGET` n'est défini NULLE PART dans `build-desktop.yml` :
+#  le binaire est donc linké avec la valeur par défaut du runner. Si ce défaut est
+#  supérieur à 10.15, l'application refuse de se lancer sur Catalina ou Monterey
+#  alors même que l'Info.plist promet 10.15 — et rien ne le signalerait.
+#
+#  On mesure donc l'ARTEFACT PUBLIÉ, pas la configuration :
+#    · la version minimale DÉCLARÉE  (Info.plist, LSMinimumSystemVersion)
+#    · la version minimale RÉELLE    (vtool -show-build → minos)
+#    · les architectures             (lipo -info)
+#    · la version du SDK de build    (LC_BUILD_VERSION → sdk)
+#  Et on agit sur les trois applications, parce que les trois sont livrées.
+#
+#  Aucun paquet n'est construit ici : on lit ce qui est déjà en ligne. C'est court
+#  (deux minutes) et cela évite de confondre « ce que le code prétend » avec « ce
+#  que l'utilisateur télécharge ».
+# ══════════════════════════════════════════════════════════════════════════════
+name: Compatibilité macOS des installateurs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/macos-compat.yml'
+  schedule:
+    # Une fois par semaine : si une future construction remonte la version minimale
+    # sans que personne ne le voie, la mesure le dira.
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  mesurer:
+    name: Lire les Mach-O publiés
+    runs-on: macos-latest
+    steps:
+      - name: Runner
+        run: |
+          echo "Runner      : $RUNNER_OS $RUNNER_ARCH"
+          echo "macOS       : $(sw_vers -productVersion)  ($(sw_vers -buildVersion))"
+          echo "Xcode       : $(xcodebuild -version | tr '\n' ' ')"
+          echo "SDK par défaut : $(xcrun --show-sdk-version)  ($(xcrun --show-sdk-path))"
+
+      - name: Télécharger les six images disque publiées
+        run: |
+          set -e
+          mkdir -p dmg
+          for app in SuperPrint Studio-IA SuperTyPo; do
+            for arch in Intel AppleSilicon; do
+              url="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/${app}-macOS-${arch}.dmg"
+              echo "— ${app}-macOS-${arch}.dmg"
+              curl -sSL -o "dmg/${app}-${arch}.dmg" "$url"
+            done
+          done
+          ls -l dmg/ | sed -n '1,20p'
+
+      - name: Lire la version minimale DÉCLARÉE et la version minimale RÉELLE
+        run: |
+          set -u
+          echo "════════════════════════════════════════════════════════════════════"
+          for f in dmg/*.dmg; do
+            nom="$(basename "$f" .dmg)"
+            echo ""
+            echo "── $nom ────────────────────────────────────────────────"
+
+            # Monter l'image disque dans un point de montage dédié.
+            point="$(mktemp -d)"
+            if ! hdiutil attach "$f" -nobrowse -readonly -mountpoint "$point" >/dev/null 2>&1; then
+              echo "  ÉCHEC du montage — image illisible"
+              rmdir "$point" 2>/dev/null || true
+              continue
+            fi
+
+            app="$(find "$point" -maxdepth 1 -name '*.app' -print -quit)"
+            if [ -z "$app" ]; then
+              echo "  AUCUNE application .app dans l'image"
+              hdiutil detach "$point" >/dev/null 2>&1 || true
+              rmdir "$point" 2>/dev/null || true
+              continue
+            fi
+
+            plist="$app/Contents/Info.plist"
+            exe="$app/Contents/MacOS/$(basename "$app" .app)"
+
+            # 1) Ce que l'Info.plist PROMET.
+            declare="$(plutil -extract LSMinimumSystemVersion raw -o - "$plist" 2>/dev/null || echo '(absent)')"
+            echo "  version minimale DÉCLARÉE (Info.plist) : $declare"
+
+            # 2) Ce que le binaire EXIGE — c'est la seule valeur qui décide.
+            if [ -f "$exe" ]; then
+              echo "  architectures                          : $(lipo -archs "$exe" 2>/dev/null || echo '?')"
+              echo "  --- vtool -show-build (le noyau lit ceci) ---"
+              vtool -show-build "$exe" 2>/dev/null | sed 's/^/    /' || echo "    vtool indisponible"
+              minos="$(vtool -show-build "$exe" 2>/dev/null | awk '/minos/{print $2; exit}')"
+              sdk="$(vtool -show-build "$exe" 2>/dev/null | awk '/sdk/{print $2; exit}')"
+              echo "  version minimale RÉELLE (minos)        : ${minos:-inconnue}"
+              echo "  SDK de construction (sdk)              : ${sdk:-inconnu}"
+              if [ -n "${minos:-}" ] && [ "$minos" != "$declare" ]; then
+                echo "  ⚠️  ÉCART : l'Info.plist annonce $declare mais le binaire exige $minos"
+                echo "      → c'est $minos qui s'applique au lancement."
+              fi
+            else
+              echo "  binaire introuvable à $exe"
+              ls "$app/Contents/MacOS/" 2>/dev/null | sed 's/^/    /' || true
+            fi
+
+            # 3) Somme de contrôle du fichier publié, pour tracer ce qui a été mesuré.
+            echo "  sha256 de l'image                      : $(shasum -a 256 "$f" | awk '{print substr($1,1,24)}')…"
+
+            hdiutil detach "$point" >/dev/null 2>&1 || true
+            rmdir "$point" 2>/dev/null || true
+          done
+          echo ""
+          echo "════════════════════════════════════════════════════════════════════"
