@@ -34,7 +34,7 @@ npm login --auth-type=web
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.114**).
+C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.114** — publiée le 16/10/2026, voir l'état mesuré plus bas).
 
 > 🔑 **MESURÉ LE 15/10/2026 — LA PUBLICATION EXIGE UNE CLÉ DE SÉCURITÉ, ET UN CODE DE 16 CHIFFRES.**
 > Ce compte a une 2FA de type **clé de sécurité** (WebAuthn), **pas** un code TOTP à 6 chiffres : `npm publish`
@@ -100,6 +100,10 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 > 📦 Le zip est régénéré par **`node tools/make-release-zip.mjs`** (depuis la racine du repo : il crée `superprint/sp213-local.zip` puis contrôle le résultat). ⚠️ Le script est **suivi par git** — celui-ci et non un script de `_dev/`, qui est ignoré et n'existerait pas sur une autre machine. Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
 > ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.629**, aligné sur ce qui est EN LIGNE, et **vérifié le 16/10/2026** : zip `1.7.629`, **55 835 569 octets**, sha256 `2DD44B96…`, **identique octet pour octet** au zip local ; `version.txt` = **1.7.629** sur superprint.cc.
+>
+> ✅ **PUBLICATION `superprint@1.0.114` — ÉTAT MESURÉ le 16/10/2026 à 09:47 (07:45:56 UTC).** Le chemin d'écriture a répondu `+ superprint@1.0.114`. Les chemins de **lecture** ont suivi avec le retard habituel : `dist-tags.latest` annonçait encore `1.0.113` et le tarball renvoyait **404** pendant les premières minutes — **sans que rien n'ait échoué**. Puis, dans l'ordre : `time` a listé `1.0.114` à 07:45:56 UTC, `dist-tags.latest` est passé à `1.0.114`, `npm view superprint version` a répondu `1.0.114`, et le tarball est enfin devenu téléchargeable. **Le tarball publié a été OUVERT** (20 072 octets, identique au `npm pack` local) : `MIN_APP_VERSION = '1.7.629'` et `package.json = 1.0.114` sont bien dedans.
+>
+> ✅ **ET LE CLI A ÉTÉ ESSAYÉ POUR DE VRAI, PAS SEULEMENT INSPECTÉ.** Lancé dans un dossier personnel **isolé** (pour ne pas toucher l'installation de la machine), l'enchaînement complet a été observé : `[1/4] Latest online version: v1.7.629` → `[2/4] Downloaded (53 MB)` → `[3/4] Application extracted` **sans l'erreur de version**, donc le contrôle `compareVersions(downloadedVersion, onlineVersion)` **passe** → `[4/4] Dependencies installed` → `SuperPrint runs at: http://127.0.0.1:5173/`. L'application installée porte `version.txt` = `1.7.629`, le `CACHE_NAME` `superprint-shell-v1.7.629-regles-qui-suivent-la-page`, l'empreinte `JS/main.js?v=20261015-v629-regles-qui-suivent-la-page`, et son `main.js` contient les marqueurs du correctif des règles. ⚠️ L'URL de l'éditeur sur le serveur local est `/superprint/app/index.html` — la racine `/` sert la page d'accueil, dont les mentions de version sont historiques et ne disent rien de la version installée.
 >
 > 🔴 **ET LA LEÇON SUR LES EMPREINTES, À NE PAS OUBLIER** : le chiffre qui figurait ici avant, « zip 1.7.617, 56 459 564 octets, sha256 `EAB82EEA…8B951` », était **exact** — mais pour le zip de la version **PRÉCÉDENTE**. Le fichier déployé avait été retéléchargé et **haché**, jamais **ouvert**. Une empreinte prouve qu'un fichier est intact, **pas** qu'il est le bon. La lecture qui fait foi est **DANS l'archive** : `version.txt` et le `package.json` interne, plus le `CACHE_NAME` du service worker (`superprint-shell-v1.7.629-regles-qui-suivent-la-page` pour cette version).
 
