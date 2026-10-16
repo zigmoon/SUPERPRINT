@@ -93,13 +93,17 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.629`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `version.txt` | Version en ligne (`1.7.630`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 
 > 📦 Le zip est régénéré par **`node tools/make-release-zip.mjs`** (depuis la racine du repo : il crée `superprint/sp213-local.zip` puis contrôle le résultat). ⚠️ Le script est **suivi par git** — celui-ci et non un script de `_dev/`, qui est ignoré et n'existerait pas sur une autre machine. Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
-> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.629**, aligné sur ce qui est EN LIGNE, et **vérifié le 16/10/2026** : zip `1.7.629`, **55 835 569 octets**, sha256 `2DD44B96…`, **identique octet pour octet** au zip local ; `version.txt` = **1.7.629** sur superprint.cc.
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.629** — il reste **valide**, mais il n'est plus aligné sur ce qui est en ligne, et c'est sans danger : le CLI prend le **plus récent** des deux (`newestVersion(version.txt, MIN_APP_VERSION)`), donc un plancher en retard accepte tout ce qui est plus nouveau sans bloquer personne.
+>
+> 📊 **ÉTAT EN LIGNE, MESURÉ LE 16/10/2026 à 22 h — et lu DANS l'archive**, comme la leçon sur les empreintes l'exige plus bas : `version.txt` sur superprint.cc répond **`1.7.630`** ; le zip servi par `app.zigmoon.com/sp213-local.zip` pèse **55 837 339 octets**, et son `public/superprint/version.txt` interne dit **`1.7.630`**. En revanche `maquettePanel` et `_SP_MAQUETTE_631` y sont **absents** de `main.js` : la **1.7.631 n'est donc pas encore téléversée**, ce qui est l'état attendu au moment d'écrire ces lignes. *(La mesure précédente, « 55 835 569 octets, sha256 `2DD44B96…` », reste exacte — pour le zip de la 1.7.629.)*
+>
+> 🆕 **1.7.631 EST PRÊTE À TÉLÉVERSER** — régénérée le 16/10/2026 avec `node tools/make-release-zip.mjs`, le script **suivi par git** (les deux scripts de zip, celui-ci et `_dev/scripts/_make_zip.cjs`, produisent le même contenu : 831 entrées, mêmes 14 entrées racine, même taille ; seul l'agencement des octets diffère). **55 852 256 octets**, tous les contrôles verts : `version.txt` et `package.json` à `1.7.631`, badge `v1.7.631`, `CACHE_NAME` `superprint-shell-v1.7.631-trappe-reglages-maquette`, empreinte `20261015-v631-trappe-reglages-maquette`, 46 vignettes de modèles, `node_modules` **absent**, les quatre documents de licence présents. **Avancer `MIN_APP_VERSION` à `1.7.631` SEULEMENT après avoir téléversé le zip ET `version.txt`.**
 >
 > ✅ **PUBLICATION `superprint@1.0.115` — ÉTAT MESURÉ le 16/10/2026 à 12:09 (10:07:26 UTC).** Cette livraison ne change pas le lanceur : elle ajoute l'**image de présentation** aux README, visible **sur GitHub ET sur npm**. Le README affiché par npm vient du paquet publié, donc il fallait republier pour que l'image y apparaisse.
 >
