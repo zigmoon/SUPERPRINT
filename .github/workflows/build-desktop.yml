@@ -321,8 +321,8 @@ jobs:
 
           # ── LE TEXTE DE LA PAGE VIT DANS UN FICHIER, PAS DANS CE YAML ────────
           # `.github/release-notes-desktop-latest.md` est la SEULE source du titre
-          # et du texte : bilingue (anglais puis francais), avec la version, les
-          # liens du site et l'adresse de contact. Le workflow « Page de version
+          # et du texte : en anglais seulement, avec la version, les liens du site
+          # et l'adresse de contact. Le workflow « Page de version
           # GitHub » relit le meme fichier pour rafraichir la page sans rien
           # reconstruire — deux copies divergeraient, donc il n'y en a qu'une.
           sed "s/@VERSION@/$version/g" .github/release-notes-desktop-latest.md > notes-desktop-latest.md
@@ -341,7 +341,7 @@ jobs:
           # lien, sans contact. Un texte de page est une donnée VIVANTE : il se
           # réécrit à chaque passage.
           gh release edit desktop-latest \
-            --title "SuperPrint $version — desktop applications / applications de bureau" \
+            --title "SuperPrint $version — desktop applications" \
             --notes-file notes-desktop-latest.md
 
           gh release upload desktop-latest livraison/* --clobber
@@ -409,7 +409,7 @@ jobs:
 
           gh release view "$tag" >/dev/null 2>&1 || \
             gh release create "$tag" \
-              --title "SuperPrint $version — desktop applications / applications de bureau" \
+              --title "SuperPrint $version — desktop applications" \
               --notes-file notes-archive.md \
               --latest=false
           gh release upload "$tag" livraison/* SHA256SUMS --clobber

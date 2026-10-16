@@ -2,7 +2,7 @@
 #  PAGE DE VERSION GITHUB — le texte de « desktop-latest », sans reconstruire.
 #
 #  POURQUOI CE WORKFLOW EXISTE. Le texte de la page de telechargement vit dans
-#  `.github/release-notes-desktop-latest.md` (anglais, puis francais). Or
+#  `.github/release-notes-desktop-latest.md` (anglais seulement). Or
 #  `build-desktop.yml` compile et publie VINGT ET UN binaires : le declencher pour
 #  corriger une phrase coute dix minutes de construction pour trois lignes de
 #  texte. Ici, la meme edition se fait en quelques secondes, sur un seul job.
@@ -73,7 +73,7 @@ jobs:
             gh release create desktop-latest --latest=false
 
           gh release edit desktop-latest \
-            --title "SuperPrint $version — desktop applications / applications de bureau" \
+            --title "SuperPrint $version — desktop applications" \
             --notes-file /tmp/notes.md
 
           # Le badge « Latest » doit rester sur desktop-latest : c'est elle que le
