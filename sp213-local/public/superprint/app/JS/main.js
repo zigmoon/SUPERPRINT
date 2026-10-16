@@ -4743,7 +4743,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.628 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.629 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -51051,37 +51051,95 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    // Supprimer les anciennes règles
-    const oldHRuler = canvasInner.querySelector('.ruler-horizontal');
-    const oldVRuler = canvasInner.querySelector('.ruler-vertical');
-    if (oldHRuler) oldHRuler.remove();
-    if (oldVRuler) oldVRuler.remove();
-    /* v1.7.621 — les règles ne vivent plus DANS la page mais dans le cadre. Ce
-       nettoyage reste : il enlève les règles laissées par une version antérieure
-       ou par un rendu interrompu, et retire le cadre quand on masque les règles. */
-    const _spCadreExistant = canvasInner.closest('.canvas-wrapper');
-    if (_spCadreExistant && _spCadreExistant.__spRegles615) {
-        try { _spCadreExistant.__spRegles615.conteneur.remove(); } catch (_) {}
-        try { if (_spCadreExistant.__spRegles615.observateur) _spCadreExistant.__spRegles615.observateur.disconnect(); } catch (_) {}
-        try { if (_spCadreExistant.__spRegles615.surDefilement) _spCadreExistant.__spRegles615.surDefilement.retirer(); } catch (_) {}
-        try { if (_spCadreExistant.__spRegles615.surRedimensionnement) window.removeEventListener('resize', _spCadreExistant.__spRegles615.surRedimensionnement); } catch (_) {}
-        try { if (_spCadreExistant.__spRegles615.surveiller) clearInterval(_spCadreExistant.__spRegles615.surveiller); } catch (_) {}
-        /* On rend au cadre TOUT son espace : le badge de version, le badge
-           « Local » et les widgets reprennent leur place d'origine. */
-        try {
-            _spCadreExistant.style.setProperty('--sp-regle-haut', '0px');
-            _spCadreExistant.style.setProperty('--sp-regle-gauche', '0px');
-        } catch (_) {}
-        _spCadreExistant.__spRegles615 = null;
-    }
+    /* ══ v1.7.629 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+
+       ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
+       `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
+       de quatre pages — 1 seule, 2-3 en double, 4 seule — cela fait six appels
+       pour trois vues, et chaque appel commençait par DÉTRUIRE le jeu de règles
+       du cadre avant de le reconstruire. Mesuré en étiquetant les éléments et en
+       interceptant les écouteurs : six barres distinctes sont créées, `el1` à
+       `el11`, et seule la dernière est encore dans le document — les cinq autres
+       sont détachées, avec leurs gestionnaires de glisser, qui ne recevront donc
+       plus jamais aucun clic.
+
+       Et la survivante est celle du DERNIER canvas du DOM, c'est-à-dire de la
+       DERNIÈRE PAGE du document. Dans le cas mesuré, cette page se trouvait à
+       1 986 px sous le haut du cadre, qui en fait 943 :
+         · origine verticale hors du cadre → AUCUNE graduation à gauche ;
+         · origine horizontale de cette page-là → mesures fausses sur la page
+           regardée, et rien ne se recalculait au défilement, puisque l'origine
+           était celle d'une page fixe choisie une fois pour toutes ;
+         · un seul glisser vivant, celui de cette page invisible → le repère
+           naissait dedans puis était retiré aussitôt, la souris n'y étant pas.
+
+       Le commentaire plus bas promettait pourtant « un seul jeu de règles par
+       cadre » : ce nettoyage annulait cette intention à chaque appel. Deux
+       moitiés du même fichier se contredisaient, et c'est le nettoyage qui
+       gagnait. Il ne sert plus que dans DEUX cas légitimes, tous deux traités
+       ci-dessous : les règles qu'une version antérieure laissait DANS la page, et
+       le démontage demandé quand on masque les règles. */
+    canvasInner.querySelectorAll('.ruler-horizontal, .ruler-vertical').forEach((el) => { try { el.remove(); } catch (_) {} });
+    const _spWrapper = canvasInner.closest('.canvas-wrapper') || canvasInner.parentElement;
     
     if (!visible) {
+        /* Démontage — le SEUL endroit qui détruit un jeu de règles, désormais. */
+        if (_spWrapper && _spWrapper.__spRegles615) {
+            const etat = _spWrapper.__spRegles615;
+            try { etat.conteneur.remove(); } catch (_) {}
+            try { if (etat.observateur) etat.observateur.disconnect(); } catch (_) {}
+            try { if (etat.surDefilement && etat.redessiner) etat.surDefilement.removeEventListener('scroll', etat.redessiner); } catch (_) {}
+            try { if (etat.surSurvol) document.removeEventListener('mousemove', etat.surSurvol); } catch (_) {}
+            try { if (etat.surRedimensionnement) window.removeEventListener('resize', etat.surRedimensionnement); } catch (_) {}
+            try { if (etat.surveiller) clearInterval(etat.surveiller); } catch (_) {}
+            /* On rend au cadre TOUT son espace : le badge de version, le badge
+               « Local » et les widgets reprennent leur place d'origine. */
+            try {
+                _spWrapper.style.setProperty('--sp-regle-haut', '0px');
+                _spWrapper.style.setProperty('--sp-regle-gauche', '0px');
+            } catch (_) {}
+            _spWrapper.__spRegles615 = null;
+        }
         // Masquer les repères (garder en mémoire leur position dans le DOM)
         canvasInner.querySelectorAll('.guide-line, .guide-label').forEach(el => { el.style.display = 'none'; });
         return;
     }
     // Restaurer les repères existants
     canvasInner.querySelectorAll('.guide-line, .guide-label').forEach(el => { el.style.display = ''; });
+
+    /* ══ LES REPÈRES DÉJÀ LÀ REDEVIENNENT DÉPLAÇABLES — DANS LES DEUX CHEMINS ══
+       ⚠️ Ce branchement existait après la construction des règles, donc il ne
+       s'exécutait qu'à ce moment-là. Comme on sort maintenant par un retour
+       anticipé quand les règles existent déjà, les repères RESTAURÉS d'un document
+       — ajoutés après coup par spRestoreGuides — n'auraient plus jamais reçu leur
+       gestionnaire de déplacement, et seraient devenus immobiles. On le fait donc
+       ici, une fois, pour les deux chemins. */
+    const rendreReperesDeplacables = () => {
+        try {
+            canvasInner.querySelectorAll('.guide-line.horizontal').forEach((line) => {
+                makeGuideDraggable(line, findSiblingLabel(line, 'horizontal'), 'horizontal');
+            });
+            canvasInner.querySelectorAll('.guide-line.vertical').forEach((line) => {
+                makeGuideDraggable(line, findSiblingLabel(line, 'vertical'), 'vertical');
+            });
+        } catch (_) {}
+    };
+
+    /* ══ LE JEU DE RÈGLES EXISTE DÉJÀ POUR CE CADRE : ON LE RÉUTILISE ══
+       C'est la correction proprement dite. Six appels consécutifs — un par canvas —
+       ne doivent plus produire six jeux de règles dont cinq sont jetés, mais UN
+       SEUL, simplement redessiné. Un seul jeu suffit pour toutes les pages, et
+       c'est même la condition pour qu'il soit juste : le redessin recalcule à
+       chaque fois la page de référence, donc un jeu unique sait montrer la page 1
+       puis la double 2-3 puis la page 4 sans jamais être recréé. */
+    if (_spWrapper && _spWrapper.__spRegles615 && document.contains(_spWrapper.__spRegles615.conteneur)) {
+        rendreReperesDeplacables();
+        try {
+            if (typeof _spWrapper.__spRegles615.surPointeur === 'function') _spWrapper.__spRegles615.surPointeur();
+            else if (_spWrapper.__spRegles615.redessiner) _spWrapper.__spRegles615.redessiner();
+        } catch (_) {}
+        return;
+    }
     
     const canvasWidth = canvasElement.width;
     const canvasHeight = canvasElement.height;
@@ -51139,13 +51197,118 @@ https://superprint.app
        barre Y et l'origine de ses graduations s'en déduisent, donc rien ne peut
        se désaligner. */
     const SP_REGLE_TAILLE = 20;
-    const _spWrapper = canvasInner.closest('.canvas-wrapper') || canvasInner.parentElement;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
+
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.629) ══
+       Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
+       MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
+       quelle page donne l'origine ? */
+
+    /* Le canvas Fabric qui porte une page : on passe par son élément DOM, seule
+       clé commune aux deux mondes. `bleedInfo.isSpread` dit si la vue est une
+       double page. */
+    const _spFabricPour = (inner) => {
+        if (!inner) return null;
+        const listes = [];
+        try { if (typeof canvases !== 'undefined' && canvases && canvases.length) listes.push(canvases); } catch (_) {}
+        try { if (window.spCanvases && window.spCanvases.length) listes.push(window.spCanvases); } catch (_) {}
+        for (const liste of listes) {
+            for (const c of liste) {
+                if (!c || !c.lowerCanvasEl || !c.lowerCanvasEl.closest) continue;
+                if (c.lowerCanvasEl.closest('.canvas-inner') === inner) return c;
+            }
+        }
+        return null;
+    };
+
+    const _spEstPageDouble = (inner) => {
+        if (!inner) return false;
+        const cv = _spFabricPour(inner);
+        if (cv && cv.bleedInfo && typeof cv.bleedInfo.isSpread === 'boolean') return cv.bleedInfo.isSpread;
+        /* Repli sans Fabric : le nom du canvas le dit (spread-canvas-N). */
+        const c = inner.querySelector('canvas');
+        return !!(c && c.id && c.id.indexOf('spread-canvas') === 0);
+    };
+
+    /* Toutes les pages du document. On les relit à chaque fois : un document
+       change de nombre de pages, de mode, et une liste mémorisée désignerait des
+       éléments retirés du document. On se limite au cadre quand on peut : il est
+       le seul à porter des règles. */
+    const _spPages = () => {
+        try {
+            let liste = _spWrapper ? _spWrapper.querySelectorAll('.canvas-inner') : null;
+            if (!liste || !liste.length) liste = document.querySelectorAll('.canvas-inner');
+            return Array.prototype.slice.call(liste);
+        } catch (_) { return []; }
+    };
+
+    /* La page SOUS LE POINTEUR, ou null si le pointeur n'est sur aucune page. */
+    const _spPageSousPointeur = (clientX, clientY) => {
+        let trouve = null, aire = Infinity;
+        for (const el of _spPages()) {
+            if (!document.contains(el)) continue;
+            const r = el.getBoundingClientRect();
+            if (clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) continue;
+            /* La plus PETITE qui contient le point : si deux se recouvraient, c'est
+               la plus précise qui doit gagner. */
+            const a = r.width * r.height;
+            if (a < aire) { aire = a; trouve = el; }
+        }
+        return trouve;
+    };
+
+    /* La page VISIBLE qui occupe le plus le cadre. C'est le repli, et il ne peut
+       par construction JAMAIS désigner une page hors de l'écran : c'est ce qui
+       garantit qu'une barre de règle ne reste plus vide. */
+    const _spPageLaPlusVisible = (cadre) => {
+        let trouve = null, mieux = 0;
+        for (const el of _spPages()) {
+            if (!document.contains(el)) continue;
+            const r = el.getBoundingClientRect();
+            const v = Math.max(0, Math.min(r.bottom, cadre.bottom) - Math.max(r.top, cadre.top));
+            if (v > mieux) { mieux = v; trouve = el; }
+        }
+        if (!trouve) {
+            /* Aucune page dans le cadre : document plus court que le cadre, ou
+               défilement au-delà des pages. On prend la première qui n'est pas
+               entièrement au-dessus du cadre, sinon la première tout court. */
+            const pages = _spPages().filter((el) => document.contains(el));
+            trouve = pages.find((el) => el.getBoundingClientRect().bottom > cadre.top) || pages[0] || null;
+        }
+        return trouve;
+    };
+
+    /* LA page de référence : le pointeur d'abord — c'est le comportement
+       d'InDesign, et c'est ce qui rend le geste cohérent, puisqu'on dépose un
+       repère là où l'on vise — à défaut la page visible la plus large. */
+    const _spPageReference = (cadre) => {
+        const etat = _spWrapper && _spWrapper.__spRegles615;
+        const pos = etat && etat.pointeur;
+        let page = null;
+        if (pos && pos.dansLeCadre) page = _spPageSousPointeur(pos.x, pos.y);
+        if (!page) page = _spPageLaPlusVisible(cadre);
+        return page;
+    };
 
     function _spReglesDessiner() {
         if (!_spWrapper || !_spWrapper.__spRegles615) return;
         const etat = _spWrapper.__spRegles615;
-        if (!etat.page || !document.contains(etat.page)) return;
+        const cadre = _spWrapper.getBoundingClientRect();
+        if (cadre.width < 2) return;
+        /* ══ QUELLE PAGE DONNE L'ORIGINE ? — RECALCULÉ À CHAQUE REDESSIN ══
+           C'est ici que se joue le défaut rapporté. La page de référence n'est plus
+           mémorisée à la création des règles : elle est redemandée à chaque
+           redessin, depuis la position du pointeur et, à défaut, depuis ce qui est
+           visible. Les graduations suivent donc le défilement, le passage en double
+           page, et le survol — au lieu de rester celles de la page qui se trouvait
+           là où les règles avaient été construites.
+           Mesuré avant correction : origine verticale à 1 986 px pour un cadre de
+           943 px, donc barre de gauche ENTIÈREMENT vide. */
+        const page = _spPageReference(cadre);
+        if (!page || page.offsetWidth <= 0) return;
+        etat.page = page;
+        etat.spread = _spEstPageDouble(page);
+        etat.largeurPageMm = pageFormat ? pageFormat.width : 0;
         /* ⚠️ LE ZOOM SE MESURE, IL NE SE LIT PAS — c'est la correction d'un vrai
            défaut. `typeof window.zoomLevel` vaut 'object' : le garde-fou
            `typeof zoomLevel === 'number'` était donc toujours faux, et le repli
@@ -51156,19 +51319,18 @@ https://superprint.app
            le facteur appliqué : `getBoundingClientRect()` inclut le `transform`,
            `offsetWidth` non. Ce rapport ne dépend donc d'AUCUNE variable interne,
            et reste juste si l'application change de mécanisme de zoom. */
-        const cadre = _spWrapper.getBoundingClientRect();
-        const page = etat.page.getBoundingClientRect();
-        const zoom = (etat.page.offsetWidth > 0) ? (page.width / etat.page.offsetWidth) : 1;
-        if (cadre.width < 2 || page.width < 2) return;
+        const rect = page.getBoundingClientRect();
+        const zoom = (page.offsetWidth > 0) ? (rect.width / page.offsetWidth) : 1;
+        if (rect.width < 2) return;
         /* `mmToPx` convertit des points (72/25,4) et ne connaît pas le zoom :
            l'écart réel à l'écran est donc `mmToPx(x) × zoom`. */
         const fondPerdu = mmToPx(bleed) * zoom;
-        const origineX = page.left - cadre.left + fondPerdu;
-        const origineY = page.top - cadre.top + fondPerdu;
+        const origineX = rect.left - cadre.left + fondPerdu;
+        const origineY = rect.top - cadre.top + fondPerdu;
         const pas = mmToPx(10) * zoom;
         if (!(pas > 2)) return;                          // zoom trop faible : illisible
-        const mmLargeur = Math.max(0, pxToMm((page.width - 2 * fondPerdu) / zoom));
-        const mmHauteur = Math.max(0, pxToMm((page.height - 2 * fondPerdu) / zoom));
+        const mmLargeur = Math.max(0, pxToMm((rect.width - 2 * fondPerdu) / zoom));
+        const mmHauteur = Math.max(0, pxToMm((rect.height - 2 * fondPerdu) / zoom));
 
         const dessinerAxe = (regle, longueurCadre, origine, mmMax, horizontal) => {
             while (regle.firstChild) regle.removeChild(regle.firstChild);
@@ -51238,10 +51400,12 @@ https://superprint.app
     if (!_spWrapper) {
         console.warn('[Règles v621] cadre de prévisualisation introuvable');
     } else {
-        const dejaLa = _spWrapper.__spRegles615 && document.contains(_spWrapper.__spRegles615.conteneur);
-        const conteneur = dejaLa
-            ? _spWrapper.__spRegles615.conteneur
-            : document.createElement('div');
+        /* On arrive ici UNIQUEMENT si ce cadre n'a pas de règles : le cas
+           contraire a déjà été traité plus haut, par un redessin et un retour.
+           La branche « elles existent déjà » qui vivait ici a donc disparu — c'est
+           elle qui, en réutilisant un conteneur que le nettoyage venait de
+           détruire, faisait échouer les deux intentions à la fois. */
+        const conteneur = document.createElement('div');
 
         /* ── LES ÉLÉMENTS FLOTTANTS CÈDENT LA PLACE À LA RÈGLE ────────────────
            MESURÉ, et c'est ce qui a motivé ce bloc : le badge de version est posé
@@ -51260,7 +51424,13 @@ https://superprint.app
             _spWrapper.style.setProperty('--sp-regle-gauche', SP_REGLE_TAILLE + 'px');
         } catch (_) {}
 
-        if (!dejaLa) {
+        /* ⚠️ GARDE-FOU, ET IL COMPTE : ce bloc CONSTRUIT, il ne doit donc jamais
+           écraser un jeu de règles existant. La sortie anticipée plus haut rend la
+           condition toujours vraie ici ; elle est réécrite quand même pour que ce
+           bloc reste juste si quelqu'un retire un jour ce retour. C'est très
+           exactement le piège qui a produit le défaut : deux moitiés de code qui
+           se croyaient chacune protégée, et aucune ne l'était. */
+        if (!(_spWrapper.__spRegles615 && document.contains(_spWrapper.__spRegles615.conteneur))) {
             conteneur.id = 'spRegles615';
             /* `pointer-events:none` sur le cadre : les règles ne doivent pas
                intercepter les clics destinés au document. Les règles elles-mêmes
@@ -51293,7 +51463,38 @@ https://superprint.app
             _spWrapper.__spRegles615 = {
                 conteneur, hRuler, vRuler, page: canvasInner,
                 exportInfo: null, spread: !!isSpreadCanvas, largeurPageMm: pageFormat ? pageFormat.width : 0,
+                /* Position du pointeur, dans le repère de l'écran. Elle est relue à
+                   CHAQUE redessin — et non mémorisée comme page — pour qu'un
+                   défilement sans mouvement de souris recalcule correctement la
+                   page de référence : c'est le cas même du défaut rapporté, où
+                   « les mesures ne suivent pas le défilement ». */
+                pointeur: null,
             };
+
+            /* ── LE POINTEUR DÉCIDE DE LA PAGE DE RÉFÉRENCE ──
+               On ne redessine QUE si cette page change : redessiner à chaque
+               déplacement de souris ferait clignoter la règle et coûterait cher
+               pour rien. Le seuil de trois pixels évite de relire la géométrie de
+               toutes les pages à chaque frémissement du pointeur. */
+            const surSurvol = (e) => {
+                try {
+                    const etat = _spWrapper && _spWrapper.__spRegles615;
+                    if (!etat) return;
+                    const cadre = _spWrapper.getBoundingClientRect();
+                    etat.pointeur = {
+                        x: e.clientX, y: e.clientY,
+                        dansLeCadre: (e.clientX >= cadre.left && e.clientX <= cadre.right && e.clientY >= cadre.top && e.clientY <= cadre.bottom),
+                    };
+                    if (etat.dernierSurvol && Math.abs(e.clientX - etat.dernierSurvol.x) < 3 && Math.abs(e.clientY - etat.dernierSurvol.y) < 3) return;
+                    etat.dernierSurvol = { x: e.clientX, y: e.clientY };
+                    if (_spPageReference(cadre) !== etat.page) _spReglesDessiner();
+                } catch (_) {}
+            };
+            document.addEventListener('mousemove', surSurvol, { passive: true });
+            _spWrapper.__spRegles615.surSurvol = surSurvol;
+            /* Le nom `surPointeur` est celui que la sortie anticipée appelle : on
+               redessine pour adopter la page sous le curseur. */
+            _spWrapper.__spRegles615.surPointeur = () => { try { _spReglesDessiner(); } catch (_) {} };
 
             /* ── LE REDESSIN. Trois déclencheurs, et le troisième est le zoom. */
             /* ⚠️ LE REDESSIN EST DIFFÉRÉ D'UNE IMAGE, ET CE N'EST PAS UN DÉTAIL.
@@ -51364,12 +51565,6 @@ https://superprint.app
                 obs.observe(pagesContainer, { attributes: true, attributeFilter: ['style'] });
                 _spWrapper.__spRegles615.observateur = obs;
             }
-        } else {
-            /* Le cadre existe déjà : on le rattache à la page courante — c'est
-               elle qui donne l'origine — et on rafraîchit. */
-            _spWrapper.__spRegles615.page = canvasInner;
-            _spWrapper.__spRegles615.spread = !!isSpreadCanvas;
-            _spWrapper.__spRegles615.largeurPageMm = pageFormat ? pageFormat.width : 0;
         }
 
         _spReglesDessiner();
@@ -51385,36 +51580,74 @@ https://superprint.app
         const hRuler = _spWrapper && _spWrapper.__spRegles615 ? _spWrapper.__spRegles615.hRuler : null;
         const vRuler = _spWrapper && _spWrapper.__spRegles615 ? _spWrapper.__spRegles615.vRuler : null;
         if (!hRuler || !vRuler) return;
-        /* Même mesure que dans `_spReglesDessiner` : le facteur d'échelle se
-           déduit du rapport entre taille rendue et taille de mise en page. */
-        const zoomCourant = () => (canvasInner && canvasInner.offsetWidth > 0)
-            ? (canvasInner.getBoundingClientRect().width / canvasInner.offsetWidth)
-            : 1;
-        const versDocument = (client, cote) => {
-            const r = canvasInner.getBoundingClientRect();
-            return ((cote === 'y' ? client - r.top : client - r.left)) / zoomCourant();
-        };
-        const mmDepuis = (docPx) => Math.round(pxToMm(docPx - mmToPx(bleed)));
+        /* ⚠️ TROIS FONCTIONS ONT DISPARU ICI, ET C'EST VOULU : `zoomCourant`,
+           `versDocument` et `mmDepuis` se référaient toutes à `canvasInner`, la
+           page figée à la construction des règles. Les garder « pour plus tard »
+           aurait laissé dans le fichier le calcul même qui produisait le défaut,
+           à portée de main du prochain qui lira ce bloc. Le facteur d'échelle et
+           la conversion en millimètres se mesurent désormais dans `placerRepere`,
+           qui reçoit la page effectivement visée. */
 
         const brancher = (regle, horizontal) => {
-            let dragging = false, ghostLine = null, ghostLabel = null;
+            let dragging = false, ghostLine = null, ghostLabel = null, ghostPage = null;
+            /* ══ LA PAGE QUI REÇOIT LE REPÈRE EST CELLE QUE L'ON VISE ══
+               Avant, tout le geste se référait à `canvasInner` — la page capturée
+               quand les règles ont été construites, c'est-à-dire, mesuré, la
+               DERNIÈRE du document. Le repère naissait donc dans une page située
+               1 986 px plus bas, puis était retiré aussitôt puisque la souris n'y
+               était pas : « je ne peux pas déposer mon repère sur la double page ».
+               On recalcule maintenant la page à chaque étape du geste, depuis la
+               position du pointeur : on dépose là où l'on vise, et si l'on change
+               de page en cours de glisser, le repère suit. */
+            const pageVisee = (clientX, clientY) => {
+                const p = _spPageSousPointeur(clientX, clientY);
+                if (p) return p;
+                const etat = _spWrapper && _spWrapper.__spRegles615;
+                if (etat && etat.page && document.contains(etat.page)) return etat.page;
+                return canvasInner;
+            };
+            /* Position EN ESPACE DOCUMENT, et valeur en millimètres, pour une page
+               donnée. Le facteur d'échelle se mesure comme dans le dessin. */
+            const placerRepere = (clientX, clientY, page) => {
+                const r = page.getBoundingClientRect();
+                const z = (page.offsetWidth > 0) ? (r.width / page.offsetWidth) : 1;
+                const doc = (horizontal ? (clientY - r.top) : (clientX - r.left)) / (z || 1);
+                const limite = horizontal ? page.offsetHeight : page.offsetWidth;
+                const d = Math.max(0, Math.min(limite, doc));
+                return { d: d, mm: Math.round(pxToMm(d - mmToPx(bleed))) };
+            };
             const onMouseMove = (e) => {
                 if (!dragging) return;
-                const d = Math.max(0, Math.min(horizontal ? canvasHeight : canvasWidth,
-                    versDocument(horizontal ? e.clientY : e.clientX, horizontal ? 'y' : 'x')));
-                const mmValue = mmDepuis(d);
-                if (horizontal) { ghostLine.style.top = d + 'px'; ghostLabel.style.top = (d - 12) + 'px'; }
-                else { ghostLine.style.left = d + 'px'; ghostLabel.style.left = (d + 5) + 'px'; }
-                ghostLabel.textContent = mmValue + 'mm';
+                const page = pageVisee(e.clientX, e.clientY);
+                if (ghostLine && page !== ghostPage && document.contains(page)) {
+                    page.appendChild(ghostLine);
+                    page.appendChild(ghostLabel);
+                    ghostPage = page;
+                }
+                const pos = placerRepere(e.clientX, e.clientY, page);
+                if (horizontal) { ghostLine.style.top = pos.d + 'px'; ghostLabel.style.top = (pos.d - 12) + 'px'; }
+                else { ghostLine.style.left = pos.d + 'px'; ghostLabel.style.left = (pos.d + 5) + 'px'; }
+                ghostLabel.textContent = pos.mm + 'mm';
+                ghostLine.dataset.position = pos.mm;
             };
             const finish = (e) => {
                 if (!dragging) return;
                 dragging = false;
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', finish);
-                const r = canvasInner.getBoundingClientRect();
-                const dehors = horizontal ? (e.clientY < r.top) : (e.clientX < r.left);
-                if (dehors) {
+                /* ⚠️ LE TEST PORTE SUR LA BANDE DE LA RÈGLE, PAS SUR LA PAGE.
+                   La règle RECOUVRE le haut des pages : comparer à la page
+                   laisserait passer un simple clic sur la règle, qui créerait un
+                   repère dans le fond perdu. On garde donc exactement le
+                   comportement d'origine — « relâcher sur la règle annule le
+                   geste » — en le mesurant là où il faut : les vingt pixels de la
+                   bande, et rien d'autre. Une fois hors de la bande, le repère se
+                   pose sur la page visée, borné aux limites de cette page. */
+                const cadre = _spWrapper.getBoundingClientRect();
+                const surLaRegle = horizontal
+                    ? (e.clientY <= cadre.top + SP_REGLE_TAILLE)
+                    : (e.clientX <= cadre.left + SP_REGLE_TAILLE);
+                if (surLaRegle) {
                     if (ghostLine) ghostLine.remove();
                     if (ghostLabel) ghostLabel.remove();
                     ghostLine = ghostLabel = null;
@@ -51429,19 +51662,19 @@ https://superprint.app
             };
             regle.addEventListener('mousedown', (e) => {
                 dragging = true;
-                const d = Math.max(0, Math.min(horizontal ? canvasHeight : canvasWidth,
-                    versDocument(horizontal ? e.clientY : e.clientX, horizontal ? 'y' : 'x')));
-                const mmValue = mmDepuis(d);
+                const page = pageVisee(e.clientX, e.clientY);
+                ghostPage = page;
+                const pos = placerRepere(e.clientX, e.clientY, page);
                 ghostLine = document.createElement('div');
                 ghostLine.className = 'guide-line ' + (horizontal ? 'horizontal' : 'vertical');
                 ghostLabel = document.createElement('div');
                 ghostLabel.className = 'guide-label';
-                ghostLabel.textContent = mmValue + 'mm';
-                ghostLine.dataset.position = mmValue;
-                if (horizontal) { ghostLine.style.top = d + 'px'; ghostLabel.style.left = '5px'; ghostLabel.style.top = (d - 12) + 'px'; }
-                else { ghostLine.style.left = d + 'px'; ghostLabel.style.left = (d + 5) + 'px'; ghostLabel.style.top = '5px'; }
-                canvasInner.appendChild(ghostLine);
-                canvasInner.appendChild(ghostLabel);
+                ghostLabel.textContent = pos.mm + 'mm';
+                ghostLine.dataset.position = pos.mm;
+                if (horizontal) { ghostLine.style.top = pos.d + 'px'; ghostLabel.style.left = '5px'; ghostLabel.style.top = (pos.d - 12) + 'px'; }
+                else { ghostLine.style.left = pos.d + 'px'; ghostLabel.style.left = (pos.d + 5) + 'px'; ghostLabel.style.top = '5px'; }
+                page.appendChild(ghostLine);
+                page.appendChild(ghostLabel);
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', finish);
             });
@@ -51452,14 +51685,7 @@ https://superprint.app
     })();
 
     // Rendre existants repères (si déjà présents) déplaçables
-    canvasInner.querySelectorAll('.guide-line.horizontal').forEach(line => {
-        const label = findSiblingLabel(line, 'horizontal');
-        makeGuideDraggable(line, label, 'horizontal');
-    });
-    canvasInner.querySelectorAll('.guide-line.vertical').forEach(line => {
-        const label = findSiblingLabel(line, 'vertical');
-        makeGuideDraggable(line, label, 'vertical');
-    });
+    rendreReperesDeplacables();
         }
 
         // Helpers pour repères DOM: trouver label et rendre déplaçable

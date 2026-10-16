@@ -941,7 +941,7 @@
         window.opener.postMessage({ type: 'sp213-ready' }, window.location.origin);
       }
     } catch (_) {}
-      /* 🆕 v1.7.628 — ET PAR LE PONT, sur le bureau.
+      /* 🆕 v1.7.629 — ET PAR LE PONT, sur le bureau.
          L'éditeur y ouvre cette page dans une FENÊTRE de la coquille : il n'y a donc
          ni `window.opener`, ni `postMessage` possible. Les deux fenêtres partagent en
          revanche leur origine, donc leur stockage local. On y dépose « ready » ; la
@@ -1022,7 +1022,7 @@
     } catch (e) { try { console.error(e); } catch (e2) {} }
   }
   window.addEventListener('message', spRecoitPolice);
-  spPontSurveiller();   // 🆕 v1.7.628 — le pont local, sur le bureau (voir plus haut)
+  spPontSurveiller();   // 🆕 v1.7.629 — le pont local, sur le bureau (voir plus haut)
   // Handshake : on signale notre disponibilité jusqu'à recevoir la fonte (max ~15 s).
   var _spPretTic = 0;
   const _spPretSein = setInterval(function () {

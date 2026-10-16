@@ -309,7 +309,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
-/* 🆕 v1.7.628 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+/* 🆕 v1.7.629 — LE MENU NE SE REFERME PLUS EN CHEMIN.
    Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
    du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
    couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
@@ -409,7 +409,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-soft);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* 🆕 v1.7.628 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+/* 🆕 v1.7.629 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
    peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
@@ -448,7 +448,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent;
 }
 .nav-dd-pied a:hover { color: var(--ink); border-bottom-color: var(--ink); }
-/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.628) ══════════════
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.629) ══════════════
    Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
    plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
    systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
@@ -1038,7 +1038,7 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 .cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
 .cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
 
-/* ══════════════ 🆕 v1.7.628 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
+/* ══════════════ 🆕 v1.7.629 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
    DERNIÈRE ZONE AVANT LE PIED DE PAGE. Elle ne double pas les trois entrées du
    haut de page, elle les prolonge : les entrées ouvrent l'application en ligne et
    ne disent rien des versions ; ici on donne le numéro de version, les trois
@@ -1684,7 +1684,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
-  /* 🎯 v1.7.628 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+  /* 🎯 v1.7.629 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
      Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
      ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
      texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
@@ -1934,7 +1934,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.628 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.629 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des

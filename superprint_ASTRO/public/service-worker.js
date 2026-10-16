@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.628-nettete-mac-et-tableau-solidaire';
+const CACHE_NAME = 'superprint-shell-v1.7.629-regles-qui-suivent-la-page';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
