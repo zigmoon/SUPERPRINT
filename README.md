@@ -28,13 +28,20 @@
 
 <p align="center">
   <img alt="App" src="https://img.shields.io/badge/app-1.7.630-000000?style=flat-square">
-  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.112-CB3837?style=flat-square">
+  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.115-CB3837?style=flat-square">
   <img alt="Desktop beta" src="https://img.shields.io/badge/desktop-Windows%20%7C%20macOS%20%7C%20Linux-F2B90B?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20spot%20inks-E1237B?style=flat-square">
   <img alt="AI" src="https://img.shields.io/badge/AI-cloud%20or%20local-F2B90B?style=flat-square">
   <img alt="UI" src="https://img.shields.io/badge/UI-FR%20%7C%20EN%20%7C%20JP-17130D?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square">
+</p>
+
+<p align="center">
+  <a href="https://superprint.cc">
+    <img src="https://raw.githubusercontent.com/zigmoon/SUPERPRINT/main/superprint/superprint_readme.png"
+         alt="SuperPrint — the DTP desk in your browser: pages, guides, prepress and export" width="900">
+  </a>
 </p>
 
 ---

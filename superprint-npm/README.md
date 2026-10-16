@@ -16,9 +16,16 @@
 
 <p align="center">
   <img alt="App" src="https://img.shields.io/badge/app-1.7.630-000000?style=flat-square">
-  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.114-CB3837?style=flat-square">
+  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.115-CB3837?style=flat-square">
   <img alt="Desktop beta" src="https://img.shields.io/badge/desktop-Windows%20%7C%20macOS%20%7C%20Linux-F2B90B?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-Proprietary-blue?style=flat-square">
+</p>
+
+<p align="center">
+  <a href="https://superprint.cc">
+    <img src="https://raw.githubusercontent.com/zigmoon/SUPERPRINT/main/superprint/superprint_readme.png"
+         alt="SuperPrint — the DTP desk in your browser: pages, guides, prepress and export" width="900">
+  </a>
 </p>
 
 > ### 🖥️ Desktop versions — Windows · macOS · Linux — **out in beta**
