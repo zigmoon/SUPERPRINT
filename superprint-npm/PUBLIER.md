@@ -34,7 +34,7 @@ npm login --auth-type=web
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.113**).
+C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.114**).
 
 > 🔑 **MESURÉ LE 15/10/2026 — LA PUBLICATION EXIGE UNE CLÉ DE SÉCURITÉ, ET UN CODE DE 16 CHIFFRES.**
 > Ce compte a une 2FA de type **clé de sécurité** (WebAuthn), **pas** un code TOTP à 6 chiffres : `npm publish`
@@ -93,15 +93,15 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.621`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `version.txt` | Version en ligne (`1.7.629`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 
 > 📦 Le zip est régénéré par **`node tools/make-release-zip.mjs`** (depuis la racine du repo : il crée `superprint/sp213-local.zip` puis contrôle le résultat). ⚠️ Le script est **suivi par git** — celui-ci et non un script de `_dev/`, qui est ignoré et n'existerait pas sur une autre machine. Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
-> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.621**, aligné sur ce qui est EN LIGNE, et **vérifié le 15/10/2026** : zip `1.7.621`, **55 820 797 octets**, sha256 `FC86AE1E…4EFE3DB`, **identique octet pour octet** au zip local ; `version.txt` = **1.7.621** sur superprint.cc.
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.629**, aligné sur ce qui est EN LIGNE, et **vérifié le 16/10/2026** : zip `1.7.629`, **55 835 569 octets**, sha256 `2DD44B96…`, **identique octet pour octet** au zip local ; `version.txt` = **1.7.629** sur superprint.cc.
 >
-> 🔴 **ET LA LEÇON SUR LES EMPREINTES, À NE PAS OUBLIER** : le chiffre qui figurait ici avant, « zip 1.7.617, 56 459 564 octets, sha256 `EAB82EEA…8B951` », était **exact** — mais pour le zip de la version **PRÉCÉDENTE**. Le fichier déployé avait été retéléchargé et **haché**, jamais **ouvert**. Une empreinte prouve qu'un fichier est intact, **pas** qu'il est le bon. La lecture qui fait foi est **DANS l'archive** : `version.txt` et le `package.json` interne, plus le `CACHE_NAME` du service worker (`superprint-shell-v1.7.621-tableau-cellules-et-exporteurs` pour cette version).
+> 🔴 **ET LA LEÇON SUR LES EMPREINTES, À NE PAS OUBLIER** : le chiffre qui figurait ici avant, « zip 1.7.617, 56 459 564 octets, sha256 `EAB82EEA…8B951` », était **exact** — mais pour le zip de la version **PRÉCÉDENTE**. Le fichier déployé avait été retéléchargé et **haché**, jamais **ouvert**. Une empreinte prouve qu'un fichier est intact, **pas** qu'il est le bon. La lecture qui fait foi est **DANS l'archive** : `version.txt` et le `package.json` interne, plus le `CACHE_NAME` du service worker (`superprint-shell-v1.7.629-regles-qui-suivent-la-page` pour cette version).
 
 > ⚠️ **Une version ÉGALE ne déclenche AUCUNE mise à jour.** L'étape 1/4 compare `version.txt` en ligne à la version installée : si elles sont égales, rien n'est rejoué. Relever le zip sans changer de version ne sert donc qu'aux nouvelles installations — les autres gardent l'ancienne application, sans que rien ne le signale. C'est la raison du passage à 1.7.617 : le correctif de l'ordre des calques vit dans `app/JS/main.js`, et l'application charge ce fichier avec une empreinte **figée sur la version** (`JS/main.js?v=…-v617-…`) et le met en cache sous un nom qui la porte aussi (`superprint-shell-v1.7.617-…`). Déployer le fichier sans relever ces deux chaînes n'aurait rien livré.
 
