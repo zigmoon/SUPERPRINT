@@ -2409,8 +2409,23 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .fondation-wa-case {
   display: flex; align-items: center; justify-content: center;
   align-self: stretch;
-  width: var(--barre-h, 72px);
+  /* ⚠️ LA CASE DOIT ALLER JUSQU'AU BORD DE L'ÉCRAN, ET C'EST TOUTE LA DIFFÉRENCE.
+     MESURÉ APRÈS LA PREMIÈRE TENTATIVE : la case faisait bien 72 × 72, mais l'œil
+     ne voit pas la case — il voit l'espace entre LE FILET et LE BORD DE L'ÉCRAN.
+     Cet espace mesurait 112 × 73 px (rapport 1,53), parce que le rembourrage droit
+     de la grille (40 px) restait vide à côté d'elle. Et l'icône, centrée dans la
+     case, tombait 20 px À GAUCHE du centre de cet espace : d'où l'impression
+     tenace de rectangle, alors que les nombres de la case étaient justes.
+     La marge droite négative reprend exactement le rembourrage de la grille : la
+     case déborde donc jusqu'au bord, et l'espace filet → bord devient 72 × 72.
+     ⚠️ LA VALEUR EST LA MÊME EXPRESSION QUE LE REMBOURRAGE (`clamp(18px,2.5vw,40px)`),
+     pas une constante : les deux ne peuvent pas diverger si la feuille change.
+     `box-sizing: border-box` garde le filet DANS les 72 px, sinon la case
+     mesurerait 73 et le carré serait faux d'un pixel. */
+  width: calc(var(--barre-h, 72px) - 1px);
+  margin-right: calc(-1 * clamp(18px,2.5vw,40px));
   border-left: 1px solid var(--line);
+  box-sizing: content-box;
 }
 .fondation-wa {
   display: inline-flex; align-items: center; justify-content: center;
