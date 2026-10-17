@@ -187,6 +187,23 @@ const navNotes = "<!-- _NAV_HERO_590 -->\n<!-- _NAV_AUTEURS_591 : entree Auteurs
 
     </div>
 
+    <!-- COMPATIBILITÉ SYSTÈMES — juste après les trois entrées, avant les
+         fondations et l'accroche.
+         Les trois noms « PC », « macOS » et « Linux » ne sont PAS traduits : ce sont
+         des noms de plateformes, pas des mots. Même raisonnement que « .exe » et
+         « Open Web App » plus haut — les écrire trois fois à l'identique serait une
+         fausse traduction. Seul le mot d'introduction change de langue, via les
+         `inline-*` (et non `data-lang`, qui force `display:block` sur l'élément
+         correspondant et casserait l'alignement en ligne). -->
+    <div class="hero-os">
+      <span class="hero-os-lbl"><span class="inline-fr">Compatible</span><span class="inline-en">Runs on</span><span class="inline-ja">対応OS</span></span>
+      <span class="hero-os-list">
+        <i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i>
+        <i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i>
+        <i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i>
+      </span>
+    </div>
+
     <!-- ══════════════ FONDATIONS OPEN SOURCE — GitHub, npm, Rust ══════════════
          Placées SOUS les trois entrées, et volontairement plus discrètes : ce sont
          les briques techniques, pas des applications à ouvrir. TROIS colonnes, comme
@@ -1657,7 +1674,7 @@ const navNotes = "<!-- _NAV_HERO_590 -->\n<!-- _NAV_AUTEURS_591 : entree Auteurs
 <script is:inline src="/JS/marketing/data-fold.js?v=1.7.636"></script>
 
 <Fragment set:html={"<!-- 🎠 CARROUSEL DES MODÈLES : flèches, compteur, glisser à la souris.\n     Le SWIPE tactile est celui du navigateur (défilement natif + scroll-snap). -->"} />
-<script is:inline src="/JS/marketing/templates-rail.js?v=1.7.636"></script>
+<script is:inline src="/JS/pages/index/3-script-3.js?v=1.7.636"></script>
 
 <Fragment set:html={"<!-- ══════════════ v1.7.467 — MENTIONS LÉGALES + CONFIDENTIALITÉ (pop-ins, 3 langues) ══════════════\n     Textes repris de index.html (mêmes formulations, source unique). Le sélecteur de langue\n     de la landing (data-lang + html[lang]) les affiche dans la bonne langue. -->"} />
 <div class="legal-overlay" id="legalOverlay" onclick="if(event.target===this)closeLegal('legalOverlay')">

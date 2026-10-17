@@ -412,6 +412,29 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   padding: 0 .14em;
   margin: 0 -.14em;
 }
+/* Compatibilité systèmes — sous les trois entrées */
+.hero-os {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 8px 20px; margin: clamp(18px,2.2vw,26px) 0 0;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--muted);
+}
+.hero-os-lbl { display: inline-flex; align-items: center; }
+/* Le filet sépare le mot d'introduction des trois plateformes ; il disparaît
+   quand la ligne se replie, sinon il se retrouverait en début de ligne. */
+.hero-os-list {
+  display: inline-flex; align-items: center; gap: 8px 16px; flex-wrap: wrap;
+  justify-content: center; padding-left: 20px; border-left: 1px solid var(--line);
+}
+.hero-os-list i {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-style: normal; letter-spacing: .14em;
+}
+.hero-os-list i img { display: block; width: 14px; height: 14px; }
+@media (max-width: 520px) {
+  .hero-os { gap: 6px 14px; }
+  .hero-os-list { padding-left: 0; border-left: 0; }
+}
 /* Pastilles quadri CMJN centrées — sous l'installeur */
 .hero-dots {
   display: flex; align-items: center; justify-content: center; gap: 14px;
@@ -1665,6 +1688,9 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   display: flex; gap: clamp(12px,1.4vw,18px); align-items: stretch;
   overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
   scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  /* ⚠️ `overflow-anchor: none` — le navigateur choisit sinon une ancre de
+     défilement parmi les cartes, et le rail ne démarre plus sur la première. */
+  overflow-anchor: none;
   padding: 4px max(24px, calc((100% - 1180px) / 2)) 22px;
   scroll-padding-left: max(24px, calc((100% - 1180px) / 2));
   scroll-padding-right: max(24px, calc((100% - 1180px) / 2));
