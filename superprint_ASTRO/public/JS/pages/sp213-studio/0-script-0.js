@@ -6892,7 +6892,7 @@ function spRtfLayoutInfo(src) {
     } catch (_) { return null; }
   }
 
-  /* ⚠️ v1.7.652 — POURQUOI LE PASSAGE DIRECT NE SE DÉCLENCHAIT PAS : IL SE MESURE.
+  /* ⚠️ v1.7.653 — POURQUOI LE PASSAGE DIRECT NE SE DÉCLENCHAIT PAS : IL SE MESURE.
      `_SP_NATIF_637` promet qu'une page reçue de l'application et NON RETOUCHÉE par
      l'IA repart avec ses objets d'origine. MESURÉ sur le bouton ÉDITER : après un
      import d'un .sp de 7 objets, `_spNatif` valait `false` — donc le studio
