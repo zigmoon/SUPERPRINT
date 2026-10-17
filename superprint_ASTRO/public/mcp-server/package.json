@@ -1,0 +1,16 @@
+{
+  "name": "superprint-mcp",
+  "version": "1.7.641",
+  "private": true,
+  "type": "module",
+  "description": "Serveur MCP pour SuperPrint — lire, convertir, créer et motifier des documents .sp depuis Claude ou tout client MCP.",
+  "bin": { "superprint-mcp": "./server.mjs" },
+  "main": "./server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node ../_selftest-mcp.mjs"
+  },
+  "engines": { "node": ">=18" },
+  "license": "SEE LICENSE IN ../LICENSE",
+  "author": "Zigmoon — Simon Dupont-Gellert & Clémence Brunet"
+}

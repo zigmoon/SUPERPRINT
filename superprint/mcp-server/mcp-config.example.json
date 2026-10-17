@@ -1,0 +1,10 @@
+{
+  "_commentaire": "Exemple de configuration MCP. Copiez le bloc « mcpServers » dans votre fichier de configuration cliente (Claude Desktop : claude_desktop_config.json). Remplacez le chemin par le chemin ABSOLU du dossier superprint/mcp-server sur votre machine.",
+  "mcpServers": {
+    "superprint": {
+      "command": "node",
+      "args": ["/chemin/absolu/vers/superprint/mcp-server/server.mjs"],
+      "env": {}
+    }
+  }
+}

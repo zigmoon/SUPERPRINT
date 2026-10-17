@@ -9,7 +9,7 @@
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
 - **Trademarks**: "SuperPrint", "SP213" and "SuperTyPo" names and logos remain trademarks of the publisher, governed separately from the code license — see https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/TRADEMARKS.md
-- **Version**: 1.7.640 (October 2026)
+- **Version**: 1.7.641 (October 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
@@ -164,6 +164,54 @@ No. SuperPrint is **proprietary** software: free to use — as served at https:/
 | Move by 1 px / 10 px | Arrows / Shift+Arrows |
 | Find / Replace | Ctrl+F / Ctrl+H |
 | Save project | Ctrl+S |
+
+## Extensibility (plug-ins and MCP)
+
+### Plug-ins
+
+SuperPrint has a plug-in system, opened from the **Plug-ins** button at the bottom of the right-hand bar. A plug-in is a single `.plugin.js` file:
+
+```js
+SPPluginAPI({
+  id: 'my-plugin',
+  name: 'My plug-in',
+  version: '1.0.0',
+  icon: '◆',
+  description: 'One sentence.',
+  options: [
+    { key: 'pas', label: 'Spacing (mm)', type: 'number', defaut: 8, min: 1, max: 80 },
+    { key: 'couleur', label: 'Colour', type: 'color', defaut: '#1a1a1a' }
+  ],
+  run: function (api, o) {
+    var r = new api.fabric.Rect({ left: 0, top: 0, width: api.document.largeur, height: api.document.hauteur, fill: o.couleur });
+    api.add(r);
+  }
+});
+```
+
+Option types: `text`, `number`, `range`, `color`, `select`, `checkbox`, `image`. The panel renders the form from the declaration, so a plug-in never touches the application DOM and automatically inherits the light and dark theme.
+
+Host API: `api.fabric` (Fabric 5.1), `api.mm()` / `api.px()` (millimetres ↔ points), `api.document` (width, height, page, pages, bleed, margins), `api.selection()`, `api.add(obj, opts)` (undoable with Ctrl+Z), `api.addMany()`, `api.remove()`, `api.imageDataUrl()` (opens a file picker, yields a dataURL), `api.alert()` / `api.prompt()` (SuperPrint-styled dialogs), `api.store.get/set` (persistent, per plug-in), `api.log()`.
+
+A plug-in runs with the page's privileges — JavaScript offers no watertight sandbox. The API provides a *contract*: the plug-in touches neither the DOM nor internal variables, which is what keeps it working across SuperPrint versions. Only install plug-ins whose origin you trust.
+
+The bundled example, **Vector Pattern** (`app/plugins/motif-vectoriel.plugin.js`), fills a page or a selected block with a repeated pattern built from a geometric shape (circle, square, diamond, triangle, star, cross, wave, diagonal lines) or an imported image. It uses a `fabric.Pattern` — a single object — rather than thousands of shapes: a full A4 page at 8 mm spacing is filled in about 9 ms and produces one object, which stays fast to select and exports correctly to PDF.
+
+### MCP server
+
+`superprint/mcp-server/` contains a Model Context Protocol server over stdio (JSON-RPC 2.0), with **no dependencies** (Node ≥ 18), so there is no `npm install` before the first launch. It exposes five tools:
+
+| Tool | Purpose |
+|---|---|
+| `superprint_formats` | Lists known page formats in millimetres |
+| `superprint_inspect` | Summarises a `.sp` or `.json`: format, pages, objects per page/type, margins, bleed |
+| `superprint_convert` | Converts `.sp → .json` and back, leaving objects untranslated |
+| `superprint_create` | Creates a document (format, page count, text) and writes it |
+| `superprint_pattern` | Creates a document filled with a repeated pattern |
+
+It works on files, never on the running application: no state shared with a window, so it is usable from a terminal, a server or CI. Configure a client by pointing `command: node` at the absolute path of `server.mjs` (see `mcp-config.example.json`). Two accepted limits: there is no PDF export tool (the rendering engine lives in the browser), and `superprint_pattern` describes the pattern inside the object rather than drawing thousands of shapes.
+
+Two file formats coexist and are both accepted by the server: `.sp` stores `document.format{width,height}` in millimetres with `pages[].objects` as an **array**, while `.json` stores `pageFormat` with `pages[].objects` as a **string**. Positions in `.sp` are in **points** (1 mm = 72/25.4 pt) — a `left: 20` means 20 points (7 mm), not 20 mm.
 
 ## Privacy and security
 

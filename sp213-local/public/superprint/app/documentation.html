@@ -349,7 +349,7 @@
 <!-- ═══════════════════  TOP BAR  ═══════════════════ -->
 <div class="topbar">
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.640</span>
+  <span class="version">v1.7.641</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -526,6 +526,13 @@
   <a href="#m-sp213" class="sub" data-lang="en">SP213 Studio — AI layouts</a>
   <a href="#m-ai" class="sub" data-lang="fr">Assistant IA</a>
   <a href="#m-ai" class="sub" data-lang="en">AI Assistant</a>
+
+  <h3 data-lang="fr">Étendre</h3>
+  <h3 data-lang="en">Extend</h3>
+  <a href="#m-plugins" class="sub" data-lang="fr">Plug-ins — en créer un</a>
+  <a href="#m-plugins" class="sub" data-lang="en">Plug-ins — write one</a>
+  <a href="#m-mcp" class="sub" data-lang="fr">Serveur MCP</a>
+  <a href="#m-mcp" class="sub" data-lang="en">MCP Server</a>
 </div>
 
 </nav>
@@ -1299,6 +1306,142 @@ SUPERPRINT12master/
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     v1.7.641 — ÉTENDRE SUPERPRINT : PLUG-INS ET SERVEUR MCP
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<h2 id="m-plugins">
+  <span data-lang="fr">Plug-ins — en créer un</span>
+  <span data-lang="en">Plug-ins — write one</span>
+</h2>
+
+<p data-lang="fr">Un plug-in SuperPrint est un fichier <code>.plugin.js</code> que l'utilisateur installe depuis le bouton <strong>Plug-ins</strong>, en bas de la barre de droite. Il reçoit une API hôte, décrit ses réglages, et peut ajouter des objets au document. Le plug-in livré, <strong>Motif vectoriel</strong>, en est l'exemple complet : il habille une page ou un bloc d'un motif répété, à partir d'une forme géométrique ou d'une image importée.</p>
+<p data-lang="en">A SuperPrint plug-in is a <code>.plugin.js</code> file the user installs from the <strong>Plug-ins</strong> button, at the bottom of the right bar. It receives a host API, declares its settings, and can add objects to the document. The bundled <strong>Vector Pattern</strong> plug-in is the complete example: it fills a page or a block with a repeated pattern, built from a geometric shape or an imported image.</p>
+
+<h3 data-lang="fr">La forme d'un plug-in</h3>
+<h3 data-lang="en">The shape of a plug-in</h3>
+
+<pre><code>SPPluginAPI({
+  id: 'mon-plug-in',            // minuscules, chiffres, point, tiret
+  name: 'Mon plug-in',
+  version: '1.0.0',
+  author: 'Votre nom',
+  icon: '◆',                    // un caractère, affiché dans la liste
+  description: 'Ce qu\'il fait, en une phrase.',
+  options: [                    // les réglages — le panneau les rend
+    { key: 'pas', label: 'Pas (mm)', type: 'number', defaut: 8, min: 1, max: 80 },
+    { key: 'couleur', label: 'Couleur', type: 'color', defaut: '#1a1a1a' }
+  ],
+  run: function (api, o) {
+    // o.pas, o.couleur : les valeurs saisies
+    var r = new api.fabric.Rect({
+      left: 0, top: 0,
+      width: api.document.largeur,
+      height: api.document.hauteur,
+      fill: o.couleur
+    });
+    api.add(r, { libelle: 'Mon plug-in' });
+  }
+});</code></pre>
+
+<p data-lang="fr">Le panneau construit lui-même le formulaire à partir de <code>options</code>. Un plug-in ne fabrique donc jamais son propre DOM : il ne peut pas casser l'interface, et il hérite automatiquement du thème clair et du thème sombre.</p>
+<p data-lang="en">The panel builds the form from <code>options</code> itself. A plug-in therefore never creates its own DOM: it cannot break the interface, and it automatically inherits both the light and dark theme.</p>
+
+<h3 data-lang="fr">Types de réglage</h3>
+<h3 data-lang="en">Setting types</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+  <th data-lang="fr">Type</th><th data-lang="en">Type</th>
+  <th data-lang="fr">Rendu</th><th data-lang="en">Rendered as</th>
+  <th data-lang="fr">Clés utiles</th><th data-lang="en">Useful keys</th>
+</tr></thead>
+<tbody>
+<tr><td><code>'text'</code></td><td data-lang="fr">champ texte</td><td data-lang="en">text field</td><td><code>defaut</code></td></tr>
+<tr><td><code>'number'</code></td><td data-lang="fr">champ numérique</td><td data-lang="en">number field</td><td><code>min</code>, <code>max</code>, <code>pas</code></td></tr>
+<tr><td><code>'range'</code></td><td data-lang="fr">curseur</td><td data-lang="en">slider</td><td><code>min</code>, <code>max</code>, <code>pas</code></td></tr>
+<tr><td><code>'color'</code></td><td data-lang="fr">sélecteur de couleur</td><td data-lang="en">colour picker</td><td><code>defaut</code> en <code>#rrggbb</code></td></tr>
+<tr><td><code>'select'</code></td><td data-lang="fr">liste déroulante</td><td data-lang="en">dropdown</td><td><code>choix</code> : tableau de valeurs ou de <code>{value,label}</code></td></tr>
+<tr><td><code>'checkbox'</code></td><td data-lang="fr">case à cocher</td><td data-lang="en">checkbox</td><td><code>defaut</code> booléen</td></tr>
+<tr><td><code>'image'</code></td><td data-lang="fr">import d'image (donne une dataURL)</td><td data-lang="en">image import (yields a dataURL)</td><td>—</td></tr>
+</tbody>
+</table></div>
+
+<h3 data-lang="fr">L'API hôte</h3>
+<h3 data-lang="en">The host API</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+  <th data-lang="fr">Appel</th><th data-lang="en">Call</th>
+  <th data-lang="fr">Ce qu'il donne</th><th data-lang="en">What it gives</th>
+</tr></thead>
+<tbody>
+<tr><td><code>api.fabric</code></td><td data-lang="fr">le moteur graphique (Fabric 5.1)</td><td data-lang="en">the graphics engine (Fabric 5.1)</td></tr>
+<tr><td><code>api.mm(v)</code> / <code>api.px(v)</code></td><td data-lang="fr">millimètres ↔ points</td><td data-lang="en">millimetres ↔ points</td></tr>
+<tr><td><code>api.document</code></td><td data-lang="fr">largeur, hauteur, page, pages, fond perdu, marges</td><td data-lang="en">width, height, page, pages, bleed, margins</td></tr>
+<tr><td><code>api.selection()</code></td><td data-lang="fr">les objets sélectionnés</td><td data-lang="en">the selected objects</td></tr>
+<tr><td><code>api.add(obj, opts)</code></td><td data-lang="fr">ajoute au plan de travail — <strong>annulable par Ctrl+Z</strong></td><td data-lang="en">adds to the canvas — <strong>undoable with Ctrl+Z</strong></td></tr>
+<tr><td><code>api.addMany(liste)</code></td><td data-lang="fr">ajoute plusieurs objets en une action</td><td data-lang="en">adds several objects as one action</td></tr>
+<tr><td><code>api.remove(obj)</code></td><td data-lang="fr">retire un objet</td><td data-lang="en">removes an object</td></tr>
+<tr><td><code>api.imageDataUrl()</code></td><td data-lang="fr">ouvre un sélecteur, rend une dataURL</td><td data-lang="en">opens a file picker, yields a dataURL</td></tr>
+<tr><td><code>api.alert(msg)</code> / <code>api.prompt(q, def)</code></td><td data-lang="fr">dialogues de la DA SuperPrint</td><td data-lang="en">SuperPrint-styled dialogs</td></tr>
+<tr><td><code>api.store.get/set</code></td><td data-lang="fr">un stockage persistant, propre au plug-in</td><td data-lang="en">persistent storage, scoped to the plug-in</td></tr>
+<tr><td><code>api.log(msg)</code></td><td data-lang="fr">écrit dans la console du navigateur</td><td data-lang="en">writes to the browser console</td></tr>
+</tbody>
+</table></div>
+
+<div class="note" data-lang="fr">⚠️ <strong>Un plug-in est un script que vous choisissez d'installer.</strong> Il s'exécute avec les droits de la page, comme une extension de navigateur ou un script Photoshop : il n'existe pas de bac à sable étanche en JavaScript. Ce que l'API apporte, c'est un <em>contrat</em> : le plug-in ne touche ni au DOM de l'application ni à ses variables internes, il passe par les fonctions ci-dessus. C'est ce qui le rend stable quand SuperPrint évolue. N'installez que des plug-ins dont vous connaissez la provenance.</div>
+<div class="note" data-lang="en">⚠️ <strong>A plug-in is a script you choose to install.</strong> It runs with the page's privileges, like a browser extension or a Photoshop script: JavaScript provides no watertight sandbox. What the API provides is a <em>contract</em>: the plug-in touches neither the application DOM nor its internal variables, it goes through the calls above. That is what keeps it working as SuperPrint evolves. Only install plug-ins whose origin you trust.</div>
+
+<h3 data-lang="fr">Un mot sur les performances</h3>
+<h3 data-lang="en">A word on performance</h3>
+<p data-lang="fr">Pour répéter une forme, ne créez pas des milliers d'objets : une page A4 à 8 mm de pas en demanderait ≈ 2 300, et la sélection comme l'export s'effondrent. Utilisez un <code>fabric.Pattern</code> — un seul objet, que le navigateur répète au rendu et que l'export PDF répète de la même façon. C'est ce que fait le plug-in Motif vectoriel : <strong>9 ms</strong> pour habiller une page entière, mesuré.</p>
+<p data-lang="en">To repeat a shape, do not create thousands of objects: an A4 page at 8 mm spacing would need ≈ 2,300, and both selection and export collapse. Use a <code>fabric.Pattern</code> — a single object the browser repeats at render time and the PDF export repeats the same way. That is what the Vector Pattern plug-in does: <strong>9 ms</strong> to fill an entire page, measured.</p>
+
+<h2 id="m-mcp">
+  <span data-lang="fr">Serveur MCP</span>
+  <span data-lang="en">MCP Server</span>
+</h2>
+
+<p data-lang="fr">Le dossier <code>superprint/mcp-server/</code> contient un serveur <strong>Model Context Protocol</strong>. Il permet à un assistant — Claude Desktop, Claude Code, Cursor, ou tout autre client MCP — de lire, convertir, créer et motiver des documents SuperPrint. Le bouton <strong>MCP Server</strong>, en bas de la barre de droite, affiche la commande exacte et le JSON de configuration, prêts à copier.</p>
+<p data-lang="en">The <code>superprint/mcp-server/</code> folder contains a <strong>Model Context Protocol</strong> server. It lets an assistant — Claude Desktop, Claude Code, Cursor, or any other MCP client — read, convert, create and pattern SuperPrint documents. The <strong>MCP Server</strong> button, at the bottom of the right bar, shows the exact command and the configuration JSON, ready to copy.</p>
+
+<h3 data-lang="fr">Les outils exposés</h3>
+<h3 data-lang="en">Exposed tools</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+  <th data-lang="fr">Outil</th><th data-lang="en">Tool</th>
+  <th data-lang="fr">Ce qu'il fait</th><th data-lang="en">What it does</th>
+</tr></thead>
+<tbody>
+<tr><td><code>superprint_formats</code></td><td data-lang="fr">liste les formats de page en millimètres</td><td data-lang="en">lists page formats in millimetres</td></tr>
+<tr><td><code>superprint_inspect</code></td><td data-lang="fr">résume un <code>.sp</code> ou <code>.json</code></td><td data-lang="en">summarises a <code>.sp</code> or <code>.json</code></td></tr>
+<tr><td><code>superprint_convert</code></td><td data-lang="fr">convertit <code>.sp → .json</code> et retour</td><td data-lang="en">converts <code>.sp → .json</code> and back</td></tr>
+<tr><td><code>superprint_create</code></td><td data-lang="fr">crée un document (format, pages, texte)</td><td data-lang="en">creates a document (format, pages, text)</td></tr>
+<tr><td><code>superprint_pattern</code></td><td data-lang="fr">crée un document habillé d'un motif</td><td data-lang="en">creates a document filled with a pattern</td></tr>
+</tbody>
+</table></div>
+
+<h3 data-lang="fr">Installation</h3>
+<h3 data-lang="en">Installation</h3>
+<p data-lang="fr">Aucune dépendance : le serveur n'utilise que Node ≥ 18. Il n'y a pas de <code>npm install</code> — le protocole MCP sur <code>stdio</code> est du JSON-RPC 2.0 délimité par des sauts de ligne, l'implémenter directement évite un registre inaccessible ou une coupure réseau au premier lancement.</p>
+<p data-lang="en">No dependencies: the server only uses Node ≥ 18. There is no <code>npm install</code> — MCP over <code>stdio</code> is newline-delimited JSON-RPC 2.0, and implementing it directly avoids an unreachable registry or a network failure on first launch.</p>
+
+<pre><code>cd superprint/mcp-server
+node server.mjs
+
+# Claude Desktop : %APPDATA%\Claude\claude_desktop_config.json (Windows)
+#                  ~/Library/Application Support/Claude/... (macOS)
+{
+  "mcpServers": {
+    "superprint": {
+      "command": "node",
+      "args": ["/chemin/absolu/vers/superprint/mcp-server/server.mjs"]
+    }
+  }
+}</code></pre>
+
+<p data-lang="fr">Le serveur travaille sur des <strong>fichiers</strong>, jamais sur l'application ouverte : aucun état partagé avec une fenêtre, donc utilisable en terminal, en serveur ou en CI. Deux limites assumées : il n'y a pas d'export PDF (le moteur de rendu vit dans le navigateur), et <code>superprint_pattern</code> décrit le motif dans l'objet plutôt que de dessiner des milliers de formes.</p>
+<p data-lang="en">The server works on <strong>files</strong>, never on the running application: no state shared with a window, so it works in a terminal, on a server or in CI. Two accepted limits: there is no PDF export (the rendering engine lives in the browser), and <code>superprint_pattern</code> describes the pattern inside the object rather than drawing thousands of shapes.</p>
+
 <!-- ─── KEYBOARD SHORTCUTS ─── -->
 <h2 id="shortcuts">
   <span data-lang="fr">Raccourcis clavier</span>
@@ -1442,7 +1585,7 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.640</span>
+  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.641</span>
   <span data-lang="en">Documentation generated September 16, 2026 — v1.7.456</span>
 </div>
 
@@ -2461,7 +2604,7 @@ log('Filet posé sur ' + Math.round(largeur) + ' mm de large');</pre>
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.640</span>
+  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.641</span>
   <span data-lang="en">Manual updated September 16, 2026 — v1.7.456</span>
 </div>
 
