@@ -96248,10 +96248,28 @@ function _spValidateProjectFile(spFile) {
     const format = spFile && spFile.document && spFile.document.format;
     const width = Number(format && format.width);
     const height = Number(format && format.height);
+    /* ⚠️ v1.7.637 — `page.objects` PEUT ARRIVER EN CHAÎNE.
+       Le filet de sécurité du Studio IA écrivait `JSON.stringify(calque)` dans
+       `page.objects`. Cette fonction exigeait un TABLEAU : le document entier était
+       donc rejeté, sans autre explication que « n'est pas un document SuperPrint
+       valide », alors qu'il contenait une maquette complète. On déplie la chaîne ici
+       — une seule fois — pour que le reste du chargeur ne voie qu'un tableau. */
+    const _objetsValides = function (page) {
+        if (!page) return false;
+        if (Array.isArray(page.objects)) return true;
+        if (typeof page.objects === 'string') {
+            try {
+                const j = JSON.parse(page.objects);
+                const arr = Array.isArray(j) ? j : (j && Array.isArray(j.objects) ? j.objects : null);
+                if (arr) { page.objects = arr; return true; }
+            } catch (_) {}
+        }
+        return false;
+    };
     return !!(spFile && spFile._sp && spFile._sp.format === 'SuperPrint Document'
         && Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0
         && Array.isArray(spFile.pages) && spFile.pages.length > 0
-        && spFile.pages.every(page => page && Array.isArray(page.objects)));
+        && spFile.pages.every(_objetsValides));
 }
 
 window._spLoadStudioImport = function() {

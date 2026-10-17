@@ -9068,6 +9068,96 @@ function spRtfLayoutInfo(src) {
     } catch (_) { return null; }
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     _SP_NATIF_637 — LES OBJETS D'ORIGINE, POUR UN ALLER-RETOUR SANS PERTE.
+     ══════════════════════════════════════════════════════════════════════════
+
+     DÉFAUT MESURÉ (banc app → studio → app, magazine 8 planches / 130 objets) :
+     le fichier revenu du studio avait PERDU 40 propriétés d'objet que le studio ne
+     modélise pas — `clipPath` (16 images découpées redevenaient rectangulaires),
+     `_spHyphenFlags` (11 blocs perdaient leur césure), `strokeDashArray`,
+     `strokeLineCap/Join`, `skewX/Y`, `shadow`, `filters`, `path*` (texte sur
+     courbe), `underline/overline/linethrough`, `cropX/cropY`, `visible`,
+     `originX/originY`, `textBackgroundColor`, `backgroundColor`, `minWidth`,
+     `breakWords`, `direction`, `splitByGrapheme`, `paintFirst`,
+     `globalCompositeOperation`, `_isOverflowFromLeft/Right`…
+
+     CE N'EST PAS UN OUBLI À COMBLER UNE PAR UNE : le studio traduit les objets
+     Fabric en un modèle en millimètres (pour l'aperçu et pour l'IA), puis les
+     retraduit au retour. Tout ce que ce modèle ne connaît pas est perdu par
+     construction — et la liste des propriétés Fabric est ouverte (chaque nouvelle
+     fonction de l'app en ajoute).
+
+     LA SEULE FAÇON D'ÊTRE EXACT EST DE NE PAS TRADUIRE. Quand une page vient d'un
+     document de l'app et que l'IA n'y a pas touché, on réémet ses objets
+     D'ORIGINE, tels quels : 100 % des propriétés, y compris celles qui n'existent
+     pas encore aujourd'hui. C'est exactement le cas du bouton ÉDITER — « je veux
+     retoucher dans SuperPrint ce que je viens d'ouvrir » — donc c'est là que la
+     fidélité compte le plus.
+
+     ⚠️ COMMENT ON SAIT QU'UNE PAGE N'A PAS CHANGÉ : on garde une empreinte du
+     tableau `elements` au moment de l'import, et on la compare à l'export. Si elle
+     est identique, la page est intacte (l'IA ne réécrit pas `elements` sans le
+     modifier). Dès qu'une page change, on repasse par la traduction pour elle —
+     et pour elle seule.
+
+     ⚠️ STOCKAGE EN MÉMOIRE, INDEXÉ PAR SIGNATURE DE DOCUMENT — PAS DANS state.doc,
+     ET PAS PAR IDENTITÉ D'OBJET. `state.doc` est écrit dans localStorage (`LS.doc`)
+     puis RELU : les objets sont alors neufs, et une WeakMap keyée sur eux serait
+     vide au moment de l'export (mesuré : le passage direct ne se déclenchait
+     jamais). On indexe donc par une signature stable — conversation + format +
+     mode — et l'empreinte de la page reste le seul juge : une page n'est réémise
+     telle quelle que si ses `elements` sont identiques au caractère près.
+     Rien n'est jamais sérialisé : les objets d'origine (images base64 comprises)
+     ne partent pas dans la sauvegarde du studio et ne peuvent pas faire sauter
+     le quota localStorage.
+     ══════════════════════════════════════════════════════════════════════════ */
+  let spNatifsDoc = null;   // { sig, pages: { [pageIndex]: { objects, empreinte } } }
+
+  function spSignatureDoc() {
+    try {
+      return [state.convActive || '', state.pageW, state.pageH, state.viewMode].join('|');
+    } catch (_) { return ''; }
+  }
+
+  /* Empreinte stable d'un tableau d'éléments : la comparaison doit être exacte. */
+  function spEmpreinte(elements) {
+    try { return JSON.stringify(elements); } catch (_) { return null; }
+  }
+
+  /* Les objets d'origine d'une page, SI elle n'a pas bougé depuis l'import.
+     Voir l'en-tête ci-dessus : index par signature de document, et l'empreinte de
+     la page est le seul juge. */
+  function spObjetsNatifs(docPage, pageIndex) {
+    try {
+      if (!docPage || !spNatifsDoc) return null;
+      if (spNatifsDoc.sig !== spSignatureDoc()) return null;
+      const entree = spNatifsDoc.pages[pageIndex];
+      if (!entree || !Array.isArray(entree.objects) || !entree.objects.length) return null;
+      if (entree.empreinte == null) return null;
+      if (spEmpreinte(docPage.elements) !== entree.empreinte) return null;
+      return JSON.parse(JSON.stringify(entree.objects));
+    } catch (_) { return null; }
+  }
+
+  /* Range les objets d'origine APRÈS l'import, hors de `state.doc` (qui, lui, est
+     sauvegardé). Appelé une fois par import, ce qui remplace l'import précédent. */
+  function spRangerNatifs(pages) {
+    try {
+      const sig = spSignatureDoc();
+      const store = { sig: sig, pages: {} };
+      (pages || []).forEach(function (pg) {
+        if (!pg) return;
+        if (pg.spNatifs && Array.isArray(pg.spNatifs) && pg.spNatifs.length) {
+          store.pages[pg.pageIndex] = { objects: pg.spNatifs, empreinte: pg.spEmpreinte };
+        }
+        delete pg.spNatifs;
+        delete pg.spEmpreinte;
+      });
+      spNatifsDoc = Object.keys(store.pages).length ? store : null;
+    } catch (_) { spNatifsDoc = null; }
+  }
+
   function importFromSuperPrint(spFile) {
     if (!spFile || !spFile.pages || !spFile.pages.length) return false;
     const docFmt = (spFile.document && spFile.document.format) || {};
@@ -9496,7 +9586,13 @@ function spRtfLayoutInfo(src) {
         //   plutot que d'etre silencieusement supprimes par filter(Boolean).
         return spVecteurVersElementImage(o, base);
       }).filter(Boolean);
-      return { pageIndex: idx, elements, masterId: (spPage && spPage.masterId) ? spPage.masterId : null };
+      return { pageIndex: idx, elements, masterId: (spPage && spPage.masterId) ? spPage.masterId : null,
+        /* _SP_NATIF_637 — LES OBJETS D'ORIGINE DE LA PAGE (cf. en-tête de
+           spNatifsParDoc) : ils servent au retour, si l'IA n'a pas touché la page.
+           Copie profonde : les objets Fabric ne doivent pas être retouchés par
+           l'aperçu du studio. `spEmpreinte` fige l'état de `elements` maintenant. */
+        spNatifs: (Array.isArray(spPage.objects) ? JSON.parse(JSON.stringify(spPage.objects)) : null),
+        spEmpreinte: spEmpreinte(elements) };
     /* 🆕 v1.7.546 — ON NE SUPPRIME PLUS UNE PAGE SANS ÉLÉMENTS QUAND ELLE EST ALIMENTÉE
        PAR UN GABARIT. Une page de l'app qui reçoit tout son contenu d'un gabarit n'a
        aucun objet propre : elle était donc retirée du document (MESURÉ : document à
@@ -9504,6 +9600,7 @@ function spRtfLayoutInfo(src) {
     }).filter(p => p.elements.length > 0 || !!p.masterId);
 
     if (!pages.length) return false;
+
 
     // 🎨 v1.7.368 — TONS DIRECTS (PANTONE) : le .sp recu de l'app porte
     //   `resources.spotInks`. Sans cette relecture, le trajet
@@ -9552,6 +9649,12 @@ function spRtfLayoutInfo(src) {
       //   de .sp l'écrivaient en dur à 'rgb', donc un document CMJN revenait en
       //   RVB (et la boîte d'export ne repassait plus en CMJN + Pantone).
       colorMode: (spFile.document && spFile.document.colorMode) ? spFile.document.colorMode : 'rgb' };
+    /* _SP_NATIF_637 — LES OBJETS D'ORIGINE, RANGÉS APRÈS `state.doc` ET AVANT LA
+       SAUVEGARDE. L'ordre compte : la signature du document (format, mode,
+       conversation) doit être celle d'ARRIVÉE, sinon la comparaison à l'export ne
+       retrouverait rien. Et les objets d'origine sont retirés des pages avant
+       l'écriture dans localStorage — sinon le document doublerait de poids. */
+    spRangerNatifs(pages);
     try {
       localStorage.setItem(LS.dims, JSON.stringify({ w, h }));
       localStorage.setItem(LS.doc, JSON.stringify(state.doc));
@@ -28873,6 +28976,23 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const spPages = state.pages.map((p) => {
       let objects = [];
       let _errConvPage = null;
+      /* ═══ _SP_NATIF_637 — PAGE INTACTE : ON RÉÉMET SES OBJETS D'ORIGINE ═══
+         Si la page vient d'un document de l'app et que l'IA n'y a pas touché, on
+         rend les objets Fabric EXACTEMENT tels qu'ils sont arrivés : aucune
+         propriété perdue, aucun arrondi de millimètre, aucune re-traduction.
+         C'est le chemin du bouton ÉDITER, donc celui qui doit être irréprochable.
+         Voir l'en-tête de `spNatifsParDoc` pour la mesure des 40 propriétés perdues. */
+      let _estNative = false;
+      try {
+        const _docPageNat = spDocPagePour(state.doc, p.pageIndex);
+        const _natifs = spObjetsNatifs(_docPageNat, p.pageIndex);
+        if (_natifs && _natifs.length) {
+          const _midNat = (state.doc && state.doc.masters && state.doc.masters.assignments
+            && state.doc.masters.assignments[p.pageIndex]) ? state.doc.masters.assignments[p.pageIndex] : null;
+          return { index: p.pageIndex, label: p.label || ('Page ' + (p.pageIndex + 1)),
+            masterId: _midNat, objects: _natifs, _spNatif: true };
+        }
+      } catch (_) {}
       try {
         // Partir du doc mm (éléments propres, sans les guides) plutôt que du canvas
         /* 🆕 v1.7.546 — recherche par CHAMP pageIndex (cf. spDocPagePour). */
@@ -28975,7 +29095,15 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
               !o._isSpreadMirror && !o.excludeFromExport);
           }
           if (_dump && Array.isArray(_dump.objects) && _dump.objects.length) {
-            objects = JSON.stringify(_dump);
+            /* ⚠️ _SP_NATIF_637 — ON ÉCRIT LE TABLEAU, PAS LA CHAÎNE.
+               MESURÉ : ce filet écrivait `JSON.stringify(_dump)`, donc `page.objects`
+               était une CHAÎNE. Or les DEUX validateurs (celui de l'app et celui de
+               ce studio, `normalizeSPFile`) exigent `Array.isArray(page.objects)` :
+               le fichier produit ici était donc REJETÉ partout — le filet de
+               sécurité ne sauva rien, il produisait un document que personne ne
+               pouvait ouvrir, sans le dire. On transmet le tableau d'objets, qui est
+               exactement ce que l'app écrit elle-même. */
+            objects = _dump.objects;
             try { console.warn('[studio .sp] page ' + (p.pageIndex + 1) + ' : document mm vide → calque transmis (' + _dump.objects.length + ' objets)'); } catch (_) {}
           } else if (!_errConvPage) {
             try { console.warn('[studio .sp] page ' + (p.pageIndex + 1) + ' : ni document mm ni calque — .sp vide'); } catch (_) {}
@@ -29010,7 +29138,27 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     // 🛡️ _SP_STUDIO_FIAB_575 — en double page, les PLANCHES deviennent des PAGES
     //   (sinon l'app reçoit 420 mm de contenu sur une page de 210 mm : la moitié
     //   de la maquette est hors page et disparaît). Mesure : 4 planches → 7 pages.
-    const spPagesFinal = spImposerPlanchesEnPages(spPages);
+    /* ═══ _SP_NATIF_637 — DEUX RÉGIMES, ET ILS DOIVENT RESTER COHÉRENTS ═══
+       · TOUTES les pages sont intactes (cas du bouton ÉDITER sur un document de
+         l'app) : on n'impose RIEN. Les objets sont ceux de l'app, posés en
+         coordonnées de PLANCHE comme ils l'étaient dans son propre fichier — donc
+         `viewMode` reste celui d'origine. Le document revient à l'identique.
+       · AU MOINS une page a été composée par l'IA : ses objets sont des PAGES
+         (le studio raisonne page par page), donc on impose les planches en pages…
+         et `viewMode` DOIT alors passer à 'single'.
+       ⚠️ C'EST LE DÉFAUT MESURÉ LE PLUS GRAVE DE CET ALLER-RETOUR : l'imposition
+       découpait les planches en pages mais laissait `viewMode: 'spread'`. MESURÉ
+       (magazine 8 planches) : l'app recevait 14 entrées avec viewMode spread, les
+       lisait comme 14 PLANCHEs et affichait « 1 / 14 » — un document deux fois trop
+       long, chaque planche à moitié vide. La cohérence des deux valeurs est donc
+       écrite ici, ensemble, et pas dans deux fonctions séparées. */
+    const _toutesNatives = spPages.length > 0 && spPages.every(p => p._spNatif === true);
+    const spPagesFinal = (_toutesNatives ? spPages : spImposerPlanchesEnPages(spPages))
+      /* ⚠️ ON RETIRE LE MARQUEUR INTERNE `_spNatif` : il ne doit pas apparaître dans
+         le fichier remis à l'app. Le retrait est fait ICI, une seule fois, pour que
+         les deux régimes rendent exactement la même forme de page. */
+      .map(p => ({ index: p.index, label: p.label, masterId: p.masterId, objects: p.objects }));
+    const _viewModeExport = _toutesNatives ? (state.viewMode === 'spread' ? 'spread' : 'single') : 'single';
 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
@@ -29018,9 +29166,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       /* ⚠️ _SP_PARITE_CADRE_592 — marges du document : celles de l'app si elles existent,
          sinon CELLES QUE LA COMPOSITION A APPLIQUÉES (cf. spMargesPourExport).
          Avant : margin 20 en dur et `margins` absent → l'app ouvrait la maquette
-         avec 20 mm de marge sur les quatre côtés. */
+         avec 20 mm de marge sur les quatre côtés.
+         ⚠️ _SP_NATIF_637 — `viewMode` vient de `_viewModeExport` : il doit être
+         calculé AVEC l'imposition, jamais à part (cf. le commentaire là-bas). */
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: _spMgExport.margin,
-      margins: _spMgExport.margins, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb',
+      margins: _spMgExport.margins, bleed: state.bleed, viewMode: _viewModeExport, colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb',
       /* _SP_STUDIO_509_DEBUT — GRILLE DE COLONNES ROUGES : réécrite TELLE QUELLE (app → studio → app). */
       colGrid: (state.doc && state.doc.colGrid) ? state.doc.colGrid : undefined, styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
@@ -29257,6 +29407,109 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
 
   // 🛡️ Normalise + valide un document .sp (maquette brute IA ou .sp complet)
   // avant tout téléchargement ou transmission à l'app SuperPrint.
+  /* ══════════════════════════════════════════════════════════════════════════
+     _SP_JSON_APP_637 — LIRE LE .json DE SUPERPRINT DANS LE STUDIO.
+     ══════════════════════════════════════════════════════════════════════════
+
+     DÉFAUT MESURÉ : le bouton « Importer » du studio accepte `.zip, .sp, .json`,
+     mais le `.json` écrit par SuperPrint (saveProjectLocal) n'a PAS la forme d'un
+     `.sp` — et il n'a pas non plus celle d'un document IA :
+       · pas de clé `_sp` (donc le studio le prenait pour une maquette IA) ;
+       · `pages[].objects` (les objets Fabric) au lieu de `pages[].elements` (les
+         éléments en millimètres que l'IA produit) ;
+       · `pageFormat` à la racine au lieu de `document.format` ;
+       · `masterPages` / `pageMasterAssignments` au lieu de `masters.templates` /
+         `masters.assignments`.
+     Résultat mesuré : « Impossible d'importer ce fichier (structure non reconnue) ».
+     Le format de travail de l'application était donc le SEUL que le studio ne
+     savait pas ouvrir.
+
+     On le convertit ici en structure .sp complète — pas un sous-ensemble : les
+     vingt clés du .json sont réparties vers leurs équivalents .sp, y compris les
+     gabarits, les folios, les tons directs, les polices embarquées, les repères et
+     les styles nommés. Les OBJETS, eux, ne sont pas traduits : ce sont déjà des
+     objets Fabric, exactement ce que le .sp transporte — ils passent tels quels,
+     et le passage direct d'_SP_NATIF_637 les réémettra à l'identique au retour. */
+  function spDepuisJsonApp(parsed) {
+    const now = new Date();
+    const fmt = parsed.pageFormat || {};
+    const w = Number(fmt.width) || 210;
+    const h = Number(fmt.height) || 297;
+    const mg = (parsed.margins && typeof parsed.margins === 'object') ? parsed.margins : null;
+    /* Les marges du .json portent CINQ valeurs (top/bottom/inner/outer + left/right
+       recopiés). Le .sp en attend quatre, en millimètres. On privilégie
+       inner/outer quand ils existent : c'est la paire qui distingue le pli du bord,
+       et la perdre remettrait un document en marges symétriques. */
+    const marges = mg
+      ? { top: Number(mg.top) || 0,
+          right: Number(mg.right != null ? mg.right : (mg.outer != null ? mg.outer : mg.inner)) || 0,
+          bottom: Number(mg.bottom) || 0,
+          left: Number(mg.left != null ? mg.left : (mg.inner != null ? mg.inner : mg.outer)) || 0 }
+      : null;
+    const pages = (Array.isArray(parsed.pages) ? parsed.pages : []).map(function (p, i) {
+      let objs = [];
+      try {
+        if (Array.isArray(p && p.objects)) objs = p.objects;
+        else if (typeof (p && p.objects) === 'string') {
+          const j = JSON.parse(p.objects);
+          objs = Array.isArray(j) ? j : (j && Array.isArray(j.objects) ? j.objects : []);
+        }
+      } catch (_) { objs = []; }
+      return { index: i, label: 'Page ' + (i + 1),
+        masterId: (parsed.pageMasterAssignments && parsed.pageMasterAssignments[i]) || null,
+        objects: objs };
+    });
+    const fonts = [];
+    pages.forEach(function (pg) {
+      (pg.objects || []).forEach(function (o) { if (o && o.fontFamily && fonts.indexOf(o.fontFamily) < 0) fonts.push(o.fontFamily); });
+    });
+    const colors = [];
+    pages.forEach(function (pg) {
+      (pg.objects || []).forEach(function (o) { if (o && typeof o.fill === 'string' && /^#/.test(o.fill) && colors.indexOf(o.fill) < 0) colors.push(o.fill); });
+    });
+    return {
+      _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0',
+        created: now.toISOString(), modified: now.toISOString(),
+        generator: 'SuperPrint .json' },
+      meta: { title: (parsed.projectName || '').trim() || 'Maquette importée', author: '', description: '', tags: [],
+        stats: { pages: pages.length,
+          objects: pages.reduce(function (n, p) { return n + p.objects.length; }, 0),
+          textBlocks: 0, images: 0, shapes: 0,
+          totalObjects: pages.reduce(function (n, p) { return n + p.objects.length; }, 0) } },
+      document: {
+        format: { width: w, height: h, unit: 'mm', orientation: fmt.orientation || (w > h ? 'landscape' : 'portrait') },
+        margin: (typeof parsed.margin === 'number') ? parsed.margin : 20,
+        margins: marges,
+        bleed: (typeof parsed.bleed === 'number') ? parsed.bleed : 3,
+        viewMode: parsed.viewMode === 'spread' ? 'spread' : 'single',
+        colorMode: parsed.colorMode || 'rgb',
+        colGrid: parsed.colGrid || undefined,
+        styles: parsed.styles || { typography: [], swatches: [] }
+      },
+      resources: { fonts: fonts, colors: colors, spotInks: parsed.spotInks || {}, customFonts: parsed.customFonts || [] },
+      textLinks: parsed.textLinks || {},
+      guides: parsed.guides || {},
+      masters: { templates: parsed.masterPages || {}, assignments: parsed.pageMasterAssignments || {} },
+      numbering: parsed.pageNumberingSettings || {},
+      numberingOverrides: parsed.pageNumberingOverrides || {},
+      pages: pages
+    };
+  }
+
+  /* Reconnaît le .json de SuperPrint : pageFormat à la racine, pages portant des
+     OBJETS (et non des `elements`), et pas de clé `_sp`. */
+  function spEstJsonApp(parsed) {
+    try {
+      if (!parsed || typeof parsed !== 'object') return false;
+      if (parsed._sp) return false;
+      if (!parsed.pageFormat || typeof parsed.pageFormat !== 'object') return false;
+      if (!Array.isArray(parsed.pages) || !parsed.pages.length) return false;
+      return parsed.pages.every(function (p) {
+        return p && (Array.isArray(p.objects) || typeof p.objects === 'string');
+      });
+    } catch (_) { return false; }
+  }
+
   function normalizeSPFile(input) {
     const parsed = typeof input === 'string' ? JSON.parse(input) : input;
     /* ══ 🆕 v1.7.591 — LES IMAGES JOINTES DU .sp EXPORTÉ DEPUIS UN MESSAGE ══
@@ -29279,16 +29532,39 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         if (Array.isArray(parsed.elements)) parsed.elements = hydrateUserImages(parsed.elements, _attsPj);
       }
     } catch (_) {}
-    const spFile = parsed && !parsed._sp && (parsed.pages || parsed.elements)
-      ? buildSPFileFromParsed(parsed)
-      : parsed;
+    /* _SP_JSON_APP_637 — le .json de SuperPrint AVANT toute autre lecture : ses
+       `pages[].objects` ne sont pas des `elements`, et sans cette branche il
+       partait dans buildSPFileFromParsed (qui produit des pages VIDES) puis était
+       rejeté. Voir spDepuisJsonApp. */
+    const spFile = spEstJsonApp(parsed)
+      ? spDepuisJsonApp(parsed)
+      : (parsed && !parsed._sp && (parsed.pages || parsed.elements)
+        ? buildSPFileFromParsed(parsed)
+        : parsed);
     const format = spFile && spFile.document && spFile.document.format;
     const width = Number(format && format.width);
     const height = Number(format && format.height);
+    /* ⚠️ _SP_NATIF_637 — `objects` PEUT ÊTRE UNE CHAÎNE dans d'anciens fichiers
+       (le filet de sécurité du studio en écrivait une). On l'accepte et on la
+       DÉPLIE ici, une fois pour toutes : sans cela le document était rejeté en
+       bloc, sans message utile. La forme chaîne est normalisée en tableau pour
+       tout le reste du fichier. */
+    const _objetsValides = (page) => {
+      if (!page) return false;
+      if (Array.isArray(page.objects)) return true;
+      if (typeof page.objects === 'string') {
+        try {
+          const j = JSON.parse(page.objects);
+          const arr = Array.isArray(j) ? j : (j && Array.isArray(j.objects) ? j.objects : null);
+          if (arr) { page.objects = arr; return true; }
+        } catch (_) {}
+      }
+      return false;
+    };
     const valid = spFile && spFile._sp && spFile._sp.format === 'SuperPrint Document'
       && Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0
       && Array.isArray(spFile.pages) && spFile.pages.length > 0
-      && spFile.pages.every(page => page && Array.isArray(page.objects));
+      && spFile.pages.every(_objetsValides);
     if (!valid) throw new Error('Structure de document SuperPrint invalide.');
     // 🎨 v1.7.350b — mémoriser les tons directs du document importé : ils
     //   seront réinscrits dans le .sp si l'utilisateur le re-télécharge.
@@ -29328,6 +29604,56 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     }
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     OUVRIR SUPERPRINT — UN ONGLET SUR LE WEB, UNE FENÊTRE DANS L'APPLICATION.
+
+     POURQUOI PAS UN SIMPLE window.open. Dans l'application de bureau, window.open
+     N'OUVRE RIEN : la coquille refuse par défaut toute création de fenêtre
+     demandée par la page, et le bouton ÉDITER restait sans effet — alors qu'il
+     fonctionnait sur le site. Constaté sur l'application installée.
+
+     On demande donc la fenêtre à la coquille, qui sait la créer. Deux détails qui
+     comptent, tous les deux vérifiés :
+
+     · dragDropEnabled: false sur la fenêtre créée. Elle N'HÉRITE PAS des réglages
+       de la fenêtre principale : sans cette ligne, le glisser-déposer depuis le
+       bureau serait cassé dans l'éditeur ouvert par le studio, alors qu'on vient
+       de le réparer pour la fenêtre principale.
+
+     · Une seule fenêtre, réutilisée. Deux clics sur ÉDITER ne doivent pas échouer
+       sur un libellé déjà pris : on ramène au premier plan celle qui existe.
+
+     Le repli est window.open, c'est-à-dire le comportement du site : si l'API de
+     la coquille n'est pas là, on ne casse rien.
+     ══════════════════════════════════════════════════════════════════════════ */
+  function ouvrirSuperPrint(spUrl) {
+    try {
+      const api = window.__TAURI__;
+      const Fenetre = api && api.webviewWindow && api.webviewWindow.WebviewWindow;
+      if (Fenetre) {
+        const dejaOuverte = Fenetre.getByLabel && Fenetre.getByLabel('superprint');
+        if (dejaOuverte) {
+          if (dejaOuverte.setFocus) { try { dejaOuverte.setFocus(); } catch (_) {} }
+          return;
+        }
+        new Fenetre('superprint', {
+          url: spUrl,
+          title: 'SuperPrint',
+          width: 1400,
+          height: 900,
+          minWidth: 900,
+          minHeight: 600,
+          center: true,
+          dragDropEnabled: false
+        });
+        return;
+      }
+    } catch (_) {
+      /* On retombe sur le navigateur : mieux vaut un onglet qu'aucun bouton. */
+    }
+    window.open(spUrl, '_blank', 'noopener');
+  }
+
   // ↗ Ouvre une maquette brute (JSON de l'IA) dans SuperPrint
   function openJSONInApp(jsonStr) {
     try {
@@ -29337,7 +29663,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         return;
       }
       const spUrl = 'app/index.html?from=sp213';
-      window.open(spUrl, '_blank', 'noopener');
+      ouvrirSuperPrint(spUrl);
     } catch (err) {
       appendChat('assistant', 'Impossible d\'ouvrir dans l\'app : ' + (err && err.message ? err.message : err));
     }
@@ -29603,10 +29929,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       appendChat('assistant', "Erreur : la maquette est trop lourde pour être transmise à SuperPrint (limite localStorage). Utilisez Exporter .sp.");
       return;
     }
-    // Ouvrir SuperPrint (app/index.html) dans un nouvel onglet, avec le marqueur from=sp213
+    // Ouvrir SuperPrint (app/index.html) avec le marqueur from=sp213 : un onglet
+    // sur le web, une fenêtre dans l'application de bureau (voir ouvrirSuperPrint).
     const spUrl = 'app/index.html?from=sp213';
-    window.open(spUrl, '_blank', 'noopener');
-    appendChat('assistant', 'SuperPrint s\'ouvre dans un nouvel onglet avec votre maquette chargée (' + state.pages.length + ' page(s)).');
+    ouvrirSuperPrint(spUrl);
+    appendChat('assistant', 'SuperPrint s\'ouvre avec votre maquette chargée (' + state.pages.length + ' page(s)).');
   }
 
   // ── Prompt système SP213 ────────────────────────────────────
