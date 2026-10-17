@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN INTÉGRÉ « GLOBAL REFACTOR »  (v1.7.647)
+   SUPERPRINT — PLUG-IN INTÉGRÉ « GLOBAL REFACTOR »  (v1.7.648)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Demande utilisateur : « on va déplacer l'outil global refactor de la top nav sous

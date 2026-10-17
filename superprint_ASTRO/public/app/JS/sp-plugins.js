@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-INS  (v1.7.647)
+   SUPERPRINT — PLUG-INS  (v1.7.648)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Un plug-in SuperPrint est un fichier `.plugin.js` que l'utilisateur installe
@@ -26,7 +26,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.647';
+  var VERSION = '1.7.648';
   var CLE_REGISTRE = 'sp_plugins_v1';        // plug-ins installés (code source + manifeste)
   var CLE_ACTIFS = 'sp_plugins_actifs_v1';   // { [id]: true/false }
 
@@ -75,7 +75,7 @@
     var api = {
       version: VERSION,
 
-      /* 🆕 v1.7.647 — L'APERÇU EST UN MODE, ET LE PLUG-IN DOIT LE SAVOIR.
+      /* 🆕 v1.7.648 — L'APERÇU EST UN MODE, ET LE PLUG-IN DOIT LE SAVOIR.
          Une trappe peut exécuter un plug-in à chaque mouvement de tirette. Dans ce
          mode, `api.apercu` vaut `true` : un plug-in qui écrit quelque chose de
          coûteux (un historique, un message, un dialogue) peut s'en abstenir. Le
@@ -90,7 +90,7 @@
       mm: mmVersPx,
       px: pxVersMm,
 
-      /* 🆕 v1.7.647 — TOUS LES PLANS DE TRAVAIL.
+      /* 🆕 v1.7.648 — TOUS LES PLANS DE TRAVAIL.
          Un plug-in qui remplace son propre dessin doit pouvoir le RETIRER partout
          où il l'a posé. Sans cette liste, le plug-in Motif devait passer par
          `window._spMaquette._debug.vues()` — l'échafaudage de débogage d'un autre
@@ -163,6 +163,20 @@
         try { if (H().sync) H().sync(); } catch (_) {}
       },
 
+      /* 🆕 v1.7.648 — LA GRANDE TOILE D'APERÇU DE LA TRAPPE.
+         Renvoie `{ canvas, ctx, largeur, hauteur }` (en pixels du support, donc
+         déjà doublé pour un écran à densité 2), ou `null` si le plug-in n'a pas
+         déclaré de champ `{ type: 'apercu' }` ou si aucune trappe n'est ouverte.
+         Le plug-in y dessine CE QU'IL S'APPRÊTE À POSER : c'est la seule façon
+         honnête de montrer un motif — une vignette d'une seule forme ne dit rien
+         du rythme, de la densité ni des raccords. */
+      toileApercu: function () {
+        try {
+          var t = window.__SP_PLUGIN_TRAP__;
+          return (t && typeof t.toileApercu === 'function') ? t.toileApercu() : null;
+        } catch (_) { return null; }
+      },
+
       /* Écrit l'entrée d'historique. En aperçu, c'est la VALIDATION qui l'appelle,
          une seule fois — jamais le plug-in. */
       commit: function (libelle) {
@@ -201,17 +215,30 @@
             inp.type = 'file';
             inp.accept = 'image/*,.svg';
             inp.style.display = 'none';
+            /* ⚠️ v1.7.648 — L'ÉLÉMENT EST RETIRÉ DÈS QU'IL A SERVI.
+               MESURÉ : le retrait n'était prévu qu'au bout de 60 s, et le champ
+               n'était jamais enlevé si l'utilisateur fermait le sélecteur sans
+               choisir de fichier. Un mixeur d'images demande plusieurs choix de
+               suite : on accumulait ainsi un `<input type=file>` invisible par
+               clic (24 relevés en une session de test). On nettoie donc dans tous
+               les cas — changement, annulation, et le délai de sécurité. */
+            var nettoyer = function () {
+              try { if (inp.parentNode) inp.parentNode.removeChild(inp); } catch (_) {}
+            };
             inp.addEventListener('change', function () {
               var f = inp.files && inp.files[0];
-              if (!f) { res(null); return; }
+              if (!f) { nettoyer(); res(null); return; }
               var r = new FileReader();
-              r.onload = function () { res(String(r.result)); };
-              r.onerror = function () { res(null); };
+              r.onload = function () { nettoyer(); res(String(r.result)); };
+              r.onerror = function () { nettoyer(); res(null); };
               r.readAsDataURL(f);
             });
+            /* Le sélecteur fermé sans choix n'émet pas `change` sur tous les
+               navigateurs : `cancel` le fait, quand il existe. */
+            inp.addEventListener('cancel', function () { nettoyer(); res(null); });
             document.body.appendChild(inp);
             inp.click();
-            setTimeout(function () { if (inp.parentNode) inp.parentNode.removeChild(inp); }, 60000);
+            setTimeout(nettoyer, 60000);
           } catch (_) { res(null); }
         });
       },
@@ -271,12 +298,21 @@
       return {
         key: String(o.key || ''),
         label: String(o.label || o.key || ''),
-        type: ['text', 'number', 'color', 'select', 'checkbox', 'image', 'range'].indexOf(o.type) >= 0 ? o.type : 'text',
+        /* 🆕 v1.7.648 — `apercu` (grande toile dessinée par le plug-in) et
+           `images` (mixeur multi-images) rejoignent les types reconnus. Sans
+           cette ligne, le normalisateur les rabattait sur `text` : la trappe
+           affichait alors une bêtise au lieu du champ demandé. */
+        type: ['text', 'number', 'color', 'select', 'checkbox', 'image', 'images', 'range', 'apercu'].indexOf(o.type) >= 0 ? o.type : 'text',
         defaut: (o.defaut !== undefined) ? o.defaut : '',
         choix: Array.isArray(o.choix) ? o.choix.slice() : null,
         min: (typeof o.min === 'number') ? o.min : undefined,
         max: (typeof o.max === 'number') ? o.max : undefined,
         pas: (typeof o.pas === 'number') ? o.pas : undefined,
+        /* Unité affichée à côté de la valeur (mm, °, %, ×) : purement cosmétique,
+           mais sans elle « 8 » ne veut rien dire sur une tirette. */
+        unite: o.unite ? String(o.unite) : '',
+        /* Rapport hauteur/largeur de la toile d'aperçu (1.414 = A4 portrait). */
+        ratio: (typeof o.ratio === 'number' && o.ratio > 0.1 && o.ratio < 10) ? o.ratio : undefined,
         aide: o.aide ? String(o.aide) : ''
       };
     }).filter(function (o) { return o.key; }) : [];
@@ -288,7 +324,7 @@
       description: String(m.description || ''),
       icon: String(m.icon || '◆'),
       options: options,
-      /* 🆕 v1.7.647 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
+      /* 🆕 v1.7.648 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
          « Global Refactor » n'est pas un formulaire : c'est un panneau entier, avec
          un aperçu en direct, un Annuler et un Valider qui existaient déjà. Le
          réécrire dans une trappe générique aurait été un second code à maintenir
@@ -328,7 +364,7 @@
     installes[m.id] = {
       source: src, name: m.name, version: m.version, author: m.author, integre: false,
       description: m.description, icon: m.icon, options: m.options, fichier: nomFichier || '',
-      /* 🆕 v1.7.647 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
+      /* 🆕 v1.7.648 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
          Les plug-ins installés AVANT cette version n'en ont pas : le filtre les
          traite alors comme « anciens » (visibles dans « Tous » et « 30 jours »),
          jamais comme « récents » — on ne date pas rétroactivement un fichier
@@ -365,7 +401,7 @@
     }
     if (!m) throw new Error('plug-in inconnu : ' + id);
     if (!m.run) throw new Error('ce plug-in n\'a pas de fonction run()');
-    /* ⚠️ v1.7.647 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
+    /* ⚠️ v1.7.648 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
        LE DIT. L'état `actif` existait depuis 1.7.642 mais n'était qu'une pastille
        d'affichage : `definirActif` écrivait dans le stockage et personne ne le
        relisait. Un interrupteur qui ne coupe rien est un mensonge — la garde est
@@ -379,7 +415,7 @@
     (m.options || []).forEach(function (o) { opts[o.key] = (valeurs && o.key in valeurs) ? valeurs[o.key] : o.defaut; });
     var api = creerApi(m, options);
     var apercu = !!(options && options.apercu);
-    /* 🆕 v1.7.647 — L'APERÇU SE DÉROULE EN SILENCE D'HISTORIQUE.
+    /* 🆕 v1.7.648 — L'APERÇU SE DÉROULE EN SILENCE D'HISTORIQUE.
        ⚠️ MESURÉ : sans cela, chaque forme posée par le plug-in déclenchait le
        `object:added` global de `main.js` → `debouncedSaveState('Objet ajouté')`.
        La pile d'undo montait de 13 à 29 en trente secondes d'aperçus, et Ctrl+Z
@@ -399,7 +435,7 @@
       );
   }
 
-  /* 🆕 v1.7.647 — VALIDER UN APERÇU.
+  /* 🆕 v1.7.648 — VALIDER UN APERÇU.
      Une trappe en aperçu direct peut avoir exécuté le plug-in trente fois. Une
      seule entrée d'historique doit en sortir, et c'est celle-ci : elle synchronise
      puis fige. Le plug-in n'a rien à en savoir. */
@@ -438,7 +474,7 @@
         integre: !!m.integre || !!(inst && inst.integre),
         actif: actifs[id] !== false,
         /* Date d'installation, pour les filtres de la bibliothèque (cf. installe
-           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.647. */
+           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.648. */
         installe: (inst && inst.installe) ? inst.installe : null,
         /* Trappe propre au plug-in (cf. `normaliser`) — intégrés uniquement. */
         trappe: m.integre ? m.trappe : ''
@@ -484,7 +520,7 @@
   window.SPPlugins = {
     version: VERSION,
     register: enregistrerIntegre,
-    /* 🆕 v1.7.647 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
+    /* 🆕 v1.7.648 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
        besoin AVANT qu'un plug-in tourne : c'est un champ de son formulaire, pas un
        appel du plug-in. Il délègue à la même fonction que `api.imageDataUrl`, donc
        un seul comportement pour les deux chemins. */

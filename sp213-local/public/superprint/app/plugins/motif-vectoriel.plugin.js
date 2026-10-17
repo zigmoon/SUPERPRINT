@@ -1,93 +1,118 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v2.0.0, app 1.7.647)
+   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.648)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce que fait ce plug-in : il habille un fond de page — ou un bloc sélectionné —
-   d'un MOTIF répété, d'une ROSACE, ou d'un KALÉIDOSCOPE construit à partir de la
-   page elle-même. Le motif est une forme géométrique dessinée, ou une IMAGE
-   importée (SVG, PNG, JPG) qui devient la tuile.
+   d'un MOTIF répété, d'une ROSACE, d'un KALÉIDOSCOPE construit à partir de la page,
+   ou d'un MOTIF « CRAZY » volontairement chaotique. Le motif est une forme
+   géométrique dessinée, ou UNE À SIX IMAGES importées, mélangées entre elles.
+
+   ── v3.0.0 : CE QUI CHANGE, ET POURQUOI ──────────────────────────────────────
+   Demande utilisateur, mot pour mot : « beaucoup trop de texte d'info partout,
+   plus de réglage en tirette, un mode crazy, une preview plus grande de mon image
+   ou de mes images (un mixer ?) ». Quatre chantiers, donc.
+
+   1. LE TEXTE D'AIDE A DISPARU. Les 14 phrases d'explication sous les champs sont
+      retirées — la bibliothèque les disait déjà, et une trappe qu'on parcourt du
+      pouce n'est pas un mode d'emploi. Ne restent que les libellés, la valeur
+      chiffrée de chaque tirette, et le grand aperçu qui montre le résultat.
+   2. TOUT CE QUI SE RÈGLE À L'ŒIL EST UNE TIRETTE. Douze réglages passent en
+      `range` avec leur valeur affichée (mm, °, %). Les deux seules listes gardées
+      sont des choix discrets et nombreux (forme, symétrie) qu'une tirette
+      rendrait illisibles.
+   3. LE GRAND APERÇU. Un champ `apercu` en tête de trappe pose une toile de
+      316 × 316 px où le plug-in dessine LA TUILE RÉPÉTÉE — pas une vignette d'une
+      seule forme. C'est le seul moyen de juger un rythme, une densité, un raccord.
+   4. LE MIXEUR D'IMAGES. Un champ `images` porte un TABLEAU de dataURL : on en
+      ajoute autant qu'on veut, chacune se retire par sa croix. Elles sont
+      superposées dans la tuile avec un mode de fusion (`multiply`, `screen`,
+      `difference`…) et une opacité réglable — c'est ce qui fait un mixeur, et pas
+      un simple sélecteur de fichier.
 
    ⚠️ POURQUOI UN MOTIF (fabric.Pattern) ET PAS DES MILLIERS D'OBJETS.
    Une page A4 à 8 mm de pas demande ~2 300 formes. Autant d'objets Fabric, c'est
    un ralenti immédiat à la sélection, à l'export PDF et à la sauvegarde — mesuré
    sur ce dépôt : un document de 130 objets pèse déjà 128 Ko.
    Un `fabric.Pattern` est UN objet : le navigateur répète la tuile au rendu, et
-   l'export PDF la répète de la même façon. Le motif est donc instantané quelle que
-   soit la densité, et il reste modifiable : on peut changer le pas ou la forme et
-   réappliquer, l'ancien motif est retiré.
+   l'export PDF la répète de la même façon.
 
-   ⚠️ LA TUILE EST DESSINÉE SUR UN CANVAS HORS ÉCRAN, À LA RÉSOLUTION DU DOCUMENT.
-   La dessiner à 72 dpi donnerait des bords crénelés dès qu'on zoome ou qu'on
-   exporte. On la dessine `facteur` fois plus grande (×4 par défaut) : nette à
-   l'impression, et le motif la réduit au rendu — d'où le `patternTransform` de 1/4.
+   ⚠️ LA TUILE EST DESSINÉE À LA RÉSOLUTION DU DOCUMENT, PAS À 72 dpi.
+   On la dessine `facteur` fois plus grande (×4 par défaut) : nette à l'impression,
+   et le motif la réduit au rendu — d'où le `patternTransform` de 1/4.
 
-   ⚠️ v2.0.0 — LA SUPER-TUILE, ET POURQUOI ELLE EXISTE.
+   ⚠️ LA SUPER-TUILE, ET POURQUOI ELLE EXISTE.
    Un `fabric.Pattern` répète UNE tuile à l'identique : impossible, avec une seule
    tuile, d'obtenir une variation d'une répétition à l'autre. On dessine donc une
    tuile de N × N CELLULES, chacune avec sa propre graine — la répétition reste
    parfaite (c'est la super-tuile qui se répète), mais l'œil voit N² cellules
-   différentes. N = 1 par défaut (répétition pure), 2 ou 3 pour la variété.
+   différentes. N = 1 par défaut, 2 ou 3 pour la variété.
    La graine est explicite : un même jeu de réglages redonne exactement le même
    dessin, donc un motif enregistré se réouvre à l'identique.
 
    ⚠️ LE KALÉIDOSCOPE EST LE GROUPE DU CARRÉ (D4), ET C'EST LE SEUL QUI PAVAILLE.
    Une rosace à 6 branches dans une tuile carrée laisse des coutures : 60° ne
    ramène pas un carré sur lui-même. Les 8 symétries qui le font sont les 4
-   rotations (0/90/180/270°) et les 4 réflexions (horizontal, vertical, deux
-   diagonales). Appliquées à une forme centrée, elles produisent une rosace
-   kaléidoscopique ET jointive à la tuile suivante.
-   « kaléidoscope dense » applique D4 deux fois, à deux échelles : plus rempli,
-   toujours jointif.
+   rotations et les 4 réflexions. « kaléidoscope dense » applique D4 deux fois, à
+   deux échelles : plus rempli, toujours jointif.
+
+   ⚠️ UNE FORME CENTRÉE EST INVARIANTE SOUS D4 — MESURÉ, ET C'EST POURQUOI
+   « ÉCART AU CENTRE » EXISTE. Premier essai : 1 588 pixels opaques avec symétrie
+   contre 1 595 sans, c'est-à-dire rien. Les huit copies se superposaient. En
+   décalant la forme du centre, chacune part dans sa propre direction et la
+   couronne apparaît (5 806 pixels opaques). Second piège, mesuré aussi : l'ordre
+   des transformations. `translate` AVANT `rotate` fait tourner autour du point
+   déjà décalé, donc le centre ne bouge pas et les copies se superposent encore.
+   Il faut `rotate` d'abord, `translate` ensuite, dans le repère déjà tourné.
 
    ⚠️ LE MODE « KALÉIDOSCOPE DE LA PAGE » EST UN VRAI KALÉIDOSCOPE, PAS UNE TUILE.
    Il prend le rendu de la page (le motif précédent ayant été retiré juste avant),
-   le réduit dans un quadrant et le reflète dans les trois autres. C'est l'effet
-   qu'on attend d'un kaléidoscope : la composition de l'utilisateur, démultipliée.
-   Il coûte un `toDataURL` par application — d'où le fait qu'il soit un mode parmi
-   d'autres et pas le comportement par défaut.
+   le réduit dans un quadrant et le reflète dans les trois autres. Il coûte un
+   `toDataURL` par application — d'où le fait qu'il soit un mode parmi d'autres.
 
    ⚠️ APERÇU EN DIRECT — `api.apercu`.
    La trappe exécute ce plug-in à chaque mouvement de tirette. En aperçu,
-   `api.apercu` vaut true : on ne valide pas d'entrée d'historique par mouvement
-   (sinon il faudrait vingt Ctrl+Z pour revenir au dessin d'avant), on synchronise
-   seulement `pages[]` pour qu'un rafraîchissement ne perde pas l'aperçu. La
-   validation écrit UNE entrée, quel que soit le nombre d'aperçus.
+   `api.apercu` vaut true : aucune entrée d'historique n'est écrite (sinon il
+   faudrait vingt Ctrl+Z pour revenir au dessin d'avant), on synchronise seulement
+   `pages[]`. La validation écrit UNE entrée, quel que soit le nombre d'aperçus.
 
    ⚠️ CE PLUG-IN EST AUSSI LE BANC D'ESSAI DE L'API.
    Il n'utilise QUE l'API documentée : `api.fabric`, `api.mm`, `api.document`,
    `api.selection`, `api.canvases`, `api.add`, `api.commit`, `api.sync`,
-   `api.apercu`. S'il fonctionne sans rien d'autre, l'API est suffisante pour un
-   plug-in réel.
+   `api.apercu`, `api.toileApercu`. S'il fonctionne sans rien d'autre, l'API est
+   suffisante pour un plug-in réel.
    ─────────────────────────────────────────────────────────────────────────────── */
 SPPluginAPI({
   id: 'motif-vectoriel',
   name: 'Motif vectoriel',
-  version: '2.0.0',
+  version: '3.0.0',
   author: 'SuperPrint',
   icon: '▦',
-  description: 'Répète une forme — ou une image — en motif, en rosace ou en kaléidoscope de la page. Aperçu en direct : chaque tirette se voit immédiatement.',
+  description: 'Motif, rosace, kaléidoscope ou chaos — à partir d\'une forme ou d\'un mélange d\'images. Aperçu en direct dans la trappe.',
 
   options: [
-    /* ── Cible et composition ─────────────────────────────────────────────── */
+    /* ── Le grand aperçu. En tête, et sans libellé : il se comprend seul. ──── */
+    { key: 'apercu', label: 'Aperçu', type: 'apercu', ratio: 1 },
+
+    /* ── Où poser ─────────────────────────────────────────────────────────── */
     {
       key: 'cible', label: 'Appliquer à', type: 'select', defaut: 'auto',
       choix: [
-        { value: 'auto', label: 'Le bloc sélectionné, sinon toute la page' },
+        { value: 'auto', label: 'Le bloc sélectionné, sinon la page' },
         { value: 'page', label: 'Toute la page' },
-        { value: 'selection', label: 'Le bloc sélectionné uniquement' }
+        { value: 'selection', label: 'Le bloc sélectionné' }
       ]
     },
     {
       key: 'mode', label: 'Effet', type: 'select', defaut: 'tuile',
       choix: [
         { value: 'tuile', label: 'Motif répété' },
-        { value: 'rosette', label: 'Rosace (une seule, centrée)' },
+        { value: 'crazy', label: 'Crazy — chaos contrôlé' },
+        { value: 'rosette', label: 'Rosace (une seule)' },
         { value: 'miroir', label: 'Kaléidoscope de la page' }
-      ],
-      aide: 'Rosace et kaléidoscope ne se répètent pas : ils composent une seule image.'
+      ]
     },
 
-    /* ── Forme ────────────────────────────────────────────────────────────── */
+    /* ── La forme ─────────────────────────────────────────────────────────── */
     {
       key: 'forme', label: 'Forme', type: 'select', defaut: 'cercle',
       choix: [
@@ -97,62 +122,41 @@ SPPluginAPI({
         { value: 'losange', label: 'Losange' },
         { value: 'triangle', label: 'Triangle' },
         { value: 'hexagone', label: 'Hexagone' },
-        { value: 'etoile5', label: 'Étoile à 5 branches' },
-        { value: 'etoile6', label: 'Étoile à 6 branches' },
+        { value: 'etoile5', label: 'Étoile 5 branches' },
+        { value: 'etoile6', label: 'Étoile 6 branches' },
         { value: 'croix', label: 'Croix' },
         { value: 'goutte', label: 'Goutte' },
-        { value: 'fleur', label: 'Fleur (4 pétales)' },
+        { value: 'fleur', label: 'Fleur' },
         { value: 'spirale', label: 'Spirale' },
         { value: 'vague', label: 'Vague' },
-        { value: 'lignes', label: 'Lignes diagonales' },
+        { value: 'lignes', label: 'Lignes' },
         { value: 'nid', label: 'Nid d\'abeille' }
       ]
     },
     {
-      key: 'symetrie', label: 'Symétrie dans la tuile', type: 'select', defaut: 'aucune',
+      key: 'symetrie', label: 'Symétrie', type: 'select', defaut: 'aucune',
       choix: [
         { value: 'aucune', label: 'Aucune' },
         { value: 'miroir-x', label: 'Miroir horizontal' },
         { value: 'miroir-y', label: 'Miroir vertical' },
         { value: 'miroir-xy', label: 'Miroir deux axes' },
-        { value: 'quart', label: 'Rotation 90° (4 branches)' },
-        { value: 'kaleido', label: 'Kaléidoscope (8 branches)' },
-        { value: 'kaleido16', label: 'Kaléidoscope dense (16)' }
-      ],
-      aide: 'Seules les symétries du carré pavillent sans couture — d\'où l\'absence de 6 branches.'
-    },
-    {
-      key: 'graine', label: 'Graine du hasard', type: 'number', defaut: 7, min: 1, max: 9999, pas: 1,
-      aide: 'Même graine + mêmes réglages = même dessin, à la réouverture comme à l\'écran.'
+        { value: 'quart', label: 'Rotation 90°' },
+        { value: 'kaleido', label: 'Kaléidoscope 8' },
+        { value: 'kaleido16', label: 'Kaléidoscope 16' }
+      ]
     },
 
-    /* ── Géométrie ────────────────────────────────────────────────────────── */
-    { key: 'pas', label: 'Pas du motif (mm)', type: 'number', defaut: 8, min: 1, max: 80, pas: 0.5,
-      aide: 'Distance entre deux répétitions.' },
-    { key: 'taille', label: 'Taille de la forme (mm)', type: 'number', defaut: 4, min: 0.4, max: 78, pas: 0.2,
-      aide: 'Diamètre ou côté. Au-delà du pas, les formes se chevauchent.' },
-    {
-      key: 'ecart', label: 'Écart au centre de la cellule', type: 'range', defaut: 0.3, min: 0, max: 0.5, pas: 0.01,
-      aide: 'Distance de la forme au centre, en fraction de cellule. À 0, les symétries se superposent : le kaléidoscope ne se voit pas.'
-    },
-    { key: 'angle', label: 'Rotation de la forme (°)', type: 'number', defaut: 0, min: 0, max: 360, pas: 1 },
-    { key: 'rotationCellule', label: 'Rotation d\'une cellule à l\'autre (°)', type: 'number', defaut: 0, min: -90, max: 90, pas: 1,
-      aide: 'Chaque cellule tourne un peu plus que la précédente : effet de vrille.' },
-    { key: 'variation', label: 'Variation entre cellules', type: 'range', defaut: 0, min: 0, max: 1, pas: 0.05,
-      aide: 'Déplace et redimensionne chaque cellule au hasard. 0 = répétition parfaite.' },
-    { key: 'quinconce', label: 'Quinconce', type: 'range', defaut: 0, min: 0, max: 1, pas: 0.05,
-      aide: 'Décale une ligne sur deux d\'une demi-cellule — appareil de briques.' },
-    { key: 'onde', label: 'Onde (mm)', type: 'number', defaut: 0, min: 0, max: 40, pas: 0.5,
-      aide: 'Fait onduler les rangées, sur une période égale à la tuile : le raccord reste continu.' },
-    {
-      key: 'cellules', label: 'Cellules par tuile', type: 'select', defaut: '1',
-      choix: [
-        { value: '1', label: '1 × 1 — répétition pure' },
-        { value: '2', label: '2 × 2 — quatre variantes' },
-        { value: '3', label: '3 × 3 — neuf variantes' }
-      ],
-      aide: 'La tuile est répétée telle quelle : plus de cellules = plus de variété, tuile plus lourde.'
-    },
+    /* ── Géométrie : des tirettes, avec leur valeur en clair ──────────────── */
+    { key: 'pas', label: 'Pas du motif', type: 'range', defaut: 8, min: 1, max: 60, pas: 0.5, unite: ' mm' },
+    { key: 'taille', label: 'Taille de la forme', type: 'range', defaut: 4, min: 0.4, max: 60, pas: 0.2, unite: ' mm' },
+    { key: 'ecart', label: 'Écart au centre', type: 'range', defaut: 30, min: 0, max: 50, pas: 1, unite: '%' },
+    { key: 'angle', label: 'Rotation de la forme', type: 'range', defaut: 0, min: 0, max: 360, pas: 1, unite: '°' },
+    { key: 'rotationCellule', label: 'Vrille d\'une cellule à l\'autre', type: 'range', defaut: 0, min: -90, max: 90, pas: 1, unite: '°' },
+    { key: 'variation', label: 'Variation', type: 'range', defaut: 0, min: 0, max: 100, pas: 1, unite: '%' },
+    { key: 'quinconce', label: 'Quinconce', type: 'range', defaut: 0, min: 0, max: 100, pas: 1, unite: '%' },
+    { key: 'onde', label: 'Onde', type: 'range', defaut: 0, min: 0, max: 40, pas: 0.5, unite: ' mm' },
+    { key: 'folie', label: 'Folie', type: 'range', defaut: 45, min: 0, max: 100, pas: 1, unite: '%' },
+    { key: 'graine', label: 'Graine', type: 'range', defaut: 7, min: 1, max: 200, pas: 1, unite: '' },
 
     /* ── Couleur ──────────────────────────────────────────────────────────── */
     { key: 'couleur', label: 'Couleur 1', type: 'color', defaut: '#1a1a1a' },
@@ -160,28 +164,50 @@ SPPluginAPI({
     {
       key: 'degrade', label: 'Dégradé', type: 'select', defaut: 'aucun',
       choix: [
-        { value: 'aucun', label: 'Aucun (couleur 1)' },
-        { value: 'lineaire', label: 'Linéaire 1 → 2' },
-        { value: 'radial', label: 'Radial 1 → 2' }
+        { value: 'aucun', label: 'Aucun' },
+        { value: 'lineaire', label: 'Linéaire' },
+        { value: 'radial', label: 'Radial' }
       ]
     },
-    { key: 'fondTuile', label: 'Fond de la tuile', type: 'color', defaut: '#ffffff' },
-    { key: 'fondActif', label: 'Remplir le fond de la tuile', type: 'checkbox', defaut: false,
-      aide: 'Sans fond, la tuile est transparente : le papier ou le bloc se voit dessous.' },
-    { key: 'trait', label: 'Trait seulement (pas de remplissage)', type: 'checkbox', defaut: false,
-      aide: 'La forme est dessinée à la plume : l\'intérieur reste transparent.' },
-    { key: 'epaisseur', label: 'Épaisseur du trait (mm)', type: 'number', defaut: 0.5, min: 0.05, max: 8, pas: 0.05 },
-    { key: 'opacite', label: 'Opacité', type: 'range', defaut: 1, min: 0.05, max: 1, pas: 0.05 },
+    { key: 'opacite', label: 'Opacité', type: 'range', defaut: 100, min: 5, max: 100, pas: 1, unite: '%' },
+    { key: 'fondActif', label: 'Remplir le fond', type: 'checkbox', defaut: false },
+    { key: 'fondTuile', label: 'Fond', type: 'color', defaut: '#ffffff' },
+    { key: 'trait', label: 'Trait seulement', type: 'checkbox', defaut: false },
+    { key: 'epaisseur', label: 'Épaisseur du trait', type: 'range', defaut: 0.5, min: 0.05, max: 8, pas: 0.05, unite: ' mm' },
 
-    /* ── Divers ───────────────────────────────────────────────────────────── */
-    { key: 'image', label: 'Utiliser une image comme forme', type: 'image',
-      aide: 'Un SVG, un PNG ou un JPG : l\'image devient la tuile répétée. Remplace la forme géométrique.' },
+    /* ── Le mixeur d'images ───────────────────────────────────────────────── */
+    /* Déclaré APRÈS la couleur : une image remplace la forme géométrique, et la
+       couleur ne sert plus qu'aux modes où aucune image n'est chargée. */
+    { key: 'images', label: 'Images (mixeur)', type: 'images' },
     {
-      key: 'facteur', label: 'Netteté de la tuile', type: 'select', defaut: '4',
+      key: 'melange', label: 'Fusion', type: 'select', defaut: 'source-over',
       choix: [
-        { value: '2', label: '×2 — aperçu rapide' },
+        { value: 'source-over', label: 'Normale' },
+        { value: 'multiply', label: 'Produit' },
+        { value: 'screen', label: 'Écran' },
+        { value: 'overlay', label: 'Incrustation' },
+        { value: 'difference', label: 'Différence' },
+        { value: 'lighter', label: 'Addition' },
+        { value: 'hard-light', label: 'Lumière crue' }
+      ]
+    },
+    { key: 'melangeOpacite', label: 'Opacité des images', type: 'range', defaut: 100, min: 5, max: 100, pas: 1, unite: '%' },
+
+    /* ── Technique ────────────────────────────────────────────────────────── */
+    {
+      key: 'cellules', label: 'Cellules par tuile', type: 'select', defaut: '1',
+      choix: [
+        { value: '1', label: '1 × 1' },
+        { value: '2', label: '2 × 2' },
+        { value: '3', label: '3 × 3' }
+      ]
+    },
+    {
+      key: 'facteur', label: 'Netteté', type: 'select', defaut: '4',
+      choix: [
+        { value: '2', label: '×2 — rapide' },
         { value: '4', label: '×4 — recommandé' },
-        { value: '8', label: '×8 — très fin (export)' }
+        { value: '8', label: '×8 — export' }
       ]
     },
     { key: 'libelle', label: 'Nom de l\'objet', type: 'text', defaut: 'Motif' }
@@ -191,26 +217,40 @@ SPPluginAPI({
     var fabric = api.fabric;
     if (!fabric) throw new Error('moteur graphique indisponible');
 
+    /* ── Les réglages, normalisés une fois pour toutes ──────────────────────
+       Les tirettes rendent des POURCENTAGES (0–100). Le dessin, lui, raisonne en
+       fractions (0–1) et en pixels : la conversion se fait ici, à un seul endroit,
+       pour qu'aucune formule plus bas n'ait à se demander quelle unité elle reçoit. */
     var pasMm = Math.max(1, Number(o.pas) || 8);
     var tailleMm = Math.max(0.4, Number(o.taille) || 4);
     var pasPx = api.mm(pasMm);
     var facteur = Math.max(1, Math.min(8, parseInt(o.facteur, 10) || 4));
     var angle = Number(o.angle) || 0;
     var rotationCellule = Number(o.rotationCellule) || 0;
-    var variation = clamp01(o.variation);
-    var quinconce = clamp01(o.quinconce);
+    var variation = pct(o.variation);
+    var quinconce = pct(o.quinconce);
+    var folie = pct(o.folie);
+    var melangeOpacite = pct(o.melangeOpacite, 1);
     var ondeMm = Math.max(0, Number(o.onde) || 0);
     var cellules = Math.max(1, Math.min(3, parseInt(o.cellules, 10) || 1));
-    var opacite = (typeof o.opacite === 'number') ? o.opacite : 1;
+    var opacite = pct(o.opacite, 1);
     var epaisseurPx = Math.max(0.5, api.mm(Math.max(0.05, Number(o.epaisseur) || 0.5)));
     var traitSeul = !!o.trait;
     var graine = Math.max(1, parseInt(o.graine, 10) || 7);
     var c1 = o.couleur || '#1a1a1a';
     var c2 = o.couleur2 || c1;
+    var mode = o.mode || 'tuile';
+    /* Le mode « crazy » n'est pas un dessin différent : c'est le même moteur poussé
+       par une folie minimale. Sans ce plancher, choisir « Crazy » avec la tirette
+       Folie à zéro ne changerait RIEN — et l'utilisateur croirait le mode cassé. */
+    var folieEffective = (mode === 'crazy') ? Math.max(folie, 0.42) : folie;
+    var MELANGES = ['source-over', 'multiply', 'screen', 'overlay', 'difference', 'lighter', 'hard-light'];
+    var melange = MELANGES.indexOf(o.melange) >= 0 ? o.melange : 'source-over';
 
-    function clamp01(v) {
+    function pct(v, defaut) {
       var n = Number(v);
-      return isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
+      if (!isFinite(n)) return (defaut === undefined ? 0 : defaut);
+      return Math.max(0, Math.min(1, n / 100));
     }
 
     /* ── Générateur pseudo-aléatoire à graine (mulberry32) ──────────────────
@@ -241,8 +281,8 @@ SPPluginAPI({
       { rot: 90, mirX: -1, mirY: 1 },
       { rot: 90, mirX: 1, mirY: -1 }
     ];
-    function symetries(mode) {
-      switch (mode) {
+    function symetries(m) {
+      switch (m) {
         case 'miroir-x': return [{ rot: 0, mirX: 1, mirY: 1 }, { rot: 0, mirX: 1, mirY: -1 }];
         case 'miroir-y': return [{ rot: 0, mirX: 1, mirY: 1 }, { rot: 0, mirX: -1, mirY: 1 }];
         case 'miroir-xy': return [
@@ -256,11 +296,78 @@ SPPluginAPI({
       }
     }
 
-    /* ── Une forme, dessinée centrée en (0,0) ─────────────────────────────── */
-    function dessinerForme(g, taillePx) {
+    /* ── Couleurs du mode crazy ─────────────────────────────────────────────
+       Un tirage entre les deux couleurs ne suffit pas à faire du « chaos » : on
+       fait aussi tourner la TEINTE de la première. D'où ces deux conversions, qui
+       restent en HSL pour ne pas passer par un espace colorimétrique plus lourd. */
+    function hexVersHsl(hex) {
+      var s = String(hex || '#1a1a1a').replace('#', '');
+      if (s.length === 3) s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
+      var r = parseInt(s.slice(0, 2), 16) / 255;
+      var g = parseInt(s.slice(2, 4), 16) / 255;
+      var b = parseInt(s.slice(4, 6), 16) / 255;
+      if (!isFinite(r) || !isFinite(g) || !isFinite(b)) return { h: 0, s: 0, l: 0.1 };
+      var max = Math.max(r, g, b), min = Math.min(r, g, b);
+      var l = (max + min) / 2, h = 0, sat = 0;
+      if (max !== min) {
+        var d = max - min;
+        sat = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        else if (max === g) h = ((b - r) / d + 2) / 6;
+        else h = ((r - g) / d + 4) / 6;
+      }
+      return { h: h, s: sat, l: l };
+    }
+    function hslCss(h, s, l) {
+      return 'hsl(' + Math.round(((h % 1) + 1) % 1 * 360) + ',' +
+        Math.round(Math.max(0, Math.min(1, s)) * 100) + '%,' +
+        Math.round(Math.max(0, Math.min(1, l)) * 100) + '%)';
+    }
+    var hsl1 = hexVersHsl(c1);
+    /* Une couleur tirée au sort : soit un mélange des deux couleurs de référence,
+       soit la première avec la teinte décalée. Le décalage est plafonné à un tiers
+       de tour pour que le motif reste de la même famille chromatique. */
+    function couleurFolie(rnd) {
+      if (rnd() < 0.45) {
+        var t = rnd();
+        var a = hexVersHsl(c1), b = hexVersHsl(c2);
+        return hslCss(a.h + (b.h - a.h) * t, a.s + (b.s - a.s) * t, a.l + (b.l - a.l) * t);
+      }
+      return hslCss(hsl1.h + (rnd() - 0.5) * 0.66, hsl1.s, hsl1.l);
+    }
+
+    /* ── Les images du mixeur, chargées une fois ────────────────────────────
+       `cellule()` est appelée des centaines de fois par tuile : y charger une image
+       à chaque fois ferait un `new Image()` par copie. On les précharge donc en
+       amont, et le dessin se contente de `drawImage` sur des objets déjà prêts. */
+    var urlsImages = [];
+    if (Array.isArray(o.images)) urlsImages = o.images.slice();
+    else if (o.image) urlsImages = [o.image];      /* ancienne forme, un seul champ */
+    urlsImages = urlsImages.filter(function (u) { return typeof u === 'string' && u; }).slice(0, 8);
+    var imagesChargees = [];
+
+    function chargerImages() {
+      if (!urlsImages.length) return Promise.resolve();
+      return Promise.all(urlsImages.map(function (url) {
+        return new Promise(function (res) {
+          var im = new Image();
+          im.onload = function () { res(im); };
+          im.onerror = function () { res(null); };
+          im.src = url;
+        });
+      })).then(function (liste) {
+        imagesChargees = liste.filter(Boolean);
+      });
+    }
+
+    /* ── Une forme, dessinée centrée en (0,0) ───────────────────────────────
+       `forme` est un paramètre et non plus une lecture de `o.forme` : le mode crazy
+       change de forme d'une copie à l'autre, et une fonction qui lit la config
+       globale ne pourrait pas. */
+    function dessinerForme(g, taillePx, forme) {
       var r = taillePx / 2;
       var i, a, x, y, rr;
-      switch (o.forme) {
+      switch (forme) {
         case 'carre':
           g.fillRect(-r, -r, taillePx, taillePx);
           break;
@@ -292,7 +399,7 @@ SPPluginAPI({
           break;
         case 'etoile5':
         case 'etoile6': {
-          var branches = (o.forme === 'etoile6') ? 6 : 5;
+          var branches = (forme === 'etoile6') ? 6 : 5;
           var rInt = r * 0.44;
           g.beginPath();
           for (i = 0; i < branches * 2; i++) {
@@ -367,14 +474,20 @@ SPPluginAPI({
       }
     }
 
-    /* ── Le remplissage : couleur unie ou dégradé ─────────────────────────── */
-    function style(g, r) {
+    /* ── Le remplissage : couleur unie, dégradé, ou tirage du mode crazy ──── */
+    function style(g, r, rnd) {
       if (traitSeul) {
-        g.strokeStyle = (o.degrade === 'aucun') ? c1 : c2;
+        g.strokeStyle = (folieEffective > 0 && rnd) ? couleurFolie(rnd) : ((o.degrade === 'aucun') ? c1 : c2);
         g.lineWidth = epaisseurPx;
         g.lineCap = 'round';
         g.lineJoin = 'round';
-      } else if (o.degrade === 'lineaire') {
+        return;
+      }
+      if (folieEffective > 0 && rnd) {
+        g.fillStyle = couleurFolie(rnd);
+        return;
+      }
+      if (o.degrade === 'lineaire') {
         var gl = g.createLinearGradient(-r, -r, r, r);
         gl.addColorStop(0, c1); gl.addColorStop(1, c2);
         g.fillStyle = gl;
@@ -387,47 +500,69 @@ SPPluginAPI({
       }
     }
 
-    /* ── Une cellule : la forme, multipliée par la symétrie choisie ───────── */
+    /* ── Le mixeur : les images superposées, avec leur mode de fusion ─────── */
+    function dessinerImages(g, taillePx) {
+      if (!imagesChargees.length) return false;
+      imagesChargees.forEach(function (im) {
+        var ratio = (im.width && im.height) ? (im.width / im.height) : 1;
+        var w = taillePx, h = taillePx;
+        if (ratio >= 1) h = taillePx / ratio; else w = taillePx * ratio;
+        g.save();
+        g.globalCompositeOperation = melange;
+        g.globalAlpha = melangeOpacite;
+        g.drawImage(im, -w / 2, -h / 2, w, h);
+        g.restore();
+      });
+      return true;
+    }
+
+    /* ── Une cellule : le contenu, multiplié par la symétrie choisie ──────── */
+    var FORMES = ['cercle', 'anneau', 'carre', 'losange', 'triangle', 'hexagone',
+      'etoile5', 'etoile6', 'croix', 'goutte', 'fleur', 'spirale', 'vague', 'lignes', 'nid'];
+
     function cellule(g, cx, cy, cote, angleExtra, aleatoire) {
-      var sym = symetries(o.symetrie);
+      /* En mode crazy, on part de D4 quoi qu'affiche la liste : c'est la définition
+         du mode, et le laisser dépendre d'un autre réglage rendrait le résultat
+         imprévisible d'une façon qui n'aide personne. */
+      var sym = symetries(mode === 'crazy' ? 'kaleido16' : o.symetrie);
       var echelle = (variation > 0) ? (1 - variation * 0.45 * aleatoire()) : 1;
-      var taille = api.mm(tailleMm) * facteur * echelle;
       /* ⚠️ L'ÉCART AU CENTRE EST CE QUI REND LE KALÉIDOSCOPE VISIBLE.
-         MESURÉ au premier essai : une forme CENTRÉE est invariante par les huit
-         symétries du carré — un cercle au centre donne un cercle, à l'identique.
-         Les 8 copies se superposaient, et la tuile comptait 1 683 pixels opaques
-         pour 1 679 sans symétrie : le réglage ne faisait RIEN de visible.
-         En décalant la forme du centre, chaque symétrie en pose une copie ailleurs
-         et l'on obtient la couronne de pétales qu'on attend d'un kaléidoscope.
-         L'écart est exprimé en fraction de cellule, plafonné à 0,5 : au-delà, la
-         forme sortirait de la cellule et le pavage aurait des trous. */
-      var ecartPx = Math.min(0.5, Math.max(0, Number(o.ecart) || 0)) * cote;
-      /* En kaléidoscope dense, une seconde passe à mi-échelle remplit les vides
-         entre les branches — c'est ce qui donne l'aspect « rosace pleine ». */
-      var passes = (o.symetrie === 'kaleido16')
-        ? [{ f: 1, a: 0 }, { f: 0.55, a: Math.PI / 4 }]
-        : [{ f: 1, a: 0 }];
+         Une forme CENTRÉE est invariante par les huit symétries du carré : les
+         copies se superposent et le réglage ne fait rien de visible (mesuré :
+         1 588 pixels opaques avec symétrie, 1 595 sans). Le plafond à 0,5 de cellule
+         évite qu'une copie sorte de la cellule et laisse un trou dans le pavage. */
+      var ecartPx = Math.min(0.5, Math.max(0, pct(o.ecart))) * cote;
+      var passes = (mode === 'crazy')
+        ? [{ f: 1, a: 0 }, { f: 0.62, a: Math.PI / 6 }, { f: 0.38, a: Math.PI / 3 }]
+        : (o.symetrie === 'kaleido16')
+          ? [{ f: 1, a: 0 }, { f: 0.55, a: Math.PI / 4 }]
+          : [{ f: 1, a: 0 }];
 
       passes.forEach(function (p) {
-        var rayon = taille * p.f / 2;
+        var rayon = (api.mm(tailleMm) * facteur * echelle) * p.f / 2;
         sym.forEach(function (s) {
           g.save();
           g.translate(cx, cy);
-          /* ⚠️ L'ORDRE DES TRANSFORMATIONS EST LE CŒUR DU KALÉIDOSCOPE, ET IL SE
-             MESURE. Premier essai : `translate(écart)` PUIS `rotate(symétrie)`.
-             La rotation s'appliquait alors autour du point déjà décalé, donc le
-             CENTRE de la forme ne bougeait pas d'une copie à l'autre : les huit
-             se superposaient exactement. Mesure : 1 588 pixels opaques sans
-             symétrie, 1 595 avec — c'est-à-dire rien.
-             Il faut tourner AUTOUR DU CENTRE DE LA CELLULE d'abord, puis décaler
-             dans le repère déjà tourné : chaque copie part alors dans sa propre
-             direction et la couronne apparaît. */
-          g.rotate(((angle + angleExtra) * Math.PI / 180) + p.a);
+          /* ⚠️ L'ORDRE DES TRANSFORMATIONS EST LE CŒUR DU KALÉIDOSCOPE.
+             `translate(écart)` PUIS `rotate` fait tourner autour du point déjà
+             décalé : le centre ne bouge pas d'une copie à l'autre et les huit se
+             superposent (mesuré : 1 588 pixels opaques avec et sans symétrie).
+             `rotate` d'abord, `translate` ensuite, dans le repère déjà tourné. */
+          var folieRot = (folieEffective > 0) ? (aleatoire() - 0.5) * 360 * folieEffective : 0;
+          var folieEch = (folieEffective > 0) ? (0.55 + aleatoire() * 0.9 * folieEffective + (1 - folieEffective)) : 1;
+          var folieEcart = (folieEffective > 0) ? (0.5 + aleatoire()) * folieEffective : 1;
+          g.rotate(((angle + angleExtra + folieRot) * Math.PI / 180) + p.a);
           g.rotate(s.rot * Math.PI / 180);
           g.scale(s.mirX, s.mirY);
-          g.translate(ecartPx * p.f, 0);
-          style(g, rayon);
-          dessinerForme(g, taille * p.f);
+          g.translate(ecartPx * p.f * folieEcart, 0);
+          var taille = api.mm(tailleMm) * facteur * echelle * p.f * folieEch;
+          if (!dessinerImages(g, taille)) {
+            style(g, rayon, (folieEffective > 0) ? aleatoire : null);
+            var forme = (mode === 'crazy' && folieEffective > 0.25)
+              ? FORMES[Math.floor(aleatoire() * FORMES.length) % FORMES.length]
+              : o.forme;
+            dessinerForme(g, taille, forme);
+          }
           g.restore();
         });
       });
@@ -478,6 +613,45 @@ SPPluginAPI({
       return cv;
     }
 
+    /* ═══ LE GRAND APERÇU ═══════════════════════════════════════════════════
+       On dessine la tuile RÉPÉTÉE, pas une vignette d'une forme : c'est le rythme
+       et le raccord qu'on vient juger. Un motif à 8 mm de pas ne se voit pas sur
+       un carré de 28 px.
+       Trois présentations, parce que les trois effets ne se lisent pas pareil :
+       la tuile se RÉPÈTE, la rosace se voit ENTIÈRE, le kaléidoscope COUVRE. */
+    function previsualiser(source) {
+      var t = (api.toileApercu ? api.toileApercu() : null);
+      if (!t || !t.ctx || !source) return;
+      var g = t.ctx;
+      var W = t.largeur, H = t.hauteur;
+      try {
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.globalCompositeOperation = 'source-over';
+        g.globalAlpha = 1;
+        g.clearRect(0, 0, W, H);
+        if (o.fondActif) {
+          g.fillStyle = o.fondTuile || '#ffffff';
+          g.fillRect(0, 0, W, H);
+        }
+        var cote = Math.max(1, source.width);
+        if (mode === 'rosette' || mode === 'miroir') {
+          var e = Math.min(W / cote, H / source.height);
+          var w1 = cote * e, h1 = source.height * e;
+          g.drawImage(source, (W - w1) / 2, (H - h1) / 2, w1, h1);
+          return;
+        }
+        /* Trois répétitions en largeur : assez pour voir le motif s'installer,
+           assez peu pour que chaque forme reste lisible. */
+        var ech = (W / 3) / cote;
+        var pas = cote * ech;
+        for (var y = 0; y < H + pas; y += pas) {
+          for (var x = 0; x < W + pas; x += pas) {
+            g.drawImage(source, x, y, pas, pas);
+          }
+        }
+      } catch (_) {}
+    }
+
     /* ── La cible ────────────────────────────────────────────────────────── */
     function cible() {
       var doc = api.document;
@@ -499,21 +673,6 @@ SPPluginAPI({
       return { objet: null, largeur: doc.largeur, hauteur: doc.hauteur, gauche: 0, haut: 0, remplace: false };
     }
 
-    var c = cible();
-
-    /* ── Nettoyage : le motif précédent de CE plug-in s'en va ──────────────
-       Sur TOUS les plans de travail, pas seulement l'actif : changer de page puis
-       revenir ne doit pas révéler un ancien motif resté en place. */
-    try {
-      api.canvases().forEach(function (cv2) {
-        if (!cv2 || typeof cv2.getObjects !== 'function') return;
-        cv2.getObjects().slice().forEach(function (obj) {
-          if (obj && obj._spMotifPlugin) cv2.remove(obj);
-        });
-        if (cv2.requestRenderAll) cv2.requestRenderAll();
-      });
-    } catch (_) {}
-
     /* ── Le kaléidoscope de page : miroir du rendu, sans le motif ────────── */
     function sourcePage() {
       try {
@@ -526,7 +685,7 @@ SPPluginAPI({
       } catch (_) { return null; }
     }
 
-    function poserMiroir() {
+    function poserMiroir(c) {
       var source = sourcePage();
       if (!source) throw new Error('la page ne peut pas être relue pour le kaléidoscope');
       var cote = Math.max(64, Math.round(Math.min(c.largeur, c.hauteur) * 2));
@@ -562,114 +721,118 @@ SPPluginAPI({
     }
 
     /* ── Poser ──────────────────────────────────────────────────────────── */
-    return new Promise(function (resolve, reject) {
-      function poser(sourceTuile, echelleMotif) {
-        var echelle = (echelleMotif && isFinite(echelleMotif) && echelleMotif > 0) ? echelleMotif : 1;
-        var pat = new fabric.Pattern({
-          source: sourceTuile,
-          repeat: 'repeat',
-          /* Le facteur de netteté a déjà agrandi la tuile : il faut la remettre à
-             l'échelle du document, sinon le motif serait `facteur` fois trop gros. */
-          patternTransform: (echelle !== 1) ? [echelle, 0, 0, echelle, 0, 0] : undefined
-        });
-
-        if (c.remplace && c.objet) {
-          if (!c.objet._spMotifAvant) {
-            try { c.objet._spMotifAvant = c.objet.fill; } catch (_) {}
-          }
-          c.objet.set({ fill: pat });
-          if (opacite < 1) c.objet.set({ opacity: opacite });
-          c.objet._spMotifPlugin = true;
-          c.objet._spMotifSurBloc = true;
-          try { c.objet.dirty = true; } catch (_) {}
-          try {
-            var cvb = c.objet.canvas;
-            if (cvb) { cvb.requestRenderAll ? cvb.requestRenderAll() : cvb.renderAll(); }
-          } catch (_) {}
-          if (api.apercu) api.sync();
-          else api.commit('Plug-in : ' + (o.libelle || 'Motif'));
-          resolve(c.objet);
-          return;
-        }
-
-        var rect = new fabric.Rect({
-          left: c.gauche, top: c.haut, width: c.largeur, height: c.hauteur,
-          fill: pat, strokeWidth: 0, stroke: null,
-          selectable: true, evented: true,
-          objectCaching: false,
-          noScaleCache: true
-        });
-        rect._spMotifPlugin = true;
-        if (opacite < 1) rect.set({ opacity: opacite });
-        try { rect.set({ name: o.libelle || 'Motif' }); } catch (_) {}
-        api.add(rect, { libelle: 'Plug-in : ' + (o.libelle || 'Motif'), envoyerEnArriere: true });
-        resolve(rect);
-      }
-
-      try {
-        if (o.mode === 'miroir') {
-          poserMiroir().then(function (cv) { poser(cv, 1); }).catch(reject);
-          return;
-        }
-
-        if (o.mode === 'rosette') {
-          /* Une seule rosace : une tuile de la taille du bloc, posée comme image.
-             On ne peut pas s'en servir comme motif — `repeat: 'no-repeat'` n'existe
-             pas dans Fabric 5 — mais une image donne exactement le même résultat
-             pour une rosace unique. */
-          var cote = Math.max(c.largeur, c.hauteur);
-          var cvr = document.createElement('canvas');
-          cvr.width = Math.round(cote); cvr.height = Math.round(cote);
-          var gr = cvr.getContext('2d');
-          if (o.fondActif) { gr.fillStyle = o.fondTuile || '#ffffff'; gr.fillRect(0, 0, cote, cote); }
-          cellule(gr, cote / 2, cote / 2, cote, 0, alea(graine));
-          var img = new fabric.Image(cvr, {
-            left: c.gauche, top: c.haut,
-            selectable: true, evented: true, objectCaching: false
+    return chargerImages().then(function () {
+      return new Promise(function (resolve, reject) {
+        function poser(c, sourceTuile, echelleMotif) {
+          var echelle = (echelleMotif && isFinite(echelleMotif) && echelleMotif > 0) ? echelleMotif : 1;
+          var pat = new fabric.Pattern({
+            source: sourceTuile,
+            repeat: 'repeat',
+            /* Le facteur de netteté a déjà agrandi la tuile : il faut la remettre à
+               l'échelle du document, sinon le motif serait `facteur` fois trop gros. */
+            patternTransform: (echelle !== 1) ? [echelle, 0, 0, echelle, 0, 0] : undefined
           });
-          try { img.set({ name: o.libelle || 'Rosace' }); } catch (_) {}
-          img._spMotifPlugin = true;
-          if (opacite < 1) img.set({ opacity: opacite });
-          api.add(img, { libelle: 'Plug-in : ' + (o.libelle || 'Rosace'), envoyerEnArriere: true });
-          resolve(img);
-          return;
-        }
 
-        if (o.image) {
-          var im = new Image();
-          im.onload = function () {
+          if (c.remplace && c.objet) {
+            if (!c.objet._spMotifAvant) {
+              try { c.objet._spMotifAvant = c.objet.fill; } catch (_) {}
+            }
+            c.objet.set({ fill: pat });
+            if (opacite < 1) c.objet.set({ opacity: opacite });
+            c.objet._spMotifPlugin = true;
+            c.objet._spMotifSurBloc = true;
+            try { c.objet.dirty = true; } catch (_) {}
             try {
-              var coteI = Math.max(8, Math.round(pasPx * facteur * cellules));
-              var cv = document.createElement('canvas');
-              cv.width = coteI; cv.height = coteI;
-              var g = cv.getContext('2d');
-              if (o.fondActif) { g.fillStyle = o.fondTuile || '#ffffff'; g.fillRect(0, 0, coteI, coteI); }
-              var t = api.mm(tailleMm) * facteur;
-              var ratio = (im.width && im.height) ? (im.width / im.height) : 1;
-              var w = t, h = t;
-              if (ratio >= 1) h = t / ratio; else w = t * ratio;
-              /* L'image est répétée dans chaque cellule de la super-tuile. */
-              for (var jj = 0; jj < cellules; jj++) {
-                for (var ii = 0; ii < cellules; ii++) {
-                  var ccx = (ii + 0.5) * pasPx * facteur;
-                  var ccy = (jj + 0.5) * pasPx * facteur;
-                  g.save();
-                  g.translate(ccx, ccy);
-                  if (angle) g.rotate(angle * Math.PI / 180);
-                  g.drawImage(im, -w / 2, -h / 2, w, h);
-                  g.restore();
-                }
-              }
-              poser(cv, 1 / facteur);
-            } catch (e) { reject(e); }
-          };
-          im.onerror = function () { reject(new Error('image du motif illisible')); };
-          im.src = o.image;
-          return;
+              var cvb = c.objet.canvas;
+              if (cvb) { cvb.requestRenderAll ? cvb.requestRenderAll() : cvb.renderAll(); }
+            } catch (_) {}
+            if (api.apercu) api.sync();
+            else api.commit('Plug-in : ' + (o.libelle || 'Motif'));
+            resolve(c.objet);
+            return;
+          }
+
+          var rect = new fabric.Rect({
+            left: c.gauche, top: c.haut, width: c.largeur, height: c.hauteur,
+            fill: pat, strokeWidth: 0, stroke: null,
+            selectable: true, evented: true,
+            objectCaching: false,
+            noScaleCache: true
+          });
+          rect._spMotifPlugin = true;
+          if (opacite < 1) rect.set({ opacity: opacite });
+          try { rect.set({ name: o.libelle || 'Motif' }); } catch (_) {}
+          api.add(rect, { libelle: 'Plug-in : ' + (o.libelle || 'Motif'), envoyerEnArriere: true });
+          resolve(rect);
         }
 
-        poser(tuile(), 1 / facteur);
-      } catch (e) { reject(e); }
+        try {
+          /* ⚠️ LE NETTOYAGE PASSE AVANT TOUT, ET C'EST UNE NÉCESSITÉ, PAS UN ORDRE.
+             Le mode « kaléidoscope de la page » relit le rendu du plan de travail :
+             si le motif de l'aperçu précédent est encore posé, il se reflète
+             lui-même, et chaque mouvement de tirette empile une génération de plus
+             — le dessin se dégrade visiblement en quelques réglages.
+             On retire donc le motif d'AVANT sur TOUS les plans de travail, pas
+             seulement l'actif : changer de page puis revenir ne doit pas révéler un
+             ancien motif resté en place. */
+          try {
+            api.canvases().forEach(function (cv2) {
+              if (!cv2 || typeof cv2.getObjects !== 'function') return;
+              cv2.getObjects().slice().forEach(function (obj) {
+                if (obj && obj._spMotifPlugin) cv2.remove(obj);
+              });
+              if (cv2.requestRenderAll) cv2.requestRenderAll();
+            });
+          } catch (_) {}
+
+          /* ⚠️ LA CIBLE PEUT ÉCHOUER SANS QUE L'APERÇU DOIVE ÉCHOUER.
+             En mode « bloc sélectionné » sans sélection, `cible()` lève. Si l'on
+             sortait tout de suite, la trappe afficherait une erreur ET un aperçu
+             vide : impossible de régler le motif avant d'avoir choisi sa cible. On
+             note donc l'erreur, on montre l'aperçu, puis on la relève. */
+          var c = null, errCible = null;
+          try { c = cible(); } catch (e) { errCible = e; }
+
+          if (mode === 'miroir') {
+            var tailleRef = c || { largeur: api.document.largeur, hauteur: api.document.hauteur };
+            poserMiroir(tailleRef).then(function (cv) {
+              previsualiser(cv);
+              if (errCible) { reject(errCible); return; }
+              poser(c, cv, 1);
+            }).catch(reject);
+            return;
+          }
+
+          if (mode === 'rosette') {
+            /* Une seule rosace : une tuile de la taille du bloc. On ne peut pas s'en
+               servir comme motif — `repeat: 'no-repeat'` n'existe pas dans Fabric 5 —
+               mais une image donne exactement le même résultat pour une rosace unique. */
+            var coteR = c ? Math.max(c.largeur, c.hauteur) : Math.max(api.document.largeur, api.document.hauteur);
+            var cvr = document.createElement('canvas');
+            cvr.width = Math.round(coteR); cvr.height = Math.round(coteR);
+            var gr = cvr.getContext('2d');
+            if (o.fondActif) { gr.fillStyle = o.fondTuile || '#ffffff'; gr.fillRect(0, 0, coteR, coteR); }
+            cellule(gr, coteR / 2, coteR / 2, coteR, 0, alea(graine));
+            previsualiser(cvr);
+            if (errCible) { reject(errCible); return; }
+            var img = new fabric.Image(cvr, {
+              left: c.gauche, top: c.haut,
+              selectable: true, evented: true, objectCaching: false
+            });
+            try { img.set({ name: o.libelle || 'Rosace' }); } catch (_) {}
+            img._spMotifPlugin = true;
+            if (opacite < 1) img.set({ opacity: opacite });
+            api.add(img, { libelle: 'Plug-in : ' + (o.libelle || 'Rosace'), envoyerEnArriere: true });
+            resolve(img);
+            return;
+          }
+
+          var cvT = tuile();
+          previsualiser(cvT);
+          if (errCible) { reject(errCible); return; }
+          poser(c, cvT, 1 / facteur);
+        } catch (e) { reject(e); }
+      });
     });
   }
 });

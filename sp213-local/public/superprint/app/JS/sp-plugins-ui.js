@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.647)
+   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.648)
    ═══════════════════════════════════════════════════════════════════════════════
 
    DEUX SURFACES, ET C'EST VOULU :
 
      · la BIBLIOTHÈQUE est une pop-in — on y installe, on supprime, on allume ou
        on éteint. Elle n'a pas besoin de voir la page : elle gère des fichiers.
-       ⚠️ v1.7.647 — ELLE NE FILTRE PLUS. La barre « Tous / 7 jours / 30 jours /
+       ⚠️ v1.7.648 — ELLE NE FILTRE PLUS. La barre « Tous / 7 jours / 30 jours /
        intégrés » a été retirée sur demande : elle découpait une liste qui tient à
        l'écran. La date d'installation reste écrite sur chaque carte.
 
@@ -30,6 +30,19 @@
   function el(tag, style, texte) {
     var e = document.createElement(tag);
     if (style) e.setAttribute('style', style);
+    if (texte !== undefined) e.textContent = texte;
+    return e;
+  }
+
+  /* ⚠️ v1.7.648 — `el()` PREND UN STYLE, PAS UNE CLASSE. Et ça s'était vu.
+     MESURÉ : `el('div', 'sp-pl-aide', …)` posait `style="sp-pl-aide"` — une
+     déclaration invalide, donc ignorée par le navigateur. Résultat : les textes
+     d'aide des plug-ins s'affichaient SANS leur style (9 px gris), et la valeur
+     chiffrée que cette livraison ajoute aux tirettes n'aurait pas eu le sien non
+     plus. Ce raccourci nomme donc la classe pour de bon. */
+  function elC(tag, classe, texte) {
+    var e = document.createElement(tag);
+    if (classe) e.className = classe;
     if (texte !== undefined) e.textContent = texte;
     return e;
   }
@@ -129,6 +142,92 @@
     var ligne = el('div', 'padding:0 12px;margin-bottom:5px;');
     var id = 'spPluginOpt_' + option.key;
 
+    /* ═══ v1.7.648 — LE GRAND APERÇU ═══════════════════════════════════════
+       Demande utilisateur : « une preview plus grand de mon image ou de mes
+       images ». Un motif ne se juge pas sur une vignette de 28 px : ce champ pose
+       une TOILE de la largeur de la trappe, et le plug-in y dessine lui-même la
+       tuile qu'il s'apprête à répéter. C'est donc la même géométrie que le dessin
+       final, à l'échelle — pas une illustration séparée qui pourrait mentir.
+       La toile est enregistrée dans `trappe.toile` et publiée par
+       `window.__SP_PLUGIN_TRAP__` (voir plus bas) : `sp-plugins.js` la sert au
+       plug-in par `api.toileApercu()`. Le plug-in qui n'en veut pas n'a qu'à ne
+       pas déclarer ce champ. */
+    if (option.type === 'apercu') {
+      var boite = el('div', 'padding:0 12px 8px;');
+      var toile = document.createElement('canvas');
+      toile.className = 'sp-pl-apercu-grand';
+      /* 632 = 316 px utiles × 2 : la trappe fait 340 px de large, moins 12 px de
+         marge de chaque côté. Deux fois, pour que le dessin soit net sur un écran
+         à densité doublée — la taille d'affichage, elle, reste 100 % de la largeur. */
+      toile.width = 632;
+      toile.height = Math.round(632 * (typeof option.ratio === 'number' ? option.ratio : 1.414));
+      boite.appendChild(toile);
+      ligne.appendChild(boite);
+      return { ligne: ligne, champ: null, option: option, toile: toile };
+    }
+
+    /* ═══ v1.7.648 — LE MIXEUR D'IMAGES ════════════════════════════════════
+       Demande utilisateur : « une preview plus grand de mon image ou de mes
+       images (un mixer ?) ». Ce champ porte un TABLEAU de dataURL : on en ajoute
+       autant qu'on veut, chacune se retire par sa croix, et le plug-in les
+       mélange comme il l'entend (le Motif les superpose avec un mode de fusion).
+       La valeur vit dans `valeurs[key]` — un tableau, jamais une chaîne : c'est
+       ce qui le distingue du champ « image » simple, et c'est ce que `lireValeur`
+       renvoie pour un plug-in qui déclare ce type. */
+    if (option.type === 'images') {
+      if (!Array.isArray(valeurs[option.key])) valeurs[option.key] = [];
+      var liste = valeurs[option.key];
+      var rappels = [];
+      var boiteI = el('div', '');
+
+      var grille = elC('div', 'sp-pl-images-grille');
+      boiteI.appendChild(grille);
+
+      function prevenir() { rappels.forEach(function (f) { try { f(); } catch (_) {} }); }
+
+      function redessiner() {
+        grille.innerHTML = '';
+        if (!liste.length) {
+          grille.appendChild(elC('div', 'sp-pl-images-vide', texte('pluginsNoImage', 'Aucune image')));
+        } else {
+          liste.forEach(function (url, i) {
+            var v = elC('div', 'sp-pl-vignette');
+            v.style.backgroundImage = 'url("' + url + '")';
+            var x = elC('button', 'sp-pl-vignette-x', '×');
+            x.type = 'button';
+            x.title = texte('pluginsClearImage', 'Retirer l\'image');
+            x.addEventListener('click', function () {
+              liste.splice(i, 1);
+              redessiner();
+              prevenir();
+            });
+            v.appendChild(x);
+            grille.appendChild(v);
+          });
+        }
+      }
+      redessiner();
+
+      var bAjout = petitBouton(texte('pluginsAddImage', '+ Image'), false);
+      bAjout.type = 'button';
+      bAjout.addEventListener('click', function () {
+        var p = (window.SPPlugins && window.SPPlugins.imageDataUrl) ? window.SPPlugins.imageDataUrl() : Promise.resolve(null);
+        p.then(function (url) {
+          if (!url) return;
+          liste.push(url);
+          redessiner();
+          prevenir();
+        });
+      });
+      boiteI.appendChild(bAjout);
+      ligne.appendChild(boiteI);
+      if (option.aide) ligne.appendChild(elC('div', 'sp-pl-aide', option.aide));
+      return {
+        ligne: ligne, champ: null, option: option, valeurs: valeurs,
+        rafraichir: function (f) { if (typeof f === 'function') rappels.push(f); }
+      };
+    }
+
     if (option.type === 'checkbox') {
       var lab = el('label', '');
     lab.className = 'sp-pl-case';
@@ -140,7 +239,7 @@
       lab.appendChild(cb);
       lab.appendChild(el('span', '', option.label));
       ligne.appendChild(lab);
-      if (option.aide) ligne.appendChild(el('div', 'sp-pl-aide', option.aide));
+      if (option.aide) ligne.appendChild(elC('div', 'sp-pl-aide', option.aide));
       return { ligne: ligne, champ: cb, option: option };
     }
 
@@ -150,6 +249,13 @@
     ligne.appendChild(lib);
 
     var v;
+    /* La valeur chiffrée d'une tirette, à droite du libellé. Créée avant le champ
+       pour pouvoir être mise à jour par son écouteur juste en dessous. */
+    var lecture = null;
+    if (option.type === 'range' || option.type === 'number') {
+      lecture = elC('span', 'sp-pl-valeur', String(option.defaut !== undefined ? option.defaut : 0) + (option.unite || ''));
+      lib.appendChild(lecture);
+    }
 
     if (option.type === 'select') {
       v = el('select', '');
@@ -174,7 +280,7 @@
       if (valeurs && valeurs[option.key]) apercu.style.backgroundImage = 'url("' + valeurs[option.key] + '")';
       var bImg = petitBouton(texte('pluginsChooseImage', 'Image'), false);
       var etat = el('span', 'font-size:9px;color:#999;font-family:"IBM Plex Mono",monospace;', '—');
-      /* 🆕 v1.7.647 — l'aperçu doit RELANCER le plug-in quand l'image change.
+      /* 🆕 v1.7.648 — l'aperçu doit RELANCER le plug-in quand l'image change.
          Le bouton n'émet aucun événement natif : on publie donc un rappel, que la
          trappe branche sur l'aperçu en direct. Sans lui, choisir une image ne
          montrait rien tant qu'on n'avait pas cliqué « Appliquer » — exactement le
@@ -203,7 +309,7 @@
       });
       boite.appendChild(apercu); boite.appendChild(bImg); boite.appendChild(bEffacer); boite.appendChild(etat);
       ligne.appendChild(boite);
-      if (option.aide) ligne.appendChild(el('div', 'sp-pl-aide', option.aide));
+      if (option.aide) ligne.appendChild(elC('div', 'sp-pl-aide', option.aide));
       return {
         ligne: ligne, champ: null, option: option, valeurs: valeurs,
         rafraichir: function (f) { if (typeof f === 'function') rappels.push(f); }
@@ -232,13 +338,24 @@
     }
     v.id = id;
     ligne.appendChild(v);
-    if (option.aide) ligne.appendChild(el('div', 'sp-pl-aide', option.aide));
+    if (lecture) {
+      var _majLecture = function () { lecture.textContent = String(v.value) + (option.unite || ''); };
+      v.addEventListener('input', _majLecture);
+      v.addEventListener('change', _majLecture);
+      _majLecture();
+    }
+    if (option.aide) ligne.appendChild(elC('div', 'sp-pl-aide', option.aide));
     return { ligne: ligne, champ: v, option: option };
   }
 
   function lireValeur(desc) {
     var o = desc.option, c = desc.champ;
     if (o.type === 'image') return (desc.valeurs && desc.valeurs[o.key]) || '';
+    if (o.type === 'images') {
+      var l = desc.valeurs && desc.valeurs[o.key];
+      return Array.isArray(l) ? l.slice() : [];
+    }
+    if (o.type === 'apercu') return null;
     if (!c) return o.defaut;
     if (o.type === 'checkbox') return !!c.checked;
     if (o.type === 'number' || o.type === 'range') {
@@ -253,7 +370,7 @@
      ══════════════════════════════════════════════════════════════════════════ */
   var trappe = { id: null, champs: [], valeurs: {}, occupe: false };
 
-  /* ⚠️ v1.7.647 — L'APERÇU EN DIRECT.
+  /* ⚠️ v1.7.648 — L'APERÇU EN DIRECT.
      Demande utilisateur : « pourquoi et temps réel c'est-à-dire que je n'ai pas
      besoin de faire apply à chaque fois pour visualiser les modifications ».
      Chaque champ relance donc le plug-in, 140 ms après le dernier mouvement (assez
@@ -408,19 +525,24 @@
 
     if (t.titre) t.titre.textContent = p.name + '  ·  v' + p.version;
     t.corps.innerHTML = '';
-
-    if (p.description) {
-      t.corps.appendChild(el('div', 'padding:10px 12px 11px;font-size:10px;line-height:1.5;color:#777;border-bottom:1px solid #eee;margin-bottom:10px;', p.description));
-    }
+    /* ⚠️ v1.7.648 — LA DESCRIPTION DU PLUG-IN N'EST PLUS RÉPÉTÉE DANS LA TRAPPE.
+       Demande utilisateur : « il y a beaucoup trop de texte d'info partout ».
+       Elle est déjà sur la carte de la bibliothèque, où elle sert à choisir le
+       plug-in ; ici, on a déjà choisi. La reprendre en tête de trappe repoussait
+       les réglages d'une trentaine de pixels vers le bas, pour une phrase qu'on
+       vient de lire. */
     if (!(p.options || []).length) {
       t.corps.appendChild(el('div', 'padding:0 12px 12px;font-size:10px;color:#999;',
         texte('pluginsNoOptions', 'Ce plug-in n\'a aucun réglage.')));
     }
+    trappe.toile = null;
     (p.options || []).forEach(function (o) {
       var d = champ(o, trappe.valeurs);
       trappe.champs.push(d);
       t.corps.appendChild(d.ligne);
-      if (o.type !== 'image') trappe.valeurs[o.key] = o.defaut;
+      if (d.toile) trappe.toile = d.toile;
+      /* « images » a déjà posé son tableau ; « aperçu » n'a pas de valeur. */
+      if (o.type !== 'image' && o.type !== 'images' && o.type !== 'apercu') trappe.valeurs[o.key] = o.defaut;
     });
     if (t.appliquer) {
       t.appliquer.disabled = !(p.options || []).length;
@@ -458,7 +580,7 @@
       ouvrirPanneau();
     });
 
-    /* ⚠️ v1.7.647 — « ENREGISTRER » N'EXÉCUTE PLUS LE PLUG-IN.
+    /* ⚠️ v1.7.648 — « ENREGISTRER » N'EXÉCUTE PLUS LE PLUG-IN.
        L'aperçu l'a déjà fait, et une exécution de plus écraserait le dessin par un
        état identique en apparence — mais avec un nouveau tirage de hasard si la
        graine avait changé entre-temps. Ce bouton ne fait donc qu'une chose :
@@ -470,7 +592,7 @@
   /* ══════════════════════════════════════════════════════════════════════════
      BIBLIOTHÈQUE (pop-in)
      ══════════════════════════════════════════════════════════════════════════
-     ⚠️ v1.7.647 — PLUS DE BARRE DE FILTRES. Demande utilisateur : « supprime toute
+     ⚠️ v1.7.648 — PLUS DE BARRE DE FILTRES. Demande utilisateur : « supprime toute
      cette ligne de filtre All 2 / 7 days / 30 days / built-in 2 ».
      Elle coûtait 28 px de haut sur une liste qui en fait 83 par carte, pour
      découper une liste qui tient à l'écran — deux plug-ins livrés, et le plus
@@ -743,7 +865,7 @@
   function ouvrirTrappePlugIn(id) {
     var p = window.SPPlugins.get(id);
 
-    /* 🆕 v1.7.647 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
+    /* 🆕 v1.7.648 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
        Il n'a pas de formulaire à construire : son `run()` ouvre le panneau qu'il
        possède déjà. On l'EXÉCUTE donc directement, sans passer par la trappe
        générique — sinon on aurait deux panneaux pour un seul outil, et un bouton
@@ -770,7 +892,7 @@
     brancherTrappe();
     var bPlug = document.getElementById('openPluginsPanel');
     if (bPlug) bPlug.addEventListener('click', function () {
-      /* ⚠️ v1.7.647 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
+      /* ⚠️ v1.7.648 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
          Il la refermait quand la trappe d'un plug-in était ouverte (« va-et-vient,
          pas une ouverture forcée »). MESURÉ : depuis que « Global Refactor » est un
          plug-in, cela fait deux clics pour l'atteindre — le premier referme la
@@ -888,5 +1010,25 @@
     ouvrirPanneauMCP: ouvrirPanneauMCP,
     fermerTrappe: fermerTrappe,
     installerFichier: installerFichier
+  };
+
+  /* ═══ v1.7.648 — LA TOILE D'APERÇU, VUE PAR LE REGISTRE ═══════════════════
+     `sp-plugins.js` construit l'API offerte au plug-in, mais c'est CE module qui
+     possède la trappe et donc la toile du champ « aperçu ». On publie un
+     accesseur, et rien de plus : le registre n'a pas à connaître la structure de
+     la trappe, et la trappe n'a pas à savoir qui la lit.
+     Renvoie `null` quand aucune trappe n'est ouverte ou que le plug-in courant
+     n'a pas déclaré de champ « aperçu » — un plug-in qui appelle `api.toileApercu()`
+     sans avoir déclaré le champ reçoit donc `null` au lieu d'une erreur. */
+  window.__SP_PLUGIN_TRAP__ = {
+    toileApercu: function () {
+      try {
+        if (!trappe || !trappe.toile) return null;
+        var c = trappe.toile;
+        var ctx = c.getContext('2d');
+        if (!ctx) return null;
+        return { canvas: c, ctx: ctx, largeur: c.width, hauteur: c.height };
+      } catch (_) { return null; }
+    }
   };
 })();

@@ -58,7 +58,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/studio_print_logo_blanc.png">
 <!-- Polices self-hosted SuperPrint : affichage correct des typos dans l'aperçu (Bebas Neue, Playfair, Montserrat, Poppins, Open Sans, etc.) -->
-<link rel="stylesheet" href="CSS/fonts.css?v=20261015-v647-polices-allegees">
+<link rel="stylesheet" href="CSS/fonts.css?v=20261015-v648-polices-allegees">
 <style>
   /* ═══════════════════════════════════════════════
      DA SuperPrint — IBM Plex Mono, boutons carrés,
@@ -9140,7 +9140,7 @@ function spRtfLayoutInfo(src) {
     } catch (_) { return null; }
   }
 
-  /* ⚠️ v1.7.647 — POURQUOI LE PASSAGE DIRECT NE SE DÉCLENCHAIT PAS : IL SE MESURE.
+  /* ⚠️ v1.7.648 — POURQUOI LE PASSAGE DIRECT NE SE DÉCLENCHAIT PAS : IL SE MESURE.
      `_SP_NATIF_637` promet qu'une page reçue de l'application et NON RETOUCHÉE par
      l'IA repart avec ses objets d'origine. MESURÉ sur le bouton ÉDITER : après un
      import d'un .sp de 7 objets, `_spNatif` valait `false` — donc le studio
@@ -9637,11 +9637,19 @@ function spRtfLayoutInfo(src) {
            l'aperçu du studio. `spEmpreinte` fige l'état de `elements` maintenant. */
         spNatifs: (Array.isArray(spPage.objects) ? JSON.parse(JSON.stringify(spPage.objects)) : null),
         spEmpreinte: spEmpreinte(elements) };
-    /* 🆕 v1.7.546 — ON NE SUPPRIME PLUS UNE PAGE SANS ÉLÉMENTS QUAND ELLE EST ALIMENTÉE
-       PAR UN GABARIT. Une page de l'app qui reçoit tout son contenu d'un gabarit n'a
-       aucun objet propre : elle était donc retirée du document (MESURÉ : document à
-       3 pages → 2 pages au retour). Le filtre garde son rôle pour la voie IA. */
-    }).filter(p => p.elements.length > 0 || !!p.masterId);
+    /* 🆕 v1.7.548 — ON NE RETIRE PLUS AUCUNE PAGE D'UN DOCUMENT IMPORTÉ.
+       MESURÉ : un document de l'app contenant une page VOLONTAIREMENT vierge (une page
+       de garde, un blanc de respiration, une page d'annonce à composer plus tard)
+       revenait de l'aller-retour app → studio → app AMPUTÉ de cette page. Le studio
+       l'affichait, mais `state.doc.pages` ne la contenait pas, et `buildSPFile` écrit
+       depuis `state.doc.pages` : elle disparaissait donc à l'export, en silence, et le
+       document se décalait d'une page (les folios, les gabarits affectés par index et
+       les chaînes de texte d'un index supérieur pointaient alors sur la mauvaise page).
+       Le filtre existait pour la VOIE IA, où une page sans élément est une page que le
+       modèle n'a pas remplie — un cas qui ne passe jamais par cette fonction.
+       On garde donc toutes les pages, dans leur ordre, et on ne refuse l'import que si
+       le fichier n'en porte aucune. */
+    });
 
     if (!pages.length) return false;
 
@@ -29020,6 +29028,12 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const spPages = state.pages.map((p) => {
       let objects = [];
       let _errConvPage = null;
+      /* ⚠️ v1.7.548 — COMBIEN D'ÉLÉMENTS LA PAGE AVAIT À CONVERTIR, su au-delà du
+         bloc `try`. Le filet de sécurité ci-dessous doit distinguer une page
+         RÉELLEMENT vierge (cas normal, venue d'un document de l'app) d'une page
+         dont la conversion a échoué : déclarée ici parce que `elements` est
+         locale au bloc où elle est lue. */
+      let _nbElementsSource = 0;
       /* ═══ _SP_NATIF_637 — PAGE INTACTE : ON RÉÉMET SES OBJETS D'ORIGINE ═══
          Si la page vient d'un document de l'app et que l'IA n'y a pas touché, on
          rend les objets Fabric EXACTEMENT tels qu'ils sont arrivés : aucune
@@ -29042,6 +29056,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         /* 🆕 v1.7.546 — recherche par CHAMP pageIndex (cf. spDocPagePour). */
         const docPage = spDocPagePour(state.doc, p.pageIndex);
         const elements = (docPage && Array.isArray(docPage.elements)) ? docPage.elements : [];
+        _nbElementsSource = elements.length;
         elements.forEach(el => {
           const t = String(el.type || '').toLowerCase();
           const op = (el.opacity != null) ? el.opacity : 1;
@@ -29150,7 +29165,17 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
             objects = _dump.objects;
             try { console.warn('[studio .sp] page ' + (p.pageIndex + 1) + ' : document mm vide → calque transmis (' + _dump.objects.length + ' objets)'); } catch (_) {}
           } else if (!_errConvPage) {
-            try { console.warn('[studio .sp] page ' + (p.pageIndex + 1) + ' : ni document mm ni calque — .sp vide'); } catch (_) {}
+            /* ⚠️ v1.7.548 — UNE PAGE VRAIMENT VIERGE N'EST PAS UN DÉFAUT.
+               MESURÉ : un document de l'app contenant une page volontairement vide
+               (page de garde, blanc de respiration) faisait crier ce filet à la
+               console à chaque ÉDITER — alors que la page est CORRECTEMENT écrite,
+               avec `objects: []`, ce que les deux validateurs acceptent. Un
+               avertissement qui se déclenche sur un cas normal finit par être
+               ignoré, y compris le jour où il signale une vraie perte. On ne
+               l'émet donc plus que si la page AVAIT de quoi être convertie. */
+            if (_nbElementsSource) {
+              try { console.warn('[studio .sp] page ' + (p.pageIndex + 1) + ' : ' + _nbElementsSource + ' élément(s) source, aucun objet produit — .sp vide'); } catch (_) {}
+            }
           }
         } catch (eFb) {
           try { console.warn('[studio .sp] repli calque impossible :', eFb); } catch (_) {}
