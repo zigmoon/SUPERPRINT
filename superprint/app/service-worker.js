@@ -9,7 +9,7 @@
    précachés changent, et c'est ce qui invalide le cache d'un utilisateur.
    Le contrôle `_dev/scripts/_make_zip_492.cjs` exige que ce nom contienne
    `version.txt` — ne pas repartir sur une numérotation parallèle. */
-const CACHE_NAME = 'superprint-shell-v1.7.651-i18n-gelule';
+const CACHE_NAME = 'superprint-shell-v1.7.652-splash-30';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -155,9 +155,13 @@ const APP_SHELL = [
   './icons/icon-192x192.png',
   './icons/icon-384x384.png',
   './icons/icon-512x512.png',
-  // 🎨 v1.7.373 — IMAGES DU SPLASH (locales, 15 × ~83 Ko = ~1,25 Mo).
+  // 🎨 v1.7.652 — IMAGES DU SPLASH : 30 photos, 1 014 Ko au total.
   //   Précachées pour un affichage IMMÉDIAT et hors ligne : le splash est la
   //   première chose que voit l'utilisateur, il ne doit jamais attendre le réseau.
+  //   ⚠️ CHIFFRES VÉRIFIÉS : 30 images de 600 × 430, qualité 50, 12 à 76 Ko
+  //   chacune (34 Ko de moyenne). Les 10 précédentes étaient en 1200 × 858 pour
+  //   une colonne affichée à ~424 px de large, soit 1 257 Ko au total : on a donc
+  //   TROIS FOIS plus d'images pour 20 % de moins en tout.
   './SP/splash/light-01.jpg',
   './SP/splash/light-02.jpg',
   './SP/splash/light-03.jpg',
@@ -168,6 +172,26 @@ const APP_SHELL = [
   './SP/splash/light-08.jpg',
   './SP/splash/light-09.jpg',
   './SP/splash/light-10.jpg',
+  './SP/splash/light-11.jpg',
+  './SP/splash/light-12.jpg',
+  './SP/splash/light-13.jpg',
+  './SP/splash/light-14.jpg',
+  './SP/splash/light-15.jpg',
+  './SP/splash/light-16.jpg',
+  './SP/splash/light-17.jpg',
+  './SP/splash/light-18.jpg',
+  './SP/splash/light-19.jpg',
+  './SP/splash/light-20.jpg',
+  './SP/splash/light-21.jpg',
+  './SP/splash/light-22.jpg',
+  './SP/splash/light-23.jpg',
+  './SP/splash/light-24.jpg',
+  './SP/splash/light-25.jpg',
+  './SP/splash/light-26.jpg',
+  './SP/splash/light-27.jpg',
+  './SP/splash/light-28.jpg',
+  './SP/splash/light-29.jpg',
+  './SP/splash/light-30.jpg',
   './icons/text.svg',
   './icons/image.svg',
   './icons/rect.svg',
