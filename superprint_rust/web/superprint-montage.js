@@ -62,7 +62,7 @@
   'use strict';
 
   /** Version de ce branchement (sert aussi de paramètre `?v=` dans `index.html`). */
-  var VERSION = '20261012-v657-rust-montage';
+  var VERSION = '20261012-v658-rust-montage';
 
   /** URL du noyau, relative à la page. Le même fichier que le branchement. */
   var URL_NOYAU = 'JS/superprint_core.wasm';

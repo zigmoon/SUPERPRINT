@@ -813,7 +813,7 @@ function syncZoomWidgetWithRightSidebar() {
     const zoomWidget = document.getElementById('zoomWidget');
     if (!rightSidebar || !zoomWidget) return;
 
-    /* ⚠️ v1.7.657 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
+    /* ⚠️ v1.7.658 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
        Cette fonction place le widget de zoom juste à gauche de la barre latérale
        droite. Or la trappe est un PANNEAU FIXE qui, lui aussi, occupe le bord
        droit : sans cette ligne, le widget tombait PAR-DESSUS elle et interceptait
@@ -823,7 +823,7 @@ function syncZoomWidgetWithRightSidebar() {
        défaut qu'aucune relecture ne trouve : les deux éléments sont corrects
        séparément, c'est leur superposition qui casse.
 
-       ⚠️ v1.7.657 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
+       ⚠️ v1.7.658 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
        C'est une correction de fond, pas un ajustement. Il y avait DEUX écrivains
        pour la même propriété : cette fonction, et une copie du même calcul au
        démarrage AVEC la trappe ; et la règle CSS en portait un troisième, écrasé
@@ -848,7 +848,7 @@ function syncZoomWidgetWithRightSidebar() {
     try {
         document.documentElement.style.setProperty('--sp-sidebar-r', largeur + 'px');
     } catch (_) {}
-    /* ⚠️ v1.7.657 — CETTE VALEUR EST UN POINT DE DÉPART, PAS LA VÉRITÉ. Elle est
+    /* ⚠️ v1.7.658 — CETTE VALEUR EST UN POINT DE DÉPART, PAS LA VÉRITÉ. Elle est
        mesurée avant que la classe `collapsed` n'ait produit son effet, donc elle vaut
        l'ancienne largeur ; `spPublierLargeursPanneauxDroits()` (juste en dessous) la
        corrige à chaque image grâce à un ResizeObserver. On garde cet appel pour que
@@ -908,7 +908,7 @@ function spPublierLargeursPanneauxDroits() {
             }
             racine.setProperty('--sp-sidebar-r', Math.round(w) + 'px');
         }
-        /* 🆕 v1.7.657 — DEUX TRAPPES, UNE SEULE LARGEUR CUMULÉE.
+        /* 🆕 v1.7.658 — DEUX TRAPPES, UNE SEULE LARGEUR CUMULÉE.
            `#maquettePanel` (Global Refactor) et `#pluginPanel` (plug-ins) sont deux
            panneaux distincts, empilés au même bord droit. Le widget de zoom et les
            encarts flottants se positionnent avec `--sp-maquette-l` : il doit donc
@@ -1226,7 +1226,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // ✨ NOUVEAU : Initialiser le positionnement du zoom-widget selon l'état de la sidebar droite
             setTimeout(() => {
-                /* ⚠️ v1.7.657 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
+                /* ⚠️ v1.7.658 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
                    CAUSAIT LE DÉFAUT. Elle écrivait `zoomWidget.style.right` en dur
                    (« calc(56px + 16px) »), SANS la largeur de la trappe, alors que la
                    fonction deux lignes plus bas écrit la même chose AVEC la trappe. Deux
@@ -2898,7 +2898,7 @@ const SP_CUSTOM_PROPS = [
        nouveau coulage du gabarit d'en recréer un second par-dessus. */
     '_spGabaritLibere',
     '_isPageNumber',
-    /* 🆕 v1.7.657 — _SP_IDML_LIENS_638 : LES LIENS HYPERTEXTE D'UN BLOC TEXTE.
+    /* 🆕 v1.7.658 — _SP_IDML_LIENS_638 : LES LIENS HYPERTEXTE D'UN BLOC TEXTE.
        MESURÉ (banc d'audit, features-561.idml) : l'import IDML détecte bien la plage
        du lien (window.__sp561Stats.plagesLien = 1), souligne le texte en bleu et lui
        donne la couleur #0000EE — mais l'URL elle-même n'était écrite NULLE PART :
@@ -2911,7 +2911,7 @@ const SP_CUSTOM_PROPS = [
            qui survit à un changement de césure, de colonnes ou de largeur.
        La propriété est déclarée ici pour être sérialisée par le .sp et le .json. */
     '_spLiens',
-    /* 🆕 v1.7.657 — LES MOTIFS POSÉS PAR LE PLUG-IN « MOTIF VECTORIEL ».
+    /* 🆕 v1.7.658 — LES MOTIFS POSÉS PAR LE PLUG-IN « MOTIF VECTORIEL ».
        Le plug-in retire ses motifs précédents avant d'en reposer un, sinon un
        utilisateur qui essaie trois pas successifs empile trois fonds. Ce retrait
        ne fonctionne que si la marque SURVIT à la sérialisation : sans ces deux
@@ -3204,7 +3204,7 @@ setInterval(function () {
 }, 2000);
 let _isAddingFromAsset = false; // Guard: empêche double saveState lors d'ajout depuis Assets
 
-/* 🆕 v1.7.657 — _SP_APERCU_MUET_647 : LE COMPTEUR QUI REND L'APERÇU D'UN PLUG-IN GRATUIT.
+/* 🆕 v1.7.658 — _SP_APERCU_MUET_647 : LE COMPTEUR QUI REND L'APERÇU D'UN PLUG-IN GRATUIT.
    ⚠️ DÉFAUT MESURÉ (banc, trappe « Motif vectoriel », journal d'historique instrumenté) :
    l'aperçu en direct relançait le plug-in à chaque mouvement de tirette, comme voulu,
    MAIS `historyStep` montait quand même de 13 à 29 en une trentaine de secondes SANS
@@ -3231,7 +3231,7 @@ function debouncedSaveState(action) {
        Pour les deux autres drapeaux, on DIFFÈRE. */
     if (_isRestoringState || _isRenderingAllPages) { _spSaveDiffere(action); return; }
     if (_isAddingFromAsset) return;
-    /* 🆕 v1.7.657 — ABANDON VOULU, comme `_isAddingFromAsset` : un aperçu de plug-in
+    /* 🆕 v1.7.658 — ABANDON VOULU, comme `_isAddingFromAsset` : un aperçu de plug-in
        n'est pas une action de l'utilisateur (voir _SP_APERCU_MUET_647). */
     if (_spApercuMuet > 0) return;
     _lastSaveAction = action || _lastSaveAction;
@@ -3248,7 +3248,7 @@ function debouncedSaveState(action) {
         _lastSaveAction = '';
         if (_isRestoringState || _isRenderingAllPages) { _spSaveDiffere(_action602); return; }
         if (_isAddingFromAsset) return;
-        /* 🆕 v1.7.657 — un minuteur armé AVANT le début de l'aperçu doit se taire lui
+        /* 🆕 v1.7.658 — un minuteur armé AVANT le début de l'aperçu doit se taire lui
            aussi : sans ce test, le silence ne valait que pour les mouvements suivants. */
         if (_spApercuMuet > 0) return;
         if (typeof saveState === 'function') saveState(_action602);
@@ -4547,7 +4547,7 @@ if (window._spGpuEnabled) {
         };
     }
 
-    /* ══ v1.7.657 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+    /* ══ v1.7.658 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
 
        `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
        WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
@@ -4984,7 +4984,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.657 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.658 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5583,7 +5583,7 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        /* ══ v1.7.657 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
+        /* ══ v1.7.658 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
            RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
            bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
@@ -15636,7 +15636,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         
         if (!target) {
             if (!canvas.selection) canvas.selection = true;
-            /* 🆕 v1.7.657 — FILET DE SÉCURITÉ DU DRAPEAU DE TRANSFORMATION.
+            /* 🆕 v1.7.658 — FILET DE SÉCURITÉ DU DRAPEAU DE TRANSFORMATION.
                Un relâchement hors du canevas n'atteint pas `mouse:up` : le drapeau
                posé par `before:transform` resterait alors à `true` et le lasso
                suivant serait ignoré. Un clic DANS LE VIDE (`target` nul) ne peut
@@ -16610,7 +16610,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         // 🛡️ FIX 2026-08-26 : pas de sauvegarde pour les retraits de guides de
         //   maquette (drawMargins/clear) — voir _spIsGuideObject en tête de handler.
         if (!_spIsGuideObject) {
-            /* 🆕 v1.7.657 — pendant un aperçu, le plug-in RETIRE ses formes précédentes
+            /* 🆕 v1.7.658 — pendant un aperçu, le plug-in RETIRE ses formes précédentes
                à chaque rendu. Sans ce test, chaque retrait relançait une sérialisation
                COMPLÈTE de toutes les planches (mesuré : ~1 s par retrait sur 12 pages). */
             if (_spApercuMuet === 0) saveAllPages();
@@ -16737,7 +16737,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         }
     });
     
-    /* 🆕 v1.7.657 — UN GESTE DE POIGNÉE N'EST PAS UN LASSO.
+    /* 🆕 v1.7.658 — UN GESTE DE POIGNÉE N'EST PAS UN LASSO.
        ⚠️ MESURÉ, ET C'EST LA CAUSE RACINE DU TABLEAU QUI SE DÉTACHE DES FILETS.
        `mouse:down` enregistre `__spSelectionStart` À CHAQUE FOIS, y compris quand
        le clic tombe sur une poignée de redimensionnement. Au relâcher, le bloc
@@ -25315,7 +25315,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                     if (typeof scheduleRender === 'function') scheduleRender(cv);
                 });
 
-                /* ═══ v1.7.657 — UNE CELLULE N'ENTRE JAMAIS DANS UNE SÉLECTION ═══
+                /* ═══ v1.7.658 — UNE CELLULE N'ENTRE JAMAIS DANS UNE SÉLECTION ═══
                    ⚠️ MESURÉ : `fabric.ActiveSelection` RECALCULE les `left`/`top` de
                    ses membres par rapport au centre de la sélection et ne sauvegarde
                    PAS leurs valeurs d'origine (`__origProps` n'est posé que par
@@ -40141,7 +40141,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const reader = new FileReader();
             reader.onload = (ev) => {
                 try {
-                    /* 🆕 v1.7.657 — un JSON FIGMA n'est pas un projet SuperPrint : le
+                    /* 🆕 v1.7.658 — un JSON FIGMA n'est pas un projet SuperPrint : le
                        chargeur ci-dessous le refuserait (« structure non reconnue »). On
                        le repère ici, sans charger le module Figma, et on le passe à
                        l'import dédié — c'est le même fichier, la même attente. */
@@ -41144,7 +41144,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             if (s.fontSize) st.fontSize = s.fontSize;
             if (s.fontWeight) st.fontWeight = s.fontWeight;
             if (s.fontStyle) st.fontStyle = s.fontStyle;
-            /* 🆕 v1.7.657 — LA POLICE DU DOCUMENT, avec son repli. Le nom exact reste en
+            /* 🆕 v1.7.658 — LA POLICE DU DOCUMENT, avec son repli. Le nom exact reste en
                tête de pile (c'est lui qui repart en .sp et en PDF) ; s'il n'est pas
                installé, le navigateur descend la pile au lieu de tomber en Times. */
             if (s.fontFamily) st.fontFamily = '"' + String(s.fontFamily).replace(/"/g, '') + '", "Open Sans", sans-serif';
@@ -41215,7 +41215,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     }
                     var mCo = /color\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))/i.exec(sInl);
                     if (mCo) { if (ns === s) ns = copier(s); ns.fill = mCo[1]; }
-                    /* 🆕 v1.7.657 — la POLICE du run Word (cf. _spWordRunsFmt). On garde
+                    /* 🆕 v1.7.658 — la POLICE du run Word (cf. _spWordRunsFmt). On garde
                        le nom exact du document : c'est lui qui repart en PDF et en .sp.
                        Le repli est ajouté au moment de l'application (cf. _spAppliquerRuns),
                        pour qu'une police absente de la machine ne casse pas la mesure. */
@@ -41258,7 +41258,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 var n = children[i];
                 if (!n) continue;
                 if (n.type === 'text') {
-                    /* 🆕 v1.7.657 — couleur et police du run, relevées dans
+                    /* 🆕 v1.7.658 — couleur et police du run, relevées dans
                        word/document.xml (cf. _spWordRunsFmt). */
                     var _st638 = '';
                     if (n.spColor) _st638 += 'color:' + n.spColor + ';';
@@ -41359,7 +41359,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     window._spAstVersHtml = _spAstVersHtml;
 
     async function flowHtmlIntoPages(html, startPageIndex, wordOpts) {
-        /* 🆕 v1.7.657 — la famille du document Word pilote tout le flux (cf. _SP_FAM_FLUX).
+        /* 🆕 v1.7.658 — la famille du document Word pilote tout le flux (cf. _SP_FAM_FLUX).
            Un appel sans `_docFont` (autre importeur) retrouve exactement Open Sans : on
            RÉINITIALISE donc à chaque entrée, jamais seulement quand l'option est là. */
         _SP_FAM_FLUX = (wordOpts && wordOpts._docFont)
@@ -41536,7 +41536,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             getPageObjs().push(data);
         }
 
-        /* 🆕 v1.7.657 — LA POLICE DU DOCUMENT WORD, POUR TOUT LE FLUX.
+        /* 🆕 v1.7.658 — LA POLICE DU DOCUMENT WORD, POUR TOUT LE FLUX.
            MESURÉ (banc d'audit) : les 15 blocs d'un .docx ressortaient tous en « Open Sans »
            alors que le document déclare sa police (par run, ou par défaut dans
            word/styles.xml → thème). On pose la famille RÉELLE en tête de pile, avec
@@ -41951,7 +41951,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             Promise.resolve()
                                 .then(function () { return _spWordImageSizesMM(arrayBuffer); })
                                 .then(function (sz) { if (sz && sz.length) _opts569._imgSizesMM = sz; })
-                                /* 🆕 v1.7.657 — COULEUR ET POLICE DES RUNS (cf. _spWordRunsFmt). */
+                                /* 🆕 v1.7.658 — COULEUR ET POLICE DES RUNS (cf. _spWordRunsFmt). */
                                 .then(function () { return _spWordRunsFmt(arrayBuffer); })
                                 .then(function (fmt) {
                                     if (!fmt) return;
@@ -41963,7 +41963,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                                 .then(function () { _spImpBusyEtape(1); return mammoth.convertToHtml({ arrayBuffer }, options); })
                                 .then(function () {
                                     if (!_ast569) throw new Error('AST Word indisponible');
-                                    /* 🆕 v1.7.657 — on reverse couleur et police sur l'AST
+                                    /* 🆕 v1.7.658 — on reverse couleur et police sur l'AST
                                        AVANT de le convertir : le HTML produit porte alors des
                                        <span style="color:…;font-family:…"> que le compositeur
                                        sait déjà lire (cf. _spHtmlRuns). */
@@ -42099,7 +42099,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             });
         }
 
-        /* ══ 🆕 v1.7.657 — _SP_WORD_FMT_638 : COULEUR ET POLICE DES RUNS ══
+        /* ══ 🆕 v1.7.658 — _SP_WORD_FMT_638 : COULEUR ET POLICE DES RUNS ══
 
            DÉFAUT MESURÉ (banc d'audit, _test_fidelite.docx) : le document Word contient
            <w:color w:val="C00000"/> sur un run et une table de polices (fontTable.xml) ;
@@ -42135,7 +42135,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             var f = zip.file('word/document.xml');
                             if (!f) { resolve(null); return; }
                             var xml = await f.async('string');
-                            /* 🆕 v1.7.657 — LA POLICE PAR DÉFAUT DU DOCUMENT.
+                            /* 🆕 v1.7.658 — LA POLICE PAR DÉFAUT DU DOCUMENT.
                                MESURÉ (fixture _test_fidelite.docx) : AUCUN run ne porte
                                <w:rFonts> — dans Word, la police du corps est déclarée une
                                seule fois, dans word/styles.xml → w:docDefaults →
@@ -42530,7 +42530,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             });
         }
         window._spImportDocxFile = importDocxFile;
-        /* 🆕 v1.7.657 — exposé comme _spAstVersHtml / _spTexteOdf : c'est la seule façon
+        /* 🆕 v1.7.658 — exposé comme _spAstVersHtml / _spTexteOdf : c'est la seule façon
            de vérifier la lecture couleur+police sans passer par une composition entière. */
         window._spWordRunsFmt = _spWordRunsFmt;
         window._spLancerImportWord = lancerImportWord;
@@ -43100,7 +43100,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         });
     })();
 
-    // ===== Figma (.json) Import — 🆕 v1.7.657 =====
+    // ===== Figma (.json) Import — 🆕 v1.7.658 =====
     /* Un document Figma s'importe à partir de son JSON (API REST `/v1/files/:key`,
        ou greffon SuperPrint). Le module `sp-figma-import.js` est chargé À LA DEMANDE,
        comme `sp-doc-import.js` : il ne pèse rien sur le démarrage d'un utilisateur
@@ -43115,7 +43115,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return new Promise(function (res, rej) {
                 const sc = document.createElement('script');
                 /* ⚠️ MESURÉ PENDANT L'AUDIT : l'URL était figée à
-                   `?v=20261017-v657-figma`. Après correction du module, le navigateur a
+                   `?v=20261017-v658-figma`. Après correction du module, le navigateur a
                    resservi la version en cache et l'import a continué d'échouer — un
                    fichier de code dont l'URL ne change pas est un fichier qu'on ne peut
                    pas corriger. On reprend donc l'empreinte de `main.js`, celle que le
@@ -43922,7 +43922,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         docPageH = ph * 25.4 / 72;
                         _spIdmlAPref = true;
                     }
-                    /* 🆕 v1.7.657 — _SP_IDML_GEOM_638 : LE FOND PERDU DU DOCUMENT.
+                    /* 🆕 v1.7.658 — _SP_IDML_GEOM_638 : LE FOND PERDU DU DOCUMENT.
                        MESURÉ (banc d'audit, banquet_republicain_master.idml) : le fichier
                        déclare DocumentBleed*Offset = 14,17 pt (= 5 mm) et l'import posait
                        3 mm — la valeur par défaut de l'application — sans le dire. Le fond
@@ -43937,7 +43937,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     if (_bdMax > 0) _spIdmlBleedMm = Math.round(_bdMax * 25.4 / 72 * 100) / 100;
                 }
             }
-            /* 🆕 v1.7.657 — _SP_IDML_GEOM_638 : REPLI SUR LA GÉOMÉTRIE DES PAGES.
+            /* 🆕 v1.7.658 — _SP_IDML_GEOM_638 : REPLI SUR LA GÉOMÉTRIE DES PAGES.
                MESURÉ (banc d'audit, features-561.idml) : un IDML sans
                <DocumentPreference> — c'est légal : seul <Preferences> est obligatoire —
                s'importait en A4 PORTRAIT, alors que son unique <Page> porte
@@ -43960,7 +43960,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             pageFormat.width = Math.round(docPageW);
             pageFormat.height = Math.round(docPageH);
 
-            /* 🆕 v1.7.657 — _SP_IDML_GEOM_638 : LES MARGES DU DOCUMENT.
+            /* 🆕 v1.7.658 — _SP_IDML_GEOM_638 : LES MARGES DU DOCUMENT.
                MESURÉ (banc d'audit, banquet_republicain_master.idml) : <MarginPreference>
                vaut Top/Bottom/Left/Right = 28,35 pt (= 10 mm) et l'import posait 20 mm
                partout — la valeur par défaut de l'application. « MarginPreference »
@@ -44637,7 +44637,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
         // ===================== HELPER FUNCTIONS =====================
 
-        /* 🆕 v1.7.657 — _SP_IDML_GEOM_638 : FORMAT ET MARGES, LUS DANS LES PAGES.
+        /* 🆕 v1.7.658 — _SP_IDML_GEOM_638 : FORMAT ET MARGES, LUS DANS LES PAGES.
            Un IDML porte sa géométrie à DEUX endroits :
              · Resources/Preferences.xml → <DocumentPreference PageWidth PageHeight
                DocumentBleed*Offset> — les valeurs du document ;
@@ -45796,7 +45796,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 }
                 var fullText = '';
                 var fabricStyles = {};
-                /* 🆕 v1.7.657 — plages de liens en indices ABSOLUS dans `fullText`. */
+                /* 🆕 v1.7.658 — plages de liens en indices ABSOLUS dans `fullText`. */
                 var _spLiensSpans = [];
                 var domFontSize = 12, domFontFamily = 'Open Sans', domFontWeight = 'normal', domFontStyle = 'normal', domFill = '#000000', domTracking = 0, domUnderline = false, domLinethrough = false, domLang = '', domAlign = 'left', domLeading = 0;
                 var hasBaseStyle = false;
@@ -45829,7 +45829,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             if (run.tracking !== domTracking) fabricStyles[lineIdx][chIdx].charSpacing = run.tracking;
                             if (run.underline !== domUnderline) fabricStyles[lineIdx][chIdx].underline = run.underline;
                             if (run.linethrough !== domLinethrough) fabricStyles[lineIdx][chIdx].linethrough = run.linethrough;
-                            /* 🆕 v1.7.657 — L'URL DU LIEN (cf. _spLiens, une seule source de
+                            /* 🆕 v1.7.658 — L'URL DU LIEN (cf. _spLiens, une seule source de
                                vérité : la liste en indices absolus, pas une clé par caractère
                                que le moteur de texte ne connaît pas). */
                             if (run.lien) {
@@ -45865,7 +45865,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     textAlign: domAlign,
                     lineHeight: Math.max(1, Math.min(3, lhVal)),
                     styles: fabricStyles,
-                    /* 🆕 v1.7.657 — les liens hypertexte du bloc, en indices absolus :
+                    /* 🆕 v1.7.658 — les liens hypertexte du bloc, en indices absolus :
                        [{debut, fin, url}]. Placé ici (et non dans les seuls styles) pour
                        rester valide si le texte est recésuré ou recomposé. */
                     _spLiens: _spLiensSpans.length ? _spLiensSpans.slice() : undefined,
@@ -52038,7 +52038,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.657 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.658 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -52186,7 +52186,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.657) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.658) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
@@ -52917,7 +52917,7 @@ https://superprint.app
         /* L'INVERSE : LA COTE, EN MILLIMETRES, D'UN REPERE REELLEMENT POSE SUR LE CANVAS.
            Sert a la collecte, pour enregistrer un repere GLISSE a sa vraie place.
 
-           ⚠️ v1.7.657 — ON LIT `left`/`top`, PAS LE CENTRE DE LA BOÎTE ENGLOBANTE.
+           ⚠️ v1.7.658 — ON LIT `left`/`top`, PAS LE CENTRE DE LA BOÎTE ENGLOBANTE.
            MESURÉ : un repère posé à 42 mm était relu à 42,18 mm, soit +0,176 mm —
            exactement une demi-épaisseur de trait (`strokeWidth: 1` = 0,51 px).
            Cause : pour une `fabric.Line` de largeur nulle, `getBoundingRect` renvoie
@@ -67697,7 +67697,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
     })
-    /* 🆕 v1.7.657 — ÉCHEC RÉSEAU DU PROXY : BASCULE SUR L'API DIRECTE.
+    /* 🆕 v1.7.658 — ÉCHEC RÉSEAU DU PROXY : BASCULE SUR L'API DIRECTE.
        MESURÉ (banc d'audit, conditions desktop : `ai-proxy.php` intercepté en échec
        réseau, comme le fait le protocole d'actifs de Tauri quand l'asset n'existe
        pas) : le journal affichait « ❌ Test échoué: Failed to fetch » et RIEN ne
@@ -70939,7 +70939,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 pluginsClearImage: "Retirer l'image",
         pluginsChooseImage: "Image",
         pluginsImageLoaded: "chargée",
-        /* 🆕 v1.7.657 — CLÉS QUI MANQUAIENT DANS LES TROIS LANGUES.
+        /* 🆕 v1.7.658 — CLÉS QUI MANQUAIENT DANS LES TROIS LANGUES.
            `copy`, `copied`, `pluginsAddImage`, `pluginsNoImage` et `pluginsOpenTrap`
            étaient appelées par `sp-plugins-ui.js` sans exister dans aucun des trois
            dictionnaires : `texte()` retombait donc sur son repli français, et ces
@@ -70950,7 +70950,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         pluginsAddImage: "+ Image",
         pluginsNoImage: "Aucune image",
         pluginsOpenTrap: "Ouvrir le plug-in",
-        /* 🆕 v1.7.657 — messages d'échec, jusque-là écrits en français dans
+        /* 🆕 v1.7.658 — messages d'échec, jusque-là écrits en français dans
            `sp-plugins-ui.js` et affichés tels quels en anglais comme en japonais. */
         pluginsToggleFail: "Changement impossible : ",
         pluginsDeleteFail: "Suppression impossible : ",
@@ -71527,7 +71527,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         underlineTitle: "Souligné — Sélectionnez du texte pour formater des mots individuels",
         formatSelectionHint: "💡 Double-cliquez le texte et sélectionnez des mots pour appliquer gras, italique, souligné par mot.",
         textAlignLabel: "Alignement",
-        /* 🎯 v1.7.657 — _SP_RANGEMENT_655 : la partie qui range Retrait, Formats,
+        /* 🎯 v1.7.658 — _SP_RANGEMENT_655 : la partie qui range Retrait, Formats,
            Espaces spéciaux, Glyphes, Vectoriser et Texte de substitution. */
         textElementsLabel: "Éléments de texte",
         frameOptionsLabel: "Options de bloc texte",
@@ -71581,7 +71581,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         specialSpacesHint: "Insère une espace typographique au curseur.",
         copySpacesLabel: "Copier dans le presse-papier :",
         narrowNbspBtn: "Fine insécable",
-        /* ⚠️ v1.7.657 — _SP_RANGEMENT_655 : CES DEUX CLÉS MANQUAIENT.
+        /* ⚠️ v1.7.658 — _SP_RANGEMENT_655 : CES DEUX CLÉS MANQUAIENT.
            Le balisage écrit `data-translate="nbspBtn"` et « thinNbspBtn », mais
            seules `narrowNbspBtn` et `nbspCopyBtn` existaient : le traducteur
            affichait donc la CLÉ ELLE-MÊME dans les deux boutons d'espaces
@@ -71750,10 +71750,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertXlsxEmpty: "Aucune donnée trouvée dans le fichier Excel",
         alertXlsxImportError: "Erreur import Excel :\n{0}",
         alertSlaInvalidXml: "Fichier .sla invalide (XML mal formé)",
-        /* 🆕 v1.7.657 — import Figma. */
+        /* 🆕 v1.7.658 — import Figma. */
         alertFigmaImportError: "Import Figma impossible : {0}",
         alertFigmaNotFigma: "Ce fichier JSON n'est pas un document Figma. Exportez-le depuis l'API Figma (GET /v1/files/:key) ou avec le greffon SuperPrint.",
-        /* 🆕 v1.7.657 — un .fig est un ZIP binaire, pas du JSON : on le dit et on donne
+        /* 🆕 v1.7.658 — un .fig est un ZIP binaire, pas du JSON : on le dit et on donne
            la marche à suivre exacte, au lieu de « JSON illisible ». */
         alertFigmaIsFigBinary: "Un fichier .fig est une archive binaire (fig-kiwi), pas du JSON : SuperPrint ne peut pas le lire directement.\n\nDeux façons d'obtenir le bon fichier :\n• Figma → clic droit sur le fichier → Copy link, puis API Figma GET /v1/files/:clé et enregistrez la réponse en .json ;\n• ou avec le greffon SuperPrint, qui exporte directement ce .json.",
         figmaImportDone: "Import Figma terminé : {0} page(s), {1} objet(s).",
@@ -72052,13 +72052,13 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 pluginsClearImage: "Remove the image",
         pluginsChooseImage: "Image",
         pluginsImageLoaded: "loaded",
-        /* 🆕 v1.7.657 — cf. le commentaire du dictionnaire français. */
+        /* 🆕 v1.7.658 — cf. le commentaire du dictionnaire français. */
         copy: "Copy",
         copied: "Copied",
         pluginsAddImage: "+ Image",
         pluginsNoImage: "No image",
         pluginsOpenTrap: "Open the plug-in",
-        /* 🆕 v1.7.657 — cf. le commentaire du dictionnaire français. */
+        /* 🆕 v1.7.658 — cf. le commentaire du dictionnaire français. */
         pluginsToggleFail: "Change failed: ",
         pluginsDeleteFail: "Uninstall failed: ",
         pluginsRunFail: "The plug-in failed: ",
@@ -72686,7 +72686,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         specialSpacesHint: "Insert a typographic space at cursor.",
         copySpacesLabel: "Copy to clipboard:",
         narrowNbspBtn: "Narrow NBSP",
-        /* ⚠️ v1.7.657 — clés manquantes (cf. commentaire du dictionnaire FR). */
+        /* ⚠️ v1.7.658 — clés manquantes (cf. commentaire du dictionnaire FR). */
         nbspBtn: "Non-breaking",
         thinNbspBtn: "Thin non-breaking",
         nbspCopyBtn: "NBSP",
@@ -72851,10 +72851,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertXlsxEmpty: "No data found in the Excel file",
         alertXlsxImportError: "Excel import error:\n{0}",
         alertSlaInvalidXml: "Invalid .sla file (malformed XML)",
-        /* 🆕 v1.7.657 — Figma import. */
+        /* 🆕 v1.7.658 — Figma import. */
         alertFigmaImportError: "Figma import failed: {0}",
         alertFigmaNotFigma: "This JSON file is not a Figma document. Export it from the Figma API (GET /v1/files/:key) or with the SuperPrint plugin.",
-        /* 🆕 v1.7.657 — a .fig is a binary archive, not JSON. */
+        /* 🆕 v1.7.658 — a .fig is a binary archive, not JSON. */
         alertFigmaIsFigBinary: "A .fig file is a binary archive (fig-kiwi), not JSON: SuperPrint cannot read it directly.\n\nTwo ways to get the right file:\n• Figma → right-click the file → Copy link, then Figma API GET /v1/files/:key and save the response as .json;\n• or with the SuperPrint plugin, which exports that .json directly.",
         figmaImportDone: "Figma import complete: {0} page(s), {1} object(s).",
         alertSlaNoDocument: "No DOCUMENT found in the .sla",
@@ -73152,13 +73152,13 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 pluginsClearImage: "画像を削除",
         pluginsChooseImage: "画像",
         pluginsImageLoaded: "読み込み済み",
-        /* 🆕 v1.7.657 — cf. le commentaire du dictionnaire français. */
+        /* 🆕 v1.7.658 — cf. le commentaire du dictionnaire français. */
         copy: "コピー",
         copied: "コピーしました",
         pluginsAddImage: "＋画像",
         pluginsNoImage: "画像がありません",
         pluginsOpenTrap: "プラグインを開く",
-        /* 🆕 v1.7.657 — cf. le commentaire du dictionnaire français. */
+        /* 🆕 v1.7.658 — cf. le commentaire du dictionnaire français. */
         pluginsToggleFail: "変更できません: ",
         pluginsDeleteFail: "アンインストールできません: ",
         pluginsRunFail: "プラグインが失敗しました: ",
@@ -73810,7 +73810,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         specialSpacesHint: "カーソル位置にタイポグラフィスペースを挿入。",
         copySpacesLabel: "クリップボードにコピー：",
         narrowNbspBtn: "狭い改行なしスペース",
-        /* ⚠️ v1.7.657 — clés manquantes (cf. commentaire du dictionnaire FR). */
+        /* ⚠️ v1.7.658 — clés manquantes (cf. commentaire du dictionnaire FR). */
         nbspBtn: "改行なし",
         thinNbspBtn: "細い改行なし",
         nbspCopyBtn: "改行なしスペース",
@@ -74600,7 +74600,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         if (hypSyl) hypSyl.textContent = translate('hyphenSyllable');
         var applyHyp = document.getElementById('applyHyphenNow');
         if (applyHyp) applyHyp.title = translate('applyHyphen');
-        /* Hints — ⚠️ v1.7.657 — _SP_RANGEMENT_655 : PLUS D'INDEX.
+        /* Hints — ⚠️ v1.7.658 — _SP_RANGEMENT_655 : PLUS D'INDEX.
            Ce bloc rangeait les phrases d'aide par POSITION (`i === 0`, `i === 1`…)
            à l'intérieur de la fiche typographie. Le rangement de la colonne a
            déplacé une aide et supprimé une autre : le décalage écrivait alors
@@ -83185,7 +83185,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 const matchExt = (f, exts) => exts.some(ext => lower(f).endsWith(ext));
                 const matchMime = (f, mimes) => mimes.some(m => (f.type || '').toLowerCase().includes(m));
 
-                /* 🆕 v1.7.657 — UN PLUG-IN DÉPOSÉ S'INSTALLE, OÙ QU'IL TOMBE.
+                /* 🆕 v1.7.658 — UN PLUG-IN DÉPOSÉ S'INSTALLE, OÙ QU'IL TOMBE.
                    ⚠️ MESURÉ : ce gestionnaire tourne en CAPTURE et coupe la
                    propagation. Sans cette route, déposer un `.plugin.js` tombait
                    dans « Format non supporté » — la bibliothèque de plug-ins ne
@@ -83200,7 +83200,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                     return;
                 }
 
-                /* 🆕 v1.7.657 — Et un fichier qui n'est PAS un plug-in, lâché SUR la
+                /* 🆕 v1.7.658 — Et un fichier qui n'est PAS un plug-in, lâché SUR la
                    bibliothèque ouverte, reçoit le refus explicite au lieu d'être
                    importé comme une image derrière la pop-in : c'est l'endroit où
                    l'utilisateur croit déposer un plug-in. */
@@ -83271,7 +83271,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 }
                 const slaFile = files.find(f => matchExt(f, ['.sla']));
                 if (slaFile) { e.preventDefault(); e.stopPropagation(); if (dispatchToInput(slaFile, 'importScribusInput', 'Document Scribus')) return; }
-                /* 🆕 v1.7.657 — un `.fig` déposé part vers l'import Figma, qui répond
+                /* 🆕 v1.7.658 — un `.fig` déposé part vers l'import Figma, qui répond
                    précisément (c'est une archive binaire, pas du JSON). Sans cette
                    ligne, le fichier tombait dans les gestionnaires d'images et
                    l'utilisateur ne recevait RIEN. */
@@ -96707,7 +96707,7 @@ function _spApplyColorMode(mode) {
  * pageIndex: [{o, pos}] } — o = orientation ('vertical'|'horizontal'), pos =
  * position en mm DEPUIS LE BORD DU FORMAT.
  *
- * ⚠️ v1.7.657 — `depuisLeFormat` N'ÉTAIT JAMAIS ÉCRIT, ET CHAQUE OUVERTURE
+ * ⚠️ v1.7.658 — `depuisLeFormat` N'ÉTAIT JAMAIS ÉCRIT, ET CHAQUE OUVERTURE
  * DÉCALAIT LES REPÈRES. MESURÉ (banc d'aller-retour .sp) : un repère vertical à
  * 42,18 mm revenait à 39,36 mm après un enregistrement puis une réouverture, puis
  * à 36,54 mm au cycle suivant, puis 33,72 — soit −2,82 mm par cycle, sans fin.
@@ -97209,7 +97209,7 @@ function _spValidateProjectFile(spFile) {
     const format = spFile && spFile.document && spFile.document.format;
     const width = Number(format && format.width);
     const height = Number(format && format.height);
-    /* ⚠️ v1.7.657 — `page.objects` PEUT ARRIVER EN CHAÎNE.
+    /* ⚠️ v1.7.658 — `page.objects` PEUT ARRIVER EN CHAÎNE.
        Le filet de sécurité du Studio IA écrivait `JSON.stringify(calque)` dans
        `page.objects`. Cette fonction exigeait un TABLEAU : le document entier était
        donc rejeté, sans autre explication que « n'est pas un document SuperPrint
@@ -97234,7 +97234,7 @@ function _spValidateProjectFile(spFile) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   🆕 v1.7.657 — PONT POUR LES PLUG-INS
+   🆕 v1.7.658 — PONT POUR LES PLUG-INS
    ═══════════════════════════════════════════════════════════════════════════════
 
    `sp-plugins.js` a besoin de trois choses que `main.js` garde dans sa portée de
@@ -97251,7 +97251,7 @@ window.__SP_PLUGIN_HOST__ = {
         try { return (typeof getActiveCanvas === 'function') ? getActiveCanvas() : null; }
         catch (_) { return null; }
     },
-    /* 🆕 v1.7.657 — TOUS LES PLANS DE TRAVAIL, pour les plug-ins qui doivent
+    /* 🆕 v1.7.658 — TOUS LES PLANS DE TRAVAIL, pour les plug-ins qui doivent
        nettoyer leurs propres objets partout (un motif posé page 1 doit être
        remplacé, pas empilé, quand on change un réglage). Le tableau `canvases`
        vit dans la portée de ce module : on rend une COPIE, pour qu'un plug-in ne
@@ -97284,7 +97284,7 @@ window.__SP_PLUGIN_HOST__ = {
         try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
         try { if (typeof saveStateFromPages === 'function') saveStateFromPages(libelle || 'Plug-in'); } catch (_) {}
     },
-    /* 🆕 v1.7.657 — SYNCHRONISER SANS ÉCRIRE D'HISTORIQUE.
+    /* 🆕 v1.7.658 — SYNCHRONISER SANS ÉCRIRE D'HISTORIQUE.
        C'est la moitié utile de `apres`, et c'est exactement ce qu'il faut pour un
        APERÇU EN DIRECT : le plug-in Motif change la tuile à chaque mouvement de
        tirette. Empiler une entrée d'historique par mouvement rendrait Ctrl+Z
@@ -97296,7 +97296,7 @@ window.__SP_PLUGIN_HOST__ = {
     sync: function () {
         try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
     },
-    /* 🆕 v1.7.657 — LE SILENCE PENDANT L'APERÇU (voir _SP_APERCU_MUET_647).
+    /* 🆕 v1.7.658 — LE SILENCE PENDANT L'APERÇU (voir _SP_APERCU_MUET_647).
        `actif = true` l'installe, `false` le lève. L'appelant doit TOUJOURS lever dans
        un `finally` : un silence oublié figerait l'historique pour toute la session.
        On accepte aussi un nombre, pour imbriquer deux aperçus sans se marcher dessus. */
@@ -102818,7 +102818,7 @@ function initObjectRightClickMenu() {
     function publierLargeur(px) {
         var app = $('mainApp');
         var v = (px || 0) + 'px';
-        /* ⚠️ v1.7.657 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
+        /* ⚠️ v1.7.658 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
            Les widgets flottants du bord droit — le zoom, l'étiquette de simulation
            CMJN, le panneau Rechercher & Remplacer — ne sont pas tous dans #mainApp :
            ceux qui sont posés sur <body> n'héritaient donc PAS de la variable et
@@ -103047,12 +103047,38 @@ function initObjectRightClickMenu() {
         return !!(o.isMargin || o.isBleed || o.isTrimBox || o.excludeFromExport || o._isUiHelper);
     }
     function estTexte(o) { return o.type === 'textbox' || o.type === 'text' || o.type === 'i-text'; }
-    /* « Cadres » : les rectangles et les images. Ce sont les objets dont la taille se
-       règle par `width`/`height` et dont le rendu suit (le motif de photo d'un cadre
-       masqué se recalcule depuis la taille affichée). */
-    function estCadre(o) { return o.type === 'rect' || o.type === 'image'; }
+    /* « Cadres » : les seuls objets dont la taille se règle par `width`/`height` ET
+       dont le rendu suit — un rectangle, y compris un rectangle à photo masquée (dont
+       le motif se recalcule depuis la taille affichée).
+       ⚠️ v1.7.658 — LES IMAGES EN SONT RETIRÉES. Le commentaire disait « les rectangles
+       et les images » ; c'était l'erreur : `width`/`height` d'un `fabric.Image` sont les
+       dimensions NATURELLES du fichier, pas une fenêtre réglable. Les y toucher
+       étirait la photo et détruisait sa définition d'origine (mesuré : 1200 → 860 px
+       de largeur naturelle). Elles sont désormais traitées comme des formes : voir
+       `estPhoto` et la branche d'échelle uniforme de `recomposerAuFormat`. */
+    function estCadre(o) { return o.type === 'rect'; }
 
-    /* ⚠️ v1.7.657 — LES FORMES ET LES GROUPES ÉTAIENT PUREMENT IGNORÉS, ET C'EST CE
+    /* ⚠️ v1.7.658 — UNE PHOTO N'EST PAS UN CADRE, ET C'EST LE DÉFAUT LE PLUS VISIBLE
+       DE CET OUTIL. MESURÉ, format 210 → 150 mm (largeur seule) sur une photo
+       1200 × 800 : la photo ressortait en 172 × 160, soit un rapport 1,075 au lieu de
+       1,500 — écrasée de 28 % en largeur. Le cercle, lui, ressortait en 87 × 121
+       (rapport 0,717) : un cercle devenu ellipse.
+       La cause est une seule ligne : `estCadre` range les images avec les rectangles,
+       et la recomposition applique aux deux `width ×= rx` et `height ×= ry`. Sur une
+       page dont SEULE la largeur change, rx ≠ ry, donc tout ce qui passe par là est
+       étiré. Un rectangle de cadre peut suivre la page — c'est son rôle ; une PHOTO,
+       non : son rapport est une propriété de la prise de vue, pas de la maquette.
+       ⚠️ ET LE DÉFAUT EST DOUBLE POUR UNE IMAGE : `width`/`height` d'un
+       `fabric.Image` ne sont pas une fenêtre réglable, ce sont les dimensions
+       NATURELLES du fichier. Les multiplier détruit la référence : mesuré, `width`
+       passait de 1200 à 860. Toute opération ultérieure qui s'en sert — le recalage
+       en colonnes calcule `colonne / o.width` — travaillait dès lors sur une valeur
+       fausse, et la photo perdait sa définition d'origine à l'export.
+       On ne touche donc JAMAIS `width`/`height` d'une image : on ne joue que sur son
+       échelle, et UNIFORMÉMENT. */
+    function estPhoto(o) { return !!o && o.type === 'image'; }
+
+    /* ⚠️ v1.7.658 — LES FORMES ET LES GROUPES ÉTAIENT PUREMENT IGNORÉS, ET C'EST CE
        QUI « CASSAIT TOUT ». MESURÉ, page 1207 → 858 px de large (A4 paysage) : les deux
        blocs texte, le rectangle, l'image et le cadre photo suivaient ; le CERCLE, le
        TRIANGLE, le TRACÉ et le GROUPE restaient à leurs coordonnées d'origine (cercle
@@ -103152,7 +103178,7 @@ function initObjectRightClickMenu() {
            de `objetsMaquette`.
        Et dans les trois cas la position passe par le CENTRE (voir `centreDe`). */
     function recomposerAuFormat(avant) {
-        var fait = { blocs: 0, cadres: 0, formes: 0 };
+        var fait = { blocs: 0, cadres: 0, formes: 0, photos: 0 };
         /* ⚠️ LE RAPPORT D'ÉCHELLE SE CALCULE SUR LE CONTENU DE LA PAGE, PAS SUR LE
            CANVAS ENTIER — et c'est ce qui rend l'aller-retour exact. Le canvas vaut
            « page(s) + fond perdu de chaque côté », et le FOND PERDU NE CHANGE PAS
@@ -103185,7 +103211,14 @@ function initObjectRightClickMenu() {
             var repere = function (v, r) { return fpx + (v - fpx) * r; };
             objetsMaquette(cv).forEach(function (o) {
                 var texte = estTexte(o);
-                var cadre = estCadre(o);
+                /* ⚠️ v1.7.658 — L'ORDRE DE CES DEUX LIGNES EST LE CORRECTIF.
+                   Une photo était rangée dans « cadre » : elle subissait donc
+                   `width ×= rx` et `height ×= ry`, c'est-à-dire un étirement dès que
+                   rx ≠ ry, ET la perte de ses dimensions naturelles. Elle est
+                   maintenant traitée comme une forme : échelle seulement, et
+                   UNIFORME (voir plus bas), donc son rapport ne peut plus bouger. */
+                var photo = estPhoto(o);
+                var cadre = !photo && estCadre(o);
                 var centre = centreDe(o);
                 /* ⚠️ `_fixedWidth` / `_fixedHeight` SONT LA RÉFÉRENCE, PAS `width`/`height`.
                    Ce sont les miroirs que l'application tient à jour, et une synchro
@@ -103206,10 +103239,22 @@ function initObjectRightClickMenu() {
                     /* ⚠️ ON MULTIPLIE L'ÉCHELLE, ON NE LA REMPLACE PAS. Un tracé ou un
                        groupe peut déjà porter un `scaleX` non nul (import SVG, mise à
                        l'échelle manuelle) : l'écraser à la valeur du rapport
-                       redimensionnerait l'objet une seconde fois depuis zéro. */
+                       redimensionnerait l'objet une seconde fois depuis zéro.
+                       ⚠️ v1.7.658 — ET L'ÉCHELLE EST LA MÊME SUR LES DEUX AXES.
+                       Elle valait rx en X et ry en Y : MESURÉ, un cercle de 120 × 120
+                       ressortait en 87 × 121 après un passage 210 → 150 mm, soit une
+                       ellipse. Un cercle, un triangle ou un tracé n'ont pas de
+                       « fenêtre » à étirer : leur géométrie est leur dessin.
+                       Le facteur retenu est le PLUS PETIT des deux, c'est-à-dire un
+                       ajustement « contenu » : l'objet occupe la même place relative
+                       dans la page sans jamais en déborder. Quand les deux rapports
+                       sont égaux — le cas d'un changement de format proportionnel —
+                       il vaut exactement rx = ry, et rien ne distingue ce choix d'un
+                       autre. */
+                    var echelle = Math.min(rx, ry);
                     o.set({
-                        scaleX: (typeof o.scaleX === 'number' && o.scaleX ? o.scaleX : 1) * rx,
-                        scaleY: (typeof o.scaleY === 'number' && o.scaleY ? o.scaleY : 1) * ry
+                        scaleX: (typeof o.scaleX === 'number' && o.scaleX ? o.scaleX : 1) * echelle,
+                        scaleY: (typeof o.scaleY === 'number' && o.scaleY ? o.scaleY : 1) * echelle
                     });
                 }
                 poserAuCentre(o, repere(centre.x, rx), repere(centre.y, ry));
@@ -103237,6 +103282,14 @@ function initObjectRightClickMenu() {
                         try { window.recalculateMaskPattern(o, cv); } catch (_) {}
                     }
                     fait.cadres++;
+                } else if (photo) {
+                    /* ⚠️ v1.7.658 — UNE PHOTO SE RECOMPTE À PART DES FORMES. Elle
+                       partage leur traitement (échelle uniforme) mais pas leur sens :
+                       le compte rendu doit dire « 2 photo(s) » et non « 2 forme(s) »,
+                       sinon on croit que les images n'ont pas été touchées. */
+                    try { if (typeof o.setCoords === 'function') o.setCoords(); } catch (_) {}
+                    try { if (typeof o._clearCache === 'function') o._clearCache(); } catch (_) {}
+                    fait.photos = (fait.photos || 0) + 1;
                 } else fait.formes++;
             });
             try { if (cv.requestRenderAll) cv.requestRenderAll(); } catch (_) {}
@@ -103265,7 +103318,7 @@ function initObjectRightClickMenu() {
         var changeTypo = typo.police || (typo.corps !== null && typo.corps !== undefined) ||
             (typo.interligne !== null && typo.interligne !== undefined) || typo.couleur ||
             (typo.alignement && typo.alignement !== '') ||
-            /* 🆕 v1.7.657 — les trois réglages de texte ajoutés à la trappe. */
+            /* 🆕 v1.7.658 — les trois réglages de texte ajoutés à la trappe. */
             (typo.interlettrage !== null && typo.interlettrage !== undefined) ||
             (typo.graisse !== null && typo.graisse !== undefined) ||
             (typo.styleTxt !== null && typo.styleTxt !== undefined);
@@ -103299,7 +103352,7 @@ function initObjectRightClickMenu() {
         });
 
         /* ── 4b. Recale sur la grille de colonnes ──
-           ⚠️ v1.7.657 — LES CADRES PHOTO SONT RECALÉS EUX AUSSI. La version précédente
+           ⚠️ v1.7.658 — LES CADRES PHOTO SONT RECALÉS EUX AUSSI. La version précédente
            ne parcourait que `blocs` (les blocs texte) : sur une maquette mêlant texte
            et photos, le texte venait se ranger dans les colonnes pendant que les photos
            restaient où elles étaient — le « recalage » désalignait la page au lieu de
@@ -103411,7 +103464,7 @@ function initObjectRightClickMenu() {
         if (etat.recompose) {
             var rc = etat.recompose;
             etat.recompose = null;
-            msg = 'Format recomposé (' + rc.blocs + ' bloc(s), ' + rc.cadres + ' cadre(s), ' + (rc.formes || 0) + ' forme(s)) · ' + msg;
+            msg = 'Format recomposé (' + rc.blocs + ' bloc(s), ' + (rc.photos || 0) + ' photo(s), ' + rc.cadres + ' cadre(s), ' + (rc.formes || 0) + ' forme(s)) · ' + msg;
         }
         /* ⚠️ ON RESYNCHRONISE LE MODÈLE APRÈS LA REFONTE — et pas seulement après la
            recomposition au format. « Recaler » change la largeur des blocs : si `pages[]`
@@ -103461,7 +103514,7 @@ function initObjectRightClickMenu() {
        produit : « Format recomposé (0 bloc(s), 0 cadre(s)) » alors que le bloc était là
        avant et après.
 
-       ⚠️ v1.7.657 — NI « AU MOINS UNE VUE », NI « TOUTES LES VUES » NE SUFFISENT : IL
+       ⚠️ v1.7.658 — NI « AU MOINS UNE VUE », NI « TOUTES LES VUES » NE SUFFISENT : IL
        FAUT QUE LES OBJETS SOIENT CHARGÉS. MESURÉ sur le gabarit « Fashion Magazine »
        (8 pages, 5 vues). Deux corrections successives, deux mesures :
          · ne tester que `vues().length` NON NUL → la première vue reconstruite
@@ -103544,7 +103597,12 @@ function initObjectRightClickMenu() {
                l'aller-retour. On attend une seconde fois, sur un état NEUF, puis on
                sauvegarde. `saveAllPages` ne prend aucune entrée d'historique. */
             attendreVues(function () {
-                if (fait.blocs || fait.cadres || fait.formes) {
+                /* ⚠️ v1.7.658 — `fait.photos` EST DANS LA CONDITION. Les photos sont
+                   désormais comptées à part des formes ; sans elles ici, un document
+                   fait UNIQUEMENT de photos recomposées ne serait jamais sauvegardé,
+                   et le rendu suivant rétablirait l'ancienne géométrie — exactement le
+                   défaut que ce bloc existe pour éviter. */
+                if (fait.blocs || fait.cadres || fait.formes || fait.photos) {
                     try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
                 }
                 refonte();
@@ -103811,7 +103869,7 @@ function initObjectRightClickMenu() {
         h += '</section>';
 
         /* GRILLE ET LIGNE DE BASE
-           🆕 v1.7.657 — demandé par l'utilisateur : « il y a plus de réglages live dans
+           🆕 v1.7.658 — demandé par l'utilisateur : « il y a plus de réglages live dans
            le studio IA, plus de tirettes ». Ces deux sections ne font pas semblant : elles
            pilotent les réglages NATIFS de SuperPrint, dont l'effet a été MESURÉ avant
            d'être exposé — afficher la grille fait passer la vue de 4 à 14 objets, et
@@ -103905,7 +103963,7 @@ function initObjectRightClickMenu() {
             police: val('mqPolice', ''), corps: nb(val('mqCorps', 0), 0),
             interligne: nb(val('mqInterligne', 0), 0), couleur: (nb(val('mqCorps', 0), 0) > 0 ? val('mqCouleurTexte', '') : ''),
             alignement: etat.alignement || '',
-            /* ⚠️ v1.7.657 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
+            /* ⚠️ v1.7.658 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
                une précaution, pas une coquetterie : `charSpacing`, `fontWeight` et
                `fontStyle` ont des valeurs par DÉFAUT parfaitement légitimes (0, normal,
                normal). Les lire sans condition ferait donc que « Refaire la maquette »
@@ -103960,7 +104018,7 @@ function initObjectRightClickMenu() {
         var corps = $('maquetteBody');
         if (corps) { corps.innerHTML = panneau(); corps.__mqRempli = true; brancher(); }
         if (typeof lireControles === 'function') lireControles();
-        /* ⚠️ v1.7.657 — UNE SEULE TRAPPE À LA FOIS, DANS LES DEUX SENS.
+        /* ⚠️ v1.7.658 — UNE SEULE TRAPPE À LA FOIS, DANS LES DEUX SENS.
            Depuis que Global Refactor s'ouvre depuis la bibliothèque de plug-ins, il
            peut s'ouvrir alors que la trappe d'un plug-in (motif vectoriel) est déjà
            là. Les deux occupent le MÊME bord droit : ouvertes ensemble elles prennent
@@ -104211,7 +104269,7 @@ function initObjectRightClickMenu() {
     }
 
     function installer() {
-        /* ⚠️ v1.7.657 — PLUS DE BOUTON `#maquetteToggle` À BRANCHER.
+        /* ⚠️ v1.7.658 — PLUS DE BOUTON `#maquetteToggle` À BRANCHER.
            L'outil est devenu un plug-in intégré (`plugins/global-refactor.plugin.js`)
            et a quitté la barre du haut ; c'est la bibliothèque de plug-ins qui en
            prend la porte d'entrée. Ce module ne garde donc que `window._spMaquette`,
