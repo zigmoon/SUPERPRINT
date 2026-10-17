@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.648)
+   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.649)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce que fait ce plug-in : il habille un fond de page — ou un bloc sélectionné —
@@ -613,10 +613,15 @@ SPPluginAPI({
       return cv;
     }
 
-    /* ═══ LE GRAND APERÇU ═══════════════════════════════════════════════════
+    /* ═══ LE GRAND APERÇU — UN ROND, DÉCOUPÉ DANS LE CANEVAS ════════════════
        On dessine la tuile RÉPÉTÉE, pas une vignette d'une forme : c'est le rythme
        et le raccord qu'on vient juger. Un motif à 8 mm de pas ne se voit pas sur
-       un carré de 28 px.
+       une vignette de 28 px.
+       ⚠️ LE DÉCOUPAGE CIRCULAIRE SE FAIT ICI, PAS SEULEMENT EN CSS. Le champ est
+       affiché en rond (`border-radius: 50%`), mais un rond n'a pas de coin : si le
+       dessin restait carré, la répétition s'arrêterait net sur la diagonale et le
+       rond paraîtrait rogné. On clippe donc au cercle inscrit, et la boucle de
+       répétition part d'un pas AVANT le bord pour couvrir le débord.
        Trois présentations, parce que les trois effets ne se lisent pas pareil :
        la tuile se RÉPÈTE, la rosace se voit ENTIÈRE, le kaléidoscope COUVRE. */
     function previsualiser(source) {
@@ -629,6 +634,10 @@ SPPluginAPI({
         g.globalCompositeOperation = 'source-over';
         g.globalAlpha = 1;
         g.clearRect(0, 0, W, H);
+        g.save();
+        g.beginPath();
+        g.arc(W / 2, H / 2, Math.min(W, H) / 2, 0, Math.PI * 2);
+        g.clip();
         if (o.fondActif) {
           g.fillStyle = o.fondTuile || '#ffffff';
           g.fillRect(0, 0, W, H);
@@ -638,17 +647,19 @@ SPPluginAPI({
           var e = Math.min(W / cote, H / source.height);
           var w1 = cote * e, h1 = source.height * e;
           g.drawImage(source, (W - w1) / 2, (H - h1) / 2, w1, h1);
+          g.restore();
           return;
         }
         /* Trois répétitions en largeur : assez pour voir le motif s'installer,
            assez peu pour que chaque forme reste lisible. */
         var ech = (W / 3) / cote;
         var pas = cote * ech;
-        for (var y = 0; y < H + pas; y += pas) {
-          for (var x = 0; x < W + pas; x += pas) {
+        for (var y = -pas; y < H + pas; y += pas) {
+          for (var x = -pas; x < W + pas; x += pas) {
             g.drawImage(source, x, y, pas, pas);
           }
         }
+        g.restore();
       } catch (_) {}
     }
 
