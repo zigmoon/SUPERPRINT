@@ -3150,7 +3150,14 @@ textarea[data-fabric-hiddentextarea] {
 .unit-btn.active { background: #1a1a1a; color: #fff; }
 .transform-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
 .transform-input label { font-size: 8px; text-transform: uppercase; opacity: 0.6; margin-bottom: 3px; display: block; }
-.transform-input input { width: 100%; height: 28px; padding: 0 5px; font-size: 10px; border: 1px solid #e0e0e0; box-sizing: border-box; }
+/* ⚠️ v1.7.637 — `font-family` MANQUAIT ICI, et c'était un oubli, pas un choix :
+   mesuré, ces champs s'affichaient en Arial au milieu d'une barre entièrement en
+   IBM Plex Mono, alors que `.input-group input` (le reste de la barre) déclare bien
+   la monospace. C'est le seul endroit de l'interface où un champ changeait de police.
+   Corrigé des deux côtés : ici, et dans le panneau « Global Refactor », pour qu'ils
+   soient identiques — c'est la demande, et deux champs voisins ne peuvent pas
+   diverger sur ce point. */
+.transform-input input { width: 100%; height: 28px; padding: 0 5px; font-size: 10px; font-family: 'IBM Plex Mono', monospace; border: 1px solid #e0e0e0; box-sizing: border-box; }
 
 /* Lock proportions button */
 .transform-lock-btn {
@@ -6039,7 +6046,9 @@ input[type=number] {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: #fafafa;
+    /* Même fond que `.rightbar` (blanc), et non #fafafa : les deux panneaux sont
+       jointifs, deux blancs différents se liraient comme un raccord. */
+    background: #fff;
     border-left: 0 solid #e0e0e0;
     transition: width var(--sp-sb-dur, 260ms) var(--sp-sb-ease, cubic-bezier(.2, .7, .2, 1)),
                 border-left-width var(--sp-sb-dur, 260ms) var(--sp-sb-ease, cubic-bezier(.2, .7, .2, 1));
@@ -6125,14 +6134,36 @@ input[type=number] {
 .theme-dark .mq-corps::-webkit-scrollbar-thumb:hover { background: #555; }
 
 /* ── Sections ── */
-.mq-sec { padding: 8px 10px 10px; border-bottom: 1px solid #ececec; }
+/* ══ v1.7.637 — CE PANNEAU REPREND LE SYSTÈME DE LA BARRE « TRANSFORMATION » ══
+   Demande utilisateur : « dans Global Refactor ce n'est pas la même taille de typo,
+   pas les mêmes espacements, ni les mêmes boutons que dans la sidebar de droite
+   Transformation — comme s'il y avait deux UI ». C'était exact, et mesuré :
+
+                        Transformation (référence)   Global Refactor (avant)
+     titre de section   mono 10 px, poids 400,        mono 9 px, poids 700,
+                        interlettrage 1 px, opacité .6 interlettrage .6 px, #888
+     libellé            mono 9 px, capitales,         mono 10 px, casse normale,
+                        interlettrage .5 px, opacité .6  #555
+     champ              28 px de haut, IBM Plex Mono  22 px, Arial, rayon 3 px
+     bouton/pastille    28 px, mono 9 px             20 px, Arial, rayon 3 px
+     section            12 px 14 px                  8 px 10 px 10 px
+     case à cocher      libellé 9 px capitales .6     10 px, casse normale
+
+   Les valeurs ci-dessous sont RECOPIÉES de `.rightbar` (voir le bloc « RIGHTBAR:
+   NORMALIZED COMPONENTS » plus haut dans ce fichier), et non inventées : c'est ce
+   qui garantit que les deux panneaux restent d'accord si l'un des deux bouge.
+   La police des champs passe aussi en IBM Plex Mono : un champ en Arial au milieu
+   d'une interface en monospace était l'écart le plus visible. */
+.mq-sec { padding: 12px 14px; border-bottom: 1px solid #e0e0e0; }
 .mq-sec h4 {
-    margin: 0 0 7px;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: .6px;
+    margin: 0 0 10px;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    color: #888;
+    opacity: .6;
+    color: inherit;
+    font-family: 'IBM Plex Mono', monospace;
 }
 
 /* ── Lignes ── */
@@ -6141,32 +6172,46 @@ input[type=number] {
     grid-template-columns: 74px 1fr 44px;
     align-items: center;
     gap: 6px;
-    min-height: 22px;
+    min-height: 28px;
     margin-bottom: 4px;
 }
-.mq-ligne > label { font-size: 10px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mq-ligne > .mq-v { font-size: 9px; color: #888; font-weight: 600; text-align: right; font-family: ui-monospace, 'Consolas', monospace; }
+.mq-ligne > label {
+    /* 8 px, capitales, interlettrage normal, opacité .6 : ce sont exactement les
+       valeurs de `.transform-input label`, le libellé du panneau de référence. J'avais
+       d'abord pris 9 px / .5 px (`.input-group label`) ; la mesure des deux panneaux
+       côte à côte a tranché pour 8 px, qui est ce que l'utilisateur voit réellement
+       dans « Transformation ». */
+    font-size: 8px;
+    text-transform: uppercase;
+    opacity: .6;
+    color: inherit;
+    margin-bottom: 3px;
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mq-ligne > .mq-v { font-size: 9px; opacity: .6; text-align: right; font-family: ui-monospace, 'Consolas', monospace; }
 .mq-ligne input[type="number"],
 .mq-ligne select {
-    height: 22px;
+    height: 28px;
     width: 100%;
     min-width: 0;
-    border: 1px solid #d5d5d5;
-    border-radius: 3px;
+    border: 1px solid #e0e0e0;
+    border-radius: 0;
     background: #fff;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    padding: 0 4px;
-    color: #222;
+    padding: 0 5px;
+    color: #111;
 }
 .mq-ligne input[type="number"] { grid-column: 2 / 3; }
 .mq-ligne select { grid-column: 2 / 4; }
 .mq-ligne input[type="color"] {
     grid-column: 2 / 3;
     width: 100%;
-    height: 22px;
+    height: 28px;
     padding: 0;
-    border: 1px solid #d5d5d5;
-    border-radius: 3px;
+    border: 1px solid #e0e0e0;
+    border-radius: 0;
     background: #fff;
     cursor: pointer;
 }
@@ -6188,22 +6233,29 @@ input[type=number] {
 }
 
 /* ── Pastilles ── */
-.mq-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.mq-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .mq-chip {
-    border: 1px solid #d5d5d5;
-    background: #fff;
-    color: #444;
-    border-radius: 3px;
+    /* Dimensions ET couleurs recopiées de `.rightbar .btn`, mesurées : fond
+       transparent, filet #ccc, texte #555 ; actif en #1a1a1a plein avec texte blanc.
+       La pastille est le bouton de ce panneau — même forme, même état actif. */
+    border: 1px solid #ccc;
+    background: transparent;
+    color: #555;
+    border-radius: 0;
+    height: 28px;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 9px;
     line-height: 1;
-    padding: 5px 7px;
+    padding: 0 10px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
+    min-width: 28px;
 }
-.mq-chip:hover { border-color: #aaa; color: #111; }
-.mq-chip.on { background: #111; border-color: #111; color: #fff; }
+.mq-chip:hover { border-color: #999; color: #111; }
+.mq-chip.on { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }
 .mq-chip i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
 
 /* ── Cases ── */
@@ -6211,14 +6263,19 @@ input[type=number] {
     display: flex;
     align-items: center;
     gap: 7px;
-    font-size: 10px;
-    color: #444;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    opacity: .6;
+    color: inherit;
+    font-family: 'IBM Plex Mono', monospace;
     cursor: pointer;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
+    min-height: 28px;
 }
 .mq-case input { width: 14px; height: 14px; accent-color: #111; cursor: pointer; flex: 0 0 auto; }
 
-.mq-large { width: 100%; height: 26px; font-size: 9px; }
+.mq-large { width: 100%; height: 28px; font-size: 9px; font-family: 'IBM Plex Mono', monospace; }
 
 /* ── Pied ── */
 .mq-pied {
@@ -6226,33 +6283,40 @@ input[type=number] {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 10px;
+    padding: 8px 14px;
     border-top: 1px solid #e0e0e0;
-    background: #f4f4f4;
+    background: #fff;
 }
 .mq-etat {
     flex: 1 1 auto;
     font-size: 9px;
-    color: #888;
+    opacity: .6;
+    font-family: 'IBM Plex Mono', monospace;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.mq-pied .btn { height: 26px; padding: 0 12px; font-size: 9px; }
+/* Même hauteur que `.rightbar .btn` (28 px, 9 px de corps). */
+.mq-pied .btn { height: 28px; padding: 0 10px; font-size: 9px; }
 
-/* ── Thème sombre ── */
+/* ── Thème sombre ──
+   Valeurs recopiées du thème sombre de `.rightbar` (voir plus haut dans ce fichier),
+   pour que les deux panneaux restent d'accord : les champs y sont #1a1a1a sur un
+   filet #333, et non #2a2a2a sur #3a3a3a comme ici auparavant. */
 .theme-dark .mq-trappe { background: #1e1e1e; border-left-color: #333; }
 .theme-dark .mq-head,
-.theme-dark .mq-pied { background: #262626; border-color: #333; }
+.theme-dark .mq-pied { background: #1e1e1e; border-color: #333; }
 .theme-dark .mq-title { color: #ddd; }
 .theme-dark .mq-close { color: #aaa; }
 .theme-dark .mq-close:hover { background: #333; color: #fff; }
-.theme-dark .mq-sec { border-bottom-color: #2c2c2c; }
-.theme-dark .mq-sec h4 { color: #888; }
+.theme-dark .mq-sec { border-bottom-color: #333; }
+.theme-dark .mq-sec h4 { color: inherit; }
 .theme-dark .mq-ligne > label,
-.theme-dark .mq-case { color: #bbb; }
+.theme-dark .mq-case,
+.theme-dark .mq-etat { color: #aaa; }
 .theme-dark .mq-ligne input[type="number"],
-.theme-dark .mq-ligne select { background: #2a2a2a; border-color: #3a3a3a; color: #eee; }
-.theme-dark .mq-chip { background: #2a2a2a; border-color: #3a3a3a; color: #bbb; }
+.theme-dark .mq-ligne select,
+.theme-dark .mq-ligne input[type="color"] { background: #1a1a1a; border-color: #333; color: #eaeaea; }
+.theme-dark .mq-chip { background: transparent; border-color: #444; color: #aaa; }
+.theme-dark .mq-chip:hover { border-color: #666; color: #eee; }
 .theme-dark .mq-chip.on { background: #eee; border-color: #eee; color: #111; }
-.theme-dark .mq-etat { color: #888; }
