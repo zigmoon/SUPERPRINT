@@ -365,7 +365,7 @@ alors plus téléchargeable nulle part. Le workflow publie donc **une seconde
 release**, portant le tag de la version :
 
 ```
-https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-v1.7.646
+https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-v1.7.647
 ```
 
 Elle contient les **mêmes 21 fichiers**, figés — plus un `SHA256SUMS` donnant

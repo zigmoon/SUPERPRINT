@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — SERVEUR MCP  (v1.7.646)
+   SUPERPRINT — SERVEUR MCP  (v1.7.647)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce serveur expose SuperPrint à un client MCP : Claude Desktop, Claude Code,
@@ -27,17 +27,16 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { basename, resolve, dirname } from 'node:path';
 
-const VERSION = '1.7.646';
+const VERSION = '1.7.647';
 const PROTOCOLE = '2025-06-18';
 
 /* ── Unités ────────────────────────────────────────────────────────────────────
    SuperPrint travaille en POINTS dans le fichier .sp (1 mm = 72/25,4 pt) et
-   décrit le format du document en MILLIMÈTRES. Les deux conversions sont donc
-   nécessaires, et les confondre est l'erreur la plus facile à commettre ici. */
+   décrit le format du document en MILLIMÈTRES. Confondre les deux unités est
+   l'erreur la plus facile à commettre ici : on ne garde donc QUE la conversion
+   réellement utilisée, pour que l'ambiguïté ne puisse pas s'installer. */
 const MM_VERS_PT = 72 / 25.4;
-const PT_VERS_MM = 25.4 / 72;
 const mm = (v) => Math.round(Number(v) * MM_VERS_PT * 1000) / 1000;
-const mmDe = (v) => Math.round(Number(v) * PT_VERS_MM * 100) / 100;
 
 const FORMATS = {
   A0: [841, 1189], A1: [594, 841], A2: [420, 594], A3: [297, 420],

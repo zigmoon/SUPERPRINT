@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-INS  (v1.7.646)
+   SUPERPRINT — PLUG-INS  (v1.7.647)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Un plug-in SuperPrint est un fichier `.plugin.js` que l'utilisateur installe
@@ -26,7 +26,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.646';
+  var VERSION = '1.7.647';
   var CLE_REGISTRE = 'sp_plugins_v1';        // plug-ins installés (code source + manifeste)
   var CLE_ACTIFS = 'sp_plugins_actifs_v1';   // { [id]: true/false }
 
@@ -58,8 +58,9 @@
   function pxVersMm(px) { return (Number(px) || 0) * 25.4 / 72; }
 
   /* ── API donnée à chaque plug-in ───────────────────────────────────────────── */
-  function creerApi(manifeste) {
+  function creerApi(manifeste, options) {
     var id = manifeste.id;
+    var apercu = !!(options && options.apercu);
 
     function canevas() {
       var c = H().canvasActif ? H().canvasActif() : null;
@@ -74,12 +75,32 @@
     var api = {
       version: VERSION,
 
+      /* 🆕 v1.7.647 — L'APERÇU EST UN MODE, ET LE PLUG-IN DOIT LE SAVOIR.
+         Une trappe peut exécuter un plug-in à chaque mouvement de tirette. Dans ce
+         mode, `api.apercu` vaut `true` : un plug-in qui écrit quelque chose de
+         coûteux (un historique, un message, un dialogue) peut s'en abstenir. Le
+         registre, lui, n'écrit JAMAIS d'entrée d'historique en aperçu — la
+         validation s'en charge une seule fois. */
+      apercu: apercu,
+
       /* Le moteur graphique, pour construire des objets. */
       get fabric() { return window.fabric; },
 
       /* Conversions — la seule unité de l'application est le point (1 mm = 72/25,4). */
       mm: mmVersPx,
       px: pxVersMm,
+
+      /* 🆕 v1.7.647 — TOUS LES PLANS DE TRAVAIL.
+         Un plug-in qui remplace son propre dessin doit pouvoir le RETIRER partout
+         où il l'a posé. Sans cette liste, le plug-in Motif devait passer par
+         `window._spMaquette._debug.vues()` — l'échafaudage de débogage d'un autre
+         module. Une dépendance pareille casse au premier remaniement. */
+      canvases: function () {
+        try {
+          var l = (H().canvases && H().canvases()) || [];
+          return l.filter(Boolean);
+        } catch (_) { return []; }
+      },
 
       /* Le document, en lecture. */
       get document() {
@@ -109,7 +130,9 @@
 
       /* Ajout d'objets. Chaque ajout est enregistré dans l'historique de
          l'application : un plug-in reste annulable par Ctrl+Z, comme n'importe
-         quelle action de l'utilisateur. */
+         quelle action de l'utilisateur.
+         ⚠️ SAUF EN APERÇU : voir `api.apercu`. On synchronise alors `pages[]` sans
+         écrire d'entrée, sinon une tirette = un Ctrl+Z. */
       add: function (obj, options) {
         if (!obj) return null;
         var c = canevas();
@@ -119,7 +142,8 @@
         if (opts.envoyerEnArriere) c.sendToBack(obj);
         else if (opts.envoyerAuFond !== false) { /* laissé devant, comme un ajout normal */ }
         c.requestRenderAll ? c.requestRenderAll() : c.renderAll();
-        apres(opts.libelle);
+        if (apercu) api.sync();
+        else apres(opts.libelle);
         return obj;
       },
 
@@ -128,8 +152,22 @@
         var sortie = [];
         (liste || []).forEach(function (o) { if (o) { c.add(o); sortie.push(o); } });
         c.requestRenderAll ? c.requestRenderAll() : c.renderAll();
-        apres((options && options.libelle) || ('Plug-in : ' + manifeste.name));
+        if (apercu) api.sync();
+        else apres((options && options.libelle) || ('Plug-in : ' + manifeste.name));
         return sortie;
+      },
+
+      /* Synchronise `pages[]` sans écrire d'historique. C'est ce que fait `add`
+         en aperçu ; un plug-in qui touche aux objets directement peut l'appeler. */
+      sync: function () {
+        try { if (H().sync) H().sync(); } catch (_) {}
+      },
+
+      /* Écrit l'entrée d'historique. En aperçu, c'est la VALIDATION qui l'appelle,
+         une seule fois — jamais le plug-in. */
+      commit: function (libelle) {
+        if (apercu) return;
+        apres(libelle);
       },
 
       /* Retire un objet ajouté (pour les aperçus successifs d'un même plug-in). */
@@ -250,7 +288,7 @@
       description: String(m.description || ''),
       icon: String(m.icon || '◆'),
       options: options,
-      /* 🆕 v1.7.646 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
+      /* 🆕 v1.7.647 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
          « Global Refactor » n'est pas un formulaire : c'est un panneau entier, avec
          un aperçu en direct, un Annuler et un Valider qui existaient déjà. Le
          réécrire dans une trappe générique aurait été un second code à maintenir
@@ -290,7 +328,7 @@
     installes[m.id] = {
       source: src, name: m.name, version: m.version, author: m.author, integre: false,
       description: m.description, icon: m.icon, options: m.options, fichier: nomFichier || '',
-      /* 🆕 v1.7.646 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
+      /* 🆕 v1.7.647 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
          Les plug-ins installés AVANT cette version n'en ont pas : le filtre les
          traite alors comme « anciens » (visibles dans « Tous » et « 30 jours »),
          jamais comme « récents » — on ne date pas rétroactivement un fichier
@@ -318,7 +356,7 @@
   }
 
   /* ── Exécution ─────────────────────────────────────────────────────────────── */
-  function executer(id, valeurs) {
+  function executer(id, valeurs, options) {
     var m = MANIFESTES[id] || null;
     if (!m) {
       /* Peut-être installé mais pas encore évalué : on retente une fois. */
@@ -327,7 +365,7 @@
     }
     if (!m) throw new Error('plug-in inconnu : ' + id);
     if (!m.run) throw new Error('ce plug-in n\'a pas de fonction run()');
-    /* ⚠️ v1.7.646 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
+    /* ⚠️ v1.7.647 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
        LE DIT. L'état `actif` existait depuis 1.7.642 mais n'était qu'une pastille
        d'affichage : `definirActif` écrivait dans le stockage et personne ne le
        relisait. Un interrupteur qui ne coupe rien est un mensonge — la garde est
@@ -339,8 +377,35 @@
     }
     var opts = {};
     (m.options || []).forEach(function (o) { opts[o.key] = (valeurs && o.key in valeurs) ? valeurs[o.key] : o.defaut; });
-    var api = creerApi(m);
-    return Promise.resolve().then(function () { return m.run(api, opts); });
+    var api = creerApi(m, options);
+    var apercu = !!(options && options.apercu);
+    /* 🆕 v1.7.647 — L'APERÇU SE DÉROULE EN SILENCE D'HISTORIQUE.
+       ⚠️ MESURÉ : sans cela, chaque forme posée par le plug-in déclenchait le
+       `object:added` global de `main.js` → `debouncedSaveState('Objet ajouté')`.
+       La pile d'undo montait de 13 à 29 en trente secondes d'aperçus, et Ctrl+Z
+       ne ramenait plus au dessin d'avant. Le silence est posé ICI, au seul point
+       par lequel passe toute exécution, et TOUJOURS levé (succès comme échec) :
+       un silence oublié figerait l'historique pour le reste de la session.
+       En exécution normale (`apercu` faux), rien n'est posé : le plug-in écrit
+       son entrée comme n'importe quelle action. */
+    if (!apercu) return Promise.resolve().then(function () { return m.run(api, opts); });
+    var h = H();
+    try { if (h.muet) h.muet(true); } catch (_) {}
+    return Promise.resolve()
+      .then(function () { return m.run(api, opts); })
+      .then(
+        function (v) { try { if (h.muet) h.muet(false); } catch (_) {} return v; },
+        function (e) { try { if (h.muet) h.muet(false); } catch (_) {} throw e; }
+      );
+  }
+
+  /* 🆕 v1.7.647 — VALIDER UN APERÇU.
+     Une trappe en aperçu direct peut avoir exécuté le plug-in trente fois. Une
+     seule entrée d'historique doit en sortir, et c'est celle-ci : elle synchronise
+     puis fige. Le plug-in n'a rien à en savoir. */
+  function valider(libelle) {
+    try { if (H().apres) { H().apres(libelle || 'Plug-in'); return true; } } catch (_) {}
+    return false;
   }
 
   /* Enregistrement d'un plug-in intégré (livré dans `app/plugins/`). */
@@ -373,7 +438,7 @@
         integre: !!m.integre || !!(inst && inst.integre),
         actif: actifs[id] !== false,
         /* Date d'installation, pour les filtres de la bibliothèque (cf. installe
-           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.646. */
+           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.647. */
         installe: (inst && inst.installe) ? inst.installe : null,
         /* Trappe propre au plug-in (cf. `normaliser`) — intégrés uniquement. */
         trappe: m.integre ? m.trappe : ''
@@ -419,7 +484,7 @@
   window.SPPlugins = {
     version: VERSION,
     register: enregistrerIntegre,
-    /* 🆕 v1.7.646 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
+    /* 🆕 v1.7.647 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
        besoin AVANT qu'un plug-in tourne : c'est un champ de son formulaire, pas un
        appel du plug-in. Il délègue à la même fonction que `api.imageDataUrl`, donc
        un seul comportement pour les deux chemins. */
@@ -427,6 +492,7 @@
     list: liste,
     get: function (id) { chargerTous(); return MANIFESTES[id] || null; },
     run: executer,
+    valider: valider,
     installerSource: installerSource,
     /* ⚠️ DEUX ORTHOGRAPHES, ET C'EST VOLONTAIRE.
        La clé publique a été publiée « definerActif » (sans le second « i ») en

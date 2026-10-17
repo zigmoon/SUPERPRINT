@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.646)
+   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.647)
    ═══════════════════════════════════════════════════════════════════════════════
 
    DEUX SURFACES, ET C'EST VOULU :
 
      · la BIBLIOTHÈQUE est une pop-in — on y installe, on supprime, on allume ou
        on éteint. Elle n'a pas besoin de voir la page : elle gère des fichiers.
-       ⚠️ v1.7.646 — ELLE NE FILTRE PLUS. La barre « Tous / 7 jours / 30 jours /
+       ⚠️ v1.7.647 — ELLE NE FILTRE PLUS. La barre « Tous / 7 jours / 30 jours /
        intégrés » a été retirée sur demande : elle découpait une liste qui tient à
        l'écran. La date d'installation reste écrite sur chaque carte.
 
@@ -174,6 +174,12 @@
       if (valeurs && valeurs[option.key]) apercu.style.backgroundImage = 'url("' + valeurs[option.key] + '")';
       var bImg = petitBouton(texte('pluginsChooseImage', 'Image'), false);
       var etat = el('span', 'font-size:9px;color:#999;font-family:"IBM Plex Mono",monospace;', '—');
+      /* 🆕 v1.7.647 — l'aperçu doit RELANCER le plug-in quand l'image change.
+         Le bouton n'émet aucun événement natif : on publie donc un rappel, que la
+         trappe branche sur l'aperçu en direct. Sans lui, choisir une image ne
+         montrait rien tant qu'on n'avait pas cliqué « Appliquer » — exactement le
+         défaut que l'aperçu en direct est censé supprimer. */
+      var rappels = [];
       bImg.addEventListener('click', function () {
         var p = (window.SPPlugins && window.SPPlugins.imageDataUrl) ? window.SPPlugins.imageDataUrl() : Promise.resolve(null);
         p.then(function (url) {
@@ -181,12 +187,27 @@
           valeurs[option.key] = url;
           apercu.style.backgroundImage = 'url("' + url + '")';
           etat.textContent = texte('pluginsImageLoaded', 'chargée');
+          rappels.forEach(function (f) { try { f(); } catch (_) {} });
         });
       });
-      boite.appendChild(apercu); boite.appendChild(bImg); boite.appendChild(etat);
+      /* Effacer l'image : on doit pouvoir revenir à la forme géométrique sans
+         recharger un fichier. */
+      var bEffacer = petitBouton('✕', false);
+      bEffacer.type = 'button';
+      bEffacer.title = texte('pluginsClearImage', 'Retirer l\'image');
+      bEffacer.addEventListener('click', function () {
+        valeurs[option.key] = '';
+        apercu.style.backgroundImage = '';
+        etat.textContent = '—';
+        rappels.forEach(function (f) { try { f(); } catch (_) {} });
+      });
+      boite.appendChild(apercu); boite.appendChild(bImg); boite.appendChild(bEffacer); boite.appendChild(etat);
       ligne.appendChild(boite);
       if (option.aide) ligne.appendChild(el('div', 'sp-pl-aide', option.aide));
-      return { ligne: ligne, champ: null, option: option, valeurs: valeurs };
+      return {
+        ligne: ligne, champ: null, option: option, valeurs: valeurs,
+        rafraichir: function (f) { if (typeof f === 'function') rappels.push(f); }
+      };
     } else if (option.type === 'range') {
       v = document.createElement('input');
       v.type = 'range';
@@ -231,6 +252,96 @@
      TRAPPE D'EXÉCUTION
      ══════════════════════════════════════════════════════════════════════════ */
   var trappe = { id: null, champs: [], valeurs: {}, occupe: false };
+
+  /* ⚠️ v1.7.647 — L'APERÇU EN DIRECT.
+     Demande utilisateur : « pourquoi et temps réel c'est-à-dire que je n'ai pas
+     besoin de faire apply à chaque fois pour visualiser les modifications ».
+     Chaque champ relance donc le plug-in, 140 ms après le dernier mouvement (assez
+     pour ne pas relancer pendant qu'on fait glisser une tirette, assez court pour
+     que ce soit perçu comme instantané).
+
+     ⚠️ TROIS DRAPEAUX, ET CHACUN CORRIGE UN DÉFAUT RÉEL :
+       · `apercuEnCours` — un plug-in peut être lent (le kaléidoscope relit la page).
+         Sans lui, trois mouvements de tirette lancent trois exécutions concurrentes,
+         et la DERNIÈRE arrivée n'est pas forcément la dernière demandée : le dessin
+         affiché ne correspond plus aux réglages.
+       · `apercuEnAttente` — un mouvement arrivé pendant une exécution ne doit pas
+         être perdu : on le rejoue à la fin, une seule fois.
+       · `aValider` — savoir s'il reste un aperçu non enregistré. C'est ce qui permet
+         de n'écrire qu'UNE entrée d'historique, et de la fermeture comme de la
+         validation. */
+  var apercuEnCours = false;
+  var apercuEnAttente = false;
+  var aValider = false;
+  var minuteurApercu = null;
+
+  function valeursTrappe() {
+    var vals = {};
+    trappe.champs.forEach(function (d) { vals[d.option.key] = lireValeur(d); });
+    return vals;
+  }
+
+  function nomPlugIn() {
+    var p = trappe.id ? window.SPPlugins.get(trappe.id) : null;
+    return p ? p.name : 'Plug-in';
+  }
+
+  /* Écrit l'entrée d'historique UNE fois, quel que soit le nombre d'aperçus. */
+  function validerApercu(silencieux) {
+    if (!aValider || !trappe.id) {
+      if (!silencieux) trappeEtat(texte('pluginsNothingToApply', 'Rien à enregistrer'));
+      return;
+    }
+    aValider = false;
+    var ok = false;
+    try { ok = window.SPPlugins.valider('Plug-in : ' + nomPlugIn()); } catch (_) { ok = false; }
+    trappeEtat(ok ? texte('pluginsSaved', 'Enregistré — Ctrl+Z pour annuler')
+                  : texte('pluginsFailed', 'Échec'));
+  }
+
+  function lancerApercu() {
+    if (!trappe.id) return;
+    if (minuteurApercu) { clearTimeout(minuteurApercu); minuteurApercu = null; }
+    minuteurApercu = setTimeout(function () {
+      minuteurApercu = null;
+      if (apercuEnCours) { apercuEnAttente = true; return; }
+      apercuEnCours = true;
+      trappeEtat(texte('pluginsPreviewing', 'Aperçu…'));
+      Promise.resolve()
+        .then(function () { return window.SPPlugins.run(trappe.id, valeursTrappe(), { apercu: true }); })
+        .then(function () {
+          aValider = true;
+          trappeEtat(texte('pluginsPreview', 'Aperçu en direct'));
+        })
+        .catch(function (e) {
+          trappeEtat(texte('pluginsFailed', 'Échec') + (e && e.message ? ' — ' + e.message : ''));
+        })
+        .then(function () {
+          apercuEnCours = false;
+          if (apercuEnAttente) { apercuEnAttente = false; lancerApercu(); }
+        });
+    }, 140);
+  }
+
+  /* Branche l'aperçu sur TOUS les champs de la trappe. `input` couvre les
+     tirettes et les champs texte, `change` les listes et les cases à cocher ;
+     on écoute les deux, le minuteur absorbe le doublon. */
+  function brancherApercu() {
+    trappe.champs.forEach(function (d) {
+      if (!d || !d.champ) return;
+      ['input', 'change'].forEach(function (n) {
+        d.champ.addEventListener(n, lancerApercu);
+      });
+    });
+    /* Le sélecteur d'image ne déclenche pas d'événement natif : il appelle une
+       promesse. `champ()` pose la valeur dans `trappe.valeurs` ; on surveille donc
+       ce changement par un rappel, plutôt que d'inventer un événement. */
+    trappe.champs.forEach(function (d) {
+      if (d && d.option && d.option.type === 'image' && d.rafraichir) {
+        d.rafraichir(lancerApercu);
+      }
+    });
+  }
 
   function trappeEls() {
     return {
@@ -311,8 +422,21 @@
       t.corps.appendChild(d.ligne);
       if (o.type !== 'image') trappe.valeurs[o.key] = o.defaut;
     });
-    if (t.appliquer) { t.appliquer.disabled = false; t.appliquer.textContent = texte('apply', 'Appliquer'); }
-    trappeEtat('');
+    if (t.appliquer) {
+      t.appliquer.disabled = !(p.options || []).length;
+      t.appliquer.textContent = texte('pluginsApplySave', 'Enregistrer');
+      t.appliquer.title = texte('pluginsApplyHint', 'Crée le point d\'annulation — Ctrl+Z revient à l\'état d\'avant.');
+    }
+    aValider = false;
+    apercuEnCours = false;
+    apercuEnAttente = false;
+    if (minuteurApercu) { clearTimeout(minuteurApercu); minuteurApercu = null; }
+    trappeEtat((p.options || []).length ? texte('pluginsLivePreview', 'Aperçu en direct — modifiez, le résultat est immédiat')
+                                       : '');
+    brancherApercu();
+    /* On dessine tout de suite : sans cela, ouvrir la trappe ne montrerait rien
+       tant qu'on n'a pas touché un champ, et l'utilisateur croirait l'outil inerte. */
+    if ((p.options || []).length) lancerApercu();
     return true;
   }
 
@@ -321,41 +445,32 @@
     if (!t.panneau || t.panneau.dataset.pret) return;
     t.panneau.dataset.pret = '1';
 
-    if (t.fermer) t.fermer.addEventListener('click', fermerTrappe);
-    if (t.retour) t.retour.addEventListener('click', function () { fermerTrappe(); ouvrirPanneau(); });
+    if (t.fermer) t.fermer.addEventListener('click', function () {
+      /* Fermer ne perd rien : ce qui est à l'écran a été vu, donc il est enregistré.
+         Les réglages sont conservés pour la prochaine ouverture — c'est le même
+         document, et re-régler un motif à chaque fois serait hostile. */
+      validerApercu(true);
+      fermerTrappe();
+    });
+    if (t.retour) t.retour.addEventListener('click', function () {
+      validerApercu(true);
+      fermerTrappe();
+      ouvrirPanneau();
+    });
 
+    /* ⚠️ v1.7.647 — « ENREGISTRER » N'EXÉCUTE PLUS LE PLUG-IN.
+       L'aperçu l'a déjà fait, et une exécution de plus écraserait le dessin par un
+       état identique en apparence — mais avec un nouveau tirage de hasard si la
+       graine avait changé entre-temps. Ce bouton ne fait donc qu'une chose :
+       écrire l'entrée d'historique. */
     if (t.appliquer) t.appliquer.addEventListener('click', function () {
-      if (!trappe.id || trappe.occupe) return;
-      var p = window.SPPlugins.get(trappe.id);
-      var vals = {};
-      trappe.champs.forEach(function (d) { vals[d.option.key] = lireValeur(d); });
-      trappe.occupe = true;
-      t.appliquer.disabled = true;
-      t.appliquer.textContent = texte('pluginsWorking', 'Traitement…');
-      trappeEtat('');
-      Promise.resolve()
-        .then(function () { return window.SPPlugins.run(trappe.id, vals); })
-        .then(function () {
-          trappe.occupe = false;
-          t.appliquer.disabled = false;
-          t.appliquer.textContent = texte('apply', 'Appliquer');
-          trappeEtat(texte('pluginsApplied', 'Appliqué'));
-          try { window.spShowToast((p ? p.name : 'Plug-in') + ' — ' + texte('pluginsApplied', 'appliqué'), { kind: 'info', duration: 2600 }); } catch (_) {}
-        })
-        .catch(function (e) {
-          trappe.occupe = false;
-          t.appliquer.disabled = false;
-          t.appliquer.textContent = texte('apply', 'Appliquer');
-          trappeEtat(texte('pluginsFailed', 'Échec'));
-          var msg = 'Le plug-in a échoué : ' + (e && e.message ? e.message : e);
-          try { window.spAlert(msg, { title: p ? p.name : 'Plug-in' }); } catch (_) { alert(msg); }
-        });
+      validerApercu(false);
     });
   }
   /* ══════════════════════════════════════════════════════════════════════════
      BIBLIOTHÈQUE (pop-in)
      ══════════════════════════════════════════════════════════════════════════
-     ⚠️ v1.7.646 — PLUS DE BARRE DE FILTRES. Demande utilisateur : « supprime toute
+     ⚠️ v1.7.647 — PLUS DE BARRE DE FILTRES. Demande utilisateur : « supprime toute
      cette ligne de filtre All 2 / 7 days / 30 days / built-in 2 ».
      Elle coûtait 28 px de haut sur une liste qui en fait 83 par carte, pour
      découper une liste qui tient à l'écran — deux plug-ins livrés, et le plus
@@ -399,6 +514,12 @@
     b.setAttribute('aria-label', libelle);
     b.appendChild(el('span', '')).className = 'sp-pl-switch-piste';
     b.appendChild(el('span', '')).className = 'sp-pl-switch-bouton';
+    /* ⚠️ L'ÉTAT ÉCRIT EST DANS LE BOUTON, PAS À CÔTÉ. Posé comme frère, il aurait
+       changé la largeur de la colonne d'actions d'une carte à l'autre (« on » et
+       « off » n'ont pas la même longueur) et fait danser les boutons Use. Ici il
+       occupe une largeur fixe, et son texte ne participe pas au calcul du nom
+       accessible — `aria-label` porte déjà l'action. */
+    b.appendChild(el('span', '', p.actif ? 'on' : 'off')).className = 'sp-pl-switch-etat';
     b.addEventListener('click', function () {
       var actif = !p.actif;
       try { window.SPPlugins.definirActif(p.id, actif); } catch (e) {
@@ -622,7 +743,7 @@
   function ouvrirTrappePlugIn(id) {
     var p = window.SPPlugins.get(id);
 
-    /* 🆕 v1.7.646 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
+    /* 🆕 v1.7.647 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
        Il n'a pas de formulaire à construire : son `run()` ouvre le panneau qu'il
        possède déjà. On l'EXÉCUTE donc directement, sans passer par la trappe
        générique — sinon on aurait deux panneaux pour un seul outil, et un bouton
@@ -649,7 +770,7 @@
     brancherTrappe();
     var bPlug = document.getElementById('openPluginsPanel');
     if (bPlug) bPlug.addEventListener('click', function () {
-      /* ⚠️ v1.7.646 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
+      /* ⚠️ v1.7.647 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
          Il la refermait quand la trappe d'un plug-in était ouverte (« va-et-vient,
          pas une ouverture forcée »). MESURÉ : depuis que « Global Refactor » est un
          plug-in, cela fait deux clics pour l'atteindre — le premier referme la
@@ -673,11 +794,12 @@
       'Ce dossier expose SuperPrint à un client MCP (Claude Desktop, Claude Code, Cursor…). '
       + 'Le client peut lire un .sp, le convertir, lister les formats, et composer un document.'));
 
-    function bloc(titre, contenu) {
+    function bloc(titre, contenu, note) {
       corps.appendChild(el('div', 'font-size:8px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:#666;margin:16px 0 5px;font-family:"IBM Plex Mono",monospace;', titre));
       var pre = el('pre', 'margin:0;padding:10px 12px;background:#f7f7f7;border-left:3px solid #1a1a1a;font-family:"IBM Plex Mono",monospace;font-size:10px;line-height:1.55;overflow:auto;max-height:180px;white-space:pre-wrap;word-break:break-all;color:#222;');
       pre.textContent = contenu;
       corps.appendChild(pre);
+      if (note) corps.appendChild(el('div', 'font-size:9px;line-height:1.5;color:#888;margin-top:5px;', note));
       var b = petitBouton(texte('copy', 'Copier'), false);
       b.style.marginTop = '6px';
       b.addEventListener('click', function () {
@@ -690,13 +812,43 @@
       corps.appendChild(b);
     }
 
-    bloc('Dossier du serveur', 'superprint/mcp-server/');
-    bloc('Installation', 'cd superprint/mcp-server\nnode server.mjs');
+    /* ⚠️ On affiche un chemin ABSOLU quand on peut le connaître : servi en file://, le
+       chemin du dossier se déduit de location.href. Le bloc de configuration d'un client
+       MCP exige « args: ["<chemin absolu>/server.mjs"] » ; un chemin relatif y est résolu
+       depuis le répertoire courant du client, donc presque toujours faux. Mesuré : la
+       version précédente affichait « superprint/mcp-server/ » et un placeholder
+       « /chemin/absolu/… » — exactement la panne que ce bouton est censé éviter.
+       En http(s) (serveur de développement, coquille Tauri) le chemin disque n'est pas
+       connaissable depuis la page : on le dit, au lieu de laisser croire. */
+    function cheminAbsoluDossier() {
+      if (location.protocol !== 'file:') return null;
+      var u = new URL('../mcp-server/', location.href);
+      var p = decodeURIComponent(u.pathname);
+      if (/^\/[A-Za-z]:/.test(p)) p = p.slice(1);              // /C:/… → C:/…
+      return p.replace(/\//g, '\\');                           // Windows
+    }
+    function cheminConfigClient() {
+      var ua = navigator.userAgent || '';
+      if (/Win/i.test(ua)) return '%APPDATA%\\Claude\\claude_desktop_config.json';
+      if (/Mac/i.test(ua)) return '~/Library/Application Support/Claude/claude_desktop_config.json';
+      return '~/.config/Claude/claude_desktop_config.json';
+    }
+
+    var dossier = cheminAbsoluDossier();
+    var serveur = dossier
+      ? dossier.replace(/\\+$/, '') + '\\server.mjs'
+      : '/chemin/absolu/vers/superprint/mcp-server/server.mjs';
+
+    bloc('Dossier du serveur',
+      dossier || 'superprint/mcp-server/',
+      dossier ? null : 'Chemin disque non lisible depuis une page servie en http : préfixez par le dossier où SuperPrint est installé.');
+    bloc('Installation', (dossier ? 'cd "' + dossier.replace(/\\+$/, '') + '"' : 'cd superprint/mcp-server') + '\nnode server.mjs');
+    bloc('Fichier de configuration du client', cheminConfigClient());
     bloc('Configuration cliente (claude_desktop_config.json)', JSON.stringify({
       mcpServers: {
-        superprint: { command: 'node', args: ['/chemin/absolu/vers/superprint/mcp-server/server.mjs'] }
+        superprint: { command: 'node', args: [serveur] }
       }
-    }, null, 2));
+    }, null, 2), 'Le bloc ci-dessus exige un chemin absolu : un relatif est résolu depuis le répertoire courant du client MCP.');
 
     var barre = el('div', 'display:flex;gap:6px;justify-content:flex-end;margin-top:18px;padding-top:12px;border-top:1px solid #eee;');
     var bDoc = petitBouton(texte('pluginsDoc', 'Documentation'), false);

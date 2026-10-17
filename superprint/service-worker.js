@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.646-reperes-alignes';
+const CACHE_NAME = 'superprint-shell-v1.7.647-motif-apercu';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
