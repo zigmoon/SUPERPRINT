@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.638-imports-word-idml-figma';
+const CACHE_NAME = 'superprint-shell-v1.7.640-fig-binaire-et-ligne';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

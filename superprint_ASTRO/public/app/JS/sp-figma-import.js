@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — IMPORT FIGMA  (v1.7.638)
+   SUPERPRINT — IMPORT FIGMA  (v1.7.640)
    ═══════════════════════════════════════════════════════════════════════════════
 
    CE QUE CE MODULE LIT : le JSON d'un fichier Figma, tel que le rendent
@@ -40,7 +40,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.638';
+  var VERSION = '1.7.640';
   var PT_MM = 25.4 / 72;          /* 1 pt (unité Figma) = 0,3528 mm */
   var BLEED_MM_DEFAUT = 3;
 
@@ -181,6 +181,39 @@
       return;
     }
 
+    /* LIGNE */
+    /* ⚠️ MESURÉ (banc d'audit, figma-real.json — export REST authentique) : une LINE
+       Figma n'a NI `fillGeometry` NI `strokeGeometry` dans la réponse REST. Elle
+       tombait donc dans la branche d'enveloppe et ressortait en RECTANGLE de
+       123 × 45 — un cadre, là où Figma dessine un trait. Une LINE Figma va toujours
+       du coin haut-gauche au coin bas-droit de sa boîte : la géométrie est donc
+       entièrement déterminée par `absoluteBoundingBox`. Aucune approximation. */
+    if (type === 'LINE') {
+      var sl = (Array.isArray(n.strokes) && n.strokes.length) ? hexDepuisPaint(n.strokes[0]) : null;
+      var couleurL = sl && sl.fill ? sl.fill : '#000000';
+      var epaisL = (typeof n.strokeWeight === 'number' && n.strokeWeight > 0) ? n.strokeWeight : 1;
+      try {
+        if (typeof fabric !== 'undefined' && fabric.Line) {
+          var ligne = new fabric.Line([0, 0, Math.round(b.w * 100) / 100, Math.round(b.h * 100) / 100], {
+            left: left, top: top, stroke: couleurL, strokeWidth: epaisL,
+            selectable: true, evented: true, originX: 'left', originY: 'top'
+          });
+          var ligneSer = ligne.toObject(['selectable', 'evented', 'hasControls', 'strokeUniform']);
+          if (typeof n.opacity === 'number' && n.opacity < 1) ligneSer.opacity = n.opacity;
+          produits.push(ligneSer);
+          return;
+        }
+      } catch (_) { /* on retombe sur l'objet déclaratif ci-dessous */ }
+      produits.push(Object.assign({}, base, {
+        type: 'line',
+        x1: 0, y1: 0,
+        x2: Math.round(b.w * 100) / 100, y2: Math.round(b.h * 100) / 100,
+        stroke: couleurL, strokeWidth: epaisL,
+        fill: ''
+      }));
+      return;
+    }
+
     /* ELLIPSE */
     if (type === 'ELLIPSE') {
       var fe = hexDepuisPaint(premierFill(n));
@@ -202,7 +235,7 @@
 
     /* VECTEUR / OPÉRATION BOOLÉENNE : on prend le tracé exact quand il est fourni. */
     if (type === 'VECTOR' || type === 'BOOLEAN_OPERATION' || type === 'STAR'
-      || type === 'POLYGON' || type === 'LINE') {
+      || type === 'POLYGON') {
       var geo = null;
       if (Array.isArray(n.fillGeometry) && n.fillGeometry.length && n.fillGeometry[0].path) {
         geo = n.fillGeometry[0].path;
@@ -266,30 +299,98 @@
     if (n.strokeAlign && String(n.strokeAlign).toUpperCase() === 'INSIDE') o.strokeUniform = true;
   }
 
+  /* ── Normalisation de la racine ─────────────────────────────────────────────── */
+  /* MESURÉ (banc d'audit, fichiers réels) : le document Figma n'arrive pas toujours
+     sous la forme `{ document: { type: 'DOCUMENT', children: [CANVAS] } }`. Quatre
+     formes circulent dans la vraie vie, et deux d'entre elles étaient REJETÉES à
+     tort — « ce fichier JSON n'est pas un document Figma » sur un fichier Figma :
+       a. GET /v1/files/:key        → { document: DOCUMENT }
+       b. greffon (racine)          → DOCUMENT directement
+       c. GET /v1/files/:key/nodes  → { nodes: { '1:2': { document: <nœud> } } }
+       d. sélection d'un cadre      → un FRAME / COMPONENT / GROUP à la racine
+                                      (c'est le cas le plus fréquent d'un export de
+                                      designer, et il était refusé)
+     On ramène les trois dernières à la forme (a) avec un CANVAS de synthèse, pour
+     que le reste du lecteur n'ait qu'un seul cas à connaître. */
+  var TYPES_CADRE = /^(FRAME|COMPONENT|COMPONENT_SET|INSTANCE|SECTION)$/;
+
+  function estNoeud(n) {
+    return !!(n && typeof n === 'object' && typeof n.type === 'string' && n.type);
+  }
+
+  function normaliserRacine(json) {
+    if (!json || typeof json !== 'object') return null;
+    /* a. la forme canonique */
+    if (estNoeud(json.document) && String(json.document.type) === 'DOCUMENT'
+      && Array.isArray(json.document.children)) {
+      return json.document;
+    }
+    /* b. DOCUMENT à la racine */
+    if (String(json.type || '') === 'DOCUMENT' && Array.isArray(json.children)) {
+      return json;
+    }
+    /* c. réponse de l'API « nodes » */
+    if (json.nodes && typeof json.nodes === 'object') {
+      var cadresNodes = [];
+      Object.keys(json.nodes).forEach(function (cle) {
+        var entree = json.nodes[cle] || {};
+        var d = entree.document || entree;
+        if (estNoeud(d)) cadresNodes.push(d);
+      });
+      if (cadresNodes.length) {
+        return {
+          type: 'DOCUMENT',
+          name: String(json.name || 'Import Figma'),
+          children: [{ type: 'CANVAS', name: 'Page 1', children: cadresNodes }]
+        };
+      }
+    }
+    /* d. un nœud seul (le cadre exporté) */
+    if (estNoeud(json) && json.type !== 'CANVAS') {
+      return {
+        type: 'DOCUMENT',
+        name: 'Import Figma',
+        children: [{ type: 'CANVAS', name: 'Page 1', children: [json] }]
+      };
+    }
+    /* Un CANVAS seul : ses enfants sont les cadres. */
+    if (estNoeud(json) && json.type === 'CANVAS') {
+      return {
+        type: 'DOCUMENT',
+        name: 'Import Figma',
+        children: [json]
+      };
+    }
+    return null;
+  }
+
   /* ── Cadres de premier niveau → pages ───────────────────────────────────────── */
   function cadresDe(json) {
     var out = [];
-    var racine = json && json.document;
+    var racine = normaliserRacine(json);
     if (!racine) return out;
     var canvases = Array.isArray(racine.children) ? racine.children : [];
     for (var i = 0; i < canvases.length; i++) {
       var cv = canvases[i];
       if (!cv || !Array.isArray(cv.children)) continue;
+      var avant = out.length;
       for (var j = 0; j < cv.children.length; j++) {
         var n = cv.children[j];
         if (!n) continue;
         /* Un CADRE est une page. Les nœuds qui traînent sur le canevas (hors cadre)
            ne sont pas des pages : ils sont réunis dans un cadre de synthèse. */
-        if (/^(FRAME|COMPONENT|COMPONENT_SET|INSTANCE|SECTION)$/.test(String(n.type || ''))) {
+        if (TYPES_CADRE.test(String(n.type || ''))) {
           out.push({ noeud: n, canvas: cv });
         }
       }
       /* Aucun cadre : on fabrique une page avec les nœuds libres du canevas. */
-      var libres = cv.children.filter(function (n) {
-        return n && !/^(FRAME|COMPONENT|COMPONENT_SET|INSTANCE|SECTION)$/.test(String(n.type || ''));
-      });
-      if (libres.length && out.length === 0) {
-        out.push({ noeud: { type: 'FRAME', name: cv.name || 'Canvas', children: libres }, canvas: cv, synthetique: true });
+      if (out.length === avant) {
+        var libres = cv.children.filter(function (n) {
+          return n && !TYPES_CADRE.test(String(n.type || ''));
+        });
+        if (libres.length) {
+          out.push({ noeud: { type: 'FRAME', name: cv.name || 'Canvas', children: libres }, canvas: cv, synthetique: true });
+        }
       }
     }
     return out;
@@ -298,22 +399,22 @@
   /* ── Détection ──────────────────────────────────────────────────────────────── */
   function estFigma(json) {
     if (!json || typeof json !== 'object') return false;
-    var d = json.document;
-    if (d && String(d.type || '') === 'DOCUMENT' && Array.isArray(d.children)) return true;
-    /* Réponse REST complète : { name, document: {...} } — déjà couverte.
-       Greffon : il peut n'envoyer que le DOCUMENT. */
-    if (String(json.type || '') === 'DOCUMENT' && Array.isArray(json.children)) return true;
-    return false;
+    /* ⚠️ MESURÉ : la version précédente testait la forme canonique et le DOCUMENT
+       à la racine, rien d'autre — un cadre exporté seul (forme la plus courante)
+       était donc refusé. On s'appuie sur le NORMALISATEUR : s'il trouve une racine
+       documentaire ET au moins un cadre, c'est un fichier Figma. */
+    var r = normaliserRacine(json);
+    if (!r) return false;
+    return cadresDe(json).length > 0;
   }
 
   /* ── Conversion complète vers un document SuperPrint ────────────────────────── */
   function versSP(json, nomFichier, bleedMm) {
-    var racine = (json && json.document) ? json.document
-      : (String(json && json.type || '') === 'DOCUMENT' ? json : null);
+    var racine = normaliserRacine(json);
     if (!racine) throw new Error('document Figma introuvable');
     var bleed = (typeof bleedMm === 'number' && isFinite(bleedMm) && bleedMm >= 0) ? bleedMm : BLEED_MM_DEFAUT;
     var bleedPx = (bleed * 72) / 25.4;
-    var cadres = cadresDe({ document: racine });
+    var cadres = cadresDe(json);
     if (!cadres.length) throw new Error('aucun cadre exploitable dans ce fichier Figma');
 
     var pages = [];
