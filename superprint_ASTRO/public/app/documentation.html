@@ -349,7 +349,7 @@
 <!-- ═══════════════════  TOP BAR  ═══════════════════ -->
 <div class="topbar">
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.641</span>
+  <span class="version">v1.7.642</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -1307,7 +1307,7 @@ SUPERPRINT12master/
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
-     v1.7.641 — ÉTENDRE SUPERPRINT : PLUG-INS ET SERVEUR MCP
+     v1.7.642 — ÉTENDRE SUPERPRINT : PLUG-INS ET SERVEUR MCP
      ═══════════════════════════════════════════════════════════════════════ -->
 
 <h2 id="m-plugins">
@@ -1317,6 +1317,16 @@ SUPERPRINT12master/
 
 <p data-lang="fr">Un plug-in SuperPrint est un fichier <code>.plugin.js</code> que l'utilisateur installe depuis le bouton <strong>Plug-ins</strong>, en bas de la barre de droite. Il reçoit une API hôte, décrit ses réglages, et peut ajouter des objets au document. Le plug-in livré, <strong>Motif vectoriel</strong>, en est l'exemple complet : il habille une page ou un bloc d'un motif répété, à partir d'une forme géométrique ou d'une image importée.</p>
 <p data-lang="en">A SuperPrint plug-in is a <code>.plugin.js</code> file the user installs from the <strong>Plug-ins</strong> button, at the bottom of the right bar. It receives a host API, declares its settings, and can add objects to the document. The bundled <strong>Vector Pattern</strong> plug-in is the complete example: it fills a page or a block with a repeated pattern, built from a geometric shape or an imported image.</p>
+
+<h3 data-lang="fr">Deux surfaces : la bibliothèque et la trappe</h3>
+<h3 data-lang="en">Two surfaces: the library and the trap</h3>
+<p data-lang="fr">Le bouton <strong>Plug-ins</strong> ouvre la <strong>bibliothèque</strong> : une pop-in qui liste ce qui est installé, avec des filtres de date (<em>Tous</em>, <em>7 jours</em>, <em>30 jours</em>, <em>intégrés</em>), une zone de dépôt et une corbeille par plug-in installé. Le bouton <strong>Utiliser</strong> ouvre ensuite la <strong>trappe</strong> du plug-in — le même panneau latéral que <em>Global Refactor</em> — parce qu'un plug-in se règle en regardant son effet : la trappe pousse l'interface au lieu de la recouvrir, donc la page reste visible. <em>Appliquer</em> laisse la trappe ouverte pour enchaîner les essais ; <em>Bibliothèque</em> y revient.</p>
+<p data-lang="en">The <strong>Plug-ins</strong> button opens the <strong>library</strong>: a pop-in listing what is installed, with date filters (<em>All</em>, <em>7 days</em>, <em>30 days</em>, <em>built-in</em>), a drop zone and a bin for each installed plug-in. <strong>Use</strong> then opens the plug-in's <strong>trap</strong> — the same side panel as <em>Global Refactor</em> — because a plug-in is adjusted by watching its effect: the trap pushes the interface instead of covering it, so the page stays visible. <em>Apply</em> keeps the trap open so you can iterate; <em>Library</em> goes back.</p>
+
+<h3 data-lang="fr">Installer, c'est déposer un fichier</h3>
+<h3 data-lang="en">Installing means dropping a file</h3>
+<p data-lang="fr">Glissez un <code>.plugin.js</code> n'importe où : sur la bibliothèque ou directement sur le plan de travail — le fichier est reconnu et installé dans les deux cas. La zone de dépôt de la bibliothèque reste le chemin le plus explicite, et un clic dessus ouvre le sélecteur de fichiers. Tout fichier qui n'est pas un <code>.plugin.js</code> est refusé avec le message exact, jamais importé par erreur comme une image. La corbeille retire le plug-in de SuperPrint ; le fichier, lui, reste où il est.</p>
+<p data-lang="en">Drag a <code>.plugin.js</code> anywhere: onto the library or straight onto the canvas — the file is recognised and installed either way. The library's drop zone remains the most explicit route, and clicking it opens the file picker. Anything that is not a <code>.plugin.js</code> is refused with the precise message, never mistakenly imported as an image. The bin removes the plug-in from SuperPrint; the file stays where it is.</p>
 
 <h3 data-lang="fr">La forme d'un plug-in</h3>
 <h3 data-lang="en">The shape of a plug-in</h3>
@@ -1585,7 +1595,7 @@ node server.mjs
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.641</span>
+  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.642</span>
   <span data-lang="en">Documentation generated September 16, 2026 — v1.7.456</span>
 </div>
 
@@ -2604,7 +2614,7 @@ log('Filet posé sur ' + Math.round(largeur) + ' mm de large');</pre>
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.641</span>
+  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.642</span>
   <span data-lang="en">Manual updated September 16, 2026 — v1.7.456</span>
 </div>
 

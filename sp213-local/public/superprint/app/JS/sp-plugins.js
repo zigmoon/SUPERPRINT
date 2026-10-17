@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-INS  (v1.7.641)
+   SUPERPRINT — PLUG-INS  (v1.7.642)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Un plug-in SuperPrint est un fichier `.plugin.js` que l'utilisateur installe
@@ -26,7 +26,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.641';
+  var VERSION = '1.7.642';
   var CLE_REGISTRE = 'sp_plugins_v1';        // plug-ins installés (code source + manifeste)
   var CLE_ACTIFS = 'sp_plugins_actifs_v1';   // { [id]: true/false }
 
@@ -274,8 +274,16 @@
   function installerSource(src, nomFichier) {
     var m = normaliser(evaluerSource(src, nomFichier), src);
     var installes = lireInstalles();
-    installes[m.id] = { source: src, name: m.name, version: m.version, author: m.author, integre: false,
-      description: m.description, icon: m.icon, options: m.options, fichier: nomFichier || '' };
+    installes[m.id] = {
+      source: src, name: m.name, version: m.version, author: m.author, integre: false,
+      description: m.description, icon: m.icon, options: m.options, fichier: nomFichier || '',
+      /* 🆕 v1.7.642 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
+         Les plug-ins installés AVANT cette version n'en ont pas : le filtre les
+         traite alors comme « anciens » (visibles dans « Tous » et « 30 jours »),
+         jamais comme « récents » — on ne date pas rétroactivement un fichier
+         qu'on n'a pas vu arriver. */
+      installe: Date.now()
+    };
     ecrireInstalles(installes);
     MANIFESTES[m.id] = m;
     var actifs = lireActifs(); actifs[m.id] = true; ecrireActifs(actifs);
@@ -335,11 +343,15 @@
     var out = [];
     Object.keys(MANIFESTES).forEach(function (id) {
       var m = MANIFESTES[id];
+      var inst = installes[id] || null;
       out.push({
         id: id, name: m.name, version: m.version, author: m.author,
         description: m.description, icon: m.icon, options: m.options,
-        integre: !!m.integre || !!(installes[id] && installes[id].integre),
-        actif: actifs[id] !== false
+        integre: !!m.integre || !!(inst && inst.integre),
+        actif: actifs[id] !== false,
+        /* Date d'installation, pour les filtres de la bibliothèque (cf. installe
+           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.642. */
+        installe: (inst && inst.installe) ? inst.installe : null
       });
     });
     out.sort(function (a, b) {
@@ -377,6 +389,11 @@
   window.SPPlugins = {
     version: VERSION,
     register: enregistrerIntegre,
+    /* 🆕 v1.7.642 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
+       besoin AVANT qu'un plug-in tourne : c'est un champ de son formulaire, pas un
+       appel du plug-in. Il délègue à la même fonction que `api.imageDataUrl`, donc
+       un seul comportement pour les deux chemins. */
+    imageDataUrl: function () { return creerApi({ id: 'panneau', name: 'Panneau', options: [] }).imageDataUrl(); },
     list: liste,
     get: function (id) { chargerTous(); return MANIFESTES[id] || null; },
     run: executer,

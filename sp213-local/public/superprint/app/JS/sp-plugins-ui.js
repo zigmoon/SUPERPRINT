@@ -1,18 +1,23 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.641)
+   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.642)
    ═══════════════════════════════════════════════════════════════════════════════
 
-   Le bouton PLUG-INS (bas de la barre de droite) ouvre ce panneau. Il fait trois
-   choses : lister les plug-ins installés, en installer un depuis un fichier
-   `.plugin.js`, et exécuter un plug-in avec ses réglages.
+   DEUX SURFACES, ET C'EST VOULU :
+
+     · la BIBLIOTHÈQUE est une pop-in — on y installe, on supprime, on filtre.
+       Elle n'a pas besoin de voir la page : elle gère des fichiers.
+
+     · l'EXÉCUTION est une TRAPPE (`#pluginPanel`), comme « Global Refactor ».
+       Un plug-in se règle en REGARDANT son effet : la trappe pousse l'interface
+       au lieu de la recouvrir, donc la page reste visible. Demande utilisateur :
+       « quand on utilise un plug-in via Utiliser, il doit arriver sous forme de
+       trappe side barre de droite ».
 
    ⚠️ LES RÉGLAGES SONT DÉCLARÉS PAR LE PLUG-IN, LE FORMULAIRE EST CONSTRUIT ICI.
-   Un plug-in ne fabrique jamais son propre DOM : il décrit ses options
-   (`options: [{key, label, type, defaut…}]`) et le panneau les rend avec la DA de
-   l'application. Deux conséquences, toutes deux voulues :
-     · un plug-in ne peut pas casser l'interface (il n'y touche pas) ;
-     · le thème sombre, les tailles et les polices restent ceux du produit, sans
-       que chaque auteur ait à les réimplémenter.
+   Un plug-in ne fabrique jamais son propre DOM : il décrit ses options et le
+   panneau les rend avec les classes de la maison — celles de « Global Refactor »,
+   pour que les deux trappes se lisent d'un seul tenant. Un plug-in ne peut donc
+   pas casser l'interface, et il hérite du thème clair comme du sombre.
    ─────────────────────────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
@@ -26,29 +31,57 @@
     return e;
   }
 
-  /* Le carton suit exactement la DA des autres pop-in (cf. askInsertAtPage) :
-     carré, en-tête, croix, boutons de la même famille. */
-  function creerModal(titre) {
+  /* Traduction avec repli : `translate()` renvoie la clé elle-même quand elle
+     n'existe pas, ce qui afficherait « pluginsUse » à l'écran. On garde donc un
+     texte français en second, et on ne l'utilise que si la clé a échoué. */
+  function texte(k, repli) {
+    try {
+      if (typeof window.translate === 'function') {
+        var t = window.translate(k);
+        if (t && t !== k) return t;
+      }
+    } catch (_) {}
+    return repli;
+  }
+
+  /* ── Pop-in de la DA SuperPrint (carré, en-tête 56 px, croix) ─────────────── */
+  function creerModal(titre, largeurPx) {
     var ancien = document.getElementById(ID_MODAL);
     if (ancien && ancien.parentNode) ancien.parentNode.removeChild(ancien);
-    var voile = el('div', 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100030;display:flex;align-items:center;justify-content:center;');
+
+    var voile = el('div', '');
+    voile.className = 'sp-pl-voile';
     voile.id = ID_MODAL;
-    var carte = el('div', 'position:relative;width:520px;max-width:94vw;max-height:86vh;overflow:auto;background:#fff;color:#1a1a1a;border:1px solid #d9d9d9;padding:0;');
-    carte.className = 'sp-modal-card';
-    var entete = el('div', 'display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e0e0e0;');
-    entete.appendChild(el('div', 'font-size:13px;font-weight:600;letter-spacing:.2px;', titre));
-    var croix = el('button', 'border:0;background:none;font-size:16px;cursor:pointer;line-height:1;padding:4px 6px;color:#666;', '✕');
+
+    /* ⚠️ `sp-modal-card` ET `sp-pl-carte` ENSEMBLE. La première porte l'ombre et
+       la police de toutes les pop-in du produit ; la seconde porte les couleurs,
+       avec sa variante sombre. Les deux classes cohabitent — une affectation de
+       `className` écrase, donc on les écrit dans la MÊME chaîne. */
+    var carte = el('div', 'width:' + (largeurPx || 640) + 'px;');
+    carte.className = 'sp-modal-card sp-pl-carte';
+
+    var entete = el('div', '');
+    entete.className = 'sp-pl-entete';
+    var titreEl = el('div', '', titre);
+    titreEl.className = 'sp-pl-titre';
+    entete.appendChild(titreEl);
+
+    var croix = el('button', '', '✕');
     croix.type = 'button';
+    croix.className = 'sp-pl-croix';
     croix.setAttribute('aria-label', 'Fermer');
     croix.addEventListener('click', fermer);
     entete.appendChild(croix);
-    var corps = el('div', 'padding:16px 18px;');
+
+    var corps = el('div', '');
+    corps.className = 'sp-pl-corps';
+
     carte.appendChild(entete);
     carte.appendChild(corps);
     voile.appendChild(carte);
     document.body.appendChild(voile);
-    /* Le fond NE FERME PAS : même règle que la pop-in d'insertion de page — un clic
-       à côté fait clignoter le carton au lieu d'abandonner une action en cours. */
+    /* Le fond NE FERME PAS : même règle que les autres pop-in — un clic à côté
+       fait clignoter le carton au lieu d'abandonner une installation en cours. */
     voile.addEventListener('click', function (ev) {
       if (ev.target !== voile) return;
       ev.stopPropagation();
@@ -56,85 +89,133 @@
       void carte.offsetWidth;
       carte.classList.add('sp-nudge');
     });
-    function fermer() { if (voile.parentNode) voile.parentNode.removeChild(voile); }
-    return { voile: voile, carte: carte, corps: corps, fermer: fermer };
+    function fermer() {
+      if (voile.parentNode) voile.parentNode.removeChild(voile);
+      document.removeEventListener('keydown', surTouche);
+    }
+    function surTouche(e) { if (e.key === 'Escape') fermer(); }
+    document.addEventListener('keydown', surTouche);
+    return { voile: voile, carte: carte, corps: corps, entete: entete, fermer: fermer };
   }
 
-  function bouton(texte, principal) {
-    var b = el('button', 'height:32px;padding:0 14px;border:1px solid ' + (principal ? '#1a1a1a' : '#d9d9d9')
-      + ';background:' + (principal ? '#1a1a1a' : '#fff') + ';color:' + (principal ? '#fff' : '#1a1a1a')
-      + ';font-size:11px;letter-spacing:.4px;text-transform:uppercase;cursor:pointer;', texte);
+  /* ── Bouton compact de la DA (26 px, mono 9 px) ───────────────────────────── */
+  function petitBouton(libelle, principal) {
+    var b = el('button', '', libelle);
     b.type = 'button';
+    b.className = 'sp-pl-btn' + (principal ? ' principal' : '');
     return b;
   }
 
-  /* ── Champ de réglage ─────────────────────────────────────────────────────── */
+  /* Icône corbeille dessinée, pas un emoji : même graisse que les autres traits
+     de l'interface, et nette en thème sombre. */
+  function iconeCorbeille() {
+    var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '0 0 24 24');
+    s.setAttribute('width', '13'); s.setAttribute('height', '13');
+    s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor');
+    s.setAttribute('stroke-width', '1.7'); s.setAttribute('stroke-linecap', 'round');
+    s.setAttribute('stroke-linejoin', 'round');
+    s.innerHTML = '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6"/>';
+    return s;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     CHAMPS DE RÉGLAGE — rendus avec les classes de la trappe
+     ══════════════════════════════════════════════════════════════════════════ */
   function champ(option, valeurs) {
-    var ligne = el('div', 'margin-bottom:12px;');
-    var lab = el('label', 'display:block;font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-bottom:5px;color:#444;', option.label);
-    ligne.appendChild(lab);
+    var ligne = el('div', 'padding:0 12px;margin-bottom:5px;');
+    var id = 'spPluginOpt_' + option.key;
+
+    if (option.type === 'checkbox') {
+      var lab = el('label', '');
+    lab.className = 'sp-pl-case';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.id = id;
+      cb.checked = !!option.defaut;
+      cb.style.cssText = 'width:14px;height:14px;accent-color:#111;cursor:pointer;flex:0 0 auto;';
+      lab.appendChild(cb);
+      lab.appendChild(el('span', '', option.label));
+      ligne.appendChild(lab);
+      if (option.aide) ligne.appendChild(el('div', 'sp-pl-aide', option.aide));
+      return { ligne: ligne, champ: cb, option: option };
+    }
+
+    var lib = el('label', '', option.label);
+    lib.className = 'sp-pl-label';
+    lib.setAttribute('for', id);
+    ligne.appendChild(lib);
+
     var v;
+
     if (option.type === 'select') {
-      v = el('select', 'width:100%;height:30px;border:1px solid #d9d9d9;background:#fff;font-size:12px;padding:0 6px;');
+      v = el('select', '');
+      v.className = 'sp-pl-input';
       (option.choix || []).forEach(function (c) {
         var o = document.createElement('option');
         if (c && typeof c === 'object') { o.value = c.value; o.textContent = c.label || c.value; }
         else { o.value = c; o.textContent = c; }
         v.appendChild(o);
       });
-      v.value = (option.defaut !== undefined && option.defaut !== '') ? option.defaut : ((option.choix && option.choix[0] && (option.choix[0].value || option.choix[0])) || '');
+      if (option.defaut !== undefined && option.defaut !== '') v.value = String(option.defaut);
     } else if (option.type === 'color') {
-      v = el('input', 'width:100%;height:30px;border:1px solid #d9d9d9;padding:0;background:#fff;cursor:pointer;');
+      v = document.createElement('input');
       v.type = 'color';
+      v.className = 'sp-pl-input';
       v.value = option.defaut || '#1a1a1a';
-    } else if (option.type === 'checkbox') {
-      v = el('input', 'width:16px;height:16px;cursor:pointer;');
-      v.type = 'checkbox';
-      v.checked = !!option.defaut;
     } else if (option.type === 'image') {
       /* L'image n'est pas un champ : c'est un bouton qui rend une dataURL. */
-      v = el('div', 'display:flex;align-items:center;gap:10px;');
-      var apercu = el('div', 'width:44px;height:44px;border:1px solid #d9d9d9;background:#fafafa center/contain no-repeat;flex:0 0 auto;');
-      var bImg = bouton('Choisir une image', false);
-      var etat = el('span', 'font-size:11px;color:#888;', 'aucune');
+      var boite = el('div', 'display:flex;align-items:center;gap:8px;min-height:28px;');
+      var apercu = el('div', 'background-position:center;background-size:contain;background-repeat:no-repeat;');
+      apercu.className = 'sp-pl-apercu';
+      if (valeurs && valeurs[option.key]) apercu.style.backgroundImage = 'url("' + valeurs[option.key] + '")';
+      var bImg = petitBouton(texte('pluginsChooseImage', 'Image'), false);
+      var etat = el('span', 'font-size:9px;color:#999;font-family:"IBM Plex Mono",monospace;', '—');
       bImg.addEventListener('click', function () {
-        var api = window.SPPlugins && window.SPPlugins._apiImage;
-        var p = api ? api.imageDataUrl() : Promise.resolve(null);
+        var p = (window.SPPlugins && window.SPPlugins.imageDataUrl) ? window.SPPlugins.imageDataUrl() : Promise.resolve(null);
         p.then(function (url) {
           if (!url) return;
           valeurs[option.key] = url;
           apercu.style.backgroundImage = 'url("' + url + '")';
-          etat.textContent = 'image chargée';
+          etat.textContent = texte('pluginsImageLoaded', 'chargée');
         });
       });
-      v.appendChild(apercu); v.appendChild(bImg); v.appendChild(etat);
-    } else if (option.type === 'number' || option.type === 'range') {
-      v = el('input', 'width:100%;height:30px;border:1px solid #d9d9d9;padding:0 8px;font-size:12px;');
-      v.type = option.type === 'range' ? 'range' : 'number';
+      boite.appendChild(apercu); boite.appendChild(bImg); boite.appendChild(etat);
+      ligne.appendChild(boite);
+      if (option.aide) ligne.appendChild(el('div', 'sp-pl-aide', option.aide));
+      return { ligne: ligne, champ: null, option: option, valeurs: valeurs };
+    } else if (option.type === 'range') {
+      v = document.createElement('input');
+      v.type = 'range';
+      v.className = 'sp-pl-input';
       if (option.min !== undefined) v.min = option.min;
       if (option.max !== undefined) v.max = option.max;
       if (option.pas !== undefined) v.step = option.pas;
-      v.value = option.defaut !== undefined ? option.defaut : '';
+      v.value = (option.defaut !== undefined) ? option.defaut : 0;
+    } else if (option.type === 'number') {
+      v = document.createElement('input');
+      v.type = 'number';
+      v.className = 'sp-pl-input';
+      if (option.min !== undefined) v.min = option.min;
+      if (option.max !== undefined) v.max = option.max;
+      if (option.pas !== undefined) v.step = option.pas;
+      v.value = (option.defaut !== undefined) ? option.defaut : '';
     } else {
-      v = el('input', 'width:100%;height:30px;border:1px solid #d9d9d9;padding:0 8px;font-size:12px;');
+      v = document.createElement('input');
       v.type = 'text';
-      v.value = option.defaut !== undefined ? option.defaut : '';
+      v.className = 'sp-pl-input';
+      v.value = (option.defaut !== undefined) ? option.defaut : '';
     }
-    v.id = 'spPluginOpt_' + option.key;
-    if (option.type === 'checkbox') {
-      var ligneCb = el('div', 'display:flex;align-items:center;gap:8px;');
-      ligneCb.appendChild(v);
-      ligneCb.appendChild(el('span', 'font-size:12px;', option.aide || ''));
-      ligne.appendChild(ligneCb);
-    } else {
-      ligne.appendChild(v);
-    }
-    if (option.aide && option.type !== 'checkbox') ligne.appendChild(el('div', 'font-size:11px;color:#888;margin-top:4px;line-height:1.4;', option.aide));
+    v.id = id;
+    ligne.appendChild(v);
+    if (option.aide) ligne.appendChild(el('div', 'sp-pl-aide', option.aide));
     return { ligne: ligne, champ: v, option: option };
   }
 
   function lireValeur(desc) {
     var o = desc.option, c = desc.champ;
+    if (o.type === 'image') return (desc.valeurs && desc.valeurs[o.key]) || '';
+    if (!c) return o.defaut;
     if (o.type === 'checkbox') return !!c.checked;
     if (o.type === 'number' || o.type === 'range') {
       var n = parseFloat(c.value);
@@ -143,175 +224,369 @@
     return c.value;
   }
 
-  /* ── Panneau principal ────────────────────────────────────────────────────── */
-  function ouvrirPanneau() {
-    var m = creerModal('Plug-ins SuperPrint');
-    var liste = (window.SPPlugins ? window.SPPlugins.list() : []);
+  /* ══════════════════════════════════════════════════════════════════════════
+     TRAPPE D'EXÉCUTION
+     ══════════════════════════════════════════════════════════════════════════ */
+  var trappe = { id: null, champs: [], valeurs: {}, occupe: false };
 
-    var intro = el('div', 'font-size:12px;line-height:1.55;color:#555;margin-bottom:14px;');
-    intro.innerHTML = 'Les plug-ins étendent SuperPrint : motifs, trames, habillages, outils maison. '
-      + 'Un plug-in est un fichier <b>.plugin.js</b> que vous installez ici.';
-    m.corps.appendChild(intro);
+  function trappeEls() {
+    return {
+      panneau: document.getElementById('pluginPanel'),
+      titre: document.getElementById('pluginPanelTitle'),
+      corps: document.getElementById('pluginPanelBody'),
+      etat: document.getElementById('pluginPanelEtat'),
+      retour: document.getElementById('pluginPanelRetour'),
+      appliquer: document.getElementById('pluginPanelAppliquer'),
+      fermer: document.getElementById('pluginPanelClose')
+    };
+  }
 
-    if (!liste.length) {
-      m.corps.appendChild(el('div', 'font-size:12px;color:#888;padding:14px 0;', 'Aucun plug-in pour le moment.'));
+  function trappeEtat(msg) {
+    var e = trappeEls().etat;
+    if (e) e.textContent = msg || '';
+  }
+
+  /* Publier la largeur des DEUX trappes : le widget de zoom et les encarts
+     flottants s'y accrochent. Sans cet appel, ils resteraient sous le panneau. */
+  function publier() {
+    try { if (typeof window.spPublierLargeursPanneauxDroits === 'function') window.spPublierLargeursPanneauxDroits(); } catch (_) {}
+  }
+
+  function fermerTrappe() {
+    var t = trappeEls();
+    if (!t.panneau || !t.panneau.classList.contains('ouvert')) return;
+    t.panneau.classList.remove('ouvert');
+    t.panneau.setAttribute('aria-hidden', 'true');
+    publier();
+  }
+
+  function ouvrirTrappe() {
+    var t = trappeEls();
+    if (!t.panneau) return;
+    /* ⚠️ UNE SEULE TRAPPE À LA FOIS. « Global Refactor » et un plug-in occupent le
+       même bord droit ; ouvertes ensemble, elles prennent 680 px et poussent le
+       plan de travail hors de l'écran. On referme Global Refactor par SON bouton —
+       il sait alors rendre l'aperçu et l'historique à leur état, ce qu'un simple
+       retrait de classe ne ferait pas. */
+    try {
+      var mq = document.getElementById('maquettePanel');
+      if (mq && mq.classList.contains('ouvert')) {
+        var cb = document.getElementById('maquetteClose');
+        if (cb) cb.click();
+      }
+    } catch (_) {}
+    t.panneau.classList.add('ouvert');
+    t.panneau.setAttribute('aria-hidden', 'false');
+    publier();
+  }
+
+  /* Remplit la trappe pour un plug-in donné. Le formulaire est reconstruit à
+     chaque ouverture : un plug-in rouvert montre ses valeurs par défaut, pas
+     celles de l'exécution précédente. */
+  function remplirTrappe(id) {
+    var p = window.SPPlugins.get(id);
+    var t = trappeEls();
+    if (!p || !t.corps) return false;
+    trappe.id = id;
+    trappe.champs = [];
+    trappe.valeurs = {};
+    trappe.occupe = false;
+
+    if (t.titre) t.titre.textContent = p.name + '  ·  v' + p.version;
+    t.corps.innerHTML = '';
+
+    if (p.description) {
+      t.corps.appendChild(el('div', 'padding:10px 12px 11px;font-size:10px;line-height:1.5;color:#777;border-bottom:1px solid #eee;margin-bottom:10px;', p.description));
+    }
+    if (!(p.options || []).length) {
+      t.corps.appendChild(el('div', 'padding:0 12px 12px;font-size:10px;color:#999;',
+        texte('pluginsNoOptions', 'Ce plug-in n\'a aucun réglage.')));
+    }
+    (p.options || []).forEach(function (o) {
+      var d = champ(o, trappe.valeurs);
+      trappe.champs.push(d);
+      t.corps.appendChild(d.ligne);
+      if (o.type !== 'image') trappe.valeurs[o.key] = o.defaut;
+    });
+    if (t.appliquer) { t.appliquer.disabled = false; t.appliquer.textContent = texte('apply', 'Appliquer'); }
+    trappeEtat('');
+    return true;
+  }
+
+  function brancherTrappe() {
+    var t = trappeEls();
+    if (!t.panneau || t.panneau.dataset.pret) return;
+    t.panneau.dataset.pret = '1';
+
+    if (t.fermer) t.fermer.addEventListener('click', fermerTrappe);
+    if (t.retour) t.retour.addEventListener('click', function () { fermerTrappe(); ouvrirPanneau(); });
+
+    if (t.appliquer) t.appliquer.addEventListener('click', function () {
+      if (!trappe.id || trappe.occupe) return;
+      var p = window.SPPlugins.get(trappe.id);
+      var vals = {};
+      trappe.champs.forEach(function (d) { vals[d.option.key] = lireValeur(d); });
+      trappe.occupe = true;
+      t.appliquer.disabled = true;
+      t.appliquer.textContent = texte('pluginsWorking', 'Traitement…');
+      trappeEtat('');
+      Promise.resolve()
+        .then(function () { return window.SPPlugins.run(trappe.id, vals); })
+        .then(function () {
+          trappe.occupe = false;
+          t.appliquer.disabled = false;
+          t.appliquer.textContent = texte('apply', 'Appliquer');
+          trappeEtat(texte('pluginsApplied', 'Appliqué'));
+          try { window.spShowToast((p ? p.name : 'Plug-in') + ' — ' + texte('pluginsApplied', 'appliqué'), { kind: 'info', duration: 2600 }); } catch (_) {}
+        })
+        .catch(function (e) {
+          trappe.occupe = false;
+          t.appliquer.disabled = false;
+          t.appliquer.textContent = texte('apply', 'Appliquer');
+          trappeEtat(texte('pluginsFailed', 'Échec'));
+          var msg = 'Le plug-in a échoué : ' + (e && e.message ? e.message : e);
+          try { window.spAlert(msg, { title: p ? p.name : 'Plug-in' }); } catch (_) { alert(msg); }
+        });
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     BIBLIOTHÈQUE (pop-in)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var filtre = 'tous';   // 'tous' | '7' | '30' | 'integres'
+
+  function joursDepuis(ts) {
+    if (!ts) return null;
+    return (Date.now() - Number(ts)) / 86400000;
+  }
+
+  function dateCourte(ts) {
+    if (!ts) return '';
+    try {
+      var d = new Date(Number(ts));
+      var lang = document.documentElement.lang || 'fr';
+      var loc = lang === 'fr' ? 'fr-FR' : (lang === 'ja' ? 'ja-JP' : 'en-GB');
+      return d.toLocaleDateString(loc, { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch (_) { return ''; }
+  }
+
+  /* Les filtres de date s'appliquent aux plug-ins INSTALLÉS : un plug-in intégré
+     n'a pas de date d'installation, il fait partie du produit et reste toujours
+     visible. Sans cette exception, « 7 jours » viderait la liste au premier jour. */
+  function filtrer(liste) {
+    if (filtre === 'integres') return liste.filter(function (p) { return p.integre; });
+    if (filtre === '7') return liste.filter(function (p) {
+      if (p.integre) return true;
+      var j = joursDepuis(p.installe);
+      return j === null ? true : j <= 7;
+    });
+    if (filtre === '30') return liste.filter(function (p) {
+      if (p.integre) return true;
+      var j = joursDepuis(p.installe);
+      return j === null ? true : j <= 30;
+    });
+    return liste;
+  }
+
+  function chipFiltre(libelle, valeur, nb) {
+    var b = el('button', '', libelle + (nb !== null && nb !== undefined ? '  ' + nb : ''));
+    b.type = 'button';
+    b.className = 'sp-pl-filtre' + (filtre === valeur ? ' on' : '');
+    b.addEventListener('click', function () { filtre = valeur; ouvrirPanneau(); });
+    return b;
+  }
+
+  function carte(p, m) {
+    var d = el('div', '');
+    d.className = 'sp-pl-item';
+    d.appendChild(el('div', '', p.icon || '◆')).className = 'sp-pl-icon';
+
+    var centre = el('div', 'flex:1 1 auto;min-width:0;');
+    var haut = el('div', 'display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;');
+    haut.appendChild(el('span', '', p.name)).className = 'sp-pl-nom';
+    haut.appendChild(el('span', '', 'v' + p.version)).className = 'sp-pl-vers';
+    if (p.integre) {
+      haut.appendChild(el('span', '', texte('pluginsBuiltin', 'intégré'))).className = 'sp-pl-badge';
+    } else {
+      var dt = dateCourte(p.installe);
+      if (dt) haut.appendChild(el('span', '', dt)).className = 'sp-pl-date';
+    }
+    centre.appendChild(haut);
+
+    if (p.description) centre.appendChild(el('div', '', p.description)).className = 'sp-pl-desc';
+    var meta = (p.options || []).length + ' ' + texte('pluginsSettings', 'réglage(s)');
+    if (p.author) meta += '  ·  ' + p.author;
+    centre.appendChild(el('div', '', meta)).className = 'sp-pl-meta';
+    d.appendChild(centre);
+
+    var actions = el('div', '');
+    actions.className = 'sp-pl-actions';
+
+    var bUtiliser = petitBouton(texte('pluginsUse', 'Utiliser'), true);
+    bUtiliser.addEventListener('click', function () { m.fermer(); ouvrirTrappePlugIn(p.id); });
+    actions.appendChild(bUtiliser);
+
+    /* Corbeille : uniquement pour les plug-ins INSTALLÉS. Un plug-in intégré fait
+       partie du produit — le retirer supprimerait une fonction, pas une extension. */
+    if (!p.integre) {
+      var bSuppr = el('button', '');
+      bSuppr.type = 'button';
+      bSuppr.className = 'sp-pl-corbeille';
+      bSuppr.title = texte('pluginsDelete', 'Désinstaller');
+      bSuppr.setAttribute('aria-label', texte('pluginsDelete', 'Désinstaller'));
+      bSuppr.appendChild(iconeCorbeille());
+      bSuppr.addEventListener('click', function () {
+        var q = texte('pluginsConfirmDelete', 'Désinstaller « {0} » ? Le fichier reste où il est ; il sera simplement retiré de SuperPrint.')
+          .replace('{0}', p.name);
+        var suite = function (ok) {
+          if (!ok) return;
+          try {
+            window.SPPlugins.desinstaller(p.id);
+            if (trappe.id === p.id) fermerTrappe();
+            ouvrirPanneau();
+            try { window.spShowToast(p.name + ' — ' + texte('pluginsDeleted', 'désinstallé'), { kind: 'info', duration: 2600 }); } catch (_) {}
+          } catch (e) {
+            try { window.spAlert('Suppression impossible : ' + e.message); } catch (_) { alert(e.message); }
+          }
+        };
+        try {
+          if (typeof window.spConfirm === 'function') window.spConfirm(q, { type: 'warn' }).then(suite);
+          else suite(window.confirm(q));
+        } catch (_) { suite(window.confirm(q)); }
+      });
+      actions.appendChild(bSuppr);
     }
 
-    liste.forEach(function (p) {
-      var ligne = el('div', 'border:1px solid #e6e6e6;padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;');
-      ligne.appendChild(el('div', 'font-size:20px;line-height:1;flex:0 0 auto;width:24px;text-align:center;', p.icon || '◆'));
-      var centre = el('div', 'flex:1 1 auto;min-width:0;');
-      var titre = el('div', 'font-size:12px;font-weight:600;', p.name + '  ');
-      titre.appendChild(el('span', 'font-size:10px;color:#999;font-weight:400;', 'v' + p.version + (p.integre ? ' · intégré' : (p.author ? ' · ' + p.author : ''))));
-      centre.appendChild(titre);
-      if (p.description) centre.appendChild(el('div', 'font-size:11px;color:#777;margin-top:3px;line-height:1.45;', p.description));
-      centre.appendChild(el('div', 'font-size:10px;color:#aaa;margin-top:4px;', p.options.length + ' réglage(s)'));
-      ligne.appendChild(centre);
+    d.appendChild(actions);
+    return d;
+  }
 
-      var actions = el('div', 'display:flex;flex-direction:column;gap:6px;flex:0 0 auto;');
-      var bLancer = bouton('Utiliser', true);
-      bLancer.addEventListener('click', function () {
-        m.fermer();
-        ouvrirPlugIn(p.id);
-      });
-      actions.appendChild(bLancer);
-      ligne.appendChild(actions);
-      m.corps.appendChild(ligne);
+  function ouvrirPanneau() {
+    var tous = (window.SPPlugins ? window.SPPlugins.list() : []);
+    var m = creerModal(texte('pluginsTitle', 'Plug-ins SuperPrint'), 660);
+
+    /* ── Bandeau des filtres ── */
+    var barre = el('div', '');
+    barre.className = 'sp-pl-barre';
+    barre.appendChild(chipFiltre(texte('pluginsFilterAll', 'Tous'), 'tous', tous.length));
+    barre.appendChild(chipFiltre(texte('pluginsFilter7', '7 jours'), '7', null));
+    barre.appendChild(chipFiltre(texte('pluginsFilter30', '30 jours'), '30', null));
+    var nbIntegres = tous.filter(function (p) { return p.integre; }).length;
+    if (nbIntegres) barre.appendChild(chipFiltre(texte('pluginsBuiltin', 'intégrés'), 'integres', nbIntegres));
+    m.corps.appendChild(barre);
+
+    /* ── Zone de dépôt ── */
+    var zone = el('div', '');
+    zone.className = 'sp-pl-zone';
+    var zt = el('div', '', texte('pluginsDropHere', 'Déposez un fichier .plugin.js ici, ou cliquez pour le choisir'));
+    zt.className = 'sp-pl-zone-titre';
+    var za = el('div', '', texte('pluginsDropHint', 'glisser-déposer  ·  un fichier à la fois'));
+    za.className = 'sp-pl-zone-aide';
+    zone.appendChild(zt);
+    zone.appendChild(za);
+    /* Le retour visuel passe par une CLASSE, pas par `style` : en thème sombre un
+       fond blanc posé en ligne resterait blanc sous la souris. */
+    var survol = function (on) { zone.classList.toggle('survol', !!on); };
+    ['dragenter', 'dragover'].forEach(function (n) {
+      zone.addEventListener(n, function (e) { e.preventDefault(); e.stopPropagation(); survol(true); });
+    });
+    zone.addEventListener('dragleave', function (e) { e.preventDefault(); e.stopPropagation(); survol(false); });
+    zone.addEventListener('drop', function (e) {
+      e.preventDefault(); e.stopPropagation(); survol(false);
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) installerFichier(f);
+    });
+    zone.addEventListener('click', choisirFichier);
+    m.corps.appendChild(zone);
+
+    /* Le glisser-déposer vaut pour TOUTE la fenêtre : viser une bande de 70 px de
+       haut serait inutilement précis. On écoute sur le voile, qui couvre l'écran. */
+    m.voile.addEventListener('dragover', function (e) { e.preventDefault(); e.stopPropagation(); survol(true); });
+    m.voile.addEventListener('dragleave', function (e) {
+      if (e.target === m.voile) survol(false);
+    });
+    m.voile.addEventListener('drop', function (e) {
+      e.preventDefault(); e.stopPropagation(); survol(false);
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) installerFichier(f);
     });
 
-    var barre = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid #eee;');
-    var bInstaller = bouton('Installer un plug-in', false);
-    bInstaller.addEventListener('click', installerDepuisFichier);
-    var bFermer = bouton('Fermer', false);
-    bFermer.addEventListener('click', m.fermer);
-    barre.appendChild(bInstaller);
-    barre.appendChild(bFermer);
-    m.corps.appendChild(barre);
+    /* ── Liste ── */
+    var liste = filtrer(tous);
+    var boite = el('div', '');
+    boite.className = 'sp-pl-liste';
+    if (!tous.length) {
+      boite.appendChild(el('div', '', texte('pluginsEmpty', 'Aucun plug-in pour le moment.'))).className = 'sp-pl-vide';
+    } else if (!liste.length) {
+      boite.appendChild(el('div', '', texte('pluginsNoMatch', 'Aucun plug-in dans ce filtre.'))).className = 'sp-pl-vide';
+    } else {
+      liste.forEach(function (p) { boite.appendChild(carte(p, m)); });
+    }
+    m.corps.appendChild(boite);
+
+    /* ── Pied ── */
+    var pied = el('div', '');
+    pied.className = 'sp-pl-pied';
+    pied.appendChild(el('span', '', liste.length + ' / ' + tous.length)).className = 'sp-pl-compte';
+    var bF = petitBouton(texte('close', 'Fermer'), false);
+    bF.addEventListener('click', m.fermer);
+    pied.appendChild(bF);
+    m.carte.appendChild(pied);
 
     return m;
   }
 
-  function installerDepuisFichier() {
+  function choisirFichier() {
     var inp = document.createElement('input');
     inp.type = 'file';
     inp.accept = '.js,.plugin.js,text/javascript';
     inp.style.display = 'none';
     inp.addEventListener('change', function () {
       var f = inp.files && inp.files[0];
-      if (!f) return;
-      var r = new FileReader();
-      r.onload = function () {
-        try {
-          var res = window.SPPlugins.installerSource(String(r.result), f.name);
-          ouvrirPanneau();
-          try { window.spShowToast('Plug-in installé : ' + res.name, { kind: 'info' }); } catch (_) {}
-        } catch (e) {
-          ouvrirPanneau();
-          try { window.spAlert('Installation impossible : ' + e.message, { title: 'Plug-in' }); } catch (_) { alert(e.message); }
-        }
-      };
-      r.readAsText(f);
+      if (f) installerFichier(f);
     });
     document.body.appendChild(inp);
     inp.click();
     setTimeout(function () { if (inp.parentNode) inp.parentNode.removeChild(inp); }, 60000);
   }
 
-  /* ── Formulaire d'un plug-in ──────────────────────────────────────────────── */
-  function ouvrirPlugIn(id) {
-    var p = window.SPPlugins.get(id);
-    if (!p) { ouvrirPanneau(); return; }
-    var m = creerModal(p.icon + '  ' + p.name);
-    if (p.description) m.corps.appendChild(el('div', 'font-size:12px;line-height:1.5;color:#666;margin-bottom:14px;', p.description));
-
-    var valeurs = {};
-    var champs = [];
-    (p.options || []).forEach(function (o) {
-      var d = champ(o, valeurs);
-      champs.push(d);
-      m.corps.appendChild(d.ligne);
-      valeurs[o.key] = o.defaut;
-    });
-
-    var barre = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:8px;padding-top:14px;border-top:1px solid #eee;');
-    var bRetour = bouton('Retour', false);
-    bRetour.addEventListener('click', function () { m.fermer(); ouvrirPanneau(); });
-    var bGo = bouton('Appliquer', true);
-    bGo.addEventListener('click', function () {
-      champs.forEach(function (d) { valeurs[d.option.key] = lireValeur(d); });
-      bGo.disabled = true;
-      bGo.textContent = 'Traitement…';
-      Promise.resolve()
-        .then(function () { return window.SPPlugins.run(id, valeurs); })
-        .then(function () {
-          m.fermer();
-          try { window.spShowToast(p.name + ' — terminé', { kind: 'info' }); } catch (_) {}
-        })
-        .catch(function (e) {
-          bGo.disabled = false;
-          bGo.textContent = 'Appliquer';
-          try { window.spAlert('Le plug-in a échoué : ' + (e && e.message ? e.message : e), { title: p.name }); }
-          catch (_) { alert(e && e.message ? e.message : e); }
-        });
-    });
-    barre.appendChild(bRetour);
-    barre.appendChild(bGo);
-    m.corps.appendChild(barre);
-    return m;
-  }
-
-  /* ── MCP Server ───────────────────────────────────────────────────────────── */
-  /* Le panneau ne « lance » rien : un serveur MCP est un processus local que le
-     client (Claude Desktop, Cursor…) démarre lui-même. Le panneau sert donc à
-     donner la commande exacte, le chemin du dossier et le JSON de configuration,
-     copiables — c'est tout ce dont l'utilisateur a besoin. */
-  function ouvrirPanneauMCP() {
-    var m = creerModal('Serveur MCP — SuperPrint');
-    m.corps.appendChild(el('div', 'font-size:12px;line-height:1.6;color:#555;margin-bottom:14px;',
-      'Ce dossier expose SuperPrint à un client MCP (Claude Desktop, Claude Code, Cursor…). '
-      + 'Le client peut lire un .sp, le convertir, lister les formats, et composer un document.'));
-
-    function bloc(titre, contenu) {
-      m.corps.appendChild(el('div', 'font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:#444;margin:14px 0 6px;', titre));
-      var pre = el('pre', 'margin:0;padding:10px 12px;background:#f7f7f7;border-left:3px solid #1a1a1a;font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.5;overflow:auto;max-height:190px;white-space:pre-wrap;word-break:break-all;');
-      pre.textContent = contenu;
-      m.corps.appendChild(pre);
-      var b = bouton('Copier', false);
-      b.style.marginTop = '6px';
-      b.addEventListener('click', function () {
-        try {
-          navigator.clipboard.writeText(contenu);
-          b.textContent = 'Copié';
-          setTimeout(function () { b.textContent = 'Copier'; }, 1400);
-        } catch (_) {}
-      });
-      m.corps.appendChild(b);
+  function installerFichier(f) {
+    if (!/\.js$/i.test(f.name || '')) {
+      var msg = texte('pluginsNotJs', 'Ce fichier n\'est pas un plug-in : un plug-in SuperPrint est un fichier .plugin.js.');
+      try { window.spAlert(msg, { title: 'Plug-in' }); } catch (_) { alert(msg); }
+      return;
     }
-
-    bloc('Dossier du serveur', 'superprint/mcp-server/');
-    bloc('Installation', 'cd superprint/mcp-server\nnpm install\nnode server.mjs');
-    bloc('Configuration cliente (claude_desktop_config.json)', JSON.stringify({
-      mcpServers: {
-        superprint: { command: 'node', args: ['/chemin/absolu/vers/superprint/mcp-server/server.mjs'] }
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var res = window.SPPlugins.installerSource(String(r.result), f.name);
+        ouvrirPanneau();
+        try { window.spShowToast(texte('pluginsInstalled', 'Plug-in installé : ') + res.name, { kind: 'info' }); } catch (_) {}
+      } catch (e) {
+        ouvrirPanneau();
+        var m2 = texte('pluginsInstallFail', 'Installation impossible : ') + e.message;
+        try { window.spAlert(m2, { title: 'Plug-in' }); } catch (_) { alert(m2); }
       }
-    }, null, 2));
-
-    var barre = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #eee;');
-    var bDoc = bouton('Documentation', false);
-    bDoc.addEventListener('click', function () {
-      try { window.open('documentation.html#plugins', '_blank'); } catch (_) {}
-    });
-    var bF = bouton('Fermer', false);
-    bF.addEventListener('click', m.fermer);
-    barre.appendChild(bDoc);
-    barre.appendChild(bF);
-    m.corps.appendChild(barre);
+    };
+    r.readAsText(f);
   }
 
-  /* ── Branchement des deux boutons ─────────────────────────────────────────── */
+  /* ── Ouverture de la trappe pour un plug-in donné ─────────────────────────── */
+  function ouvrirTrappePlugIn(id) {
+    brancherTrappe();
+    if (!remplirTrappe(id)) { ouvrirPanneau(); return; }
+    ouvrirTrappe();
+  }
+
+  /* ── Boutons de la barre de droite ────────────────────────────────────────── */
   function installerBoutons() {
+    brancherTrappe();
     var bPlug = document.getElementById('openPluginsPanel');
     if (bPlug) bPlug.addEventListener('click', function () {
+      /* Un clic sur le bouton referme la trappe si elle est ouverte : c'est un
+         va-et-vient, pas une ouverture forcée. */
+      var t = trappeEls();
+      if (t.panneau && t.panneau.classList.contains('ouvert')) { fermerTrappe(); return; }
       try { if (typeof window.toggleSidebar === 'function') window.toggleSidebar('right'); } catch (_) {}
       ouvrirPanneau();
     });
@@ -319,12 +594,78 @@
     if (bMcp) bMcp.addEventListener('click', ouvrirPanneauMCP);
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     MCP SERVER
+     ══════════════════════════════════════════════════════════════════════════ */
+  function ouvrirPanneauMCP() {
+    var m = creerModal('Serveur MCP — SuperPrint', 640);
+    var corps = el('div', 'padding:16px;');
+    corps.appendChild(el('div', 'font-size:11px;line-height:1.6;color:#666;margin-bottom:6px;',
+      'Ce dossier expose SuperPrint à un client MCP (Claude Desktop, Claude Code, Cursor…). '
+      + 'Le client peut lire un .sp, le convertir, lister les formats, et composer un document.'));
+
+    function bloc(titre, contenu) {
+      corps.appendChild(el('div', 'font-size:8px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:#666;margin:16px 0 5px;font-family:"IBM Plex Mono",monospace;', titre));
+      var pre = el('pre', 'margin:0;padding:10px 12px;background:#f7f7f7;border-left:3px solid #1a1a1a;font-family:"IBM Plex Mono",monospace;font-size:10px;line-height:1.55;overflow:auto;max-height:180px;white-space:pre-wrap;word-break:break-all;color:#222;');
+      pre.textContent = contenu;
+      corps.appendChild(pre);
+      var b = petitBouton(texte('copy', 'Copier'), false);
+      b.style.marginTop = '6px';
+      b.addEventListener('click', function () {
+        try {
+          navigator.clipboard.writeText(contenu);
+          b.textContent = texte('copied', 'Copié');
+          setTimeout(function () { b.textContent = texte('copy', 'Copier'); }, 1400);
+        } catch (_) {}
+      });
+      corps.appendChild(b);
+    }
+
+    bloc('Dossier du serveur', 'superprint/mcp-server/');
+    bloc('Installation', 'cd superprint/mcp-server\nnode server.mjs');
+    bloc('Configuration cliente (claude_desktop_config.json)', JSON.stringify({
+      mcpServers: {
+        superprint: { command: 'node', args: ['/chemin/absolu/vers/superprint/mcp-server/server.mjs'] }
+      }
+    }, null, 2));
+
+    var barre = el('div', 'display:flex;gap:6px;justify-content:flex-end;margin-top:18px;padding-top:12px;border-top:1px solid #eee;');
+    var bDoc = petitBouton(texte('pluginsDoc', 'Documentation'), false);
+    bDoc.addEventListener('click', function () {
+      try { window.open('documentation.html#m-mcp', '_blank'); } catch (_) {}
+    });
+    var bF = petitBouton(texte('close', 'Fermer'), true);
+    bF.addEventListener('click', m.fermer);
+    barre.appendChild(bDoc);
+    barre.appendChild(bF);
+    corps.appendChild(barre);
+    m.corps.appendChild(corps);
+  }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installerBoutons);
   else installerBoutons();
 
+  /* ⚠️ UN PLUG-IN DÉPOSÉ SUR LE PLAN DE TRAVAIL PASSE PAR ICI.
+     MESURÉ : le gestionnaire `drop` de `main.js` est en CAPTURE et appelle
+     `stopPropagation()` — les écouteurs du voile et de la zone de dépôt ne
+     reçoivent donc JAMAIS l'événement. `main.js` route explicitement les
+     `.plugin.js` vers ce point d'entrée (cf. `matchExt(f, ['.plugin.js'])`). */
+  window._spInstallerPlugIn = function (fichier) {
+    ouvrirPanneau();
+    installerFichier(fichier);
+  };
+
+  /* Fichier lâché SUR la bibliothèque qui n'est pas un `.plugin.js` : on montre le
+     refus, on n'importe pas un PNG derrière la pop-in. */
+  window._spFichierSurPlugIns = function (fichier) {
+    if (fichier) installerFichier(fichier);
+  };
+
   window.SPPluginsUI = {
     ouvrirPanneau: ouvrirPanneau,
-    ouvrirPlugIn: ouvrirPlugIn,
-    ouvrirPanneauMCP: ouvrirPanneauMCP
+    ouvrirPlugIn: ouvrirTrappePlugIn,
+    ouvrirPanneauMCP: ouvrirPanneauMCP,
+    fermerTrappe: fermerTrappe,
+    installerFichier: installerFichier
   };
 })();
