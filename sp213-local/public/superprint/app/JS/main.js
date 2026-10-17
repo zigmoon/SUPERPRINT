@@ -813,7 +813,7 @@ function syncZoomWidgetWithRightSidebar() {
     const zoomWidget = document.getElementById('zoomWidget');
     if (!rightSidebar || !zoomWidget) return;
 
-    /* ⚠️ v1.7.635 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
+    /* ⚠️ v1.7.636 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
        Cette fonction place le widget de zoom juste à gauche de la barre latérale
        droite. Or la trappe est un PANNEAU FIXE qui, lui aussi, occupe le bord
        droit : sans cette ligne, le widget tombait PAR-DESSUS elle et interceptait
@@ -823,7 +823,7 @@ function syncZoomWidgetWithRightSidebar() {
        défaut qu'aucune relecture ne trouve : les deux éléments sont corrects
        séparément, c'est leur superposition qui casse.
 
-       ⚠️ v1.7.635 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
+       ⚠️ v1.7.636 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
        C'est une correction de fond, pas un ajustement. Il y avait DEUX écrivains
        pour la même propriété : cette fonction, et une copie du même calcul au
        démarrage AVEC la trappe ; et la règle CSS en portait un troisième, écrasé
@@ -1088,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // ✨ NOUVEAU : Initialiser le positionnement du zoom-widget selon l'état de la sidebar droite
             setTimeout(() => {
-                /* ⚠️ v1.7.635 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
+                /* ⚠️ v1.7.636 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
                    CAUSAIT LE DÉFAUT. Elle écrivait `zoomWidget.style.right` en dur
                    (« calc(56px + 16px) »), SANS la largeur de la trappe, alors que la
                    fonction deux lignes plus bas écrit la même chose AVEC la trappe. Deux
@@ -4365,7 +4365,7 @@ if (window._spGpuEnabled) {
         };
     }
 
-    /* ══ v1.7.635 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+    /* ══ v1.7.636 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
 
        `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
        WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
@@ -4802,7 +4802,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.635 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.636 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5401,7 +5401,7 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        /* ══ v1.7.635 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
+        /* ══ v1.7.636 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
            RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
            bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
@@ -51155,7 +51155,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.635 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.636 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -51303,7 +51303,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.635) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.636) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
@@ -101526,7 +101526,7 @@ function initObjectRightClickMenu() {
     function publierLargeur(px) {
         var app = $('mainApp');
         var v = (px || 0) + 'px';
-        /* ⚠️ v1.7.635 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
+        /* ⚠️ v1.7.636 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
            Les widgets flottants du bord droit — le zoom, l'étiquette de simulation
            CMJN, le panneau Rechercher & Remplacer — ne sont pas tous dans #mainApp :
            ceux qui sont posés sur <body> n'héritaient donc PAS de la variable et
@@ -101871,7 +101871,7 @@ function initObjectRightClickMenu() {
         var changeTypo = typo.police || (typo.corps !== null && typo.corps !== undefined) ||
             (typo.interligne !== null && typo.interligne !== undefined) || typo.couleur ||
             (typo.alignement && typo.alignement !== '') ||
-            /* 🆕 v1.7.635 — les trois réglages de texte ajoutés à la trappe. */
+            /* 🆕 v1.7.636 — les trois réglages de texte ajoutés à la trappe. */
             (typo.interlettrage !== null && typo.interlettrage !== undefined) ||
             (typo.graisse !== null && typo.graisse !== undefined) ||
             (typo.styleTxt !== null && typo.styleTxt !== undefined);
@@ -102330,7 +102330,7 @@ function initObjectRightClickMenu() {
         h += '</section>';
 
         /* GRILLE ET LIGNE DE BASE
-           🆕 v1.7.635 — demandé par l'utilisateur : « il y a plus de réglages live dans
+           🆕 v1.7.636 — demandé par l'utilisateur : « il y a plus de réglages live dans
            le studio IA, plus de tirettes ». Ces deux sections ne font pas semblant : elles
            pilotent les réglages NATIFS de SuperPrint, dont l'effet a été MESURÉ avant
            d'être exposé — afficher la grille fait passer la vue de 4 à 14 objets, et
@@ -102424,7 +102424,7 @@ function initObjectRightClickMenu() {
             police: val('mqPolice', ''), corps: nb(val('mqCorps', 0), 0),
             interligne: nb(val('mqInterligne', 0), 0), couleur: (nb(val('mqCorps', 0), 0) > 0 ? val('mqCouleurTexte', '') : ''),
             alignement: etat.alignement || '',
-            /* ⚠️ v1.7.635 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
+            /* ⚠️ v1.7.636 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
                une précaution, pas une coquetterie : `charSpacing`, `fontWeight` et
                `fontStyle` ont des valeurs par DÉFAUT parfaitement légitimes (0, normal,
                normal). Les lire sans condition ferait donc que « Refaire la maquette »
@@ -102747,3 +102747,231 @@ function initObjectRightClickMenu() {
     else installer();
 })();
 /* _SP_MAQUETTE_631_FIN */
+
+/* ══ _SP_RACCOURCIS_635 — LE PANNEAU DES RACCOURCIS S'AFFICHE POUR LE SYSTÈME ══
+
+   Demande utilisateur : « mettre les raccourcis clavier mac / pc / linux, propose un
+   panel de raccourcis applicatifs de logiciels de PAO comme “⌘ + / ⌘ − (zoom /
+   dézoom mac), Ctrl + / Ctrl − (zoom / dézoom PC / LINUX)” ».
+
+   ⚠️ CE QUI ÉTAIT FAUX, ET CE N'ÉTAIT PAS UNE FAUTE DE RÉDACTION. Le panneau
+   (Réglages ▸ Raccourcis) annonçait « Ctrl » PARTOUT, quelle que soit la machine, et
+   se rattrapait par une note en bas de page — « Sur macOS, Ctrl = ⌘ Cmd ». Sur un Mac
+   le panneau était donc faux LIGNE À LIGNE : ⌘B s'y lisait Ctrl+B, et le zoom s'y
+   lisait Ctrl + alors qu'il se tape ⌘ +. Symétriquement, les raccourcis d'OUTILS y
+   étaient écrits « ⌥ + T », juste sur Mac mais introuvable sur PC, où c'est Alt+T.
+   Une note en bas de page ne répare pas une liste fausse en haut.
+
+   ⚠️ ON NE RÉÉCRIT PAS LA LISTE, ON TRADUIT SES TOUCHES. Le panneau existe en trois
+   langues et son HTML vit à TROIS endroits (le défaut français dans `index.html`,
+   l'anglais et le japonais dans le dictionnaire de traduction). Recopier la liste par
+   système ferait NEUF copies à tenir à jour, et la première divergence rendrait le
+   panneau faux dans une langue qu'on ne relit pas. On garde donc UNE liste, et on
+   remplace seulement ce que chaque système écrit DANS ses touches.
+
+   ⚠️ L'ORIGINE EST MÉMORISÉE SUR LA TOUCHE ELLE-MÊME (`data-sp-kbd`). Sans cela,
+   changer deux fois de système relirait « ⌘ » — ce qu'on vient d'écrire — au lieu de
+   « Ctrl », et la touche resterait figée sur la première traduction. C'est la même
+   règle que partout ailleurs : on ne relit jamais une valeur qu'on vient d'écrire.
+
+   ⚠️ C'EST UN OBSERVATEUR, PAS UN APPEL. Le contenu de l'onglet est remplacé par le
+   dictionnaire de traduction à chaque changement de langue (`shortcutsInnerContent`).
+   Un simple appel au démarrage serait donc effacé au premier passage en anglais. On
+   observe le conteneur : quelle que soit la langue, la liste redevient juste — et le
+   module ne se reconnaît pas lui-même (garde `enCours`), sinon il bouclerait. */
+(function () {
+    'use strict';
+    if (window._SP_RACCOURCIS_635) return;
+    window._SP_RACCOURCIS_635 = true;
+
+    var ID = 'shortcutsInnerContent';
+
+    /* Ce que chaque système écrit dans une touche. Les clés sont les libellés DÉJÀ
+       présents dans le panneau : ils se recouvrent largement d'une langue à l'autre
+       (Ctrl, Shift, Alt s'écrivent pareil en français et en anglais), et ⌥ / Option /
+       Alt sont trois écritures du même geste.
+       ⚠️ Les profils PC ne touchent QUE ce qui est faux chez eux : « ⌥ » et « Option »
+       deviennent « Alt », « ⌘ » devient « Ctrl ». On ne renomme pas « Shift » en
+       « Maj » : ce serait changer la LANGUE du panneau, pas son système. */
+    var MODIFS_PC = {
+        'Ctrl': 'Ctrl', 'Cmd': 'Ctrl', '\u2318': 'Ctrl', '\u2318 Cmd': 'Ctrl',
+        'Shift': 'Shift', '\u21e7': 'Shift', 'Maj': 'Maj',
+        'Alt': 'Alt', 'Option': 'Alt', '\u2325': 'Alt',
+        'Suppr': 'Suppr'
+    };
+    var PROFILS = {
+        mac: {
+            nom: 'macOS',
+            mots: {
+                'Ctrl': '\u2318', 'Cmd': '\u2318', '\u2318 Cmd': '\u2318', '\u2318': '\u2318',
+                'Shift': '\u21e7', '\u21e7': '\u21e7', 'Maj': '\u21e7',
+                'Alt': '\u2325', 'Option': '\u2325', '\u2325': '\u2325',
+                'Suppr': '\u232b'
+            },
+            note: '<kbd>\u2318</kbd> Commande &nbsp;·&nbsp; <kbd>\u2325</kbd> Option &nbsp;·&nbsp; <kbd>\u21e7</kbd> Majuscule'
+        },
+        windows: { nom: 'Windows', mots: MODIFS_PC, note: 'Touches <b>Ctrl</b> &nbsp;·&nbsp; <b>Alt</b> &nbsp;·&nbsp; <b>Maj</b>' },
+        linux: { nom: 'Linux', mots: MODIFS_PC, note: 'Touches <b>Ctrl</b> &nbsp;·&nbsp; <b>Alt</b> &nbsp;·&nbsp; <b>Maj</b>' }
+    };
+    var ORDRE = ['mac', 'windows', 'linux'];
+
+    /* Le libellé du sélecteur, dans les trois langues du produit. Trois mots, tenus
+       ici plutôt que dans le dictionnaire commun : ils n'appartiennent qu'à ce
+       panneau, et les y ajouter obligerait à toucher trois dictionnaires de 8 000
+       caractères pour une phrase. */
+    var LIBELLE = {
+        fr: 'Raccourcis affichés pour',
+        en: 'Shortcuts shown for',
+        ja: 'ショートカット表示'
+    };
+
+    function langue() {
+        try { if (typeof currentLanguage === 'string' && LIBELLE[currentLanguage]) return currentLanguage; } catch (_) {}
+        return 'fr';
+    }
+
+    /* Le système réel de la machine. `navigator.platform` est déprécié mais reste ce
+       qui distingue le mieux Linux de Windows — la chaîne d'agent utilisateur, elle,
+       dit « Linux » sur Android, qu'on ne veut pas confondre avec un poste Linux. */
+    function detecter() {
+        var ua = '';
+        try {
+            ua = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || '';
+        } catch (_) {}
+        ua = String(ua).toLowerCase();
+        if (ua.indexOf('mac') >= 0 || ua.indexOf('iphone') >= 0 || ua.indexOf('ipad') >= 0) return 'mac';
+        if (ua.indexOf('linux') >= 0 && ua.indexOf('android') < 0) return 'linux';
+        return 'windows';
+    }
+
+    var profil = detecter();
+    var enCours = false;
+
+    function conteneur() { return document.getElementById(ID); }
+
+    function peindre() {
+        var c = conteneur();
+        if (!c) return;
+        var p = PROFILS[profil];
+        if (!p) return;
+
+        /* 1. Les touches. L'origine va sur l'élément au premier passage : c'est elle
+              qu'on relit ensuite, jamais le texte affiché. */
+        var kbs = c.querySelectorAll('kbd');
+        for (var i = 0; i < kbs.length; i++) {
+            var k = kbs[i];
+            var src = k.getAttribute('data-sp-kbd');
+            if (src === null) { src = (k.textContent || '').trim(); k.setAttribute('data-sp-kbd', src); }
+            if (Object.prototype.hasOwnProperty.call(p.mots, src)) k.textContent = p.mots[src];
+        }
+
+        /* 2. Le sélecteur, en tête du panneau. Il est RECRÉÉ à chaque passage : le
+              changement de langue remplace tout le contenu, il ne serait donc pas
+              conservé autrement.
+              ⚠️ SON CONTENU EST RÉÉCRIT À CHAQUE PEINTURE, ET C'EST MESURÉ. La
+              première version ne le construisait que s'il était absent : la barre
+              naissait à la première peinture — avant que la langue soit appliquée —
+              et gardait donc son libellé anglais même en français, puisque les
+              peintures suivantes la réutilisaient telle quelle. Mesuré : libellé
+              « Shortcuts shown for » sur une interface en français, y compris après
+              un clic sur un profil. Reconstruire quatre éléments coûte moins qu'un
+              état à maintenir, et l'observateur ne le voit pas (il écoute les enfants
+              du CONTENEUR, pas ceux de la barre). */
+        var barre = c.querySelector('.sp-rac-os');
+        if (!barre) {
+            barre = document.createElement('div');
+            barre.className = 'sp-rac-os';
+            c.insertBefore(barre, c.firstChild);
+        }
+        barre.innerHTML = '<span class="sp-rac-os-lbl">' + LIBELLE[langue()] + '</span>' +
+            ORDRE.map(function (o) {
+                return '<button type="button" class="sp-rac-os-btn" data-os="' + o + '">' + PROFILS[o].nom + '</button>';
+            }).join('');
+        var boutons = barre.querySelectorAll('.sp-rac-os-btn');
+        for (var j = 0; j < boutons.length; j++) {
+            var b = boutons[j];
+            var on = b.getAttribute('data-os') === profil;
+            b.classList.toggle('on', on);
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            b.title = 'Afficher les raccourcis ' + PROFILS[b.getAttribute('data-os')].nom;
+        }
+
+        /* 3. La note de bas de page. Elle disait « Sur macOS, Ctrl = ⌘ Cmd », ce qui
+              n'a plus lieu d'être : le panneau parle désormais le langage du système.
+              On la remplace par la légende du système AFFICHÉ.
+              ⚠️ ON LA RETROUVE D'ABORD PAR SA MARQUE, ET SEULEMENT ENSUITE PAR SON
+              TEXTE — c'est une correction mesurée. La repérer au seul mot « macOS »
+              ne marchait qu'UNE FOIS : après la première peinture la note ne disait
+              plus « macOS » mais la légende du système, donc la deuxième peinture ne
+              la reconnaissait plus et la laissait telle quelle — mesuré, la légende
+              restait « Touches Ctrl · Alt · Maj » même en affichant macOS. La marque
+              `data-sp-rac-note` survit, elle, aux changements de profil ; le mot
+              « macOS » (présent dans les trois langues : « Sur macOS », « On macOS »,
+              « macOSでは ») reste le filet pour le contenu fraîchement injecté par un
+              changement de langue, qui efface l'attribut avec le reste. */
+        var note = c.querySelector('[data-sp-rac-note]');
+        if (!note) {
+            var enfants = c.children;
+            for (var n = 0; n < enfants.length; n++) {
+                var e = enfants[n];
+                if (e === barre) continue;
+                if (e.querySelector && e.querySelector('.sp-shortcut-grid')) continue;
+                if ((e.textContent || '').indexOf('macOS') < 0) continue;
+                note = e;
+                break;
+            }
+        }
+        if (note) {
+            note.setAttribute('data-sp-rac-note', '1');
+            note.innerHTML = p.note;
+        }
+    }
+
+    function peindreSansBoucle() {
+        if (enCours) return;
+        enCours = true;
+        try { peindre(); } catch (e) { try { console.warn('[raccourcis] peinture impossible', e); } catch (_) {} }
+        enCours = false;
+    }
+
+    function brancher() {
+        var c = conteneur();
+        if (!c) return false;
+        /* Le clic est délégué sur le conteneur : les boutons sont recréés à chaque
+           changement de langue, des écouteurs posés sur eux seraient perdus. */
+        c.addEventListener('click', function (e) {
+            var b = e.target && e.target.closest ? e.target.closest('.sp-rac-os-btn') : null;
+            if (!b) return;
+            var o = b.getAttribute('data-os');
+            if (!PROFILS[o]) return;
+            profil = o;
+            peindreSansBoucle();
+        });
+        try {
+            var obs = new MutationObserver(function () { peindreSansBoucle(); });
+            obs.observe(c, { childList: true, subtree: false });
+        } catch (_) {}
+        peindreSansBoucle();
+        return true;
+    }
+
+    function installer() {
+        if (brancher()) return;
+        /* Le panneau peut ne pas exister encore (ou être monté plus tard) : on
+           réessaie quelques fois plutôt que d'abandonner en silence. */
+        var essais = 0;
+        var t = setInterval(function () {
+            if (brancher() || ++essais > 40) clearInterval(t);
+        }, 250);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installer);
+    else installer();
+
+    window._spRaccourcis = {
+        profil: function () { return profil; },
+        choisir: function (o) { if (PROFILS[o]) { profil = o; peindreSansBoucle(); } return profil; },
+        detecter: detecter
+    };
+})();
+/* _SP_RACCOURCIS_635_FIN */

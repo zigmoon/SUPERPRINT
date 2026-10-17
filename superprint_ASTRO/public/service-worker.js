@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.635-global-refactor-miroir';
+const CACHE_NAME = 'superprint-shell-v1.7.636-raccourcis-par-systeme';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
