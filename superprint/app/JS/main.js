@@ -14921,6 +14921,9 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             selectionKey: 'shiftKey' // ✅ FIX: comportement standard (Drag=sélection, Shift+Click=multi)
         });
         fabricCanvas._spRenderReady = false;
+        /* La page A4 vaut 612,283 px CSS : sans cet alignement, le bitmap (arrondi à
+           l'entier) est rééchantillonné à l'affichage. Voir _SP_NETTETE_637. */
+        try { if (typeof spAjusterTailleAffichee === 'function') spAjusterTailleAffichee(fabricCanvas); } catch (_) {}
 
         // 🎨 PASTEBOARD V2: table de montage grise (horizontal+vertical), zone page blanche, filet bleu par-dessus
         if (pbPx > 0 || pbVPx > 0) {
@@ -19283,6 +19286,8 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         // (Fabric.js peut parfois ignorer backgroundColor passé au constructeur)
         // ⚡ PERF: pas de requestRenderAll ici — loadSpreadContent fera le render final
         fabricCanvas.setBackgroundColor('#ffffff', null);
+        /* Même alignement que ci-dessus : la taille affichée suit le bitmap. */
+        try { if (typeof spAjusterTailleAffichee === 'function') spAjusterTailleAffichee(fabricCanvas); } catch (_) {}
 
         // 🎨 PASTEBOARD V2: table de montage grise (horizontal+vertical), zone page blanche
         if (pbPx > 0 || pbVPx > 0) {
@@ -35485,6 +35490,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 try {
                     fabric.devicePixelRatio = _baseDPR;
                     oldC.setDimensions({ width: oldC.width, height: oldC.height });
+                    if (typeof spAjusterTailleAffichee === 'function') spAjusterTailleAffichee(oldC);
                     oldC.requestRenderAll();
                 } catch (_) {}
             }
@@ -35499,6 +35505,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         if (c && c.lowerCanvasEl) {
             try {
                 c.setDimensions({ width: c.width, height: c.height });
+                if (typeof spAjusterTailleAffichee === 'function') spAjusterTailleAffichee(c);
                 c.requestRenderAll();
             } catch (_) {}
         }
@@ -35529,6 +35536,67 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         try { if (typeof window.spTabRegleMaj === 'function') window.spTabRegleMaj(); } catch (_) {}
     }
 
+    /* ═══ _SP_NETTETE_637 — LA TAILLE AFFICHEE DOIT ETRE CELLE DU BITMAP ═══
+       MESURE (audit, A4 à 100 %, écran 1,5x) : le bitmap du canvas fait 918 × 1288
+       pixels physiques, mais l'élément est affiché en 612,281 × 858,896 px CSS. Le
+       navigateur doit donc rééchantillonner toute l'image avec un facteur
+       fractionnaire — 1,49932 pixel physique par pixel CSS au lieu de 1,5. Ce
+       facteur n'est pas un détail : c'est une interpolation bilinéaire appliquée à
+       CHAQUE trait de glyphe, et c'est elle qui « mange » les déliés d'une
+       typographie de labeur.
+
+       D'OÙ VIENT L'ÉCART : la page A4 vaut 210 mm, soit 612,283 px à 72 dpi — un
+       nombre fractionnaire. Fabric arrondit le bitmap à l'entier (918) mais laisse
+       la taille affichée à la valeur logique (612,281), d'où le décalage.
+
+       LA CORRECTION EST ARITHMÉTIQUE, PAS ESTHÉTIQUE : on affiche le canvas à
+       `bitmap / densité`, ce qui rend le rapport EXACTEMENT égal à la densité de
+       rastérisation. Le bitmap est alors retranscrit un pour un, sans interpolation.
+       L'écart de mise en page est de 0,28 px sur une page de 612 px (0,05 %) :
+       invisible, alors que le rééchantillonnage, lui, ne l'est pas.
+
+       ON NE TOUCHE QUE LES PLANCHES (`canvases`). Les canvas d'éditeur (gabarit,
+       planche-contact) utilisent volontairement une taille affichée différente de
+       leur bitmap comme facteur de réduction : les aligner casserait leur échelle. */
+    function spAjusterTailleAffichee(cv) {
+        try {
+            const el = cv && cv.lowerCanvasEl;
+            if (!el) return false;
+            const dens = (typeof cv.getRetinaScaling === 'function' ? cv.getRetinaScaling() : 1) || 1;
+            const w = (el.width / dens), h = (el.height / dens);
+            if (!(w > 0) || !(h > 0)) return false;
+            const ws = w + 'px', hs = h + 'px';
+            let change = false;
+            if (el.style.width !== ws) { el.style.width = ws; change = true; }
+            if (el.style.height !== hs) { el.style.height = hs; change = true; }
+            const up = cv.upperCanvasEl;
+            if (up) {
+                if (up.style.width !== ws) up.style.width = ws;
+                if (up.style.height !== hs) up.style.height = hs;
+            }
+            /* Le conteneur Fabric porte AUSSI la taille logique : s'il garde
+               612,281 autour d'un canvas de 612, la page déborde de 0,28 px et le
+               pasteboard se décale d'autant. On aligne les trois. */
+            const cont = el.parentNode;
+            if (cont && cont.classList && cont.classList.contains('canvas-container')) {
+                cont.style.width = ws;
+                cont.style.height = hs;
+            }
+            return change;
+        } catch (_) { return false; }
+    }
+    window.spAjusterTailleAffichee = spAjusterTailleAffichee;
+
+    /* Le même ajustement, sur TOUTES les planches. Idempotent : ne réécrit rien
+       quand la taille est déjà juste, donc appelable sans coût après un rendu. */
+    function spAjusterTailleAfficheeToutes() {
+        try {
+            if (typeof canvases === 'undefined' || !canvases) return;
+            canvases.forEach((c) => { if (c) spAjusterTailleAffichee(c); });
+        } catch (_) {}
+    }
+    window.spAjusterTailleAfficheeToutes = spAjusterTailleAfficheeToutes;
+
     /* ═══ _SP_NETTETE_627 — RE-RASTERISER TOUS LES CANVAS A LA DENSITE COURANTE ═══
        Sert au changement d'ecran, et a lui seul : le zoom, lui, ne doit toucher que
        la page visible (une haute resolution sur douze pages ferait exploser la
@@ -35545,6 +35613,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 if (!c || !c.lowerCanvasEl) return;
                 try {
                     c.setDimensions({ width: c.width, height: c.height });
+                    if (typeof spAjusterTailleAffichee === 'function') spAjusterTailleAffichee(c);
                     c.requestRenderAll();
                 } catch (_) {}
             });
@@ -35638,6 +35707,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             _spDPRTimer = null;
             const t0 = (window.performance && performance.now) ? performance.now() : Date.now();
             try { _updateCanvasDPRForZoom(); } catch (_) {}
+            try { if (typeof spAjusterTailleAfficheeToutes === 'function') spAjusterTailleAfficheeToutes(); } catch (_) {}
             const t1 = (window.performance && performance.now) ? performance.now() : Date.now();
             _spDureeDPR = t1 - t0;
             if (_spDPRRelance) { _spDPRRelance = false; _spProgrammerDPR(); }
@@ -94560,7 +94630,41 @@ window.createNewProjectFromModal = function() {
     if (typeof pageNumberingOverrides !== 'undefined') {
         for (const k in pageNumberingOverrides) delete pageNumberingOverrides[k];
     }
-    
+
+    /* ═══ _SP_NOUVEAU_NET_637 — UN DOCUMENT NEUF NE REPREND AUCUN REPÈRE ═══
+       DÉFAUT MESURÉ (audit) : un document créé après avoir utilisé « Réglages de la
+       maquette » démarrait avec 13 repères déjà posés — 3 bandes de colonnes rouges
+       et 10 traits de grille bleue — alors que la page est vide.
+
+       LES DEUX CAUSES SONT DIFFÉRENTES, ET C'EST POURQUOI IL FAUT DEUX GESTES :
+         · les COLONNES rouges vivent dans `localStorage['sp_col_grid']` (préférence
+           globale, relue au démarrage) ; le panneau de la maquette y écrit le nombre
+           de colonnes choisi. Rien ne les effaçait à la création d'un document, donc
+           la planche neuve héritait des colonnes du document précédent.
+         · la GRILLE bleue vit dans la variable `gridVisible`, qui survit elle aussi à
+           la fermeture du document : si elle était allumée, `rebuildGridAll` la
+           redessinait sur les nouvelles planches.
+
+       On repasse donc par les DEUX INTERRUPTEURS RÉELS (`spColGridAppliquer` et
+       `gridVisibleToggle`) plutôt que de manipuler l'état à la main : ce sont eux qui
+       enregistrent la préférence et qui retirent les repères déjà posés. Les mises en
+       page enregistrées, elles, gardent leurs propres colonnes : `document.colGrid`
+       est relu à l'ouverture, donc rien n'est perdu pour les documents existants.
+       Les repères MANUELS (`isManualGuide`) ne sont pas concernés : ils naviguent
+       dans le .sp et disparaissent avec les planches qu'on vient de libérer. */
+    try {
+        if (typeof window.spColGridAppliquer === 'function') {
+            window.spColGridAppliquer({ cols: 0, opacity: 12, margins: true });
+        }
+    } catch (_) {}
+    try {
+        const _gt = document.getElementById('gridVisibleToggle');
+        if (_gt && _gt.checked) {
+            _gt.checked = false;
+            _gt.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    } catch (_) {}
+
     // Apply new format
     pageFormat = { width: w, height: h };
     spSetMargesMm(_npM, isNaN(m) ? 20 : m);
