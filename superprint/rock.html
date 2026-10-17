@@ -337,7 +337,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
-/* 🆕 v1.7.636 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+/* 🆕 v1.7.637 — LE MENU NE SE REFERME PLUS EN CHEMIN.
    Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
    du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
    couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
@@ -454,7 +454,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    concurrencer le nom de l'application — 8 px, sans approche forcée, et un peu
    effacé pour qu'il se lise comme une précision et non comme un titre. */
 .nav-dd-app-ver { font-family: var(--f-mono); font-size: 8px; letter-spacing: .02em; color: var(--muted); opacity: .85; }
-/* 🆕 v1.7.636 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+/* 🆕 v1.7.637 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
    peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
@@ -496,7 +496,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
   color: var(--paper); background: var(--ink);
 }
-/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.636) ══════════════
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.637) ══════════════
    Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
    plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
    systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
@@ -1658,7 +1658,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
-  /* 🎯 v1.7.636 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+  /* 🎯 v1.7.637 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
      Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
      ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
      texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
@@ -2248,7 +2248,7 @@ body { background: var(--paper); }
   <a href="index.html" aria-label="SuperPrint — Accueil">
     <img src="favicon.png" alt="SuperPrint — logo">
   </a>
-  <span class="brand-ver">v1.7.636</span>
+  <span class="brand-ver">v1.7.637</span>
   <span class="brand-tag">
     <span class="inline-fr">Notre moteur</span><span class="inline-en">Our engine</span><span class="inline-ja">私たちのエンジン</span>
   </span>
@@ -2298,15 +2298,15 @@ body { background: var(--paper); }
               <span class="nav-dd-os">PC — Windows</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.636</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.637</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.636</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.637</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.636</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.637</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
               </span>
@@ -2319,15 +2319,15 @@ body { background: var(--paper); }
               <span class="nav-dd-os">MAC — macOS</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.636</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.637</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.636</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.637</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.636</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.637</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
               </span>
@@ -2340,15 +2340,15 @@ body { background: var(--paper); }
               <span class="nav-dd-os">LINUX</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.636</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.637</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.636</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.637</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.636</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.637</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
               </span>
@@ -2381,7 +2381,7 @@ body { background: var(--paper); }
   <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
   <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
-  <!-- (v1.7.636 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
+  <!-- (v1.7.637 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
        la barre a été déplacé dans .nav-tools, qui reste visible sous 1000 px :
        il n'y a donc plus rien à dupliquer ici.) -->
   <div class="mm-lang">
@@ -2393,7 +2393,7 @@ body { background: var(--paper); }
   </div>
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.636</span>
+    <span>SuperPrint v1.7.637</span>
   </div>
 </div>
 
@@ -2622,7 +2622,7 @@ body { background: var(--paper); }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.636</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.637</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>

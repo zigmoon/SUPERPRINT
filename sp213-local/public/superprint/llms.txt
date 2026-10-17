@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.636 (October 2026)
+- **Version**: 1.7.637 (October 2026)
 - **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.115) — the same application, downloaded once and run on your machine
 - **Desktop applications**: three separate installers — **SuperPrint**, **Studio IA** and **SuperTyPo** — for Windows (`.exe`, `.msi`), macOS (Apple Silicon and Intel `.dmg`) and Linux (`.AppImage`, `.deb`, `.rpm`), 21 files per release. They share one single version number and install independently: you download only what you use. Download page: https://superprint.cc/ (three languages) — direct files: https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/ (this alias always serves the newest published release, so a link never goes stale).
 

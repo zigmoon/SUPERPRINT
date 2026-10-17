@@ -1426,7 +1426,7 @@ html[lang="ja"] .logo::before {
     color: #e0e0e0; background: #2a2a2a; border-color: #444; box-shadow: 0 1px 0 #222;
 }
 
-/* ── v1.7.636 — SÉLECTEUR DE SYSTÈME DU PANNEAU DES RACCOURCIS ──
+/* ── v1.7.637 — SÉLECTEUR DE SYSTÈME DU PANNEAU DES RACCOURCIS ──
    Le panneau montre les touches du système de la machine ; ce sélecteur dit lequel,
    et permet de vérifier les deux autres. Il est en tête du panneau, discret : c'est
    une information, pas une commande qu'on vient chercher. */
@@ -2168,7 +2168,7 @@ textarea[data-fabric-hiddentextarea] {
     background: transparent !important;
     border: 0 !important;
 }
-/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.636). Elles étaient en #f0f0f0, à peine
+/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.637). Elles étaient en #f0f0f0, à peine
    plus clair que le plan de travail (#e8e8e8) : elles s'y fondaient, et on ne
    voyait plus où commençait la graduation. #fafafa est nettement plus clair,
    reste distinct du blanc de la page, et garde les graduations (#333/#666)
@@ -4180,12 +4180,12 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
 /* ==================== ZOOM WIDGET (Bottom Right) ==================== */
 .zoom-widget {
     position: fixed;
-    /* ⚠️ v1.7.636 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
+    /* ⚠️ v1.7.637 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
        « Réglages de la maquette » quand elle est ouverte. Sans elle, le widget
        restait ancré à 296 px du bord droit et se retrouvait PAR-DESSUS la trappe,
        où il interceptait les clics sur « Valider » et « Annuler » (mesuré).
 
-       ⚠️ v1.7.636 — LA POSITION EST CALCULÉE ICI, ET NULLE PART AILLEURS. Il y avait
+       ⚠️ v1.7.637 — LA POSITION EST CALCULÉE ICI, ET NULLE PART AILLEURS. Il y avait
        trois écrivains pour cette seule propriété : cette règle, `style.right` posé
        par `syncZoomWidgetWithRightSidebar()`, et une copie du même calcul au
        démarrage QUI, ELLE, IGNORAIT LA TRAPPE. Le style en ligne gagnant sur la
@@ -4209,7 +4209,7 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
         calc(var(--sp-sidebar-r, 280px) + var(--sp-maquette-l, 0px) + 16px),
         calc(100vw - var(--sp-zoom-w, 223px) - 8px)
     )); /* barre latérale + trappe + marge, borné au bord gauche */
-    /* ⚠️ v1.7.636 — LA COURBE EST CELLE DE LA TRAPPE, PAS UNE AUTRE. Le widget
+    /* ⚠️ v1.7.637 — LA COURBE EST CELLE DE LA TRAPPE, PAS UNE AUTRE. Le widget
        portait `0.3s ease` alors que la trappe et la barre latérale animent sur
        `--sp-sb-dur` (260 ms) avec `--sp-sb-ease` (cubic-bezier(.2,.7,.2,1), une
        sortie rapide). Les deux courbes divergeaient donc PENDANT tout le
@@ -5835,7 +5835,7 @@ input[type=number] {
    🆕 v1.7.448 — RECHERCHER & REMPLACER : panneau confortable et déplaçable
    ═══════════════════════════════════════════════════════════════════════ */
 .fr-panel {
-    /* ⚠️ v1.7.636 — MÊME FAMILLE DE DÉFAUT QUE LE WIDGET DE ZOOM : une position
+    /* ⚠️ v1.7.637 — MÊME FAMILLE DE DÉFAUT QUE LE WIDGET DE ZOOM : une position
        ancrée à droite en dur (300 px) ne tient aucun compte de la trappe. Ce panneau
        fait 400 px de large et sert tous les jours (Rechercher & Remplacer) : ouvert
        avec la trappe, il finissait sous elle. Il lit donc les mêmes largeurs
@@ -6025,7 +6025,7 @@ input[type=number] {
    restait 8 px). Modifier l'attribut `style` du div `.toolbar-center`. */
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   v1.7.636 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
+   v1.7.637 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
 
    Elle est le dernier enfant de `.app`, qui est un conteneur FLEX : sa largeur
    s'ajoute donc à droite et POUSSE l'interface, au lieu de la recouvrir comme le

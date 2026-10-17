@@ -813,7 +813,7 @@ function syncZoomWidgetWithRightSidebar() {
     const zoomWidget = document.getElementById('zoomWidget');
     if (!rightSidebar || !zoomWidget) return;
 
-    /* ⚠️ v1.7.636 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
+    /* ⚠️ v1.7.637 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
        Cette fonction place le widget de zoom juste à gauche de la barre latérale
        droite. Or la trappe est un PANNEAU FIXE qui, lui aussi, occupe le bord
        droit : sans cette ligne, le widget tombait PAR-DESSUS elle et interceptait
@@ -823,7 +823,7 @@ function syncZoomWidgetWithRightSidebar() {
        défaut qu'aucune relecture ne trouve : les deux éléments sont corrects
        séparément, c'est leur superposition qui casse.
 
-       ⚠️ v1.7.636 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
+       ⚠️ v1.7.637 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
        C'est une correction de fond, pas un ajustement. Il y avait DEUX écrivains
        pour la même propriété : cette fonction, et une copie du même calcul au
        démarrage AVEC la trappe ; et la règle CSS en portait un troisième, écrasé
@@ -1221,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // ✨ NOUVEAU : Initialiser le positionnement du zoom-widget selon l'état de la sidebar droite
             setTimeout(() => {
-                /* ⚠️ v1.7.636 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
+                /* ⚠️ v1.7.637 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
                    CAUSAIT LE DÉFAUT. Elle écrivait `zoomWidget.style.right` en dur
                    (« calc(56px + 16px) »), SANS la largeur de la trappe, alors que la
                    fonction deux lignes plus bas écrit la même chose AVEC la trappe. Deux
@@ -4498,7 +4498,7 @@ if (window._spGpuEnabled) {
         };
     }
 
-    /* ══ v1.7.636 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+    /* ══ v1.7.637 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
 
        `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
        WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
@@ -4935,7 +4935,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.636 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.637 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5534,7 +5534,7 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        /* ══ v1.7.636 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
+        /* ══ v1.7.637 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
            RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
            bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
@@ -51358,7 +51358,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.636 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.637 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -51506,7 +51506,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.636) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.637) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
@@ -101781,7 +101781,7 @@ function initObjectRightClickMenu() {
     function publierLargeur(px) {
         var app = $('mainApp');
         var v = (px || 0) + 'px';
-        /* ⚠️ v1.7.636 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
+        /* ⚠️ v1.7.637 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
            Les widgets flottants du bord droit — le zoom, l'étiquette de simulation
            CMJN, le panneau Rechercher & Remplacer — ne sont pas tous dans #mainApp :
            ceux qui sont posés sur <body> n'héritaient donc PAS de la variable et
@@ -102228,7 +102228,7 @@ function initObjectRightClickMenu() {
         var changeTypo = typo.police || (typo.corps !== null && typo.corps !== undefined) ||
             (typo.interligne !== null && typo.interligne !== undefined) || typo.couleur ||
             (typo.alignement && typo.alignement !== '') ||
-            /* 🆕 v1.7.636 — les trois réglages de texte ajoutés à la trappe. */
+            /* 🆕 v1.7.637 — les trois réglages de texte ajoutés à la trappe. */
             (typo.interlettrage !== null && typo.interlettrage !== undefined) ||
             (typo.graisse !== null && typo.graisse !== undefined) ||
             (typo.styleTxt !== null && typo.styleTxt !== undefined);
@@ -102774,7 +102774,7 @@ function initObjectRightClickMenu() {
         h += '</section>';
 
         /* GRILLE ET LIGNE DE BASE
-           🆕 v1.7.636 — demandé par l'utilisateur : « il y a plus de réglages live dans
+           🆕 v1.7.637 — demandé par l'utilisateur : « il y a plus de réglages live dans
            le studio IA, plus de tirettes ». Ces deux sections ne font pas semblant : elles
            pilotent les réglages NATIFS de SuperPrint, dont l'effet a été MESURÉ avant
            d'être exposé — afficher la grille fait passer la vue de 4 à 14 objets, et
@@ -102868,7 +102868,7 @@ function initObjectRightClickMenu() {
             police: val('mqPolice', ''), corps: nb(val('mqCorps', 0), 0),
             interligne: nb(val('mqInterligne', 0), 0), couleur: (nb(val('mqCorps', 0), 0) > 0 ? val('mqCouleurTexte', '') : ''),
             alignement: etat.alignement || '',
-            /* ⚠️ v1.7.636 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
+            /* ⚠️ v1.7.637 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
                une précaution, pas une coquetterie : `charSpacing`, `fontWeight` et
                `fontStyle` ont des valeurs par DÉFAUT parfaitement légitimes (0, normal,
                normal). Les lire sans condition ferait donc que « Refaire la maquette »

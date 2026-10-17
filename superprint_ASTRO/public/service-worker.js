@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.636-raccourcis-par-systeme';
+const CACHE_NAME = 'superprint-shell-v1.7.637-sp-json-sans-perte';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
