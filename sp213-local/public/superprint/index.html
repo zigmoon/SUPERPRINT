@@ -937,19 +937,31 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   justify-content: center;
 }
 .hero-os-list a {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 4px; text-decoration: none;
-  transition: transform .22s var(--ease);
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 4px; text-decoration: none; color: var(--muted);
+  font-family: var(--f-mono); font-size: 13px; letter-spacing: .1em;
+  /* ⚠️ LA CASSE RÉELLE DES MARQUES, PAS DES CAPITALES. `text-transform` n'est PAS
+     hérité d'un parent ici (plus de `uppercase` sur `.hero-os`), mais on le pose
+     explicitement : la règle du site met les libellés en capitales à plusieurs
+     endroits, et « MACOS » est une faute de marque. */
+  text-transform: none;
 }
-.hero-os-list a img { display: block; width: 26px; height: 26px; }
-.hero-os-list a:hover, .hero-os-list a:focus-visible { transform: scale(1.08); }
+.hero-os-list a img { display: block; width: 26px; height: 26px; flex: 0 0 auto; }
+/* ⚠️ AUCUN GROSSISSEMENT AU SURVOL — DEMANDE EXPLICITE : « ne grossis rien au
+   survol please ». Le retour visuel passe donc par le TEXTE, qui s'encadre d'un
+   filet d'encre : on voit que c'est cliquable sans que rien ne bouge sous la
+   souris. Le `transform: scale()` et sa transition ont été retirés, pas mis à 1 :
+   une règle neutralisée peut revenir avec une autre feuille. */
+.hero-os-list .hero-os-nom {
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s var(--ease), color .2s var(--ease);
+}
+.hero-os-list a:hover .hero-os-nom,
+.hero-os-list a:focus-visible .hero-os-nom { border-bottom-color: var(--ink); color: var(--ink); }
 .hero-os-list a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) {
-  .hero-os-list a { transition: none; }
-  .hero-os-list a:hover, .hero-os-list a:focus-visible { transform: none; }
-}
 @media (max-width: 620px) {
   .hero-os-list { gap: 4px 18px; }
+  .hero-os-list a { font-size: 12px; gap: 7px; }
   .hero-os-list a img { width: 22px; height: 22px; }
 }
 
@@ -962,7 +974,22 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-dots .dot.m { background: var(--magenta); }
 .hero-dots .dot.y { background: var(--yellow); }
 .hero-dots .dot.k { background: var(--ink); }
-#hero .lead { margin-top: clamp(22px,3vw,34px); max-width: 640px; color: var(--ink-soft); margin-left: auto; margin-right: auto; }
+/* 🆕 v1.7.655 — L'INTERLIGNE DU HERO PASSE DE 1,75 À 1,45.
+   Demande utilisateur : « Ici l'interlignage est trop fort, réduis-le ! » — la
+   phrase de l'accroche, celle qui commence par « SuperPrint rend la PAO
+   accessible… ». MESURÉ AVANT : corps de 19 px, interligne de 33,25 px, soit un
+   rapport de 1,75, et 3 lignes pour 100 px de haut. 1,75 est un interligne de
+   texte courant ; pour une accroche de 19 px c'est presque du double interligne.
+   APRÈS : 1,45, soit 27,55 px, et 3 lignes pour 83 px — la phrase se resserre
+   sans que les lignes se touchent.
+   ⚠️ LA RÈGLE EST PORTÉE PAR `#hero .lead`, PAS PAR `.lead`. `.lead` sert aussi
+   aux têtes de section, à l'appel final et à la grille des applications : y
+   toucher aurait changé quatre endroits que personne n'a signalés. */
+#hero .lead {
+  margin-top: clamp(22px,3vw,34px); max-width: 640px; color: var(--ink-soft);
+  line-height: 1.45;
+  margin-left: auto; margin-right: auto;
+}
 #hero .lead strong { color: var(--ink); }
 .hero-lead { margin-top: clamp(16px,2.2vw,28px) !important; }
 .btn {
@@ -2970,11 +2997,11 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <div class="hero-os">
       <span class="hero-os-list">
         <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener noreferrer"
-           aria-label="Windows — installateurs" title="Windows — installateurs"><img src="icons/windows.svg" alt="" width="26" height="26" loading="lazy" decoding="async"></a>
+           aria-label="Windows — installateurs" title="Windows — installateurs"><img src="icons/windows.svg" alt="" width="26" height="26" loading="lazy" decoding="async"><span class="hero-os-nom">Windows</span></a>
         <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener noreferrer"
-           aria-label="macOS — installateurs" title="macOS — installateurs"><img src="icons/macos.svg" alt="" width="26" height="26" loading="lazy" decoding="async"></a>
+           aria-label="macOS — installateurs" title="macOS — installateurs"><img src="icons/macos.svg" alt="" width="26" height="26" loading="lazy" decoding="async"><span class="hero-os-nom">macOS</span></a>
         <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener noreferrer"
-           aria-label="Linux — installateurs" title="Linux — installateurs"><img src="icons/linux.svg" alt="" width="26" height="26" loading="lazy" decoding="async"></a>
+           aria-label="Linux — installateurs" title="Linux — installateurs"><img src="icons/linux.svg" alt="" width="26" height="26" loading="lazy" decoding="async"><span class="hero-os-nom">Linux</span></a>
       </span>
     </div>
 
