@@ -1,11 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.644)
+   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.645)
    ═══════════════════════════════════════════════════════════════════════════════
 
    DEUX SURFACES, ET C'EST VOULU :
 
-     · la BIBLIOTHÈQUE est une pop-in — on y installe, on supprime, on filtre.
-       Elle n'a pas besoin de voir la page : elle gère des fichiers.
+     · la BIBLIOTHÈQUE est une pop-in — on y installe, on supprime, on allume ou
+       on éteint. Elle n'a pas besoin de voir la page : elle gère des fichiers.
+       ⚠️ v1.7.645 — ELLE NE FILTRE PLUS. La barre « Tous / 7 jours / 30 jours /
+       intégrés » a été retirée sur demande : elle découpait une liste qui tient à
+       l'écran. La date d'installation reste écrite sur chaque carte.
 
      · l'EXÉCUTION est une TRAPPE (`#pluginPanel`), comme « Global Refactor ».
        Un plug-in se règle en REGARDANT son effet : la trappe pousse l'interface
@@ -349,16 +352,21 @@
         });
     });
   }
-
   /* ══════════════════════════════════════════════════════════════════════════
      BIBLIOTHÈQUE (pop-in)
-     ══════════════════════════════════════════════════════════════════════════ */
-  var filtre = 'tous';   // 'tous' | '7' | '30' | 'integres'
-
-  function joursDepuis(ts) {
-    if (!ts) return null;
-    return (Date.now() - Number(ts)) / 86400000;
-  }
+     ══════════════════════════════════════════════════════════════════════════
+     ⚠️ v1.7.645 — PLUS DE BARRE DE FILTRES. Demande utilisateur : « supprime toute
+     cette ligne de filtre All 2 / 7 days / 30 days / built-in 2 ».
+     Elle coûtait 28 px de haut sur une liste qui en fait 83 par carte, pour
+     découper une liste qui tient à l'écran — deux plug-ins livrés, et le plus
+     souvent un ou deux ajoutés. Un filtre qui ne filtre presque rien ne rend pas
+     service : il ajoute une décision avant chaque coup d'œil.
+     `filtrer`, `chipFiltre` et `joursDepuis` sont retirés avec elle, et non
+     laissés en place : du code mort qui reference un état disparu se relit comme
+     une fonctionnalité qu'on aurait oublié de brancher.
+     La DATE d'installation reste affichée sur chaque carte : c'est l'information
+     qui manquerait vraiment, et elle ne prend aucune décision à la place de
+     l'utilisateur. */
 
   function dateCourte(ts) {
     if (!ts) return '';
@@ -368,32 +376,6 @@
       var loc = lang === 'fr' ? 'fr-FR' : (lang === 'ja' ? 'ja-JP' : 'en-GB');
       return d.toLocaleDateString(loc, { day: '2-digit', month: 'short', year: 'numeric' });
     } catch (_) { return ''; }
-  }
-
-  /* Les filtres de date s'appliquent aux plug-ins INSTALLÉS : un plug-in intégré
-     n'a pas de date d'installation, il fait partie du produit et reste toujours
-     visible. Sans cette exception, « 7 jours » viderait la liste au premier jour. */
-  function filtrer(liste) {
-    if (filtre === 'integres') return liste.filter(function (p) { return p.integre; });
-    if (filtre === '7') return liste.filter(function (p) {
-      if (p.integre) return true;
-      var j = joursDepuis(p.installe);
-      return j === null ? true : j <= 7;
-    });
-    if (filtre === '30') return liste.filter(function (p) {
-      if (p.integre) return true;
-      var j = joursDepuis(p.installe);
-      return j === null ? true : j <= 30;
-    });
-    return liste;
-  }
-
-  function chipFiltre(libelle, valeur, nb) {
-    var b = el('button', '', libelle + (nb !== null && nb !== undefined ? '  ' + nb : ''));
-    b.type = 'button';
-    b.className = 'sp-pl-filtre' + (filtre === valeur ? ' on' : '');
-    b.addEventListener('click', function () { filtre = valeur; ouvrirPanneau(); });
-    return b;
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -539,16 +521,6 @@
     var tous = (window.SPPlugins ? window.SPPlugins.list() : []);
     var m = creerModal(texte('pluginsTitle', 'Plug-ins SuperPrint'), 660);
 
-    /* ── Bandeau des filtres ── */
-    var barre = el('div', '');
-    barre.className = 'sp-pl-barre';
-    barre.appendChild(chipFiltre(texte('pluginsFilterAll', 'Tous'), 'tous', tous.length));
-    barre.appendChild(chipFiltre(texte('pluginsFilter7', '7 jours'), '7', null));
-    barre.appendChild(chipFiltre(texte('pluginsFilter30', '30 jours'), '30', null));
-    var nbIntegres = tous.filter(function (p) { return p.integre; }).length;
-    if (nbIntegres) barre.appendChild(chipFiltre(texte('pluginsBuiltin', 'intégrés'), 'integres', nbIntegres));
-    m.corps.appendChild(barre);
-
     /* ── Zone de dépôt ── */
     var zone = el('div', '');
     zone.className = 'sp-pl-zone';
@@ -586,22 +558,23 @@
     });
 
     /* ── Liste ── */
-    var liste = filtrer(tous);
+    /* Plus de filtre : la liste est complète, et le pied ne compte donc plus
+       « n / n » — un compteur qui affiche toujours le même nombre ne dit rien. */
     var boite = el('div', '');
     boite.className = 'sp-pl-liste';
     if (!tous.length) {
       boite.appendChild(el('div', '', texte('pluginsEmpty', 'Aucun plug-in pour le moment.'))).className = 'sp-pl-vide';
-    } else if (!liste.length) {
-      boite.appendChild(el('div', '', texte('pluginsNoMatch', 'Aucun plug-in dans ce filtre.'))).className = 'sp-pl-vide';
     } else {
-      liste.forEach(function (p) { boite.appendChild(carte(p, m)); });
+      tous.forEach(function (p) { boite.appendChild(carte(p, m)); });
     }
     m.corps.appendChild(boite);
 
     /* ── Pied ── */
     var pied = el('div', '');
     pied.className = 'sp-pl-pied';
-    pied.appendChild(el('span', '', liste.length + ' / ' + tous.length)).className = 'sp-pl-compte';
+    /* Le pied ne garde QUE la fermeture. Sans le compteur, `justify-content` est
+       passé à `flex-end` dans la feuille de style : un `space-between` laisserait
+       un vide à gauche qui se lit comme un élément manquant. */
     var bF = petitBouton(texte('close', 'Fermer'), false);
     bF.addEventListener('click', m.fermer);
     pied.appendChild(bF);
@@ -649,7 +622,7 @@
   function ouvrirTrappePlugIn(id) {
     var p = window.SPPlugins.get(id);
 
-    /* 🆕 v1.7.644 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
+    /* 🆕 v1.7.645 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
        Il n'a pas de formulaire à construire : son `run()` ouvre le panneau qu'il
        possède déjà. On l'EXÉCUTE donc directement, sans passer par la trappe
        générique — sinon on aurait deux panneaux pour un seul outil, et un bouton
@@ -676,7 +649,7 @@
     brancherTrappe();
     var bPlug = document.getElementById('openPluginsPanel');
     if (bPlug) bPlug.addEventListener('click', function () {
-      /* ⚠️ v1.7.644 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
+      /* ⚠️ v1.7.645 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
          Il la refermait quand la trappe d'un plug-in était ouverte (« va-et-vient,
          pas une ouverture forcée »). MESURÉ : depuis que « Global Refactor » est un
          plug-in, cela fait deux clics pour l'atteindre — le premier referme la
