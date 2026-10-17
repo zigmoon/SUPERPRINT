@@ -848,10 +848,143 @@ function syncZoomWidgetWithRightSidebar() {
     try {
         document.documentElement.style.setProperty('--sp-sidebar-r', largeur + 'px');
     } catch (_) {}
+    /* ⚠️ v1.7.637 — CETTE VALEUR EST UN POINT DE DÉPART, PAS LA VÉRITÉ. Elle est
+       mesurée avant que la classe `collapsed` n'ait produit son effet, donc elle vaut
+       l'ancienne largeur ; `spPublierLargeursPanneauxDroits()` (juste en dessous) la
+       corrige à chaque image grâce à un ResizeObserver. On garde cet appel pour que
+       le tout premier rendu ne parte pas d'une valeur vide. */
+    try { if (typeof spPublierLargeursPanneauxDroits === 'function') spPublierLargeursPanneauxDroits(); } catch (_) {}
     /* Le style en ligne des versions précédentes est retiré : sans cela, il
        continuerait d'écraser la feuille de style. */
     try { zoomWidget.style.removeProperty('right'); } catch (_) {}
 }
+
+/* ═══ _SP_ECART_ZOOM_637 — LE WIDGET SUIT LA CIBLE, PAS LA LARGEUR EN COURS ═══
+   DÉFAUT MESURÉ : barre latérale déployée (280 px) et trappe ouverte, le widget de
+   zoom se trouvait à 412 px du bord droit au lieu de 636 — soit 224 px de trop à
+   droite, c'est-à-dire PAR-DESSUS les deux panneaux, et il interceptait leurs clics.
+   La variable `--sp-sidebar-r` valait 56px, la largeur REPLIÉE.
+
+   LA CAUSE EST UNE MESURE PRISE AU MAUVAIS MOMENT, pas un mauvais calcul :
+   `syncZoomWidgetWithRightSidebar()` lit `getBoundingClientRect().width` à l'instant
+   où l'on pose la classe `collapsed` — c'est-à-dire AVANT que la transition de largeur
+   n'ait commencé. Elle enregistre donc l'ancienne largeur, et rien ne la corrige
+   ensuite : le décalage est permanent.
+
+   ⚠️ POURQUOI ON PUBLIE LA LARGEUR CIBLE ET NON LA LARGEUR MESURÉE — c'est le point
+   contre-intuitif, et je l'ai vérifié en échantillonnant chaque image d'une bascule.
+   Publier la largeur MESURÉE image par image (ResizeObserver) a d'abord été essayé :
+   le widget suivait, mais avec UNE IMAGE DE RETARD, parce que la taille des panneaux
+   est lue après coup — mesuré, l'écart oscillait entre -324 et 16 px sur la fermeture,
+   et entre 278 et 16 px sur l'ouverture. Invisible à l'œil, mais faux, et toujours
+   pas « la même distance ».
+   En publiant la CIBLE, la variable saute immédiatement à la valeur d'arrivée ; le
+   widget et les panneaux démarrent alors leur animation au même instant, avec la même
+   durée (`--sp-sb-dur`) et la même courbe (`--sp-sb-ease`) — l'écart de 16 px est
+   constant par construction, à chaque image, sans avoir à mesurer quoi que ce soit.
+   C'est pour cela que `.rightbar` et `.mq-trappe` partagent désormais ces deux
+   variables, et que `.zoom-widget` porte la même transition.
+
+   La cible se lit dans la FEUILLE DE STYLE, pas dans une constante : 280/56 px sont
+   les largeurs de `.rightbar` et `.rightbar.collapsed`, et la trappe expose sa
+   largeur ouverte en `max-width` (340 px). Si un point de rupture les change, la
+   valeur publiée suit. Un `transitionend` corrige ensuite sur la valeur mesurée, ce
+   qui rattrape tout écart résiduel une fois l'animation finie. */
+function spPublierLargeursPanneauxDroits() {
+    try {
+        const racine = document.documentElement.style;
+        const sb = document.getElementById('rightSidebar');
+        if (sb) {
+            const cs = getComputedStyle(sb);
+            let w = 0;
+            if (cs.display !== 'none' && cs.visibility !== 'hidden') {
+                /* La largeur d'arrivée : celle de la classe que l'élément porte
+                   MAINTENANT. On demande la valeur à une copie hors flux pour ne
+                   pas dépendre de la largeur en cours d'animation — `cs.width`
+                   renverrait la valeur intermédiaire. */
+                w = sb.classList.contains('collapsed')
+                    ? _spLargeurReglee(sb, '.rightbar.collapsed', 56)
+                    : _spLargeurReglee(sb, '.rightbar', 280);
+            }
+            racine.setProperty('--sp-sidebar-r', Math.round(w) + 'px');
+        }
+        const mq = document.getElementById('maquettePanel');
+        if (mq) {
+            const ouvert = mq.classList.contains('ouvert');
+            let w = 0;
+            if (ouvert) {
+                const mw = parseFloat(getComputedStyle(mq).maxWidth);
+                w = (isFinite(mw) && mw > 0) ? mw : 340;
+            }
+            racine.setProperty('--sp-maquette-l', Math.round(w) + 'px');
+        }
+    } catch (_) {}
+}
+window.spPublierLargeursPanneauxDroits = spPublierLargeursPanneauxDroits;
+
+/* Largeur d'arrivée d'un panneau, lue dans les règles CSS qui le concernent.
+   On parcourt les feuilles pour trouver la DERNIÈRE règle qui fixe `width` sur le
+   sélecteur demandé : c'est celle qui gagne, comme dans la cascade. Le repli couvre
+   le cas d'une feuille cross-origin (illisible) ou d'une valeur en `auto`. */
+function _spLargeurReglee(el, selecteur, repli) {
+    try {
+        let vue = null;
+        for (const sh of document.styleSheets) {
+            let regles; try { regles = sh.cssRules; } catch (_) { continue; }
+            for (const r of regles) {
+                if (!r.selectorText || !r.style || !r.style.width) continue;
+                if (r.selectorText.split(',').some((s) => s.trim() === selecteur)) vue = r.style.width;
+            }
+        }
+        if (vue) {
+            const n = parseFloat(vue);
+            if (isFinite(n) && n > 0) return n;
+        }
+    } catch (_) {}
+    return repli;
+}
+
+(function installerSuiviPanneauxDroits() {
+    try {
+        if (window._spSuiviPanneauxDroits) return;
+        window._spSuiviPanneauxDroits = true;
+        const panneaux = () => ['rightSidebar', 'maquettePanel']
+            .map((id) => document.getElementById(id)).filter(Boolean);
+        /* La classe est le seul signal qui dise « ouverture demandée » : on le suit
+           sur les deux panneaux, quelle que soit la fonction qui la pose. Publier
+           ici, c'est publier DANS LA MÊME IMAGE que le début de l'animation. */
+        const observer = new MutationObserver(() => spPublierLargeursPanneauxDroits());
+        panneaux().forEach((el) => observer.observe(el, { attributes: true, attributeFilter: ['class'] }));
+        /* Correction de fin d'animation : à l'arrêt, cible et mesure coïncident.
+           Elle rattrape aussi les changements de largeur qui ne passent pas par la
+           classe (point de rupture, largeur forcée). */
+        panneaux().forEach((el) => {
+            el.addEventListener('transitionend', (e) => {
+                if (e.propertyName === 'width') spPublierLargeursPanneauxDroits();
+            });
+        });
+        window.addEventListener('resize', spPublierLargeursPanneauxDroits);
+        /* Largeur réelle du widget de zoom, pour la borne `min()` de la feuille de
+           style : sans elle, une fenêtre étroite avec les deux panneaux ouverts
+           poussait le widget hors de l'écran par la gauche. On observe le widget
+           lui-même — sa largeur change avec la langue et le nombre de boutons — mais
+           on ne publie QUE sa largeur : sa position ne dépend pas d'elle, donc
+           aucune boucle d'observation possible. */
+        try {
+            const zw = document.getElementById('zoomWidget');
+            if (zw && typeof ResizeObserver === 'function') {
+                const ro = new ResizeObserver(() => {
+                    const w = zw.offsetWidth;
+                    if (w > 0) document.documentElement.style.setProperty('--sp-zoom-w', w + 'px');
+                });
+                ro.observe(zw);
+                if (zw.offsetWidth > 0) document.documentElement.style.setProperty('--sp-zoom-w', zw.offsetWidth + 'px');
+            }
+        } catch (_) {}
+        spPublierLargeursPanneauxDroits();
+    } catch (_) {}
+})();
+
 
 function syncMobileSidebarBackdrop() {
     const backdrop = ensureMobileSidebarBackdrop();

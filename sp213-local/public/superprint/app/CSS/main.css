@@ -2213,7 +2213,7 @@ textarea[data-fabric-hiddentextarea] {
     border-left: 1px solid #e0e0e0; 
     overflow-y: auto; 
     overflow-x: hidden;
-    transition: width 0.3s ease;
+    transition: width var(--sp-sb-dur, 260ms) var(--sp-sb-ease, cubic-bezier(.2, .7, .2, 1));
     scrollbar-gutter: stable;
     user-select: none;
     -webkit-user-select: none;
@@ -4190,7 +4190,18 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
        `--sp-sidebar-r` par la barre latérale, `--sp-maquette-l` par la trappe — et
        le calcul vit dans la feuille de style. Aucun style en ligne ne peut plus
        diverger, et un élément flottant posé sur <body> les lit comme les autres. */
-    right: calc(var(--sp-sidebar-r, 280px) + var(--sp-maquette-l, 0px) + 16px); /* barre latérale + trappe + marge */
+    /* ⚠️ LA BORNE `min()` EMPÊCHE LE WIDGET DE SORTIR PAR LA GAUCHE. Sur une
+       fenêtre étroite où les deux panneaux sont ouverts (mesuré : 500 px de large,
+       trappe 340 + barre 56), la place restante est inférieure à la largeur du
+       widget : sans borne il partait à -127 px, hors de l'écran. `--sp-zoom-w` est
+       la largeur réelle du widget, publiée par un ResizeObserver (sa largeur change
+       avec la langue et le nombre de boutons). La borne ne s'applique que dans ce
+       cas dégénéré : en usage normal, `min()` choisit la première valeur et rien ne
+       change. */
+    right: max(16px, min(
+        calc(var(--sp-sidebar-r, 280px) + var(--sp-maquette-l, 0px) + 16px),
+        calc(100vw - var(--sp-zoom-w, 223px) - 8px)
+    )); /* barre latérale + trappe + marge, borné au bord gauche */
     /* ⚠️ v1.7.636 — LA COURBE EST CELLE DE LA TRAPPE, PAS UNE AUTRE. Le widget
        portait `0.3s ease` alors que la trappe et la barre latérale animent sur
        `--sp-sb-dur` (260 ms) avec `--sp-sb-ease` (cubic-bezier(.2,.7,.2,1), une
@@ -4211,6 +4222,15 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
     align-items: center;
     gap: 4px;
     backdrop-filter: saturate(1.2) blur(2px);
+    /* ⚠️ v1.7.637 — LA MÊME DURÉE ET LA MÊME COURBE QUE LES DEUX PANNEAUX.
+       `--sp-sidebar-r` et `--sp-maquette-l` reçoivent la largeur CIBLE dès que la
+       classe du panneau change (voir `spPublierLargeursPanneauxDroits` dans main.js),
+       donc le widget et les panneaux démarrent leur animation au même instant. En
+       partageant `--sp-sb-dur` (260 ms) et `--sp-sb-ease`, l'écart de 16 px est
+       constant à chaque image, sans mesure ni correction.
+       MESURÉ AVANT : `--sp-sidebar-r` restait figée sur la largeur repliée (56 px),
+       et le widget finissait à 412 px du bord au lieu de 636 — par-dessus les deux
+       panneaux, où il interceptait leurs clics. */
     transition: right var(--sp-sb-dur, 260ms) var(--sp-sb-ease, cubic-bezier(.2, .7, .2, 1));
 }
 
@@ -6035,10 +6055,28 @@ input[type=number] {
     justify-content: space-between;
     gap: 8px;
     padding: 0 10px;
-    height: 34px;
+    /* ⚠️ v1.7.637 — 56 px, COMME LE BANDEAU DE LA TRAPPE « TRANSFORM », ET PAS 34.
+       Les deux panneaux sont côte à côte au bord droit ; avec un bandeau de 34 px
+       contre 56, les deux titres ne tombaient pas sur la même ligne et le contenu
+       commençait 22 px plus haut d'un panneau à l'autre. MESURÉ avant : `.mq-head`
+       34 px, `.rightbar-header` 56 px (hauteur posée en style en ligne dans
+       index.html). La valeur est écrite ici en dur, comme celle d'en face, plutôt
+       que déduite : ce sont deux éléments de deux modules différents.
+       Le fond et le filet suivent aussi celui de la barre latérale, sinon la barre
+       du haut se lirait en deux morceaux de gris différents. */
+    height: 56px;
     flex: 0 0 auto;
     border-bottom: 1px solid #e0e0e0;
-    background: #f4f4f4;
+    background: #fff;
+}
+/* ⚠️ `!important` EST ICI PAR SYMÉTRIE, PAS PAR BRUTALITÉ : la règle jumelle
+   `.theme-dark .rightbar-header` en porte un aussi (dans ce même fichier). Sans lui,
+   un `.theme-dark .mq-sec`-like plus spécifique repeignait le bandeau en #262626
+   alors que celui d'à côté est en #1e1e1e — mesuré, deux gris différents sur une
+   barre qui doit se lire d'un seul tenant. */
+.theme-dark .mq-head {
+    background: #1e1e1e !important;
+    border-bottom-color: #333 !important;
 }
 .mq-title {
     font-size: 10px;
@@ -6066,6 +6104,25 @@ input[type=number] {
     overflow-x: hidden;
     padding: 4px 0 10px;
 }
+
+/* ⚠️ v1.7.637 — LA BARRE DE DÉFILEMENT EST CELLE DU RESTE DU PROJET.
+   Sans ces règles, `.mq-corps` gardait la barre NATIVE du navigateur : MESURÉ
+   15 px de large sur Windows, contre 7 px pour la barre latérale voisine, avec
+   flèches et rails gris système. Deux panneaux côte à côte, deux barres
+   différentes, et 8 px de largeur de contenu en moins.
+   Les valeurs sont recopiées de `.rightbar` (6 px, pouce #ccc arrondi 3 px, rail
+   transparent) : ce sont exactement les règles de la barre latérale qu'on voit
+   juste à côté, donc la comparaison est immédiate.
+   ⚠️ ON N'UTILISE PAS `scrollbar-width`/`scrollbar-color` ICI : mesuré, dès que
+   `scrollbar-width` est présent Chromium IGNORE les pseudo-éléments WebKit et
+   revient à sa barre fine standard — 10 px au lieu des 7 px de la barre latérale.
+   C'est le même choix que `.rightbar`, qui n'a que les règles WebKit. */
+.mq-corps::-webkit-scrollbar { width: 6px; height: 6px; }
+.mq-corps::-webkit-scrollbar-track { background: transparent; }
+.mq-corps::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+.mq-corps::-webkit-scrollbar-thumb:hover { background: #aaa; }
+.theme-dark .mq-corps::-webkit-scrollbar-thumb { background: #444; }
+.theme-dark .mq-corps::-webkit-scrollbar-thumb:hover { background: #555; }
 
 /* ── Sections ── */
 .mq-sec { padding: 8px 10px 10px; border-bottom: 1px solid #ececec; }
