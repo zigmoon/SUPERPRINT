@@ -2309,7 +2309,13 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    trois entrées, et chaque filet vertical tombe sous le bord gauche de la carte
    correspondante. */
 .fondations-grid {
-  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+  display: grid;
+  /* 🆕 v1.7.655 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+     Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
+     bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
+     363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
+     quatre cases d'information se partagent le reste à parts égales. */
+  grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
   /* 🆕 v1.7.654 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
@@ -2345,6 +2351,36 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
+/* 🆕 v1.7.655 — LE CARRÉ WHATSAPP DE LA BARRE.
+   Même dessin, même numéro, même `aria-label` que la bulle flottante : c'est le
+   MÊME lien, transporté dans la barre pour ne plus flotter au-dessus du contenu.
+   Au repos : aucun fond, l'encre du texte. Au survol : carré d'encre, pictogramme
+   de papier — l'inversion est celle des boutons du site, et elle n'ajoute aucune
+   couleur (le vert de la marque n'entre nulle part dans cette page).
+   ⚠️ 44 px, ET PAS LA TAILLE D'UNE ICÔNE : c'est la plus petite cible tactile
+   confortable, et elle reste confortable à la souris.
+   ⚠️ `.fondation-wa` N'EST PAS UNE `.fondation` : elle n'a ni nom ni description,
+   donc elle ne doit pas hériter du soulignement de `.fondation:hover`. */
+.fondation-wa {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; flex: 0 0 auto;
+  border: 1px solid var(--line-strong); color: var(--ink);
+  text-decoration: none;
+  transition: background .22s var(--ease), border-color .22s var(--ease), color .22s var(--ease);
+}
+.fondation-wa svg { display: block; width: 24px; height: 24px; fill: currentColor; }
+.fondation-wa:hover, .fondation-wa:focus-visible {
+  background: var(--ink); border-color: var(--ink); color: var(--paper);
+}
+.fondation-wa:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .fondation-wa { transition: none; } }
+/* ⚠️ SOUS 901 px, LE CARRÉ S'EFFACE ET LA BULLE REPREND LE RELAIS.
+   Sans cette règle les deux existeraient : la barre empilée porterait un carré
+   WhatsApp, ET la bulle flotterait par-dessus — deux commandes pour le même numéro,
+   sur un écran où la place est comptée. La bulle est le bon objet en mobile : elle
+   reste atteignable au pouce quand la barre, elle, défile avec la page. */
+@media (max-width: 900px) { .fondation-wa { display: none; } }
+
 /* Même seuil que les trois entrées du dessus (voir .entries) : sous 900 px on
    empile, sinon le trio laisserait un trou dans la trame. */
 @media (max-width: 900px) {
@@ -2390,12 +2426,16 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     On relève donc le conteneur — et SEULEMENT CELUI QUI PORTE LA BARRE (`:has`),
-     pour ne rien changer aux cinq autres ni aux pages sans barre. La valeur 3 passe
-     devant les cinq conteneurs restés à 2, et reste loin SOUS tout ce qui doit
-     continuer de couvrir la barre : la barre de navigation (120), la bulle WhatsApp
-     (100), le menu mobile (118), les fenêtres légales (300). */
-  .container:has(.fondations) { z-index: 3; }
+     🆕 v1.7.655 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
+     des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
+     DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
+     amené à hauteur de barre : recouvrement de 15 px, et `elementFromPoint` rendait
+     `tpl-arrow tpl-prev` — le clic visait le chevron, sous la barre.
+     40 passe devant tout le contenu de page (2 et 3) tout en restant SOUS ce qui doit
+     couvrir la barre : la bulle WhatsApp mobile (100), le menu mobile (118), la
+     navigation (120) et les fenêtres légales (300). */
+  .container:has(.fondations) { z-index: 40; }
 
   /* ⚠️ HAUTEUR FIXE, ET C'EST LE POINT DÉLICAT DE TOUTE LA BARRE. `--barre-h` sert à
      dégager le pied de page : réserver une valeur devinée serait toujours faux, car
@@ -2720,6 +2760,20 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 }
 @media (prefers-reduced-motion: reduce) { .sp-wa { transition: none; } }
 @media print { .sp-wa { display: none; } }
+
+/* 🆕 v1.7.655 — LA BULLE FLOTTANTE N'EXISTE PLUS QU'EN MOBILE.
+   Demande utilisateur : « mets le bouton WhatsApp directement dans la barre plutôt
+   que flottant, cependant garde-le bien en mobile (cette bulle WhatsApp est à
+   conserver en mobile) ». Sous 901 px la barre n'est plus fixe — elle défile avec
+   la page — donc une entrée WhatsApp y serait invisible neuf fois sur dix. La bulle
+   reprend le relais là où elle est la plus utile.
+   Au-dessus de 901 px, les deux existeraient côte à côte : deux boutons pour le
+   même numéro, dont un qui masque le contenu. On n'en garde qu'un.
+   ⚠️ CETTE RÈGLE EST APRÈS `.sp-wa`, ET C'EST INDISPENSABLE. À spécificité égale
+   (0,1,0 de part et d'autre), c'est la dernière déclarée qui gagne : placée avant,
+   elle était écrasée par le `display: flex` de la bulle. Mesuré : la bulle restait
+   visible en desktop malgré la règle écrite. */
+@media (min-width: 901px) { .sp-wa { display: none; } }
 
 /* _PAGE_ROCK_588 — la page ROCK v1 vit désormais dans rock.html. */
 </style>
@@ -3061,6 +3115,22 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <span class="fondation-desc"><span class="inline-fr">Le noyau de calcul, sûr et prévisible.</span><span class="inline-en">The computing core: safe and predictable.</span><span class="inline-ja">安全で予測可能な計算コア。</span></span>
           </span>
         </a>
+
+            <!-- 🆕 v1.7.655 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
+                 Demande utilisateur : « à la fin du footer fixe en carré mets le bouton
+                 WhatsApp directement, cela sera plus simple directement dans la barre
+                 plutôt que flottant ; cependant garde-le bien en mobile (cette bulle
+                 WhatsApp est à conserver en mobile) ».
+                 C'est donc le MÊME dessin et le MÊME numéro que la bulle flottante, mais
+                 posé dans la barre : un carré de 44 px, sans fond, qui prend l'encre au
+                 survol — le vocabulaire des trois autres cases.
+                 ⚠️ LA BULLE FLOTTANTE N'EST PAS SUPPRIMÉE, ELLE EST MASQUÉE EN DESKTOP
+                 (voir `.sp-wa` sous 901 px). La supprimer du balisage aurait fait
+                 disparaître la seule entrée WhatsApp des téléphones. -->
+            <a class="fondation-wa" href="https://wa.me/33671614110" target="_blank" rel="noopener noreferrer"
+               title="WhatsApp — +33 6 71 61 41 10" aria-label="WhatsApp — +33 6 71 61 41 10">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="24" height="24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            </a>
 
       </div>
     </div>
