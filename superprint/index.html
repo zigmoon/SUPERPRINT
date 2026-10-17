@@ -883,14 +883,19 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   /* ⚠️ LE DÉBORD DE L'ITALIQUE DOIT ÊTRE PEINT, SINON IL DISPARAÎT.
      `background-clip: text` ne peint le dégradé QUE dans la boîte de remplissage
      de l'élément, et le texte est découpé à l'intersection des deux. Or une
-     italique déborde à droite de son avance : MESURÉ sur « libère votre
-     créativité », Playfair italic 96 px — avance 898,6 px, encre jusqu'à 906 px,
-     soit 7,4 px d'encre HORS de la boîte. Comme la couleur est transparente,
-     ces 7,4 px n'ont aucun dégradé et deviennent invisibles : le « é » final
-     paraît coupé. Le rembourrage élargit la zone peinte ; la marge négative
-     annule son effet sur la mise en page, donc le centrage ne bouge pas. */
-  padding: 0 .1em;
-  margin: 0 -.1em;
+     italique déborde à droite de son avance. MESURÉ (Playfair et sans italique,
+     `getClientRects` d'un Range sur la ligne) à toutes les tailles du clamp :
+     ce débord vaut 0,104 em quelle que soit la taille — 10,0 px à 96 px,
+     8,0 px à 77 px, 6,0 px à 57,4 px, 4,2 px à 40 px, sur « from idea to print »
+     comme sur « アイデアから印刷へ。 ». Comme la couleur est transparente, cette
+     bande n'a aucun dégradé et devient invisible : la dernière lettre paraît
+     coupée. Un rembourrage de .1em laissait 0,004 em (0,4 px) d'encre dehors —
+     donc encore un pixel rogné ; .14em laisse 0,036 em de marge (3,5 px à 96 px).
+     La marge négative annule l'effet du rembourrage sur la mise en page : le
+     centrage et les retours à la ligne sont inchangés (vérifié, mêmes comptes de
+     lignes avec .1em et .14em). */
+  padding: 0 .14em;
+  margin: 0 -.14em;
 }
 /* Pastilles quadri CMJN centrées — sous l'installeur */
 .hero-dots {
@@ -2809,9 +2814,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <div class="hero-kicker" data-lang="en">The first DTP software, 100% online</div>
     <div class="hero-kicker" data-lang="ja">100%オンラインのNo.1レイアウトデスク</div>
 
-    <h1 data-lang="fr"><span class="line">la mise en page intelligente</span> <span class="line"><em class="italic">libère votre créativité</em></span></h1>
-    <h1 data-lang="en"><span class="line">The professional</span> <span class="line">page layout,</span> <span class="line"><em class="italic">in your browser.</em></span></h1>
-    <h1 data-lang="ja"><span class="line">プロ仕様の</span> <span class="line">ページレイアウトを、</span> <span class="line"><em class="italic">ブラウザで。</em></span></h1>
+    <h1 data-lang="fr"><span class="line">la mise en page intelligente</span> <span class="line"><em class="italic">de l'idée à l'impression</em></span></h1>
+    <h1 data-lang="en"><span class="line">intelligent layout</span> <span class="line"><em class="italic">from idea to print</em></span></h1>
+    <h1 data-lang="ja"><span class="line">賢いレイアウト</span> <span class="line"><em class="italic">アイデアから印刷へ。</em></span></h1>
 
     <!-- ══════════════ TROIS ENTRÉES — APP, STUDIO, SUPERTYPO ══════════════
      Le pied de chaque bloc dit « Open Web App » : c'est le NOM de l'action, pas
