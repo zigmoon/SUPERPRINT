@@ -39,7 +39,7 @@
 
 <p align="center">
   <a href="https://superprint.cc">
-    <img src="https://raw.githubusercontent.com/zigmoon/SUPERPRINT/main/superprint/superprint_readme.png"
+    <img src="https://raw.githubusercontent.com/zigmoon/SUPERPRINT/main/superprint/superprint_readme.webp"
          alt="SuperPrint — the DTP desk in your browser: pages, guides, prepress and export" width="900">
   </a>
 </p>
