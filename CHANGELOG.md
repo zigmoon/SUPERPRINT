@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -6,6 +6,41 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **Full release notes** (trilingual FR / EN / JP, with detail) are published at **https://app.zigmoon.com/release.html**.
 - Every release is git-tagged `v1.7.NNN` — see the [Releases](https://github.com/zigmoon/SUPERPRINT/tags) tab.
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
+
+---
+
+## [1.7.633] — 2026-10-16
+
+_Les widgets du bord droit suivent la trappe, l'icône devient celle de ses voisines, et la trappe gagne des tirettes_
+
+> **Pourquoi cette version existe.** Trois retours d'un seul message, et **les trois ont été mesurés avant d'être corrigés** — parce que les deux premiers, lus dans le code, auraient envoyé au mauvais endroit.
+
+### Fixed — les widgets ne passent plus sous la trappe
+
+- **Le défaut, mesuré dans le navigateur de l'utilisateur**, trappe ouverte : le widget de zoom restait **à 72 px du bord droit** — à `1215-1430` — alors que la trappe occupait `1162-1502`. Il était donc **entièrement dessous**. La phrase de l'utilisateur le disait exactement : « il flotte actuellement par-dessous la colonne ».
+- ⚠️ **La cause n'était pas un calcul faux, mais TROIS écrivains pour une seule propriété** : la feuille de style, un style en ligne posé par `syncZoomWidgetWithRightSidebar()`, et une **copie du même calcul** au démarrage qui, elle, **ignorait la trappe**. Le style en ligne gagnant sur la feuille de style, c'est la copie périmée qui décidait. C'est le genre de défaut qu'aucune relecture ne trouve : chaque écrivain, lu seul, est correct.
+- **Il n'en reste qu'un** : les deux largeurs — barre latérale et trappe — sont **publiées, mesurées**, sur la racine du document, et le calcul vit dans la feuille de style. Aucun style en ligne ne peut plus diverger.
+- **Deux autres panneaux avaient le même défaut**, corrigés de même : l'étiquette de simulation CMJN, figée à 296 px du bord droit, et le panneau **Rechercher & Remplacer** — large de 400 px et figé à 300 px — qui sert tous les jours.
+- **Vérifié à quatre largeurs de fenêtre** — 1700, 1502, 1280 et 1100 px : le widget se décale **exactement** de la largeur de la trappe, ne passe plus dessous, reste dans la zone de travail, et **plus aucun style en ligne** ne fixe sa position — preuve que le second écrivain a disparu, et non qu'il a été corrigé à moitié.
+
+### Changed — la trappe gagne des tirettes, et aucune n'est décorative
+
+- La trappe passe de **5 à 8 tirettes** et de **7 à 9 sections** : **interlettrage**, **graisse**, **italique**, plus une section **Grille** et une section **Ligne de base**.
+- **Mesuré avant d'être exposé** : l'interlettrage s'applique au bloc (`0` puis `150` en millièmes de cadratin), la graisse passe à `bold`, l'italique à `italic`, la grille fait passer la vue de **4 à 14 objets**, et la ligne de base de **14 à 79** — puis de **79 à 31** quand le pas passe de 4 à 16 mm, un pas plus grand donnant logiquement moins de lignes. C'est ce dernier chiffre qui prouve que la tirette agit vraiment.
+- ⚠️ **Un piège mesuré a fait écarter une sonde entière** : ces réglages ne répondent **que si la grille est visible**, car les gestionnaires de l'application sont gardés par leur état de visibilité — régler la couleur d'une grille éteinte ne fait **strictement rien**. La première sonde actionnait `#toggleGrid`, qui ne fait qu'*ouvrir un widget* : elle relevait des comptes à zéro, ce qui ne disait rien du produit. D'où l'ordre imposé dans `appliquerGrille()` : **on allume d'abord, on règle ensuite**.
+- **Les repères de colonnes rouges ne sont PAS exposés** : mesurés, ils ne répondent pas — 36 objets avant, 36 après, l'état `cols` resté à 0. Une tirette qui ne fait rien serait exactement le défaut qu'on veut éviter.
+- ⚠️ **Une perte de travail évitée** : interlettrage, graisse et italique ont des valeurs par défaut parfaitement légitimes (`0`, `normal`, `normal`). Les lire sans condition aurait fait que « Refaire la maquette » **remette à zéro** l'interlettrage d'un document qui en a. Ils ne s'appliquent donc qu'après un geste sur leur propre commande — et la suite vérifie précisément ce point.
+
+### Fixed — l'icône reprend celle du studio IA
+
+- **Mesuré avant correction** : notre bouton portait la classe `btn` toute seule, mesurait **38×32** au lieu de **32×32**, et surtout affichait `border: 1px solid #1a1a1a` **au repos**, qui devenait noir plein **au survol** — d'où le mot « horrible » — alors que ses voisines n'ont aucun contour.
+- Il porte désormais **la classe des voisines** (`btn btn-square`), **la même taille**, et **aucun contour** — au repos **comme en survol** — et prend le même fond qu'elles au survol.
+- Et le **dessin est celui du studio** : trois tirettes, qui disent « réglages » là où une page coupée en colonnes disait « maquette ».
+
+### Verification
+
+- **Nouvelle suite `_verif_maquette_633.mjs` : 109 assertions, 0 échec, en TROIS moteurs** — Chromium, WebKit 26.6 et le **WebKit 16.0 de macOS Monterey** — les widgets étant en plus mesurés à **quatre largeurs de fenêtre**.
+- **Batterie complète : 15 suites sur 15 vertes — 725 assertions, 0 échec.**
 
 ---
 

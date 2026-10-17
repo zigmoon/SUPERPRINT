@@ -813,7 +813,7 @@ function syncZoomWidgetWithRightSidebar() {
     const zoomWidget = document.getElementById('zoomWidget');
     if (!rightSidebar || !zoomWidget) return;
 
-    /* ⚠️ v1.7.632 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
+    /* ⚠️ v1.7.635 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
        Cette fonction place le widget de zoom juste à gauche de la barre latérale
        droite. Or la trappe est un PANNEAU FIXE qui, lui aussi, occupe le bord
        droit : sans cette ligne, le widget tombait PAR-DESSUS elle et interceptait
@@ -823,16 +823,34 @@ function syncZoomWidgetWithRightSidebar() {
        défaut qu'aucune relecture ne trouve : les deux éléments sont corrects
        séparément, c'est leur superposition qui casse.
 
-       On passe par une VARIABLE CSS plutôt que par une largeur en dur : la trappe
-       publie `--sp-maquette-l`, et le widget la suit. Une largeur recopiée ici
-       divergerait le jour où la trappe change de taille. Quand la trappe est
-       fermée la variable vaut 0px, donc le calcul redonne EXACTEMENT la valeur
-       d'avant (280px + 16px, ou 56px + 16px repliée) : rien ne bouge.
-       ⚠️ Le widget ne l'affiche que si `#mainApp` porte la variable — la trappe
-       publie donc sur `#mainApp`, qui contient le widget comme la trappe. */
-    const rightVal = rightSidebar.classList.contains('collapsed')
-        ? 'calc(56px + var(--sp-maquette-l, 0px) + 16px)' : 'calc(280px + var(--sp-maquette-l, 0px) + 16px)';
-    zoomWidget.style.right = rightVal;
+       ⚠️ v1.7.635 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
+       C'est une correction de fond, pas un ajustement. Il y avait DEUX écrivains
+       pour la même propriété : cette fonction, et une copie du même calcul au
+       démarrage AVEC la trappe ; et la règle CSS en portait un troisième, écrasé
+       par le style en ligne. Mesuré chez l'utilisateur, trappe ouverte : le widget
+       restait à 72 px du bord droit, c'est-à-dire entièrement SOUS la trappe
+       (widget 1215-1430, trappe 1162-1502), au lieu de la suivre.
+       La position est donc calculée à UN SEUL endroit — la feuille de style — à
+       partir de deux largeurs publiées sur :root : celle de la barre latérale,
+       MESURÉE (plus de 280/56 devinés), et celle de la trappe. Comme :root est la
+       racine du document, tout élément flottant peut les lire, y compris ceux qui
+       sont posés sur <body> et non dans #mainApp — ce que #mainApp ne permettait
+       pas. Aucun style en ligne ne peut plus diverger. */
+    const repliee = rightSidebar.classList.contains('collapsed');
+    let largeur = 0;
+    try {
+        const r = rightSidebar.getBoundingClientRect();
+        if (r && r.width > 0) largeur = Math.round(r.width);
+    } catch (_) {}
+    /* Un élément `display: none` (mobile, mode dédié) mesurerait 0 : on garde alors
+       la valeur historique, sinon le widget viendrait se coller au bord droit. */
+    if (!largeur) largeur = repliee ? 56 : 280;
+    try {
+        document.documentElement.style.setProperty('--sp-sidebar-r', largeur + 'px');
+    } catch (_) {}
+    /* Le style en ligne des versions précédentes est retiré : sans cela, il
+       continuerait d'écraser la feuille de style. */
+    try { zoomWidget.style.removeProperty('right'); } catch (_) {}
 }
 
 function syncMobileSidebarBackdrop() {
@@ -1070,16 +1088,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // ✨ NOUVEAU : Initialiser le positionnement du zoom-widget selon l'état de la sidebar droite
             setTimeout(() => {
-                const rightSidebar = document.getElementById('rightSidebar');
-                const zoomWidget = document.getElementById('zoomWidget');
-                if (rightSidebar && zoomWidget) {
-                    if (rightSidebar.classList.contains('collapsed')) {
-                        zoomWidget.style.right = 'calc(56px + 16px)';
-                    } else {
-                        zoomWidget.style.right = 'calc(280px + 16px)';
-                    }
-                }
-                
+                /* ⚠️ v1.7.635 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
+                   CAUSAIT LE DÉFAUT. Elle écrivait `zoomWidget.style.right` en dur
+                   (« calc(56px + 16px) »), SANS la largeur de la trappe, alors que la
+                   fonction deux lignes plus bas écrit la même chose AVEC la trappe. Deux
+                   écrivains pour la même propriété, dont un périmé : MESURÉ dans le
+                   navigateur de l'utilisateur, trappe ouverte, le widget restait ancré à
+                   72 px du bord droit — donc ENTIÈREMENT SOUS la trappe (mesuré : widget
+                   1215-1430, trappe 1162-1502) au lieu de la suivre. L'utilisateur l'a
+                   décrit exactement ainsi : « il flotte actuellement par-dessous la
+                   colonne ». Le bon écrivain étant celui qui suit immédiatement, il
+                   suffit de le laisser faire. */
                 syncZoomWidgetWithRightSidebar();
                 
                 // ✨ MENU BURGER MOBILE : Initialiser les event listeners
@@ -4346,7 +4365,7 @@ if (window._spGpuEnabled) {
         };
     }
 
-    /* ══ v1.7.632 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+    /* ══ v1.7.635 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
 
        `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
        WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
@@ -4783,7 +4802,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.632 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.635 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5382,7 +5401,7 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        /* ══ v1.7.632 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
+        /* ══ v1.7.635 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
            RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
            bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
@@ -51136,7 +51155,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.632 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.635 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -51284,7 +51303,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.632) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.635) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
@@ -70225,7 +70244,82 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         groupTitle: "Grouper la sélection",
         ungroupTitle: "Dégrouper la sélection",
         aiAssistantTitle: "Prompt IA — décrire une maquette",
-        maquetteTitle: "Réglages de la maquette",
+        maquetteTitle: "Global Refactor",
+        /* ⚠️ v1.7.634 — LES LIBELLÉS DE « GLOBAL REFACTOR ». Le NOM du module ne se
+           traduit pas : c'est un nom de fonction, comme « Rock » ou « Studio IA ». Ce qui
+           se traduit, c'est tout ce que le panneau affiche — sections, champs, pastilles
+           et compte rendu — parce que l'application existe en trois langues et que
+           l'utilisateur l'a demandé explicitement. */
+        mqSecFormat: "Format",
+        mqSecMarges: "Marges",
+        mqSecColonnes: "Colonnes",
+        mqSecPagination: "Pagination",
+        mqSecTypo: "Typographie",
+        mqSecGrille: "Grille",
+        mqSecBase: "Ligne de base",
+        mqSecPalette: "Palette",
+        mqSecRefonte: "Refonte",
+        mqUnite: "Unité",
+        mqLargeur: "Largeur",
+        mqHauteur: "Hauteur",
+        mqFondPerdu: "Fond perdu",
+        mqHaut: "Haut",
+        mqBas: "Bas",
+        mqInterieur: "Intérieur",
+        mqExterieur: "Extérieur",
+        mqGouttiere: "Gouttière",
+        mqPiedUnite: "po",
+        mqAucune: "Aucune",
+        mqPosBasCentre: "Bas · centre",
+        mqPosBasGauche: "Bas · gauche",
+        mqPosBasDroite: "Bas · droite",
+        mqPosBasExterieur: "Bas · extérieur",
+        mqPosHautCentre: "Haut · centre",
+        mqPosHautGauche: "Haut · gauche",
+        mqPosHautDroite: "Haut · droite",
+        mqPosHautExterieur: "Haut · extérieur",
+        mqPalEncre: "Encre",
+        mqPalArdoise: "Ardoise",
+        mqPalBordeaux: "Bordeaux",
+        mqPalEncreDouce: "Encre douce",
+        mqPalNuit: "Nuit",
+        mqRecaler: "Recaler les blocs sur les colonnes",
+        mqRecalerAide: "Replace chaque bloc dans la colonne où se trouve son centre, et l'élargit à cette colonne",
+        mqCadres: "Cadres ajustés au texte",
+        mqCadresAide: "La hauteur des cadres suit leur contenu au lieu de rester fixe",
+        mqRefaire: "Refaire la maquette",
+        mqPaletteAppliquer: "Appliquer la palette",
+        mqNumPage: "Numéroter les pages",
+        mqPosition: "Position",
+        mqStyle: "Style",
+        mqPolice: "Police",
+        mqCorps: "Corps",
+        mqInterligne: "Interligne",
+        mqInterlettrage: "Interlettrage",
+        mqGras: "Graisse",
+        mqNormale: "Normale",
+        mqGras2: "Gras",
+        mqStyleTxt: "Style",
+        mqDroit: "Droit",
+        mqItalique: "Italique",
+        mqCouleur: "Couleur",
+        mqAlignement: "Alignement",
+        mqGauche: "Gauche",
+        mqCentre: "Centré",
+        mqDroite: "Droite",
+        mqJustifie: "Justifié",
+        mqGrilleAfficher: "Afficher la grille",
+        mqGrilleAfficherAide: "La grille de composition et sa couleur",
+        mqGrillePleine: "Pleine page",
+        mqGrillePleineAide: "Ignorer les marges : la grille couvre toute la page",
+        mqBaseAfficher: "Afficher la ligne de base",
+        mqBaseAfficherAide: "Les lignes d'alignement vertical du texte",
+        mqPas: "Pas",
+        mqDecalage: "Décalage",
+        mqTexte: "Texte",
+        mqAccent: "Accent",
+        mqApercuDirect: "Aperçu en direct",
+        mqFermer: "Fermer",
         /* 🆕 Clés de la configuration IA, désormais dans l'ONGLET IA des
            Préférences, plus celles de la bannière de la boîte de prompt. */
         settingsAiOk: "Une clé est enregistrée.",
@@ -71192,7 +71286,84 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         groupTitle: "Group selection",
         ungroupTitle: "Ungroup selection",
         aiAssistantTitle: "AI prompt — describe a layout",
-        maquetteTitle: "Layout settings",
+        maquetteTitle: "Global Refactor",
+        /* ⚠️ v1.7.634 — THE LABELS OF "GLOBAL REFACTOR". The module's NAME is not
+           translated: it is a feature name, like "Rock" or "Studio IA". Everything the
+           panel displays is — sections, fields, chips and the status line. */
+        mqSecFormat: "Format",
+        mqSecMarges: "Margins",
+        mqSecColonnes: "Columns",
+        mqSecPagination: "Pagination",
+        mqSecTypo: "Typography",
+        mqSecGrille: "Grid",
+        mqSecBase: "Baseline",
+        mqSecPalette: "Palette",
+        mqSecRefonte: "Refactor",
+        mqUnite: "Unit",
+        mqLargeur: "Width",
+        mqHauteur: "Height",
+        mqFondPerdu: "Bleed",
+        mqHaut: "Top",
+        mqBas: "Bottom",
+        mqInterieur: "Inner",
+        mqExterieur: "Outer",
+        mqGouttiere: "Gutter",
+        mqPiedUnite: "in",
+        mqAucune: "None",
+        mqPosBasCentre: "Bottom · centre",
+        mqPosBasGauche: "Bottom · left",
+        mqPosBasDroite: "Bottom · right",
+        mqPosBasExterieur: "Bottom · outer",
+        mqPosHautCentre: "Top · centre",
+        mqPosHautGauche: "Top · left",
+        mqPosHautDroite: "Top · right",
+        mqPosHautExterieur: "Top · outer",
+        mqPalEncre: "Ink",
+        mqPalArdoise: "Slate",
+        mqPalBordeaux: "Claret",
+        mqPalEncreDouce: "Soft ink",
+        mqPalNuit: "Night",
+        mqRecaler: "Snap blocks to the columns",
+        mqRecalerAide: "Puts each block in the column its centre falls into, and widens it to that column",
+        mqCadres: "Frames fitted to text",
+        mqCadresAide: "Frame height follows its content instead of staying fixed",
+        mqRefaire: "Rebuild the layout",
+        mqPaletteAppliquer: "Apply the palette",
+        mqNumPage: "Number the pages",
+        mqPosition: "Position",
+        mqStyle: "Style",
+        mqPolice: "Typeface",
+        mqCorps: "Size",
+        mqInterligne: "Leading",
+        mqInterlettrage: "Letter spacing",
+        mqGras: "Weight",
+        mqNormale: "Regular",
+        mqGras2: "Bold",
+        mqStyleTxt: "Style",
+        mqDroit: "Upright",
+        mqItalique: "Italic",
+        mqCouleur: "Colour",
+        mqAlignement: "Alignment",
+        mqGauche: "Left",
+        mqCentre: "Centred",
+        mqDroite: "Right",
+        mqJustifie: "Justified",
+        mqGrilleAfficher: "Show the grid",
+        mqGrilleAfficherAide: "The composition grid and its colour",
+        mqGrillePleine: "Full page",
+        mqGrillePleineAide: "Ignore the margins: the grid covers the whole page",
+        mqBaseAfficher: "Show the baseline",
+        mqBaseAfficherAide: "The vertical alignment lines of the text",
+        mqPas: "Step",
+        mqDecalage: "Offset",
+        mqTexte: "Text",
+        mqAccent: "Accent",
+        mqApercuDirect: "Live preview",
+        mqFermer: "Close",
+        /* ⚠️ v1.7.634 — LE MODULE S'APPELLE DÉSORMAIS « GLOBAL REFACTOR », dans les trois
+           langues, à la demande de l'utilisateur. Le nom ne se traduit pas : c'est un nom
+           de fonction, comme « Rock » ou « Studio IA ». Ce qui se traduit, ce sont les
+           libellés du panneau — voir les clés mq* plus bas. */
         settingsAiOk: "A key is saved.",
         settingsAiAucune: "No key saved.",
         settingsAiReglages: "Assistant settings",
@@ -72156,7 +72327,80 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         groupTitle: "選択をグループ化",
         ungroupTitle: "グループ解除",
         aiAssistantTitle: "AIプロンプト — レイアウトを説明",
-        maquetteTitle: "レイアウト設定",
+        maquetteTitle: "Global Refactor",
+        /* ⚠️ v1.7.634 — 「Global Refactor」のラベル。モジュール名は訳しません：Rock や
+           Studio IA と同じ固有名です。パネルが表示するもの — セクション・項目・チップ・
+           ステータス行 — はすべて訳します。 */
+        mqSecFormat: "判型",
+        mqSecMarges: "余白",
+        mqSecColonnes: "段組",
+        mqSecPagination: "ノンブル",
+        mqSecTypo: "文字組み",
+        mqSecGrille: "グリッド",
+        mqSecBase: "ベースライン",
+        mqSecPalette: "パレット",
+        mqSecRefonte: "再構成",
+        mqUnite: "単位",
+        mqLargeur: "幅",
+        mqHauteur: "高さ",
+        mqFondPerdu: "塗り足し",
+        mqHaut: "上",
+        mqBas: "下",
+        mqInterieur: "内側",
+        mqExterieur: "外側",
+        mqGouttiere: "段間",
+        mqPiedUnite: "in",
+        mqAucune: "なし",
+        mqPosBasCentre: "下 · 中央",
+        mqPosBasGauche: "下 · 左",
+        mqPosBasDroite: "下 · 右",
+        mqPosBasExterieur: "下 · 外側",
+        mqPosHautCentre: "上 · 中央",
+        mqPosHautGauche: "上 · 左",
+        mqPosHautDroite: "上 · 右",
+        mqPosHautExterieur: "上 · 外側",
+        mqPalEncre: "インク",
+        mqPalArdoise: "スレート",
+        mqPalBordeaux: "ボルドー",
+        mqPalEncreDouce: "ソフトインク",
+        mqPalNuit: "ナイト",
+        mqRecaler: "ブロックを段に合わせる",
+        mqRecalerAide: "各ブロックの中心がある段に配置し、その段幅に広げます",
+        mqCadres: "枠を文字に合わせる",
+        mqCadresAide: "枠の高さを固定せず、内容に合わせます",
+        mqRefaire: "レイアウトを再構成",
+        mqPaletteAppliquer: "パレットを適用",
+        mqNumPage: "ページ番号を入れる",
+        mqPosition: "位置",
+        mqStyle: "スタイル",
+        mqPolice: "書体",
+        mqCorps: "文字サイズ",
+        mqInterligne: "行送り",
+        mqInterlettrage: "字間",
+        mqGras: "ウェイト",
+        mqNormale: "標準",
+        mqGras2: "太字",
+        mqStyleTxt: "スタイル",
+        mqDroit: "立体",
+        mqItalique: "イタリック",
+        mqCouleur: "色",
+        mqAlignement: "配置",
+        mqGauche: "左",
+        mqCentre: "中央",
+        mqDroite: "右",
+        mqJustifie: "両端揃え",
+        mqGrilleAfficher: "グリッドを表示",
+        mqGrilleAfficherAide: "組版グリッドとその色",
+        mqGrillePleine: "ページ全体",
+        mqGrillePleineAide: "余白を無視して、グリッドをページ全体に広げます",
+        mqBaseAfficher: "ベースラインを表示",
+        mqBaseAfficherAide: "文字の垂直方向の基準線",
+        mqPas: "ピッチ",
+        mqDecalage: "オフセット",
+        mqTexte: "テキスト",
+        mqAccent: "アクセント",
+        mqApercuDirect: "ライブプレビュー",
+        mqFermer: "閉じる",
         settingsAiOk: "キーが保存されています。",
         settingsAiAucune: "キーが保存されていません。",
         settingsAiReglages: "アシスタントの設定",
@@ -101281,8 +101525,15 @@ function initObjectRightClickMenu() {
 
     function publierLargeur(px) {
         var app = $('mainApp');
-        if (!app) return;
-        try { app.style.setProperty('--sp-maquette-l', (px || 0) + 'px'); } catch (_) {}
+        var v = (px || 0) + 'px';
+        /* ⚠️ v1.7.635 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
+           Les widgets flottants du bord droit — le zoom, l'étiquette de simulation
+           CMJN, le panneau Rechercher & Remplacer — ne sont pas tous dans #mainApp :
+           ceux qui sont posés sur <body> n'héritaient donc PAS de la variable et
+           restaient sous la trappe. :root est la racine du document, donc tout le
+           monde la lit. #mainApp la reçoit par héritage, rien ne change pour lui. */
+        try { document.documentElement.style.setProperty('--sp-maquette-l', v); } catch (_) {}
+        if (app) { try { app.style.setProperty('--sp-maquette-l', v); } catch (_) {} }
     }
 
     /* ── ÉTAT DU TIROIR ─────────────────────────────────────────────────────
@@ -101295,6 +101546,9 @@ function initObjectRightClickMenu() {
     var origineSaveStateFromPages = null;
     var minuteur = null;
     var etat = {};
+    /* État de la grille et de la ligne de base à l'ouverture — ils ne sont pas dans
+       l'historique, donc « Annuler » doit les rendre lui-même (voir `ouvrir`). */
+    var etatAvant = null;
     /* Vrai pendant que la trappe écrit ELLE-MÊME dans les champs de l'application :
        le guetteur de format ne doit pas se prendre pour une modification venue de
        l'extérieur et réafficher ce qu'on est en train d'écrire. */
@@ -101312,9 +101566,14 @@ function initObjectRightClickMenu() {
         try {
             var w = $('mqW'), h = $('mqH'), b = $('mqBleed');
             if (typeof pageFormat === 'undefined') return;
-            if (w) w.value = String(arrondi(pageFormat.width, 1));
-            if (h) h.value = String(arrondi(pageFormat.height, 1));
-            if (b && typeof bleed === 'number') b.value = String(arrondi(bleed, 1));
+            /* ⚠️ v1.7.634 — LES TIRETTES SONT DANS L'UNITÉ DU PANNEAU, `pageFormat` est en
+               millimètres : on convertit. Sans cela, un document de 21 cm afficherait
+               « 210 » dans la tirette, et le premier réglage touché remettrait la page à
+               210 cm. */
+            if (w) w.value = String(versUnite(pageFormat.width));
+            if (h) h.value = String(versUnite(pageFormat.height));
+            if (b && typeof bleed === 'number') b.value = String(versUnite(bleed));
+            majEtiquette('mqW'); majEtiquette('mqH'); majEtiquette('mqBleed');
             etat.format = { w: pageFormat.width, h: pageFormat.height };
         } catch (_) {}
     }
@@ -101395,11 +101654,17 @@ function initObjectRightClickMenu() {
         var f = (typeof mmToPx === 'function') ? mmToPx : function (x) { return x * 72 / 25.4; };
         var larg = (typeof pageFormat !== 'undefined') ? pageFormat.width : 210;
         var haut = (typeof pageFormat !== 'undefined') ? pageFormat.height : 297;
-        var interne = (cote === 'droite') ? m.outer : m.inner;
-        var externe = (cote === 'droite') ? m.inner : m.outer;
-        var x = f(interne);
+        /* ⚠️ LA MARGE INTÉRIEURE CHANGE DE CÔTÉ SELON LA PAGE. Sur une double page, le pli
+           est à DROITE pour la page de gauche et à GAUCHE pour celle de droite : la marge
+           intérieure n'est donc pas la marge de gauche dans les deux cas. La version
+           précédente la plaçait toujours à gauche, ce qui inversait le miroir annoncé.
+           `cote` désigne la moitié du canvas ('gauche', 'droite') ou la page seule. */
+        var gauche = (cote === 'gauche');
+        var margeGauche = gauche ? m.outer : m.inner;
+        var margeDroite = gauche ? m.inner : m.outer;
+        var x = f(margeGauche);
         var y = f(m.top);
-        var w = f(larg) - f(interne) - f(externe);
+        var w = f(larg) - f(margeGauche) - f(margeDroite);
         var h = f(haut) - f(m.top) - f(m.bottom);
         if (!(w > 8) || !(h > 8)) return null;
         return { x: x, y: y, w: w, h: h };
@@ -101421,13 +101686,18 @@ function initObjectRightClickMenu() {
         var info = cv && cv.bleedInfo ? cv.bleedInfo : null;
         var f = (typeof mmToPx === 'function') ? mmToPx : function (x) { return x * 72 / 25.4; };
         var larg = (typeof pageFormat !== 'undefined') ? pageFormat.width : 210;
+        /* ⚠️ LE DÉCALAGE EST L'ORIGINE DE LA PAGE DANS LE CANVAS — ni 0, ni la seule largeur
+           de page. Le fond perdu déplace le bord de la page (`info.left`), et une double page
+           porte DEUX pages : la seconde commence à gauche + une largeur de page. Sans cela,
+           ses blocs seraient recalés d'une page entière à côté. */
+        var origine = (info && isFinite(info.left)) ? info.left : 0;
         if (info && info.isSpread) {
             return [
-                { cote: 'gauche', decalage: 0, zone: zonePage(cv, 'gauche') },
-                { cote: 'droite', decalage: f(larg), zone: zonePage(cv, 'droite') },
+                { cote: 'gauche', decalage: origine, zone: zonePage(cv, 'gauche') },
+                { cote: 'droite', decalage: origine + f(larg), zone: zonePage(cv, 'droite') },
             ];
         }
-        return [{ cote: 'seule', decalage: 0, zone: zonePage(cv, 'seule') }];
+        return [{ cote: 'seule', decalage: origine, zone: zonePage(cv, 'seule') }];
     }
 
     /* ══ 3bis. LA RECOMPOSITION AU FORMAT ══
@@ -101600,7 +101870,11 @@ function initObjectRightClickMenu() {
         var typo = etat.typo || {};
         var changeTypo = typo.police || (typo.corps !== null && typo.corps !== undefined) ||
             (typo.interligne !== null && typo.interligne !== undefined) || typo.couleur ||
-            (typo.alignement && typo.alignement !== '');
+            (typo.alignement && typo.alignement !== '') ||
+            /* 🆕 v1.7.635 — les trois réglages de texte ajoutés à la trappe. */
+            (typo.interlettrage !== null && typo.interlettrage !== undefined) ||
+            (typo.graisse !== null && typo.graisse !== undefined) ||
+            (typo.styleTxt !== null && typo.styleTxt !== undefined);
         blocs.forEach(function (entree) {
             var o = entree.obj;
             var touche = false;
@@ -101609,6 +101883,18 @@ function initObjectRightClickMenu() {
             if (typo.interligne > 0 && o.lineHeight !== typo.interligne) { o.set('lineHeight', typo.interligne); touche = true; }
             if (typo.couleur && o.fill !== typo.couleur) { o.set('fill', typo.couleur); touche = true; }
             if (typo.alignement && o.textAlign !== typo.alignement) { o.set('textAlign', typo.alignement); touche = true; }
+            /* ⚠️ `charSpacing` se compte en millièmes de cadratin : 50 vaut 0,05 cadratin,
+               ce que les imprimeurs écrivent « 50 » dans un bloc InDesign. On garde donc
+               l'échelle native plutôt que d'en inventer une seconde. */
+            if (typo.interlettrage !== null && typo.interlettrage !== undefined && o.charSpacing !== typo.interlettrage) {
+                o.set('charSpacing', typo.interlettrage); touche = true;
+            }
+            if (typo.graisse !== null && typo.graisse !== undefined && o.fontWeight !== typo.graisse) {
+                o.set('fontWeight', typo.graisse === '' ? 'normal' : typo.graisse); touche = true;
+            }
+            if (typo.styleTxt !== null && typo.styleTxt !== undefined && o.fontStyle !== typo.styleTxt) {
+                o.set('fontStyle', typo.styleTxt === '' ? 'normal' : typo.styleTxt); touche = true;
+            }
             if (touche) {
                 fait.blocs++;
                 /* Le moteur de texte refait couler les lignes à la nouvelle mesure :
@@ -101629,11 +101915,16 @@ function initObjectRightClickMenu() {
                    le pli ne peut pas appartenir aux deux, et se fier à son bord
                    gauche le rangerait du mauvais côté dès qu'il déborde un peu. */
                 var centre = (o.left || 0) + (o.getScaledWidth ? o.getScaledWidth() : o.width) / 2;
+                /* ⚠️ LA PAGE SE CHOISIT PAR LE DÉCALAGE, ET ON PARCOURT DE LA DERNIÈRE À LA
+                   PREMIÈRE. La version précédente n'attribuait `page` que pour i === 0 : sur
+                   une double page, `page` restait DONC TOUJOURS la page de gauche, et un bloc
+                   posé à droite était recalé dans la grille de gauche — exactement le
+                   « recalage du mauvais côté » que la marge miroir doit empêcher. Chaque côté
+                   porte son décalage (origine de la page dans le canvas) ; la page de l'objet
+                   est la dernière dont le décalage est franchi par son centre. */
                 var page = cotes[0];
-                for (var i = 0; i < cotes.length; i++) {
-                    var c = cotes[i];
-                    var fin = c.decalage + (c.zone ? c.zone.w + ((typeof mmToPx === 'function' ? mmToPx : function (x) { return x * 72 / 25.4; })((typeof spMargesMm === 'function' ? spMargesMm() : { inner: 20, outer: 20 }).inner + (typeof spMargesMm === 'function' ? spMargesMm() : { inner: 20, outer: 20 }).outer)) : Infinity);
-                    if (i === 0 && centre < c.decalage + 1e6 && (cotes.length === 1 || centre < cotes[1].decalage)) { page = c; break; }
+                for (var i = cotes.length - 1; i >= 0; i--) {
+                    if (centre >= cotes[i].decalage) { page = cotes[i]; break; }
                 }
                 if (!page || !page.zone) return;
                 var cols = colonnesDe(page.zone, geo.gouttiere);
@@ -101644,7 +101935,12 @@ function initObjectRightClickMenu() {
                 var k = Math.floor((centreLocal - page.zone.x) / (cols[0].w + (typeof mmToPx === 'function' ? mmToPx : function (x) { return x * 72 / 25.4; })(geo.gouttiere)));
                 k = Math.max(0, Math.min(cols.length - 1, k));
                 o.set('left', page.decalage + cols[k].x);
+                /* ⚠️ `_fixedWidth` EST LA RÉFÉRENCE (cf. la recomposition au format plus haut) :
+                   ne poser que `width` laissait l'application rétablir l'ANCIENNE largeur dès
+                   le rendu suivant — MESURÉ, des blocs recalés à 236 px revenaient à 426 px au
+                   seul changement de mode d'affichage. On pose donc les deux. */
                 o.set('width', cols[k].w);
+                o._fixedWidth = cols[k].w;
                 try { if (typeof o.setCoords === 'function') o.setCoords(); } catch (_) {}
                 fait.recales++;
             });
@@ -101683,6 +101979,14 @@ function initObjectRightClickMenu() {
             var rc = etat.recompose;
             etat.recompose = null;
             msg = 'Format recomposé (' + rc.blocs + ' bloc(s), ' + rc.cadres + ' cadre(s)) · ' + msg;
+        }
+        /* ⚠️ ON RESYNCHRONISE LE MODÈLE APRÈS LA REFONTE — et pas seulement après la
+           recomposition au format. « Recaler » change la largeur des blocs : si `pages[]`
+           garde l'ancienne, le prochain rendu la rétablirait. C'est le même piège que la
+           recomposition, et le même remède : `saveAllPages` ne prend aucune entrée
+           d'historique. On l'appelle dès qu'un réglage a réellement touché le document. */
+        if (fait.blocs || fait.recales || fait.cadres) {
+            try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
         }
         etatMessage(msg);
         return fait;
@@ -101785,6 +102089,42 @@ function initObjectRightClickMenu() {
         } catch (_) {}
     }
 
+    /* ══ GRILLE ET LIGNE DE BASE ══
+       ⚠️ L'ORDRE EST LE CŒUR DE CETTE FONCTION, ET IL EST MESURÉ. Les gestionnaires de
+       l'application sont gardés par leur état de visibilité : régler la couleur d'une
+       grille éteinte, ou activer la ligne de base alors que la grille est invisible, ne
+       fait STRICTEMENT RIEN (relevé : 4 objets avant, 4 après). On allume donc d'abord,
+       et on règle ensuite. `gridVisibleToggle` est le VRAI interrupteur — `#toggleGrid`,
+       lui, ne fait qu'ouvrir un widget, ce que la première sonde avait pris pour la
+       commande et qui expliquait ses comptes à zéro. */
+    function cocher(id, valeur) {
+        var el = $(id);
+        if (!el) return false;
+        var voulu = !!valeur;
+        if (el.checked === voulu) return false;
+        el.checked = voulu;
+        try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {}
+        return true;
+    }
+
+    function appliquerGrille() {
+        var g = etat.grille || {};
+        var l = etat.ligneBase || {};
+        /* 1. Allumer ou éteindre. */
+        cocher('gridVisibleToggle', !!g.actif);
+        if (!g.actif) return;                       /* éteinte : rien d'autre n'aurait d'effet */
+        /* 2. Régler. */
+        cocher('gridFullPage', !!g.pleinePage);
+        if (g.couleur) ecrireChamp('gridColor', g.couleur);
+        cocher('baselineGridToggle', !!l.actif);
+        if (l.actif) {
+            if (l.pas > 0) ecrireChamp('baselineStep', l.pas);
+            if (l.decalage !== null && l.decalage !== undefined) ecrireChamp('baselineOffset', l.decalage);
+        }
+        etatMessage('Grille : couleur et ligne de base appliquées'
+            + (l.actif ? ' (pas ' + arrondi(l.pas, 1) + ' mm, décalage ' + arrondi(l.decalage, 1) + ' mm)' : ''));
+    }
+
     function appliquerPagination() {
         /* On écrit `pageNumberingSettings` — source unique lue par le moteur — puis on
            demande son application à la fonction de l'app. */
@@ -101827,23 +102167,56 @@ function initObjectRightClickMenu() {
     /* ══ 6. LE PANNEAU ══
        Texte sobre : des libellés, aucune explication. Ce qui n'est pas évident porte
        une infobulle, et rien de plus. */
+    /* ══ TRADUCTION ET UNITÉS ══
+       Le module existe en trois langues, comme tout le reste de l'application : on lit
+       donc les libellés dans le dictionnaire commun. `translate()` est déclarée dans la
+       portée du programme ; on la teste par `typeof` parce que c'est la convention de ce
+       fichier, et si elle manquait on retomberait sur le français plutôt que d'afficher
+       une clé technique à l'utilisateur. */
+    function T(cle, repli) {
+        try {
+            if (typeof translate === 'function') {
+                var v = translate(cle);
+                if (v && v !== cle) return v;
+            }
+        } catch (_) {}
+        return repli;
+    }
+    /* L'unité du panneau. Elle est PROPRE À LA TRAPPE : le studio en avait une, et
+       mélanger la sienne avec `currentUnit` de l'application ferait diverger l'affichage
+       des champs de la page et celui des tirettes. On l'amorce sur l'unité du document
+       quand elle est connue, sinon sur le millimètre. */
+    var UNITES = [['mm', 1, 'mm'], ['cm', 10, 'cm'], ['in', 25.4, 'mqPiedUnite']];
+    function uniteCourante() {
+        var u = etat.unite;
+        for (var i = 0; i < UNITES.length; i++) if (UNITES[i][0] === u) return UNITES[i];
+        try { if (typeof currentUnit === 'string') { for (var j = 0; j < UNITES.length; j++) if (UNITES[j][0] === currentUnit) return UNITES[j]; } } catch (_) {}
+        return UNITES[0];
+    }
+    var facteurUnite = function () { return uniteCourante()[1]; };
+    var versUnite = function (mm) { var f = facteurUnite(); return arrondi(mm / f, f === 1 ? 1 : 2); };
+    var versMm = function (v) { return nb(v, 0) * facteurUnite(); };
+    var suffixeUnite = function () { var u = uniteCourante(); return ' ' + T(u[2], u[2]); };
+
     var FORMATS = [
         ['A4', 210, 297], ['A4 P', 297, 210], ['A3', 297, 420], ['A5', 148, 210],
         ['Letter', 216, 279], ['Carré', 210, 210]
     ];
     var COLONNES = [0, 2, 3, 4, 6, 12];
+    /* Les libellés portent désormais une CLÉ de dictionnaire : la valeur technique reste
+       en première position, c'est elle que le moteur lit. */
     var POSITIONS = [
-        ['bottom-center', 'Bas · centre'], ['bottom-left', 'Bas · gauche'], ['bottom-right', 'Bas · droite'],
-        ['bottom-exterior', 'Bas · extérieur'], ['top-center', 'Haut · centre'], ['top-left', 'Haut · gauche'],
-        ['top-right', 'Haut · droite'], ['top-exterior', 'Haut · extérieur']
+        ['bottom-center', 'mqPosBasCentre'], ['bottom-left', 'mqPosBasGauche'], ['bottom-right', 'mqPosBasDroite'],
+        ['bottom-exterior', 'mqPosBasExterieur'], ['top-center', 'mqPosHautCentre'], ['top-left', 'mqPosHautGauche'],
+        ['top-right', 'mqPosHautDroite'], ['top-exterior', 'mqPosHautExterieur']
     ];
     var STYLES = [['decimal', '1, 2, 3'], ['roman', 'I, II, III'], ['alpha', 'A, B, C']];
     var PALETTES = [
-        ['Encre', '#111111', '#111111'],
-        ['Ardoise', '#334155', '#64748b'],
-        ['Bordeaux', '#7f1d1d', '#b45309'],
-        ['Encre douce', '#374151', '#9ca3af'],
-        ['Nuit', '#1e293b', '#0ea5e9']
+        ['mqPalEncre', '#111111', '#111111'],
+        ['mqPalArdoise', '#334155', '#64748b'],
+        ['mqPalBordeaux', '#7f1d1d', '#b45309'],
+        ['mqPalEncreDouce', '#374151', '#9ca3af'],
+        ['mqPalNuit', '#1e293b', '#0ea5e9']
     ];
 
     function chips(items, actif, attr) {
@@ -101865,6 +102238,17 @@ function initObjectRightClickMenu() {
     function case_(id, libelle, coche, titre) {
         return '<label class="mq-case" title="' + (titre || libelle) + '"><input type="checkbox" id="' + id + '"' + (coche ? ' checked' : '') + '><span>' + libelle + '</span></label>';
     }
+    /* Réaffiche la valeur d'une tirette à côté d'elle. L'unité est celle du champ
+       (`mqW`, `mqH` et `mqBleed` suivent l'unité du panneau) ou le millimètre pour les
+       autres ; on lit donc le suffixe dans l'étiquette déjà écrite par `ligne()`, plutôt
+       que de le redéduire — une deuxième source pour la même information finirait par
+       diverger de la première. */
+    function majEtiquette(id) {
+        var el = $(id), lab = $(id + '_v');
+        if (!el || !lab) return;
+        var suffixe = (lab.textContent.match(/[^\d.,\-\s]+.*$/) || [''])[0];
+        lab.textContent = el.value + suffixe;
+    }
 
     function panneau() {
         var m = (typeof spMargesMm === 'function') ? spMargesMm() : { top: 20, bottom: 20, inner: 20, outer: 20 };
@@ -101872,71 +102256,123 @@ function initObjectRightClickMenu() {
         var cols = 0;
         try { if (typeof window.spColGridEtat === 'function') cols = nb(window.spColGridEtat().cols, 0); } catch (_) {}
         var pol = polices();
+        var u = uniteCourante();
+        var su = suffixeUnite();
         var h = '';
+        /* Bornes des tirettes de format, DANS L'UNITÉ AFFICHÉE : 20 mm à 600 mm.
+           Le pas suit l'unité — 1 en millimètres, plus fin en centimètres et en pouces —
+           sinon une tirette en pouces sauterait de 2,54 mm à chaque cran. */
+        var mini = arrondi(20 / u[1], 2), maxi = arrondi(600 / u[1], 2);
+        var pas = (u[0] === 'mm') ? 1 : (u[0] === 'cm' ? 0.1 : 0.05);
 
-        /* FORMAT */
-        h += '<section class="mq-sec"><h4>Format</h4>';
-        h += '<div class="mq-chips" id="mqFormats">' + chips(FORMATS.map(function (f) { return [f[1] + 'x' + f[2], f[0]]; }), '') + '</div>';
-        h += champ('mqW', 'Largeur', arrondi(pageFormat.width, 1), 20, 600, 0.5, ' mm');
-        h += champ('mqH', 'Hauteur', arrondi(pageFormat.height, 1), 20, 600, 0.5, ' mm');
-        h += ligne('mqBleed', 'Fond perdu', arrondi(bleed, 1), 0, 10, 0.5, ' mm');
+        /* FORMAT
+           ⚠️ v1.7.634 — LES TIRETTES DE FORMAT EN DIRECT, COMME DANS LE STUDIO. Demande
+           utilisateur : « j'ai des tirettes qui changent le format en live dans le studio,
+           celles du départ, je ne les retrouve pas ici, c'est dommage ». Le panneau
+           n'avait que deux champs NUMÉRIQUES ; ce sont désormais deux TIRETTES, avec le
+           choix de l'unité (mm, cm, pouces) comme dans le studio. Chaque cran
+           recompose la maquette — c'est le même chemin que la puce A4 ou le champ du
+           format, donc aucune logique n'est dupliquée. */
+        h += '<section class="mq-sec"><h4>' + T('mqSecFormat', 'Format') + '</h4>';
+        h += '<div class="mq-chips" id="mqFormats">' + chips(FORMATS.map(function (f) { return [f[1] + 'x' + f[2], f[0]]; }), '', 'data-v') + '</div>';
+        h += '<div class="mq-ligne"><label>' + T('mqUnite', 'Unité') + '</label><div class="mq-chips" id="mqUnite">' +
+            chips(UNITES.map(function (x) { return [x[0], T(x[2], x[2])]; }), u[0], 'data-v') + '</div></div>';
+        h += ligne('mqW', T('mqLargeur', 'Largeur'), versUnite(pageFormat.width), mini, maxi, pas, su);
+        h += ligne('mqH', T('mqHauteur', 'Hauteur'), versUnite(pageFormat.height), mini, maxi, pas, su);
+        h += ligne('mqBleed', T('mqFondPerdu', 'Fond perdu'), versUnite(bleed), 0, arrondi(10 / u[1], 2), pas, su);
         h += '</section>';
 
         /* MARGES */
-        h += '<section class="mq-sec"><h4>Marges</h4>';
-        h += champ('mqMT', 'Haut', arrondi(m.top, 1), 0, 120, 1, ' mm');
-        h += champ('mqMB', 'Bas', arrondi(m.bottom, 1), 0, 120, 1, ' mm');
-        h += champ('mqMI', 'Intérieur', arrondi(m.inner, 1), 0, 120, 1, ' mm');
-        h += champ('mqMO', 'Extérieur', arrondi(m.outer, 1), 0, 120, 1, ' mm');
+        h += '<section class="mq-sec"><h4>' + T('mqSecMarges', 'Marges') + '</h4>';
+        h += champ('mqMT', T('mqHaut', 'Haut'), arrondi(m.top, 1), 0, 120, 1, ' mm');
+        h += champ('mqMB', T('mqBas', 'Bas'), arrondi(m.bottom, 1), 0, 120, 1, ' mm');
+        h += champ('mqMI', T('mqInterieur', 'Intérieur'), arrondi(m.inner, 1), 0, 120, 1, ' mm');
+        h += champ('mqMO', T('mqExterieur', 'Extérieur'), arrondi(m.outer, 1), 0, 120, 1, ' mm');
         h += '</section>';
 
         /* COLONNES */
-        h += '<section class="mq-sec"><h4>Colonnes</h4>';
-        h += '<div class="mq-chips" id="mqCols">' + chips(COLONNES.map(function (n) { return [n, (n === 0 ? 'Aucune' : String(n))]; }), cols) + '</div>';
-        h += ligne('mqGouttiere', 'Gouttière', 5, 1, 20, 0.5, ' mm');
+        h += '<section class="mq-sec"><h4>' + T('mqSecColonnes', 'Colonnes') + '</h4>';
+        h += '<div class="mq-chips" id="mqCols">' + chips(COLONNES.map(function (n) { return [n, (n === 0 ? T('mqAucune', 'Aucune') : String(n))]; }), cols, 'data-v') + '</div>';
+        h += ligne('mqGouttiere', T('mqGouttiere', 'Gouttière'), 5, 1, 20, 0.5, ' mm');
         h += '</section>';
 
         /* PAGINATION */
-        h += '<section class="mq-sec"><h4>Pagination</h4>';
-        h += case_('mqPnActif', 'Numéroter les pages', !!pn.enabled);
-        h += '<div class="mq-ligne"><label for="mqPnPos">Position</label><select id="mqPnPos">' +
-            POSITIONS.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === pn.position ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+        h += '<section class="mq-sec"><h4>' + T('mqSecPagination', 'Pagination') + '</h4>';
+        h += case_('mqPnActif', T('mqNumPage', 'Numéroter les pages'), !!pn.enabled);
+        h += '<div class="mq-ligne"><label for="mqPnPos">' + T('mqPosition', 'Position') + '</label><select id="mqPnPos">' +
+            POSITIONS.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === pn.position ? ' selected' : '') + '>' + T(o[1], o[1]) + '</option>'; }).join('') +
             '</select></div>';
-        h += '<div class="mq-ligne"><label for="mqPnStyle">Style</label><select id="mqPnStyle">' +
+        h += '<div class="mq-ligne"><label for="mqPnStyle">' + T('mqStyle', 'Style') + '</label><select id="mqPnStyle">' +
             STYLES.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === pn.style ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
             '</select></div>';
-        h += '<div class="mq-ligne"><label for="mqPnPolice">Police</label><select id="mqPnPolice">' +
+        h += '<div class="mq-ligne"><label for="mqPnPolice">' + T('mqPolice', 'Police') + '</label><select id="mqPnPolice">' +
             pol.map(function (f) { return '<option value="' + f + '"' + (f === pn.fontFamily ? ' selected' : '') + '>' + f + '</option>'; }).join('') +
             '</select></div>';
-        h += ligne('mqPnCorps', 'Corps', nb(pn.fontSize, 10), 5, 32, 1, ' pt');
-        h += '<div class="mq-ligne"><label for="mqPnCouleur">Couleur</label><input type="color" id="mqPnCouleur" value="' + (pn.fontColor || '#333333') + '"><b class="mq-v"></b></div>';
+        h += ligne('mqPnCorps', T('mqCorps', 'Corps'), nb(pn.fontSize, 10), 5, 32, 1, ' pt');
+        h += '<div class="mq-ligne"><label for="mqPnCouleur">' + T('mqCouleur', 'Couleur') + '</label><input type="color" id="mqPnCouleur" value="' + (pn.fontColor || '#333333') + '"><b class="mq-v"></b></div>';
         h += '</section>';
 
         /* TYPOGRAPHIE */
-        h += '<section class="mq-sec"><h4>Typographie</h4>';
-        h += '<div class="mq-ligne"><label for="mqPolice">Police</label><select id="mqPolice">' +
+        h += '<section class="mq-sec"><h4>' + T('mqSecTypo', 'Typographie') + '</h4>';
+        h += '<div class="mq-ligne"><label for="mqPolice">' + T('mqPolice', 'Police') + '</label><select id="mqPolice">' +
             pol.map(function (f) { return '<option value="' + f + '">' + f + '</option>'; }).join('') +
             '</select></div>';
-        h += ligne('mqCorps', 'Corps', 0, 0, 72, 1, ' pt');
-        h += ligne('mqInterligne', 'Interligne', 0, 0, 3, 0.05, '');
-        h += '<div class="mq-ligne"><label for="mqCouleurTexte">Couleur</label><input type="color" id="mqCouleurTexte" value="#111111"><b class="mq-v"></b></div>';
-        h += '<div class="mq-ligne"><label>Alignement</label><div class="mq-chips" id="mqAlign">' +
-            chips([['left', 'Gauche'], ['center', 'Centré'], ['right', 'Droite'], ['justify', 'Justifié']], '') + '</div></div>';
+        h += ligne('mqCorps', T('mqCorps', 'Corps'), 0, 0, 72, 1, ' pt');
+        h += ligne('mqInterligne', T('mqInterligne', 'Interligne'), 0, 0, 3, 0.05, '');
+        h += ligne('mqInterlettrage', T('mqInterlettrage', 'Interlettrage'), 0, -50, 300, 5, ' /1000');
+        h += '<div class="mq-ligne"><label>' + T('mqGras', 'Graisse') + '</label><div class="mq-chips" id="mqGras">' +
+            chips([['', T('mqNormale', 'Normale')], ['bold', T('mqGras2', 'Gras')]], '', 'data-v') + '</div></div>';
+        h += '<div class="mq-ligne"><label>' + T('mqStyleTxt', 'Style') + '</label><div class="mq-chips" id="mqItalique">' +
+            chips([['', T('mqDroit', 'Droit')], ['italic', T('mqItalique', 'Italique')]], '', 'data-v') + '</div></div>';
+        h += '<div class="mq-ligne"><label for="mqCouleurTexte">' + T('mqCouleur', 'Couleur') + '</label><input type="color" id="mqCouleurTexte" value="#111111"><b class="mq-v"></b></div>';
+        h += '<div class="mq-ligne"><label>' + T('mqAlignement', 'Alignement') + '</label><div class="mq-chips" id="mqAlign">' +
+            chips([['left', T('mqGauche', 'Gauche')], ['center', T('mqCentre', 'Centré')], ['right', T('mqDroite', 'Droite')], ['justify', T('mqJustifie', 'Justifié')]], '', 'data-v') + '</div></div>';
+        h += '</section>';
+
+        /* GRILLE ET LIGNE DE BASE
+           🆕 v1.7.635 — demandé par l'utilisateur : « il y a plus de réglages live dans
+           le studio IA, plus de tirettes ». Ces deux sections ne font pas semblant : elles
+           pilotent les réglages NATIFS de SuperPrint, dont l'effet a été MESURÉ avant
+           d'être exposé — afficher la grille fait passer la vue de 4 à 14 objets, et
+           l'activation de la ligne de base de 14 à 79 (puis 36 quand le pas passe de 4 à
+           12 mm, un pas plus grand donnant moins de lignes).
+           ⚠️ PIÈGE MESURÉ : ces réglages ne répondent QUE si la grille est visible — les
+           gestionnaires de l'application sont gardés par leur état de visibilité. Régler
+           la couleur d'une grille éteinte ne fait donc STRICTEMENT RIEN. D'où l'ordre
+           imposé dans `appliquerGrille()` : on allume d'abord, on règle ensuite.
+           ⚠️ ET ON N'EXPOSE PAS LES REPÈRES DE COLONNES ROUGES : mesuré, ils ne
+           répondent pas (36 objets avant, 36 après, état `cols` resté à 0). Une tirette
+           qui ne fait rien serait exactement le défaut qu'on veut éviter. */
+        var gb = $('gridVisibleToggle'), gfp = $('gridFullPage'), gc = $('gridColor');
+        var bt = $('baselineGridToggle'), bs = $('baselineStep'), bo = $('baselineOffset');
+        h += '<section class="mq-sec"><h4>' + T('mqSecGrille', 'Grille') + '</h4>';
+        h += case_('mqGrille', T('mqGrilleAfficher', 'Afficher la grille'), !!(gb && gb.checked), T('mqGrilleAfficherAide', 'La grille de composition et sa couleur'));
+        h += case_('mqGrillePage', T('mqGrillePleine', 'Pleine page'), !!(gfp && gfp.checked), T('mqGrillePleineAide', 'Ignorer les marges : la grille couvre toute la page'));
+        h += '<div class="mq-ligne"><label for="mqGrilleCouleur">' + T('mqCouleur', 'Couleur') + '</label><input type="color" id="mqGrilleCouleur" value="' + ((gc && gc.value) ? gc.value : '#2bb7ff') + '"><b class="mq-v"></b></div>';
+        h += '</section>';
+
+        h += '<section class="mq-sec"><h4>' + T('mqSecBase', 'Ligne de base') + '</h4>';
+        h += case_('mqBase', T('mqBaseAfficher', 'Afficher la ligne de base'), !!(bt && bt.checked), T('mqBaseAfficherAide', 'Les lignes d\'alignement vertical du texte'));
+        h += ligne('mqBasePas', T('mqPas', 'Pas'), nb(bs ? bs.value : 4, 4), 1, 24, 0.5, ' mm');
+        h += ligne('mqBaseDecalage', T('mqDecalage', 'Décalage'), nb(bo ? bo.value : 0, 0), -50, 50, 0.5, ' mm');
         h += '</section>';
 
         /* PALETTE */
-        h += '<section class="mq-sec"><h4>Palette</h4>';
-        h += '<div class="mq-chips" id="mqPalettes">' + PALETTES.map(function (p) { return '<button type="button" class="mq-chip mq-chip-pal" data-pal="' + p[0] + '"><i style="background:' + p[1] + '"></i>' + p[0] + '</button>'; }).join('') + '</div>';
-        h += '<div class="mq-ligne"><label for="mqPalTexte">Texte</label><input type="color" id="mqPalTexte" value="#111111"><b class="mq-v"></b></div>';
-        h += '<div class="mq-ligne"><label for="mqPalAccent">Accent</label><input type="color" id="mqPalAccent" value="#111111"><b class="mq-v"></b></div>';
-        h += '<button type="button" class="btn btn-secondary mq-large" id="mqPalAppliquer">Appliquer la palette</button>';
+        h += '<section class="mq-sec"><h4>' + T('mqSecPalette', 'Palette') + '</h4>';
+        h += '<div class="mq-chips" id="mqPalettes">' + PALETTES.map(function (p) {
+            var nom = T(p[0], p[0]);
+            return '<button type="button" class="mq-chip mq-chip-pal" data-pal="' + p[0] + '" title="' + nom + '"><i style="background:' + p[1] + '"></i>' + nom + '</button>';
+        }).join('') + '</div>';
+        h += '<div class="mq-ligne"><label for="mqPalTexte">' + T('mqTexte', 'Texte') + '</label><input type="color" id="mqPalTexte" value="#111111"><b class="mq-v"></b></div>';
+        h += '<div class="mq-ligne"><label for="mqPalAccent">' + T('mqAccent', 'Accent') + '</label><input type="color" id="mqPalAccent" value="#111111"><b class="mq-v"></b></div>';
+        h += '<button type="button" class="btn btn-secondary mq-large" id="mqPalAppliquer">' + T('mqPaletteAppliquer', 'Appliquer la palette') + '</button>';
         h += '</section>';
 
         /* REFONTE */
-        h += '<section class="mq-sec"><h4>Refonte</h4>';
-        h += case_('mqRecaler', 'Recaler les blocs sur les colonnes', true, 'Replace chaque bloc dans la colonne où se trouve son centre, et l\'élargit à cette colonne');
-        h += case_('mqHauteur', 'Cadres ajustés au texte', false, 'La hauteur des cadres suit leur contenu au lieu de rester fixe');
-        h += '<button type="button" class="btn btn-secondary mq-large" id="mqRefaire">Refaire la maquette</button>';
+        h += '<section class="mq-sec"><h4>' + T('mqSecRefonte', 'Refonte') + '</h4>';
+        h += case_('mqRecaler', T('mqRecaler', 'Recaler les blocs sur les colonnes'), true, T('mqRecalerAide', ''));
+        h += case_('mqHauteur', T('mqCadres', 'Cadres ajustés au texte'), false, T('mqCadresAide', ''));
+        h += '<button type="button" class="btn btn-secondary mq-large" id="mqRefaire">' + T('mqRefaire', 'Refaire la maquette') + '</button>';
         h += '</section>';
 
         return h;
@@ -101955,13 +102391,30 @@ function initObjectRightClickMenu() {
     function lireControles() {
         var val = function (id, repli) { var e = $(id); return e ? e.value : repli; };
         var coche = function (id) { var e = $(id); return e ? !!e.checked : false; };
-        etat.format = { w: nb(val('mqW', pageFormat.width), pageFormat.width), h: nb(val('mqH', pageFormat.height), pageFormat.height) };
-        etat.fondPerdu = nb(val('mqBleed', bleed), bleed);
+        /* Une commande n'est « engagée » que si l'utilisateur l'a actionnée depuis
+           l'ouverture de la trappe. Voir l'avertissement sur l'interlettrage plus bas. */
+        var engage = function (id) { return !!(etat.engage && etat.engage[id]); };
+        /* ⚠️ v1.7.634 — LES CHAMPS DE FORMAT SONT DÉSORMAIS DES TIRETTES, EXPRIMÉES DANS
+           L'UNITÉ DU PANNEAU. On les lit donc dans cette unité et on convertit en
+           MILLIMÈTRES, qui est l'unité du modèle : c'est `appliquerFormat` qui reconvertit
+           vers l'unité du document au moment d'écrire dans les champs de l'application.
+           Les deux conversions sont distinctes et c'est voulu — celle-ci appartient au
+           panneau, l'autre à l'application. */
+        etat.format = {
+            w: versMm(val('mqW', versUnite(pageFormat.width))),
+            h: versMm(val('mqH', versUnite(pageFormat.height)))
+        };
+        etat.fondPerdu = versMm(val('mqBleed', versUnite(bleed)));
         etat.marges = {
             top: nb(val('mqMT', 20), 20), bottom: nb(val('mqMB', 20), 20),
             inner: nb(val('mqMI', 20), 20), outer: nb(val('mqMO', 20), 20)
         };
-        etat.colonnes = nb(etat.colonnes, 0);
+        /* ⚠️ LE NOMBRE DE COLONNES SE LIT DANS LA PASTILLE ACTIVE, PAS SEULEMENT DANS
+           `etat`. À l'ouverture, `etat.colonnes` peut être vide alors que le document a
+           DÉJÀ des colonnes (projet rechargé) : la pastille les afficherait, mais `refonte`
+           ne recalerait rien — un panneau qui ment sur l'état du document. */
+        var colChip = document.querySelector('#mqCols .mq-chip.on');
+        etat.colonnes = colChip ? nb(colChip.getAttribute('data-v'), 0) : nb(etat.colonnes, 0);
         etat.gouttiere = nb(val('mqGouttiere', 5), 5);
         etat.pagination = {
             actif: coche('mqPnActif'), position: val('mqPnPos', ''), style: val('mqPnStyle', ''),
@@ -101970,7 +102423,25 @@ function initObjectRightClickMenu() {
         etat.typo = {
             police: val('mqPolice', ''), corps: nb(val('mqCorps', 0), 0),
             interligne: nb(val('mqInterligne', 0), 0), couleur: (nb(val('mqCorps', 0), 0) > 0 ? val('mqCouleurTexte', '') : ''),
-            alignement: etat.alignement || ''
+            alignement: etat.alignement || '',
+            /* ⚠️ v1.7.635 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
+               une précaution, pas une coquetterie : `charSpacing`, `fontWeight` et
+               `fontStyle` ont des valeurs par DÉFAUT parfaitement légitimes (0, normal,
+               normal). Les lire sans condition ferait donc que « Refaire la maquette »
+               REMETTRAIT À ZÉRO l'interlettrage et la graisse d'un document qui en a —
+               une perte de travail réelle, déclenchée par un bouton qui n'a rien à voir.
+               On ne les applique donc qu'après un geste sur leur propre commande. */
+            interlettrage: engage('mqInterlettrage') ? nb(val('mqInterlettrage', 0), 0) : null,
+            graisse: engage('mqGras') ? (etat.graisse || '') : null,
+            styleTxt: engage('mqItalique') ? (etat.styleTxt || '') : null
+        };
+        etat.grille = {
+            actif: coche('mqGrille'), pleinePage: coche('mqGrillePage'),
+            couleur: val('mqGrilleCouleur', '#2bb7ff')
+        };
+        etat.ligneBase = {
+            actif: coche('mqBase'), pas: nb(val('mqBasePas', 4), 4),
+            decalage: nb(val('mqBaseDecalage', 0), 0)
         };
         etat.palette = { texte: val('mqPalTexte', ''), accent: val('mqPalAccent', '') };
         etat.recalerColonnes = coche('mqRecaler');
@@ -101984,6 +102455,16 @@ function initObjectRightClickMenu() {
         if (!t) return;
         ouvert = true;
         histoAvant = (typeof historyStep === 'number') ? historyStep : -1;
+        /* ⚠️ LA GRILLE ET LA LIGNE DE BASE NE VIVENT PAS DANS L'HISTORIQUE. L'entrée
+           d'historique ne porte ni `gridVisibleToggle` ni `baselineGridToggle` : un
+           `restoreState` ne les remet donc PAS. L'aperçu les ayant allumées, « Annuler »
+           laissait la grille et les lignes de base affichées — MESURÉ : 84 objets sur le
+           canvas après annulation, au lieu des 4 du départ. On retient leur état ici pour
+           le rendre tel quel à la fermeture sans validation. */
+        etatAvant = {
+            grille: !!(($('gridVisibleToggle') || {}).checked),
+            base: !!(($('baselineGridToggle') || {}).checked)
+        };
         /* On fige la config avant de neutraliser l'historique : `saveAllPages` peut
            vouloir enregistrer, et il serait dommage de le rendre inerte trop tôt. */
         try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
@@ -102037,6 +102518,7 @@ function initObjectRightClickMenu() {
                `saveState`, lui, COMMENCE par `saveAllPages()` : il synchronise puis
                fige. C'est donc le seul appel correct ici, et il suffit. */
             try { if (typeof saveState === 'function') saveState('Refonte de la maquette'); } catch (_) {}
+            etatAvant = null;
             etatMessage('');
         } else {
             /* Retour exact à l'état d'avant : c'est l'entrée d'historique qui était
@@ -102046,6 +102528,15 @@ function initObjectRightClickMenu() {
                 if (histoAvant >= 0 && typeof restoreState === 'function' && history[histoAvant]) restoreState(history[histoAvant]);
                 else if (typeof renderAllPages === 'function') renderAllPages();
             } catch (_) {}
+            /* On rend la grille et la ligne de base à leur état d'avant : `restoreState`
+               ne les connaît pas (voir la note dans `ouvrir`). On les éteint dans l'ordre
+               inverse de leur allumage — ligne de base, puis grille — car les gestionnaires
+               de l'application sont gardés par la visibilité de la grille. */
+            if (etatAvant) {
+                cocher('baselineGridToggle', !!(etatAvant.grille && etatAvant.base));
+                cocher('gridVisibleToggle', !!etatAvant.grille);
+                etatAvant = null;
+            }
             etatMessage('');
         }
     }
@@ -102062,34 +102553,57 @@ function initObjectRightClickMenu() {
         if (zf) zf.addEventListener('click', function (e) {
             var b = e.target.closest ? e.target.closest('.mq-chip') : null;
             if (!b) return;
-            var d = b.getAttribute('data-pal') === null ? b.textContent : null;
             lister('.mq-chip', zf).forEach(function (x) { x.classList.remove('on'); });
             b.classList.add('on');
             var found = FORMATS.filter(function (f) { return f[0] === b.textContent; })[0];
-            if (found) { ecrireChamp('mqW', found[1]); ecrireChamp('mqH', found[2]); differer(appliquerFormatEtRefonte); }
+            /* ⚠️ Les cotes de `FORMATS` sont en MILLIMÈTRES, les tirettes sont dans l'unité
+               du panneau : on convertit. Écrire 210 dans une tirette en centimètres
+               donnerait 210 cm, soit un format deux fois plus grand qu'un A0. */
+            if (found) {
+                ecrireChamp('mqW', versUnite(found[1]));
+                ecrireChamp('mqH', versUnite(found[2]));
+                majEtiquette('mqW'); majEtiquette('mqH');
+                differer(appliquerFormatEtRefonte);
+            }
         });
 
-        /* Colonnes : pastilles */
+        /* Unité : mm, cm, pouces. On RECONSTRUIT le panneau, parce que changer d'unité
+           change les bornes et le pas des tirettes de format, et qu'un simple relibellé
+           laisserait des curseurs aux mauvaises bornes. `etat.engage` vit hors du panneau :
+           les réglages déjà touchés restent engagés. */
+        var zu = $('mqUnite');
+        if (zu) zu.addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('.mq-chip') : null;
+            if (!b) return;
+            lireControles();
+            var v = String(b.getAttribute('data-v') || b.textContent).trim();
+            etat.unite = (v === 'cm') ? 'cm' : (v === 'in' ? 'in' : 'mm');
+            var corps = $('maquetteBody');
+            if (corps) { corps.innerHTML = panneau(); brancher(); }
+            etatMessage(T('mqUnite', 'Unité') + ' : ' + v);
+        });
+
+        /* Colonnes : pastilles. ⚠️ On lit la VALEUR (`data-v`), jamais le libellé : il est
+           traduit, et comparer un texte traduit à « Aucune » ferait retomber le nombre de
+           colonnes à zéro dans les deux autres langues. */
         var zc = $('mqCols');
         if (zc) zc.addEventListener('click', function (e) {
             var b = e.target.closest ? e.target.closest('.mq-chip') : null;
             if (!b) return;
             lister('.mq-chip', zc).forEach(function (x) { x.classList.remove('on'); });
             b.classList.add('on');
-            etat.colonnes = nb(b.textContent === 'Aucune' ? 0 : b.textContent, 0);
+            etat.colonnes = nb(b.getAttribute('data-v'), 0);
             differer(function () { appliquerColonnes(); lireControles(); refonte(); });
         });
 
-        /* Alignement : pastilles */
+        /* Alignement : pastilles. Même règle : la VALEUR, pas le mot traduit. */
         var za = $('mqAlign');
         if (za) za.addEventListener('click', function (e) {
             var b = e.target.closest ? e.target.closest('.mq-chip') : null;
             if (!b) return;
             lister('.mq-chip', za).forEach(function (x) { x.classList.remove('on'); });
             b.classList.add('on');
-            etat.alignement = b.textContent.toLowerCase();
-            var map = { 'gauche': 'left', 'centré': 'center', 'droite': 'right', 'justifié': 'justify' };
-            etat.alignement = map[b.textContent.toLowerCase()] || 'left';
+            etat.alignement = b.getAttribute('data-v') || 'left';
             differer(function () { lireControles(); refonte(); });
         });
 
@@ -102109,14 +102623,24 @@ function initObjectRightClickMenu() {
             }
         });
 
-        /* Champs numériques : format, marges */
-        ['mqW', 'mqH', 'mqBleed'].forEach(function (id) {
-            var el = $(id); if (!el) return;
-            el.addEventListener('change', function () { differer(appliquerFormatEtRefonte); });
-        });
+        /* Champs numériques : marges */
         ['mqMT', 'mqMB', 'mqMI', 'mqMO'].forEach(function (id) {
             var el = $(id); if (!el) return;
             el.addEventListener('change', function () { differer(function () { lireControles(); appliquerMarges(); refonte(); }); });
+        });
+        /* ⚠️ v1.7.634 — LES TIRETTES DE FORMAT SONT EN DIRECT, COMME DANS LE STUDIO.
+           `input` (et pas seulement `change`) donne le retour immédiat pendant le
+           glissement ; c'est `differer()` qui borne le coût, puisqu'il reporte l'application
+           de 140 ms et l'annule à chaque nouveau cran. Un glissement continu ne recompose
+           donc la maquette qu'une fois posé, au lieu d'une fois par pixel. */
+        ['mqW', 'mqH', 'mqBleed'].forEach(function (id) {
+            var el = $(id); if (!el) return;
+            ['input', 'change'].forEach(function (ev) {
+                el.addEventListener(ev, function () {
+                    majEtiquette(id);
+                    differer(appliquerFormatEtRefonte);
+                });
+            });
         });
 
         /* Gouttière */
@@ -102136,15 +102660,44 @@ function initObjectRightClickMenu() {
         /* Typographie */
         var pol = $('mqPolice');
         if (pol) pol.addEventListener('change', function () { differer(function () { lireControles(); refonte(); }); });
-        [['mqCorps', ' pt'], ['mqInterligne', '']].forEach(function (paire) {
+        [['mqCorps', ' pt'], ['mqInterligne', ''], ['mqInterlettrage', ' /1000']].forEach(function (paire) {
             var el = $(paire[0]); if (!el) return;
             el.addEventListener('input', function () {
                 var v = $(paire[0] + '_v'); if (v) v.textContent = el.value + paire[1];
+                /* On marque l'engagement AVANT de relire : c'est ce qui autorise
+                   `lireControles()` à rapporter la valeur de cette commande. */
+                etat.engage = etat.engage || {}; etat.engage[paire[0]] = true;
+                differer(function () { lireControles(); refonte(); });
+            });
+        });
+        /* Graisse et style : deux pastilles, lues par leur `data-v`. La valeur est
+           posée AVANT `lireControles()`, qui la reprend pour l'appliquer aux blocs. */
+        [['mqGras', 'graisse'], ['mqItalique', 'styleTxt']].forEach(function (paire) {
+            var z = $(paire[0]); if (!z) return;
+            z.addEventListener('click', function (e) {
+                var b = e.target.closest ? e.target.closest('.mq-chip') : null;
+                if (!b) return;
+                lister('.mq-chip', z).forEach(function (x) { x.classList.remove('on'); });
+                b.classList.add('on');
+                etat[paire[1]] = b.getAttribute('data-v') || '';
+                etat.engage = etat.engage || {}; etat.engage[paire[0]] = true;
                 differer(function () { lireControles(); refonte(); });
             });
         });
         var ct = $('mqCouleurTexte');
         if (ct) ct.addEventListener('input', function () { differer(function () { lireControles(); refonte(); }); });
+
+        /* Grille et ligne de base — chaque commande applique TOUT le bloc : l'ordre
+           allumage-puis-réglage est ce qui rend ces réglages efficaces. */
+        ['mqGrille', 'mqGrillePage', 'mqGrilleCouleur', 'mqBase', 'mqBasePas', 'mqBaseDecalage'].forEach(function (id) {
+            var el = $(id); if (!el) return;
+            ['input', 'change'].forEach(function (ev) {
+                el.addEventListener(ev, function () {
+                    var v = $(id + '_v'); if (v && el.type === 'range') v.textContent = el.value + (id === 'mqBasePas' || id === 'mqBaseDecalage' ? ' mm' : '');
+                    differer(function () { lireControles(); appliquerGrille(); });
+                });
+            });
+        });
 
         /* Actions */
         var pa = $('mqPalAppliquer');
@@ -102156,9 +102709,13 @@ function initObjectRightClickMenu() {
             el.addEventListener('change', function () { differer(function () { lireControles(); refonte(); }); });
         });
 
-        /* Barre du bas */
-        var va = $('maquetteValider'); if (va) va.addEventListener('click', function () { fermer(true); });
-        var an = $('maquetteAnnuler'); if (an) an.addEventListener('click', function () { fermer(false); });
+        /* Barre du bas — ⚠️ v1.7.634 : CES DEUX BOUTONS NE SONT PLUS BRANCHÉS ICI.
+           `brancher()` est rappelée à chaque reconstruction du corps — depuis qu'on
+           reconstruit le panneau à chaque ouverture, et de nouveau au changement d'unité —
+           alors que ces deux boutons sont EN DEHORS du corps et ne sont donc jamais
+           recréés : chaque appel ajoutait un écouteur de plus. Mesuré avant correction :
+           le clic sur « Valider » en déclenchait deux. Ils sont désormais branchés une
+           seule fois, dans `installer()`, avec la bascule et la croix de fermeture. */
     }
 
     function installer() {
@@ -102166,6 +102723,10 @@ function initObjectRightClickMenu() {
         if (b) b.addEventListener('click', basculer);
         var c = $('maquetteClose');
         if (c) c.addEventListener('click', function () { fermer(false); });
+        /* Branchement UNIQUE de la barre du bas : ces éléments ne sont jamais recréés,
+           contrairement au corps du panneau. */
+        var va = $('maquetteValider'); if (va) va.addEventListener('click', function () { fermer(true); });
+        var an = $('maquetteAnnuler'); if (an) an.addEventListener('click', function () { fermer(false); });
         /* Échap ferme sans valider : le même geste que partout ailleurs. */
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && ouvert) { e.stopPropagation(); fermer(false); }

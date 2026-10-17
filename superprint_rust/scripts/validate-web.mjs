@@ -480,7 +480,7 @@ titre('document : plusieurs pages, vectoriel, tons directs, image, métadonnées
 
   doc.info('title', 'SuperPrint — essai d’export');
   doc.info('author', 'Zigmoon');
-  doc.info('producer', 'SuperPrint 0.2.0');
+  doc.info('producer', 'SuperPrint 0.3.0');
 
   // Page 1 : CMJN, deux encres directes, formes variées.
   doc.addPage({ trimWidthMm: 170, trimHeightMm: 240, bleedMm: 3, markMm: 10, quadri: 'cmyk' });

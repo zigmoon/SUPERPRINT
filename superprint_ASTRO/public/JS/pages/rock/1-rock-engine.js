@@ -11,16 +11,7 @@
    • sobriété : le rendu s'arrête quand la scène n'est pas visible, pas de post-traitement,
      et une image vectorielle remplace la 3D si WebGL manque.
    ══════════════════════════════════════════════════════════════════════════════════ */
-/* ⚠️ DEUX NIVEAUX DE REMONTÉE, ET CE N'EST PAS UN DÉTAIL. Ce fichier vit dans
-   `/JS/pages/rock/`. Le même code était auparavant écrit EN LIGNE dans
-   `rock.html`, à la racine : `./JS/…` y désignait donc `/JS/…`, et c'était juste.
-   Une fois le code extrait dans un fichier, `./` a changé de sens — il désigne
-   maintenant `/JS/pages/rock/JS/…`, qui n'existe pas. Mesuré sur le site
-   construit : la requête partait en 404, three.js ne se chargeait jamais, et la
-   page restait bloquée sur « Chargement de la scène… » — le rocher 3D, qui est
-   le sujet de cette page, ne s'affichait pas. `../../` remonte de `/JS/pages/rock/`
-   à `/JS/`, où le fichier se trouve réellement. */
-import * as THREE from '../../three.module.min.js';
+import * as THREE from './JS/three.module.min.js';
 
 const canvas = document.getElementById('rkCanvas');
 const cadre = canvas && canvas.parentElement;

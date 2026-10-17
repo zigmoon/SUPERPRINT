@@ -941,6 +941,52 @@
         window.opener.postMessage({ type: 'sp213-ready' }, window.location.origin);
       }
     } catch (_) {}
+      /* 🆕 v1.7.635 — ET PAR LE PONT, sur le bureau.
+         L'éditeur y ouvre cette page dans une FENÊTRE de la coquille : il n'y a donc
+         ni `window.opener`, ni `postMessage` possible. Les deux fenêtres partagent en
+         revanche leur origine, donc leur stockage local. On y dépose « ready » ; la
+         boucle de relance de l'éditeur le lit et renvoie la police par le même
+         chemin. Voir app/JS/main.js, « OUVRIR UNE APPLICATION SŒUR ». */
+      spPontEcrire({ type: 'sp213-ready' });
+  }
+
+  /* ── Le pont local, sur le bureau uniquement ────────────────────────────────
+     Sur le site, `postMessage` fait le travail depuis toujours et deux onglets du
+     même domaine se verraient mutuellement : la condition ci-dessous sépare les deux
+     mondes, et rien ne change pour le web. */
+  const SP_BUREAU = !!(window.__TAURI__ && window.__TAURI__.webviewWindow);
+  const SP_PONT_CLE = 'sp_pont_app';
+
+  function spPontEcrire(objet) {
+      if (!SP_BUREAU) return;
+      try {
+      objet.t = Date.now();
+      localStorage.setItem(SP_PONT_CLE, JSON.stringify(objet));
+      } catch (_) {}
+  }
+
+  function spPontSurveiller() {
+      if (!SP_BUREAU) return;
+      let essais = 0;
+      /* Sondage plutôt qu'événement `storage` : relayé ou non par l'hôte, il n'est
+         pas vérifiable ici, alors que relire une clé l'est. La fenêtre est bornée aux
+         mêmes 15 s que les relances de l'éditeur (25 × 600 ms). */
+      const tic = setInterval(function () {
+      essais++;
+      if (_spPoliceRecue || essais > 25) { clearInterval(tic); return; }
+      let m = null;
+      try { const v = localStorage.getItem(SP_PONT_CLE); m = v ? JSON.parse(v) : null; } catch (_) { m = null; }
+      if (m && m.type === 'sp213-ping') { spSignalPret(); return; }
+      if (m && m.type === 'sp213-font') {
+        try {
+            const bin = atob(String(m.b64 || ''));
+            const u = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+            spRecoitPolice({ origin: window.location.origin, data: { type: 'sp213-font', name: m.name, text: m.text, buffer: u.buffer } });
+        } catch (_) {}
+      }
+      }, 600);
+      spSignalPret();     // l'éditeur peut être prêt avant nous : on se signale d'abord
   }
   async function spRecoitPolice(ev) {
     try {
@@ -976,6 +1022,7 @@
     } catch (e) { try { console.error(e); } catch (e2) {} }
   }
   window.addEventListener('message', spRecoitPolice);
+  spPontSurveiller();   // 🆕 v1.7.635 — le pont local, sur le bureau (voir plus haut)
   // Handshake : on signale notre disponibilité jusqu'à recevoir la fonte (max ~15 s).
   var _spPretTic = 0;
   const _spPretSein = setInterval(function () {

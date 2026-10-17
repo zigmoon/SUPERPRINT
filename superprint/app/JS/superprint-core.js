@@ -43,7 +43,7 @@
   'use strict';
 
   /** Version de la colle (suit celle du workspace Rust). */
-  var VERSION = '0.2.0';
+  var VERSION = '0.3.0';
 
   /**
    * Codes d'erreur de la frontière C. Ils doivent rester **synchronisés** avec

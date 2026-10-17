@@ -4,18 +4,18 @@ version = 3
 
 [[package]]
 name = "superprint-compress"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
 ]
 
 [[package]]
 name = "superprint-core"
-version = "0.2.0"
+version = "0.3.0"
 
 [[package]]
 name = "superprint-doc"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-flow",
  "superprint-path",
@@ -24,21 +24,21 @@ dependencies = [
 
 [[package]]
 name = "superprint-doc-wasm"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-doc",
 ]
 
 [[package]]
 name = "superprint-eps-wasm"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-ps",
 ]
 
 [[package]]
 name = "superprint-flow"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
  "superprint-text",
@@ -46,35 +46,35 @@ dependencies = [
 
 [[package]]
 name = "superprint-font"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
 ]
 
 [[package]]
 name = "superprint-icc"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
 ]
 
 [[package]]
 name = "superprint-image"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
 ]
 
 [[package]]
 name = "superprint-impose"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
 ]
 
 [[package]]
 name = "superprint-montage"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
  "superprint-image",
@@ -84,14 +84,14 @@ dependencies = [
 
 [[package]]
 name = "superprint-path"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
 ]
 
 [[package]]
 name = "superprint-pdf"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-compress",
  "superprint-core",
@@ -102,7 +102,7 @@ dependencies = [
 
 [[package]]
 name = "superprint-preflight"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
  "superprint-font",
@@ -112,28 +112,28 @@ dependencies = [
 
 [[package]]
 name = "superprint-ps"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-path",
 ]
 
 [[package]]
 name = "superprint-swatch"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
 ]
 
 [[package]]
 name = "superprint-text"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-core",
 ]
 
 [[package]]
 name = "superprint-wasm"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-compress",
  "superprint-core",
@@ -148,7 +148,7 @@ dependencies = [
 
 [[package]]
 name = "superprint-zip"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "superprint-compress",
 ]

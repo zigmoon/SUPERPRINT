@@ -1983,7 +1983,7 @@ input, textarea, select, [contenteditable="true"], [contenteditable=""] {
 }
 .cmyk-preview-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; display: none; background: rgba(0, 40, 60, 0.08); mix-blend-mode: multiply; }
 .cmyk-preview-overlay.active { display: block; }
-.cmyk-preview-label { position: fixed; top: 80px; right: 296px; background: #000000; color: #fff; padding: 8px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 1px; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-left: 4px solid #333333; }
+.cmyk-preview-label { position: fixed; top: 80px; right: calc(var(--sp-sidebar-r, 280px) + var(--sp-maquette-l, 0px) + 16px); background: #000000; color: #fff; padding: 8px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 1px; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-left: 4px solid #333333; }
 .cmyk-preview-label.active { display: block; }
 .canvas-scroll-area { 
     flex: 1; 
@@ -2147,7 +2147,7 @@ textarea[data-fabric-hiddentextarea] {
     background: transparent !important;
     border: 0 !important;
 }
-/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.632). Elles étaient en #f0f0f0, à peine
+/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.635). Elles étaient en #f0f0f0, à peine
    plus clair que le plan de travail (#e8e8e8) : elles s'y fondaient, et on ne
    voyait plus où commençait la graduation. #fafafa est nettement plus clair,
    reste distinct du blanc de la page, et garde les graduations (#333/#666)
@@ -4152,14 +4152,24 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
 /* ==================== ZOOM WIDGET (Bottom Right) ==================== */
 .zoom-widget {
     position: fixed;
-    /* ⚠️ v1.7.632 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
+    /* ⚠️ v1.7.635 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
        « Réglages de la maquette » quand elle est ouverte. Sans elle, le widget
        restait ancré à 296 px du bord droit et se retrouvait PAR-DESSUS la trappe,
-       où il interceptait les clics sur « Valider » et « Annuler » (mesuré). La
-       variable vaut 0px quand la trappe est fermée : le calcul redonne alors
-       exactement la valeur d'origine. Elle est publiée sur #mainApp par le module
-       _SP_MAQUETTE_631, et relue par syncZoomWidgetWithRightSidebar(). */
-    right: calc(280px + var(--sp-maquette-l, 0px) + 16px); /* Distance de la rightbar (280px) + trappe + marge */
+       où il interceptait les clics sur « Valider » et « Annuler » (mesuré).
+
+       ⚠️ v1.7.635 — LA POSITION EST CALCULÉE ICI, ET NULLE PART AILLEURS. Il y avait
+       trois écrivains pour cette seule propriété : cette règle, `style.right` posé
+       par `syncZoomWidgetWithRightSidebar()`, et une copie du même calcul au
+       démarrage QUI, ELLE, IGNORAIT LA TRAPPE. Le style en ligne gagnant sur la
+       feuille de style, c'est la copie périmée qui décidait. Mesuré chez
+       l'utilisateur, trappe ouverte : widget à 72 px du bord droit, donc
+       entièrement SOUS la trappe (widget 1215-1430, trappe 1162-1502). D'où sa
+       phrase exacte : « il flotte actuellement par-dessous la colonne ».
+       Il n'en reste qu'un : les deux largeurs sont PUBLIÉES, mesurées, sur :root —
+       `--sp-sidebar-r` par la barre latérale, `--sp-maquette-l` par la trappe — et
+       le calcul vit dans la feuille de style. Aucun style en ligne ne peut plus
+       diverger, et un élément flottant posé sur <body> les lit comme les autres. */
+    right: calc(var(--sp-sidebar-r, 280px) + var(--sp-maquette-l, 0px) + 16px); /* barre latérale + trappe + marge */
     bottom: 16px;
     z-index: 100;
     background: rgba(255, 255, 255, 0.96);
@@ -5292,6 +5302,8 @@ input[type=number] {
    Save/Import/Export reprennent le meme look "icon nu" que group/ungroup. */
 #openCollabBtn,
 #openAIBtn,
+#maquetteToggle,
+#sp3dPlayBtn,
 #togglePasteboardBtn,
 #groupSelection,
 #ungroupSelection,
@@ -5303,6 +5315,8 @@ input[type=number] {
 #redo,
 .theme-dark #openCollabBtn,
 .theme-dark #openAIBtn,
+.theme-dark #maquetteToggle,
+.theme-dark #sp3dPlayBtn,
 .theme-dark #togglePasteboardBtn,
 .theme-dark #groupSelection,
 .theme-dark #ungroupSelection,
@@ -5316,9 +5330,16 @@ input[type=number] {
     box-shadow: none !important;
     background: transparent !important;
 }
+/* ⚠️ v1.7.634 — DEUX ICÔNES MANQUAIENT À CETTE LISTE, ET C'EST TOUT LEUR DÉFAUT.
+   `#maquetteToggle` (Global Refactor) et `#sp3dPlayBtn` (Aperçu 3D) ne portaient pas
+   le traitement « icône nue » des autres : la première gardait le filet de `.btn`,
+   et la seconde, sans classe du tout, n'avait AUCUN état de survol. Les deux
+   rejoignent donc le même groupe, plutôt que de recevoir chacune leur rustine. */
 /* Hover discret : juste un fond tres leger, toujours pas de filet */
 #openCollabBtn:hover,
 #openAIBtn:hover,
+#maquetteToggle:hover,
+#sp3dPlayBtn:hover,
 #togglePasteboardBtn:hover,
 #groupSelection:hover,
 #ungroupSelection:hover,
@@ -5333,6 +5354,8 @@ input[type=number] {
 }
 .theme-dark #openCollabBtn:hover,
 .theme-dark #openAIBtn:hover,
+.theme-dark #maquetteToggle:hover,
+.theme-dark #sp3dPlayBtn:hover,
 .theme-dark #togglePasteboardBtn:hover,
 .theme-dark #groupSelection:hover,
 .theme-dark #ungroupSelection:hover,
@@ -5344,6 +5367,26 @@ input[type=number] {
 .theme-dark #redo:hover {
     background: rgba(255, 255, 255, 0.08) !important;
     border: 0 !important;
+}
+
+/* ⚠️ v1.7.634 — QUAND ELLE EST ACTIVE, L'ICÔNE RESTE GRIS CLAIR. Demande utilisateur :
+   « quand l'icône réglage est active elle devient fond noir, je n'en veux pas, on ne voit
+   plus rien — mets le fond gris du survol à la limite quand c'est actif ». Le fond noir
+   venait de la règle GÉNÉRIQUE `.btn.active` (fond #1a1a1a, texte #fff), qui convient à
+   un bouton de mode mais pas à une icône nue posée sur du blanc : elle devient une tache.
+   On reprend donc EXACTEMENT le gris du survol, et on garde la couleur de l'icône — le
+   bouton reste lisible et l'on voit toujours qu'il est actif. `!important` est nécessaire :
+   `.btn.active` est déclarée plus loin dans cette feuille. */
+#maquetteToggle.active,
+#sp3dPlayBtn.active {
+    background: rgba(0, 0, 0, 0.06) !important;
+    border: 0 !important;
+    color: #1a1a1a !important;
+}
+.theme-dark #maquetteToggle.active,
+.theme-dark #sp3dPlayBtn.active {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #e0e0e0 !important;
 }
 /* Label "● Nom" du bouton Collab : discret sur grand écran, masqué quand
    l'espace manque (sinon il pousse les boutons voisins). */
@@ -5735,7 +5778,12 @@ input[type=number] {
    🆕 v1.7.448 — RECHERCHER & REMPLACER : panneau confortable et déplaçable
    ═══════════════════════════════════════════════════════════════════════ */
 .fr-panel {
-    position: fixed; top: 70px; right: 300px; z-index: 10001;
+    /* ⚠️ v1.7.635 — MÊME FAMILLE DE DÉFAUT QUE LE WIDGET DE ZOOM : une position
+       ancrée à droite en dur (300 px) ne tient aucun compte de la trappe. Ce panneau
+       fait 400 px de large et sert tous les jours (Rechercher & Remplacer) : ouvert
+       avec la trappe, il finissait sous elle. Il lit donc les mêmes largeurs
+       publiées sur :root, ce qui le fait suivre la trappe ET la barre latérale. */
+    position: fixed; top: 70px; right: calc(var(--sp-sidebar-r, 280px) + var(--sp-maquette-l, 0px) + 20px); z-index: 10001;
     width: 400px; max-width: calc(100vw - 24px);
     background: #fff; border: 1px solid #e2e2e2; border-radius: 10px;
     box-shadow: 0 10px 34px rgba(0,0,0,0.16);
@@ -5920,7 +5968,7 @@ input[type=number] {
    restait 8 px). Modifier l'attribut `style` du div `.toolbar-center`. */
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   v1.7.632 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
+   v1.7.635 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
 
    Elle est le dernier enfant de `.app`, qui est un conteneur FLEX : sa largeur
    s'ajoute donc à droite et POUSSE l'interface, au lieu de la recouvrir comme le
@@ -6035,12 +6083,21 @@ input[type=number] {
     background: #fff;
     cursor: pointer;
 }
+/* ⚠️ v1.7.634 — LA TIRETTE REPREND CELLE DE « TRANSPARENCE · OPACITÉ ». Demande
+   utilisateur : « dans Global Refactor je prendrais en modèle, en design, celle
+   disponible dans Transparency : Opacity, qui est plus design que les tirettes du
+   panneau ». C'est la MÊME déclaration, recopiée de `#opacitySlider` — piste fine de
+   4 px, pouce proportionnel, accent noir — au lieu de la hauteur de 18 px qui donnait
+   la grosse piste native. Un seul dessin pour les deux, donc : si l'un bouge, l'autre
+   doit bouger, et la comparaison visuelle des deux panneaux le vérifie. */
 .mq-ligne input[type="range"] {
     grid-column: 2 / 3;
     width: 100%;
     min-width: 0;
-    accent-color: #111;
-    height: 18px;
+    flex: 1;
+    height: 4px;
+    accent-color: #1a1a1a;
+    cursor: pointer;
 }
 
 /* ── Pastilles ── */

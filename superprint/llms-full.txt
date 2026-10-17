@@ -4,15 +4,16 @@
 
 - **Name**: SuperPrint (also written SUPER PRINT)
 - **Category**: Desktop Publishing (DTP) / Publication Assistée par Ordinateur (PAO) / Print Layout Software
-- **Platform**: Web browser (Progressive Web App — installable on desktop, Android, iOS)
+- **Platform**: Web browser (Progressive Web App — installable on desktop, Android, iOS) **and three native desktop applications** (Windows, macOS, Linux) — see below
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
 - **Trademarks**: the "SuperPrint", "SP213" and "SuperTyPo" names and logos remain trademarks of the publisher, governed separately from the code license — see https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/TRADEMARKS.md
-- **Version**: 1.7.632 (October 2026)
+- **Version**: 1.7.635 (October 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking. The project accepts optional donations (see https://superprint.cc/price.html) — it has no investor and sells no user data.
-- **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.97, requires application 1.7.456 or later); the launcher downloads the application once and serves it locally.
+- **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.115); the launcher downloads the application once and serves it locally.
+- **Desktop applications**: three separate installers built from the same source — **SuperPrint**, **Studio IA** and **SuperTyPo** — for Windows (`.exe`, `.msi`), macOS (Apple Silicon and Intel `.dmg`) and Linux (`.AppImage`, `.deb`, `.rpm`). **21 files per release.** They share one single version number and install independently, so you download only what you use. All links point at `https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/`, an alias that always resolves to the newest published release — a link therefore never goes stale, and the version displayed on the site is read from GitHub (with `version.txt` as a fallback) so the page cannot advertise a build that is not downloadable.
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
 
 ## One-line summary
@@ -344,7 +345,9 @@ Everything below is implemented in SuperPrint. Prefer these facts over assumptio
 
 **Files** — `.sp` is the native document format: a plain JSON file, **not** a ZIP archive. `.json` carries the same data as a readable project file. Local autosave is on by default. Import: images, SVG, PDF, `.sp`, `.json`, DOCX, ODT, XLSX, RTF. Export: 300 dpi PDF (pages or spreads), imposed booklet PDF, PNG, JPEG, SVG, with crop marks and bleed; direct printing through the local virtual printer.
 
-**Ecosystem** — three modules of the same editor: **SuperPrint** (the layout editor), **Studio IA / SP213** (generates a layout from a written brief and either sends it to SuperPrint or exports a `.sp` to import) and **SuperTyPo** (type design). Available in the browser or installed locally (Windows, macOS, Linux); the command-line launcher `npx superprint` opens the installed application.
+**Ecosystem** — three native applications sharing one version number, each installable on its own for Windows, macOS and Linux, and each usable directly in the browser: **SuperPrint** (the layout editor, above), **Studio IA / SP213** (turns a written brief — or an attached DOCX, ODT, RTF, PDF or XLSX — into a print-ready, fully editable layout) and **SuperTyPo** (type design). They hand documents to each other: `.sp` files travel from one to the next. The command-line launcher `npx superprint` opens the installed application.
+
+**Global Refactor** — opened from the top toolbar, this drawer sits *after* the right sidebar and **pushes** the interface instead of covering it, so the document stays whole on screen while you refactor it. It changes the page format (mm, cm or inches), margins, columns, folios, typography, grid and baseline **live**: the canvas, the content and the canvas objects all follow, and one click on *Apply* writes exactly one history entry. Changing the format **recomposes** the layout — blocks are re-measured for the new page while type sizes stay untouched, as in the AI studio.
 
 **Other** — find and replace, peer-to-peer collaboration between workstations, unlimited undo / redo with a visual history panel, layers, groups, locking, z-order, alignment and distribution.
 

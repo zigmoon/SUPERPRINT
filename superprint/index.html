@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.632",
+      "softwareVersion": "1.7.635",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -548,7 +548,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
-/* 🆕 v1.7.632 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+/* 🆕 v1.7.635 — LE MENU NE SE REFERME PLUS EN CHEMIN.
    Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
    du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
    couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
@@ -665,7 +665,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    concurrencer le nom de l'application — 8 px, sans approche forcée, et un peu
    effacé pour qu'il se lise comme une précision et non comme un titre. */
 .nav-dd-app-ver { font-family: var(--f-mono); font-size: 8px; letter-spacing: .02em; color: var(--muted); opacity: .85; }
-/* 🆕 v1.7.632 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+/* 🆕 v1.7.635 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
    peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
@@ -707,7 +707,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
   color: var(--paper); background: var(--ink);
 }
-/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.632) ══════════════
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.635) ══════════════
    Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
    plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
    systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
@@ -1297,7 +1297,7 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 .cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
 .cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
 
-/* ══════════════ 🆕 v1.7.632 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
+/* ══════════════ 🆕 v1.7.635 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
    DERNIÈRE ZONE AVANT LE PIED DE PAGE. Elle ne double pas les trois entrées du
    haut de page, elle les prolonge : les entrées ouvrent l'application en ligne et
    ne disent rien des versions ; ici on donne le numéro de version, les trois
@@ -1943,7 +1943,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
-  /* 🎯 v1.7.632 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+  /* 🎯 v1.7.635 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
      Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
      ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
      texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
@@ -2193,7 +2193,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.632 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.635 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -2386,10 +2386,16 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .tpl-arrow {
   position: absolute; top: calc(14px + clamp(196px,21.5vw,246px) / 2); transform: translateY(-50%);
   width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
-  background: var(--paper-3); border: 1px solid var(--line-strong); color: var(--ink);
+  /* ⚠️ v1.7.634 — FLÈCHES EN FOND NOIR, TYPO BLANCHE. Demande utilisateur : « mettre les
+     flèches en fond noir et typo blanche ». Elles étaient en gris clair sur filet gris,
+     discrètes au point de ne plus se lire comme des commandes — alors que sur une section
+     qui sert à parcourir les maquettes, ce sont elles qui pilotent. Le survol ÉCLAIRCIT
+     le noir, il ne le remplace pas par du blanc : un fond blanc aurait fait disparaître
+     la flèche blanche. */
+  background: var(--ink); border: 1px solid var(--ink); color: var(--white);
   cursor: pointer; z-index: 3; transition: background .25s var(--ease), opacity .25s var(--ease);
 }
-.tpl-arrow:hover { background: var(--white); }
+.tpl-arrow:hover { background: var(--ink-soft); border-color: var(--ink-soft); }
 .tpl-arrow[disabled] { opacity: .32; cursor: default; }
 .tpl-arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tpl-prev { left: max(10px, calc((100% - 1180px) / 2 - 54px)); }
@@ -2601,7 +2607,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.632</span>
+  <span class="brand-ver">v1.7.635</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -2619,7 +2625,13 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
     <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
-    <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+    <!-- 🆕 v1.7.634 — L'ENTRÉE « ROCK v1 » A QUITTÉ LA BARRE DE NAVIGATION. Demande
+         utilisateur : « dans la top navigation, retirer Rock v1 ; mettre cette partie
+         dans les features en dessous de l'inventaire de SuperPrint, avec le titre
+         “Rock, le moteur intelligent de SuperPrint” ». Rock n'est pas une page à part :
+         c'est le moteur de l'application, et il se raconte donc à sa place, dans les
+         fonctions. La page rock.html existe toujours et reste liée depuis le bloc des
+         fonctions et depuis le pied de page : on ne casse aucun lien. -->
     <!-- 🆕 v1.7.613 — LE MENU RESTE DANS `.nav-links`, À LA PLACE QU'OCCUPAIT
          « Ouvrir l'app ». La barre répartit ses trois groupes en
          `space-between` : placé dans `.nav-tools`, le bouton glissait de 277 px
@@ -2655,15 +2667,15 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
               <span class="nav-dd-os">PC — Windows</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.632</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.635</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.632</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.635</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.632</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.635</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
               </span>
@@ -2676,15 +2688,15 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
               <span class="nav-dd-os">MAC — macOS</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.632</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.635</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.632</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.635</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.632</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.635</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
               </span>
@@ -2697,15 +2709,15 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
               <span class="nav-dd-os">LINUX</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.632</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.635</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.632</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.635</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.632</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.635</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
               </span>
@@ -2744,11 +2756,13 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
-    <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+  <!-- 🆕 v1.7.634 — « ROCK v1 » RETIRÉ AUSSI DU MENU BURGER, pour la même raison que de
+       la barre de navigation : c'est un moteur, pas une rubrique. Il se raconte dans les
+       fonctions, sous le titre « Rock, le moteur intelligent de SuperPrint ». -->
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
        que setLang() continue de marquer la langue choisie. -->
-  <!-- (v1.7.632 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
+  <!-- (v1.7.635 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
        la barre a été déplacé dans .nav-tools, qui reste visible sous 1000 px :
        il n'y a donc plus rien à dupliquer ici.) -->
   <div class="mm-lang">
@@ -2762,7 +2776,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.632</span>
+    <span>SuperPrint v1.7.635</span>
   </div>
 </div>
 
@@ -2881,16 +2895,19 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 
 <!-- ══════════════ CARROUSEL DES MODÈLES — v1.7.465 ══════════════
-     Pleine largeur, défilement horizontal natif (swipe mobile), 46 maquettes.
+     Pleine largeur, défilement horizontal natif (swipe mobile). Le rail contient les 46
+     maquettes dans le HTML, et le script n'en MONTRE qu'une partie tirée au hasard à
+     chaque chargement (v1.7.634) : rien n'est retiré du document, on choisit ce qu'on met
+     en avant.
      Chaque carte ouvre l'application avec le modèle déjà composé. -->
 <section id="templates" aria-labelledby="tpl-title">
   <div class="tpl-head">
     <span class="tpl-kicker" data-lang="fr">Modèles inclus</span>
     <span class="tpl-kicker" data-lang="en">Included templates</span>
     <span class="tpl-kicker" data-lang="ja">同梱テンプレート</span>
-    <h2 id="tpl-title" data-lang="fr">46 maquettes prêtes à ouvrir.</h2>
-    <h2 data-lang="en">46 layouts ready to open.</h2>
-    <h2 data-lang="ja">そのまま開ける 46 点のレイアウト。</h2>
+    <h2 id="tpl-title" data-lang="fr">Des maquettes prêtes à ouvrir.</h2>
+    <h2 data-lang="en">Layouts ready to open.</h2>
+    <h2 data-lang="ja">そのまま開けるレイアウト。</h2>
     <p data-lang="fr">Magazines, rapports, CV, calendriers, livres, menus, cartes de visite, presse quotidienne : chaque maquette est composée dans SuperPrint, aux bonnes marges et au bon format. Un clic et la maquette s'ouvre dans l'application pour l'éditer.</p>
     <p data-lang="en">Magazines, reports, CVs, calendars, books, menus, business cards, <strong>Japanese daily-newspaper layouts</strong> and a <strong>mobile-home brochure</strong>: every layout is composed in SuperPrint, with the right margins and page size. One click opens it in the application, ready to edit.</p>
     <p data-lang="ja">雑誌、レポート、履歴書、カレンダー、書籍、メニュー、名刺、<strong>日本語の新聞レイアウト</strong>と<strong>お品書き</strong>、そしてフランス語のモバイルハウス案内。すべて SuperPrint で、正しい余白と判型で組んであります。クリックするとアプリで開き、そのまま編集できます。</p>
@@ -3278,7 +3295,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   </div>
 
   <div class="tpl-foot">
-    <span class="tpl-count" id="tplCount">1 / 43</span>
+    <span class="tpl-count" id="tplCount">1 / 12</span>
     <span class="tpl-hint"><span class="inline-fr">Glissez, ou utilisez les flèches</span><span class="inline-en">Drag, or use the arrows</span><span class="inline-ja">ドラッグ、または矢印キー</span></span>
   </div>
 </section>
@@ -3483,6 +3500,101 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     </details>
 
 
+    <!-- 2 bis · ROCK — 🆕 v1.7.634. Demande utilisateur : « dans la top navigation,
+         retirer Rock v1 ; mettre cette partie dans les features en dessous de l'inventaire
+         de SuperPrint, et mettre en titre “Rock, le moteur intelligent de SuperPrint” ».
+         Ce bloc REPREND le contenu de la page rock.html — mêmes faits, mêmes chiffres —
+         dans la forme des autres replis de cette section, et il est posé JUSTE APRÈS
+         l'inventaire, comme demandé. Il n'invente rien : le texte vient de rock.html, qui
+         reste en ligne et reste lié en bas de ce bloc. -->
+    <details class="spf-fold" id="rock" data-chapitre="rock">
+        <summary class="spf-bar">
+          <div class="spf-k"><span data-lang="fr">Le moteur</span><span data-lang="en">The engine</span><span data-lang="ja">エンジン</span></div>
+          <div class="spf-t"><h3 data-lang="fr">Rock, le moteur intelligent de SuperPrint</h3><h3 data-lang="en">Rock, the intelligent engine of SuperPrint</h3><h3 data-lang="ja">Rock — SuperPrint の知的エンジン</h3></div>
+          <span class="spf-m">SP213 rock 1.0 · 0 jeton</span>
+          <span class="spf-plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="spf-in">
+          <div class="spf-lead"><p data-lang="fr">Rock n'écrit pas de phrases : il <strong>compose</strong>. Un livre, une maquette, une carte de visite, un catalogue — il pose les blocs, chaîne le texte, calcule les folios, les marges et le fond perdu, et il monte les pages selon les usages de l'imprimerie. Il travaille <strong>sur votre machine</strong>, sans clé et sans jeton.</p><p data-lang="en">Rock does not write sentences: it <strong>composes</strong>. A book, a layout, a business card, a catalogue — it places the blocks, chains the text, works out folios, margins and bleed, and imposes the pages the way a print shop does. It runs <strong>on your machine</strong>, with no key and no token.</p><p data-lang="ja">Rock は文章を書きません。<strong>組版します</strong>。書籍、レイアウト、名刺、カタログ。ブロックを配置し、テキストを流し込み、ノンブル・余白・塗り足しまで印刷屋の作法でページを面付けします。鍵もトークンも不要で、<strong>お使いの端末上で</strong>動きます。</p></div>
+<div class="pp-grid">
+
+      <article class="pp-card">
+        <div class="pp-num">01</div>
+        <h3 data-lang="fr">Il comprend le métier</h3>
+        <h3 data-lang="en">It understands the trade</h3>
+        <h3 data-lang="ja">業界を理解する</h3>
+        <p data-lang="fr">Marge intérieure du côté de la pliure, extérieure du côté des chants, fond perdu, traits de coupe, folios pairs et impairs : Rock applique les règles du métier au lieu de répartir des rectangles. C'est ce qui fait qu'une maquette composée par lui <strong>s'imprime</strong> sans être reprise.</p>
+        <p data-lang="en">Inner margin on the fold side, outer on the trim side, bleed, crop marks, even and odd folios: Rock applies the rules of the trade instead of spreading rectangles around. That is what makes a layout it composes <strong>print</strong> without being redone.</p>
+        <p data-lang="ja">綴じ側が内余白、裁ち側が外余白、塗り足し、トンボ、偶数・奇数のノンブル。Rock は矩形を並べるのではなく、印刷の作法を適用します。だからこそ彼が組んだレイアウトは手直しなしで<strong>印刷に出せます</strong>。</p>
+        <span class="pp-tag">Métier</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">02</div>
+        <h3 data-lang="fr">Il lit vos documents</h3>
+        <h3 data-lang="en">It reads your documents</h3>
+        <h3 data-lang="ja">書類を読み取ります</h3>
+        <p data-lang="fr">Déposez un texte, un plan, un catalogue : Rock en extrait la structure — titres, chapôs, listes, légendes — et la met en pages. Le texte reste <strong>du texte</strong> : il demeure éditable dans SuperPrint, et modifiable au pixel près ensuite, à la main.</p>
+        <p data-lang="en">Drop in a text, an outline, a catalogue: Rock extracts the structure — headings, standfirsts, lists, captions — and lays it out. The text stays <strong>text</strong>: it remains editable in SuperPrint, and adjustable down to the pixel afterwards, by hand.</p>
+        <p data-lang="ja">原稿、目次、カタログをドロップすると、Rock が構造 — 見出し、リード、箇条書き、キャプション — を抽出して組版します。テキストは<strong>テキストのまま</strong>。SuperPrint 内で編集でき、その後は手作業でピクセル単位まで調整できます。</p>
+        <span class="pp-tag">Import</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">03</div>
+        <h3 data-lang="fr">Rien ne sort de votre machine</h3>
+        <h3 data-lang="en">Nothing leaves your machine</h3>
+        <h3 data-lang="ja">データは端末から出ません</h3>
+        <p data-lang="fr">Rock ne parle à aucun service : il n'y a <strong>ni clé, ni compte, ni jeton</strong> à consommer, et rien à envoyer. Un document confidentiel reste confidentiel par construction, pas par promesse — et le studio le dit franchement quand un modèle en ligne est nécessaire à la place.</p>
+        <p data-lang="en">Rock talks to no service: there is <strong>no key, no account, no token</strong> to spend, and nothing to send. A confidential document stays confidential by construction, not by promise — and the studio says so plainly when an online model is needed instead.</p>
+        <p data-lang="ja">Rock はどのサービスとも通信しません。<strong>鍵も、アカウントも、消費するトークンも</strong>なく、送信するものもありません。機密文書は約束ではなく構造として機密のままです。代わりにオンラインモデルが必要な場合は、スタジオがはっきりと伝えます。</p>
+        <span class="pp-tag">0 jeton</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">04</div>
+        <h3 data-lang="fr">Écologique par construction</h3>
+        <h3 data-lang="en">Sober by construction</h3>
+        <h3 data-lang="ja">構造として省エネ</h3>
+        <p data-lang="fr">Composer sans modèle de langage, c'est ne rien calculer de superflu : pas de requête, pas de ferme de serveurs, pas d'attente. Une maquette se recompose <strong>en quelques millisecondes</strong>, sur le poste — c'est aussi pour cela que le réglage du format s'y fait en direct, à la tirette.</p>
+        <p data-lang="en">Composing without a language model means computing nothing superfluous: no request, no server farm, no waiting. A layout recomposes <strong>in a few milliseconds</strong>, on the machine — which is also why the format can be adjusted live there, by slider.</p>
+        <p data-lang="ja">言語モデルなしで組むということは、余計な計算をしないことです。リクエストも、サーバーファームも、待ち時間もありません。レイアウトは端末上で<strong>数ミリ秒</strong>で再構成され、だからこそ判型をスライダーでライブに調整できるのです。</p>
+        <span class="pp-tag">Local</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">05</div>
+        <h3 data-lang="fr">Il pense comme un imprimeur</h3>
+        <h3 data-lang="en">It thinks like a printer</h3>
+        <h3 data-lang="ja">印刷のルールで考える</h3>
+        <p data-lang="fr">Les repères et les grilles font partie du gabarit : une maquette peut n'être faite <strong>que</strong> de repères et de grilles, et s'appliquer à plusieurs pages d'un coup. Le travail préparatoire se transmet donc d'une page à l'autre au lieu d'être refait.</p>
+        <p data-lang="en">Guides and grids are part of the master: a layout can consist of <strong>nothing but</strong> guides and grids, and apply to several pages at once. Preparatory work therefore travels from page to page instead of being redone.</p>
+        <p data-lang="ja">ガイドとグリッドはマスターページの一部です。レイアウトは<strong>ガイドとグリッドだけ</strong>で成り立ち、複数ページに一括適用できます。下準備は作り直すのではなく、ページ間を引き継がれます。</p>
+        <span class="pp-tag">Gabarit</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">06</div>
+        <h3 data-lang="fr">Un moteur, une mission : la mise en page</h3>
+        <h3 data-lang="en">One engine, one mission: layout</h3>
+        <h3 data-lang="ja">エンジンはひとつ、役割は組版</h3>
+        <p data-lang="fr">Rock ne dessine pas, ne retouche pas les images et n'écrit pas de texte à votre place : il <strong>met en page</strong>. La version et le moteur sont nommés dans l'interface (<code>SP213 rock 1.0</code>), pour qu'on sache toujours qui a composé le document ouvert.</p>
+        <p data-lang="en">Rock does not draw, does not retouch images and does not write text for you: it <strong>lays out</strong>. The version and the engine are named in the interface (<code>SP213 rock 1.0</code>), so you always know what composed the open document.</p>
+        <p data-lang="ja">Rock は描画せず、画像をレタッチせず、文章も代筆しません。<strong>組版します</strong>。バージョンとエンジン名はインターフェースに表示され（<code>SP213 rock 1.0</code>）、開いている文書を何が組んだかが常に分かります。</p>
+        <span class="pp-tag">SP213 rock 1.0</span>
+      </article>
+
+</div>
+          <div class="spf-cta">
+            <a href="rock.html" class="btn btn-paper" data-lang="fr">Tout savoir sur Rock</a>
+            <a href="rock.html" class="btn btn-paper" data-lang="en">Everything about Rock</a>
+            <a href="rock.html" class="btn btn-paper" data-lang="ja">Rock の詳細</a>
+            <a href="sp213-studio.html" class="btn btn-outline" data-lang="fr">Essayer dans le studio</a>
+            <a href="sp213-studio.html" class="btn btn-outline" data-lang="en">Try it in the studio</a>
+            <a href="sp213-studio.html" class="btn btn-outline" data-lang="ja">スタジオで試す</a>
+          </div>
+        </div>
+    </details>
     <!-- 3 · LE PRÉPRESSE — replié, et traité à l'encre pour trancher avec le reste -->
     <details class="spf-fold" id="prepress" data-chapitre="prepress">
         <summary class="spf-bar">
@@ -4221,17 +4333,18 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <p class="lead" data-lang="fr">SuperPrint s'ouvre en quelques secondes. Vos documents sont sauvegardés seuls, sur votre appareil. Aucune inscription, aucun abonnement.</p>
     <p class="lead" data-lang="en">SuperPrint opens in seconds. Your documents save themselves, on your device. No sign-up, no subscription.</p>
     <p class="lead" data-lang="ja">SuperPrintは数秒で開きます。ドキュメントは端末に自動保存。登録もサブスクも不要です。</p>
-    <div class="cta-btns">
-      <a href="app/index.html" class="btn btn-black" data-lang="fr">Lancer SuperPrint <span class="arr" aria-hidden="true">→</span></a>
-      <a href="app/index.html" class="btn btn-black" data-lang="en">Open SuperPrint <span class="arr" aria-hidden="true">→</span></a>
-      <a href="app/index.html" class="btn btn-black" data-lang="ja">SuperPrintを開く <span class="arr" aria-hidden="true">→</span></a>
-      <a href="sp213-studio.html" class="btn btn-outline-black" data-lang="fr">Ouvrir le studio IA</a>
-      <a href="sp213-studio.html" class="btn btn-outline-black" data-lang="en">Open the AI studio</a>
-      <a href="sp213-studio.html" class="btn btn-outline-black" data-lang="ja">AIスタジオを開く</a>
-      <a href="documentation.html" class="btn btn-outline-black" data-lang="fr">Lire le manuel</a>
-      <a href="documentation.html" class="btn btn-outline-black" data-lang="en">Read the manual</a>
-      <a href="documentation.html" class="btn btn-outline-black" data-lang="ja">マニュアルを読む</a>
-    </div>
+    <!-- 🆕 v1.7.634 — LES TROIS BOUTONS SECONDAIRES ONT ÉTÉ RETIRÉS. Demande
+         utilisateur : « dans la partie colophon — prêt à composer, retirer les 3 boutons
+         Lancer SuperPrint, Ouvrir le studio IA, Lire le manuel ». Trois appels à l'action
+         concurrents dans la même rangée : l'œil ne sait plus lequel suivre, et les trois
+         destinations sont déjà atteignables depuis la barre de navigation, qui reste en
+         haut de la page comme dans le menu. La section garde donc son titre, son
+         paragraphe et sa mention « sans compte · sans publicité » : ce qui restait à
+         dire reste dit.
+         ⚠️ LES TROIS `<a>` DES TROIS LANGUES SONT RETIRÉS ENSEMBLE : laisser une seule
+         langue sans bouton, ou l'inverse, aurait fait disparaître la rangée en français
+         et l'aurait laissée en anglais — le genre d'incohérence invisible dans une
+         relecture d'une seule langue. -->
     <div class="cta-registration">
       <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
       <span data-lang="fr">Sans compte · Sans publicité</span>
@@ -4273,12 +4386,12 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <span class="lg-role"><span class="inline-fr">Le bureau de PAO</span><span class="inline-en">The DTP desk</span><span class="inline-ja">DTPデスク</span></span>
           </div>
         </div>
-        <p class="lg-desc" data-lang="fr">Le bureau de PAO complet : mise en page, prépresse, export PDF. Tout le poste, hors ligne.</p>
-        <p class="lg-desc" data-lang="en">The complete DTP desk: layout, prepress, PDF export. The whole workstation, offline.</p>
-        <p class="lg-desc" data-lang="ja">DTPデスクのすべて — 組版、プリプレス、PDF書き出し。オフラインで完結。</p>
+        <p class="lg-desc" data-lang="fr">Le bureau de PAO complet : mise en page, prépresse, export PDF.</p>
+        <p class="lg-desc" data-lang="en">The complete DTP desk: layout, prepress, PDF export.</p>
+        <p class="lg-desc" data-lang="ja">DTPデスクのすべて — 組版、プリプレス、PDF書き出し。</p>
         <div class="lg-ver">
           <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
-          <b>v1.7.632</b>
+          <b>v1.7.635</b>
         </div>
         <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
         <div class="lg-actions">
@@ -4304,7 +4417,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         <p class="lg-desc" data-lang="ja">レイアウトを言葉に。AIが組み、あなたが直し、書き出す。</p>
         <div class="lg-ver">
           <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
-          <b>v1.7.632</b>
+          <b>v1.7.635</b>
         </div>
         <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
         <div class="lg-actions">
@@ -4330,7 +4443,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         <p class="lg-desc" data-lang="ja">書体を読み込み、1文字ずつ曲線で描き直し、書き出す。</p>
         <div class="lg-ver">
           <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
-          <b>v1.7.632</b>
+          <b>v1.7.635</b>
         </div>
         <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
         <div class="lg-actions">
@@ -4459,7 +4572,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.632</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.635</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -4613,7 +4726,7 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 
 // ── Zone « Nos logiciels · Nos versions » : le bouton ouvre le menu de la barre ──
-/* 🆕 v1.7.632 — Le bouton de la zone du bas ne recopie pas les sept adresses de
+/* 🆕 v1.7.635 — Le bouton de la zone du bas ne recopie pas les sept adresses de
    fichiers : il ouvre le menu de la barre, qui reste la seule liste du site.
    Deux pièges, tous les deux traités ici :
    1. Le menu se referme au moindre clic hors de lui (écouteur sur `document`).
@@ -4860,7 +4973,32 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 (function () {
   var rail = document.getElementById('tplRail');
   if (!rail) return;
-  var cartes = Array.prototype.slice.call(rail.querySelectorAll('.tpl-card'));
+  var toutes = Array.prototype.slice.call(rail.querySelectorAll('.tpl-card'));
+
+  /* ⚠️ v1.7.634 — TIRAGE ALÉATOIRE À CHAQUE CHARGEMENT. Demande utilisateur : « faire un
+     random des templates : les templates changent à chaque chargement de la page ».
+     On mélange donc les cartes, puis on n'en MONTRE QU'UNE PARTIE — et pas seulement dans
+     un autre ordre : sur 46 maquettes, un simple mélange se lit « la même page » d'une
+     visite à l'autre, alors qu'une sélection différente se voit tout de suite.
+     Les cartes non tirées restent dans le DOCUMENT, retirées du rail et masquées : elles
+     restent donc dans le HTML servi, avec leur lien et leur aperçu. On ne cache rien à
+     l'indexation, on choisit ce qu'on met en avant.
+     Le tirage est enfin CONTRÔLÉ, pas seulement « mélangé » : une permutation de Fisher-Yates
+     donne toutes les sélections avec la même probabilité, là où trier sur un nombre
+     aléatoire est biaisé et peut laisser des cartes voisines groupées.
+     Le nombre affiché n'est donc PAS le nombre de maquettes du site, et le compteur suit
+     la sélection réelle — il était écrit en dur (« 1 / 43 ») et ne pouvait pas suivre. */
+  var A_MONTRER = 12;
+  var melange = toutes.slice();
+  for (var i = melange.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = melange[i]; melange[i] = melange[j]; melange[j] = t;
+  }
+  var choisies = melange.slice(0, Math.min(A_MONTRER, melange.length));
+  var ecartees = melange.slice(choisies.length);
+  ecartees.forEach(function (c) { c.remove(); });
+  choisies.forEach(function (c) { rail.appendChild(c); });
+  var cartes = choisies;
   var prev = document.querySelector('.tpl-prev'), next = document.querySelector('.tpl-next');
   var compteur = document.getElementById('tplCount');
   var total = cartes.length;
@@ -5491,6 +5629,92 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   if (typeof setLangOrigine === 'function') {
     window.setLang = function (l, explicite) { setLangOrigine(l, explicite); maj(); };
   }
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════
+     🆕 v1.7.634 — LES VERSIONS AFFICHÉES SUIVENT GITHUB
+
+     Question de l'utilisateur : « dans le bouton téléchargement, est-ce que les versions
+     sont synchronisées avec GitHub ? Si non, il faut le faire. »
+
+     RÉPONSE MESURÉE AVANT D'ÉCRIRE : NON, elles ne l'étaient pas. Les liens de
+     téléchargement, eux, étaient déjà bons — ils passent par l'alias
+     `releases/download/desktop-latest/…`, que GitHub fait pointer sur la dernière
+     version publiée, vérifié : l'alias servait bien 1.7.632 avec ses 21 fichiers. Mais
+     les QUATRE VINGT-TREIZE numéros affichés sur la page (« v1.7.635 » au colophon, dans
+     le menu, sous chaque application) étaient du texte figé dans le HTML : ils ne
+     changeaient donc QU'AU moment d'un bump, et seulement parce que le script de
+     publication les réécrivait. Entre deux publications, la page peut donc annoncer une
+     version qui n'existe pas encore en téléchargement — c'est exactement ce qui se passe
+     aujourd'hui (le site annonce 1.7.635, l'alias GitHub sert 1.7.632).
+
+     CE QUE CE SCRIPT FAIT, ET CE QU'IL NE FAIT PAS :
+      · il LIT la version réelle, et réécrit les numéros affichés ;
+      · il ne touche PAS les liens : ils utilisent déjà l'alias, qui est la bonne manière
+        de toujours servir la dernière version sans jamais retoucher le HTML ;
+      · il ne bloque rien : lecture en arrière-plan, et si les deux sources échouent, le
+        numéro écrit en dur reste — c'est un repli volontaire, pas un oubli. Une page
+        dont la version disparaîtrait serait pire qu'une page un peu en retard.
+
+     ORDRE DES SOURCES : GitHub D'ABORD, parce que c'est la source que l'utilisateur
+     publie et la question qu'il pose ; `version.txt` ensuite, sur le même serveur, donc
+     sans CORS ni quota d'API. Les deux sont datées à la lecture pour qu'on puisse dire
+     d'où vient le numéro affiché.
+     ══════════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  var API = 'https://api.github.com/repos/zigmoon/SUPERPRINT/releases/tags/desktop-latest';
+  var SECOURS = 'version.txt';
+  var MOTIF = /^v?(\d+\.\d+\.\d+)$/;
+
+  function ecrire(version, source) {
+    var propre = String(version).replace(/^v/, '');
+    if (!MOTIF.test('v' + propre)) return false;
+    var cibles = document.querySelectorAll('.brand-ver, .nav-dd-app-ver, .lg-ver b');
+    Array.prototype.forEach.call(cibles, function (el) { el.textContent = 'v' + propre; });
+    /* On note la source dans le document : c'est ce qui permet de VÉRIFIER que la
+       synchronisation a eu lieu, au lieu de regarder la page et d'espérer. */
+    try { document.documentElement.setAttribute('data-version-source', source + ':' + propre); } catch (_) {}
+    return true;
+  }
+
+  function depuisGithub() {
+    return fetch(API, { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j) return false;
+        /* Le numéro est dans le titre de la publication (« SuperPrint 1.7.632 — … »), et
+           le corps de l'annonce le répète : on lit le titre d'abord, le corps ensuite.
+           On ne se fie PAS au nom du fichier joint : il peut être renommé. */
+        var m = String(j.name || '').match(/(\d+\.\d+\.\d+)/) || String(j.body || '').match(/(\d+\.\d+\.\d+)/);
+        return m ? ecrire(m[1], 'github') : false;
+      })
+      .catch(function () { return false; });
+  }
+
+  function depuisVersionTxt() {
+    return fetch(SECOURS, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (t) { return t ? ecrire(t.trim(), 'version.txt') : false; })
+      .catch(function () { return false; });
+  }
+
+  function commencer() {
+    depuisGithub().then(function (fait) {
+      /* `version.txt` prend le relais seulement si GitHub n'a rien donné — et il
+         CORRIGE aussi GitHub quand celui-ci est en retard, puisque c'est la valeur que
+         l'utilisateur vient de déposer en même temps que le zip. */
+      return depuisVersionTxt().then(function (fait2) {
+        if (!fait && !fait2) {
+          try { document.documentElement.setAttribute('data-version-source', 'html-fige'); } catch (_) {}
+        }
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', commencer);
+  else commencer();
 })();
 </script>
 </body>
