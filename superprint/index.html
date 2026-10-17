@@ -900,79 +900,59 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   padding: 0 .14em;
   margin: 0 -.14em;
 }
-/* ══════════════ COMPATIBILITÉ SYSTÈMES — SOUS LES TROIS ENTRÉES ══════════════
-   🆕 v1.7.654 — DEMANDE UTILISATEUR, MOT POUR MOT : « met les 3 logos mac pc
-   linux et info Windows macOS Linux un peu plus grand (ceux en dessous les 3
-   boites (app) ils sont tout petit) et met un lien qui pointe vers les
-   installeurs sur github ».
+/* ══════════════ COMPATIBILITÉ SYSTÈMES — TROIS LOGOS, TROIS LIENS ══════════════
+   🆕 v1.7.654 — DEMANDE UTILISATEUR : « met les 3 logos mac pc linux et info
+   Windows macOS Linux un peu plus grand (ceux en dessous les 3 boîtes (app) ils
+   sont tout petit) et met un lien qui pointe vers les installeurs sur github ».
+   ⚠️ MESURÉ AVANT : 10 px de corps, pictogrammes de 14 × 14, ligne haute de 17 px,
+   et AUCUN lien. C'était la plus petite écriture du hero, alors que c'est elle qui
+   dit sur quoi le logiciel tourne.
 
-   ⚠️ MESURÉ AVANT, ET C'EST CE QUI JUSTIFIE LE CHANGEMENT : la ligne entière
-   occupait 280 × 17 px, en corps de 10 px, avec des pictogrammes de 14 × 14 px.
-   Sur une page dont le titre fait 88 px, c'était la plus petite écriture du hero
-   — alors que c'est elle qui dit sur quoi le logiciel tourne. Corps porté à
-   13 px (+30 %), pictogrammes à 20 × 20 px (+43 %), interlignes élargis en
-   proportion (8/16 → 10/22 px) pour que la ligne respire au lieu de se tasser.
+   🆕 v1.7.655 — DEUXIÈME RETOUR, ET IL RACCOURCIT PLUS QU'IL N'ALLONGE :
+   « supprimer Installateurs et COMPATIBLE, mettre que les logos avec le lien
+   GitHub ». Le mot d'introduction (« Compatible » / « Runs on » / 対応OS) et la
+   gélule « Installateurs » DISPARAISSENT donc du visible. Il ne reste que les
+   trois pictogrammes, et CHACUN EST LE LIEN — un logo de système qui ne mène à
+   rien serait un dessin, pas une commande.
 
-   ⚠️ LES INTERLETTRAGES SONT RÉDUITS, PAS AUGMENTÉS. À corps constant, un
-   interlettrage de .24em convenait à une gélule de 10 px ; à 13 px, il écartait
-   les lettres au point de faire lire « P C ». On le ramène à .1em sur les noms
-   de systèmes et .18em sur le mot d'introduction.
+   ⚠️ RIEN N'EST PERDU POUR AUTANT : le nom du système et la destination passent
+   dans aria-label ET title. Un lecteur d'écran annonce « Windows — installateurs »,
+   et la souris les affiche au survol. C'est la seule façon de tenir « que les
+   logos » sans rendre la ligne muette.
 
-   LE LIEN VERS GITHUB EST UNE GÉLULE, comme les boutons du site : il mène au
-   tag `desktop-latest`, l'alias que GitHub fait pointer sur la dernière livraison
-   — donc jamais une version figée dans le marquage. Il porte le pictogramme
-   GitHub pour qu'on sache où l'on atterrit avant de cliquer, et une flèche
-   sortante qui dit que l'on quitte le site. */
+   ⚠️ 26 px ET NON 20 : la ligne n'a plus de texte pour la porter, ce sont les
+   pictogrammes seuls qui doivent se voir. L'écart passe à 26 px, et la zone
+   cliquable est plus grande que le dessin (padding 4px), pour qu'on ne vise pas
+   un carré de 26 px à la souris. */
 .hero-os {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-  gap: 10px 22px; margin: clamp(18px,2.2vw,26px) 0 0;
-  font-family: var(--f-mono); font-size: 13px; letter-spacing: .18em;
-  text-transform: uppercase; color: var(--muted);
+  gap: 6px 26px; margin: clamp(18px,2.2vw,26px) 0 0;
 }
-.hero-os-lbl { display: inline-flex; align-items: center; }
-/* Le filet sépare le mot d'introduction des trois plateformes ; il disparaît
-   quand la ligne se replie, sinon il se retrouverait en début de ligne. */
+/* LE LOGO EST LE LIEN. Aucun contour, aucun fond : au repos la ligne se lit comme
+   trois marques posées sur le papier, et seul le survol dit qu'elles sont
+   cliquables. Le grossissement est léger (1.08), pour rester dans le vocabulaire
+   discret du hero — ce n'est pas un bouton d'appel à l'action. */
 .hero-os-list {
-  display: inline-flex; align-items: center; gap: 10px 22px; flex-wrap: wrap;
-  justify-content: center; padding-left: 22px; border-left: 1px solid var(--line);
+  display: inline-flex; align-items: center; gap: 6px 26px; flex-wrap: wrap;
+  justify-content: center;
 }
-.hero-os-list i {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-style: normal; letter-spacing: .1em;
-  /* ⚠️ LA CASSE RÉELLE DES NOMS DE PLATEFORME EST RESPECTÉE. La ligne est en
-     capitales par héritage (`text-transform: uppercase` sur `.hero-os`), ce qui
-     rendait « MACOS » — une faute de marque, et d'autant plus visible que la
-     ligne est passée de 10 à 13 px. On garde la casse du mot : Windows, macOS,
-     Linux. C'est aussi l'orthographe employée dans la demande (« info Windows
-     macOS Linux »). */
-  text-transform: none;
+.hero-os-list a {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 4px; text-decoration: none;
+  transition: transform .22s var(--ease);
 }
-.hero-os-list i img { display: block; width: 20px; height: 20px; }
-/* La gélule GitHub : contour d'encre, fond de papier, inversion au survol —
-   exactement le vocabulaire des autres boutons du site. */
-.hero-os-dl {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 13px 6px 11px; border: 1px solid var(--line-strong);
-  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink);
-  text-decoration: none; transition: all .25s var(--ease);
+.hero-os-list a img { display: block; width: 26px; height: 26px; }
+.hero-os-list a:hover, .hero-os-list a:focus-visible { transform: scale(1.08); }
+.hero-os-list a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-os-list a { transition: none; }
+  .hero-os-list a:hover, .hero-os-list a:focus-visible { transform: none; }
 }
-.hero-os-dl img { display: block; width: 16px; height: 16px; }
-.hero-os-dl .fleche { font-size: 12px; line-height: 1; opacity: .55; }
-.hero-os-dl:hover, .hero-os-dl:focus-visible {
-  background: var(--ink); border-color: var(--ink); color: var(--paper);
-}
-/* ⚠️ LE PICTOGRAMME GITHUB EST CUIT À L'ENCRE (#17130D) : il ne peut pas suivre
-   `currentColor` dans une <img>. Sur fond d'encre il disparaîtrait donc. On
-   l'inverse au survol, ce qui redonne exactement le blanc du papier. */
-.hero-os-dl:hover img, .hero-os-dl:focus-visible img { filter: invert(1) brightness(1.9); }
-.hero-os-dl:hover .fleche, .hero-os-dl:focus-visible .fleche { opacity: .85; }
 @media (max-width: 620px) {
-  .hero-os { gap: 8px 16px; font-size: 12px; }
-  .hero-os-list { padding-left: 0; border-left: 0; gap: 8px 16px; }
-  .hero-os-list i img { width: 18px; height: 18px; }
-  .hero-os-dl { font-size: 10px; }
+  .hero-os-list { gap: 4px 18px; }
+  .hero-os-list a img { width: 22px; height: 22px; }
 }
+
 .hero-dots {
   display: flex; align-items: center; justify-content: center; gap: 14px;
   margin: clamp(20px,2.6vw,34px) 0 0;
@@ -2413,8 +2393,19 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    max-width: 1180px; margin: 0 auto;
-    padding: 0 clamp(18px,4vw,40px);
+    /* 🆕 v1.7.655 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+       Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
+       desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
+       d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
+       bord sur un écran de 1600. Le `max-width` disparaît donc : les quatre cases
+       se partagent la largeur entière. Mesuré à 1600 px : les colonnes passent de
+       260 à 380 px et la première case commence à 40 px du bord.
+       ⚠️ LE REMBOURRAGE RESTE, et il n'est pas décoratif : sans lui le premier logo
+       toucherait le bord de l'écran et le dernier, le bord opposé.
+       ⚠️ SOUS 901 px LA BARRE N'EST PLUS FIXE (grille empilée) : cette règle vit
+       dans la requête de média desktop, elle ne les touche donc pas. */
+    max-width: none; margin: 0;
+    padding: 0 clamp(18px,2.5vw,40px);
     border-top: 0; border-bottom: 0;
   }
   /* Le rembourrage vertical part : c'est la HAUTEUR FIXE de la barre qui fait le
@@ -2908,9 +2899,14 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <section id="hero">
   <div class="ghost" aria-hidden="true">PRINT</div>
   <div class="container">
-    <div class="hero-kicker" data-lang="fr">Le n°1 de la PAO 100% online</div>
-    <div class="hero-kicker" data-lang="en">The first DTP software, 100% online</div>
-    <div class="hero-kicker" data-lang="ja">100%オンラインのNo.1レイアウトデスク</div>
+    <!-- 🆕 v1.7.655 — « 100% ONLINE » DEVIENT « GRATUITE ».
+         Demande utilisateur : « Le n°1 de la PAO 100% online (remplace par
+         gratuit) ». Accord au féminin : le sujet est LA PAO (publication assistée
+         par ordinateur). L'anglais et le japonais suivent le même déplacement —
+         « 100% online » y décrivait le navigateur, pas le prix. -->
+    <div class="hero-kicker" data-lang="fr">Le n°1 de la PAO gratuite</div>
+    <div class="hero-kicker" data-lang="en">The number one free DTP software</div>
+    <div class="hero-kicker" data-lang="ja">無料No.1のレイアウトデスク</div>
 
     <h1 data-lang="fr"><span class="line">l'édition créative</span> <span class="line"><em class="italic">nouvelle génération</em></span></h1>
     <h1 data-lang="en"><span class="line">creative publishing</span> <span class="line"><em class="italic">next generation</em></span></h1>
@@ -2926,9 +2922,14 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
       <a class="entry" href="app/index.html" style="--entry-accent:#00A7C7">
         <span class="entry-name">SuperPrint</span>
+        <!-- 🆕 v1.7.655 — « Le bureau de PAO complet : mise en page, prépresse,
+             export. » devient « Bureau de PAO de dernière génération. » Demande
+             utilisateur, mot pour mot. La version anglaise et la japonaise suivent
+             le même déplacement : elles décrivaient une LISTE DE FONCTIONS, elles
+             disent maintenant la GÉNÉRATION du produit. -->
         <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="50" height="50"></span>
         <span class="entry-body">
-          <span class="entry-desc"><span class="inline-fr">Le bureau de PAO complet : mise en page, prépresse, export.</span><span class="inline-en">The complete DTP desk: layout, prepress, export.</span><span class="inline-ja">DTPデスクのすべて — 組版、プリプレス、書き出し。</span></span>
+          <span class="entry-desc"><span class="inline-fr">Bureau de PAO de dernière génération.</span><span class="inline-en">Next-generation DTP desk.</span><span class="inline-ja">次世代のDTPデスク。</span></span>
           <span class="entry-go">Open Web App →</span>
         </span>
       </a>
@@ -2953,32 +2954,28 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
     </div>
 
-    <!-- COMPATIBILITÉ SYSTÈMES — juste après les trois entrées, avant les
-         fondations et l'accroche.
-         Les trois noms « Windows », « macOS » et « Linux » ne sont PAS traduits : ce
-         sont des noms de plateformes, pas des mots. Même raisonnement que « .exe » et
-         « Open Web App » plus haut — les écrire trois fois à l'identique serait une
-         fausse traduction. Seul le mot d'introduction change de langue, via les
-         `inline-*` (et non `data-lang`, qui force `display:block` sur l'élément
-         correspondant et casserait l'alignement en ligne). -->
+    <!-- COMPATIBILITÉ SYSTÈMES — juste après les trois entrées.
+         🆕 v1.7.655 — TROIS LOGOS, RIEN D'AUTRE. Demande utilisateur : « supprimer
+         Installateurs et COMPATIBLE, mettre que les logos avec le lien GitHub ».
+         Le mot d'introduction et la gélule ont donc disparu ; il ne reste que les
+         trois pictogrammes, et CHACUN EST LE LIEN vers les installeurs. Un logo de
+         système qui ne mène à rien serait un dessin, pas une commande.
+         ⚠️ LE NOM DU SYSTÈME VIT DANS `aria-label` ET `title`, plus dans le texte
+         visible : sans eux la ligne serait muette pour un lecteur d'écran, et rien
+         n'indiquerait où mène le clic. La souris les affiche au survol.
+         `releases/tag/desktop-latest` est l'alias que GitHub fait pointer sur la
+         dernière livraison : le lien ne se périme pas à chaque version, et il mène
+         aux vingt et un fichiers (sept par application), exactement comme le
+         sous-menu « Télécharger » du haut de page. -->
     <div class="hero-os">
-      <span class="hero-os-lbl"><span class="inline-fr">Compatible</span><span class="inline-en">Runs on</span><span class="inline-ja">対応OS</span></span>
       <span class="hero-os-list">
-        <i><img src="icons/windows.svg" alt="" width="20" height="20" loading="lazy" decoding="async">Windows</i>
-        <i><img src="icons/macos.svg" alt="" width="20" height="20" loading="lazy" decoding="async">macOS</i>
-        <i><img src="icons/linux.svg" alt="" width="20" height="20" loading="lazy" decoding="async">Linux</i>
+        <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener noreferrer"
+           aria-label="Windows — installateurs" title="Windows — installateurs"><img src="icons/windows.svg" alt="" width="26" height="26" loading="lazy" decoding="async"></a>
+        <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener noreferrer"
+           aria-label="macOS — installateurs" title="macOS — installateurs"><img src="icons/macos.svg" alt="" width="26" height="26" loading="lazy" decoding="async"></a>
+        <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener noreferrer"
+           aria-label="Linux — installateurs" title="Linux — installateurs"><img src="icons/linux.svg" alt="" width="26" height="26" loading="lazy" decoding="async"></a>
       </span>
-      <!-- 🆕 v1.7.654 — LE LIEN MÈNE AUX INSTALLEURS, PAS À UNE PAGE FIGÉE.
-           `releases/tag/desktop-latest` est l'alias que GitHub fait pointer sur la
-           dernière livraison : le lien ne se périme donc pas à chaque version, et
-           il mène aux vingt et un fichiers (sept par application) exactement comme
-           le sous-menu « Télécharger » du haut de page. -->
-      <a class="hero-os-dl" href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest"
-         target="_blank" rel="noopener noreferrer">
-        <img src="icons/github.svg" alt="" width="16" height="16" loading="lazy" decoding="async">
-        <span class="inline-fr">Installeurs</span><span class="inline-en">Installers</span><span class="inline-ja">インストーラー</span>
-        <span class="fleche" aria-hidden="true">↗</span>
-      </a>
     </div>
 
     <!-- ══════════════ FONDATIONS OPEN SOURCE — GitHub, npm, Rust ══════════════
