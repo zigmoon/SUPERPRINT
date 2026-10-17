@@ -365,7 +365,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
-/* 🆕 v1.7.656 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+/* 🆕 v1.7.657 — LE MENU NE SE REFERME PLUS EN CHEMIN.
    Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
    du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
    couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
@@ -482,7 +482,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    concurrencer le nom de l'application — 8 px, sans approche forcée, et un peu
    effacé pour qu'il se lise comme une précision et non comme un titre. */
 .nav-dd-app-ver { font-family: var(--f-mono); font-size: 8px; letter-spacing: .02em; color: var(--muted); opacity: .85; }
-/* 🆕 v1.7.656 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+/* 🆕 v1.7.657 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
    peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
@@ -524,7 +524,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
   color: var(--paper); background: var(--ink);
 }
-/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.656) ══════════════
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.657) ══════════════
    Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
    plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
    systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
@@ -1373,7 +1373,7 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
-  /* 🎯 v1.7.656 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+  /* 🎯 v1.7.657 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
      Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
      ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
      texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
@@ -1917,7 +1917,18 @@ section.help-price > .help-ress-intro { text-align: center; margin-left: auto; m
 .help-price-card:nth-child(2) { border-top-color: var(--magenta); }
 .help-price-card:nth-child(3) { border-top-color: var(--yellow); }
 .help-price-card:nth-child(4) { border-top-color: var(--ink); }
-.help-price-card--free { background: var(--paper); border-color: var(--ink); }
+/* ⚠️ 1.7.657 — LE FILET DU HAUT GARDE L'ACCENT CYAN. `border-color` est un
+   RACCOURCI qui écrit les QUATRE côtés à la fois : posé après la règle de base
+   (`border-top: 3px solid var(--cyan)`), il repeignait aussi le filet du haut, et
+   la carte gratuite perdait son accent — mesuré : rgb(23,19,13) sur les quatre
+   côtés, quand les trois autres cartes portent bien magenta, jaune et encre en
+   haut. L'encre reste donc sur les côtés et le bas, où elle sert à détacher la
+   carte gratuite du fond ; le haut reprend le cyan de la règle de base. */
+.help-price-card--free {
+  background: var(--paper);
+  border-left-color: var(--ink); border-right-color: var(--ink); border-bottom-color: var(--ink);
+  border-top-color: var(--cyan);
+}
 .help-price-no { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
 .help-price-no b { font-weight: 700; color: var(--ink); }
 .help-price-no i { font-style: normal; }
@@ -2288,7 +2299,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 @media print { .sp-wa { display: none; } }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   1.7.656 — LA BARRE FIXE DES FONDATIONS, SUR « FAQ » ET « TARIF »
+   1.7.657 — LA BARRE FIXE DES FONDATIONS, SUR « FAQ » ET « TARIF »
    Demande utilisateur : « contrôle que le footer fixe soit bien implémenté dans
    les pages faq et price ». Le contrôle a montré qu'il ne l'était pas : les deux
    pages ne portaient aucune des trois classes (fondations, fondations-grid,
@@ -2301,7 +2312,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    commentaire dans la requête de média).
    ═══════════════════════════════════════════════════════════════════════════ */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.656 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.657 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -2309,14 +2320,14 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    correspondante. */
 .fondations-grid {
   display: grid;
-  /* 🆕 v1.7.656 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+  /* 🆕 v1.7.657 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
      Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
      bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
      363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
      quatre cases d'information se partagent le reste à parts égales. */
   grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.656 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+  /* 🆕 v1.7.657 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
      353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
      la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
@@ -2350,7 +2361,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-/* 🆕 v1.7.656 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+/* 🆕 v1.7.657 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
    Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
    ICON MÊME NOIR QUE RUST ».
    ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
@@ -2421,7 +2432,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
    toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
    elles se lisent sans qu'on aille les chercher.
-   🆕 v1.7.656 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   🆕 v1.7.657 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
    cette même barre.
 
    LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
@@ -2453,7 +2464,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     🆕 v1.7.656 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     🆕 v1.7.657 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
      À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
      des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
      DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
@@ -2472,7 +2483,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
      réservée devient exacte par construction. */
   .fondations {
     position: fixed; left: 0; right: 0; bottom: 0;
-    /* 1.7.656 — le 40 est porté par la BARRE sur ces deux pages : elle est ici
+    /* 1.7.657 — le 40 est porté par la BARRE sur ces deux pages : elle est ici
        enfant direct de <body>, donc dans le contexte d'empilement racine (voir
        l'en-tête du script). Sur index.html il est porté par `.container`. */
     z-index: 40;
@@ -2491,7 +2502,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    /* 🆕 v1.7.656 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+    /* 🆕 v1.7.657 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
        Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
        desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
        d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
@@ -2519,7 +2530,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 /* Une barre fixe s'imprimerait sur la première page de tout document : à l'écran
    elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
 @media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
-/* ═══ 1.7.656 — LA BULLE WHATSAPP S'EFFACE EN DESKTOP ═══
+/* ═══ 1.7.657 — LA BULLE WHATSAPP S'EFFACE EN DESKTOP ═══
    Sans cette règle, la barre fixe porterait une case WhatsApp ET la bulle
    flotterait par-dessus : deux commandes pour le même numéro, dont une qui masque
    le contenu. ⚠️ ELLE DOIT RESTER APRÈS .sp-wa : à spécificité égale, seule la
@@ -2581,7 +2592,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.656</span>
+  <span class="brand-ver">v1.7.657</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -2634,15 +2645,15 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
               <span class="nav-dd-os">PC — Windows</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.656</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.657</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.656</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.657</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.656</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.657</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
               </span>
@@ -2655,15 +2666,15 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
               <span class="nav-dd-os">MAC — macOS</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.656</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.657</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.656</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.657</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.656</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.657</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
               </span>
@@ -2676,15 +2687,15 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
               <span class="nav-dd-os">LINUX</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.656</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.657</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.656</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.657</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.656</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.657</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
               </span>
@@ -2735,7 +2746,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.656</span>
+    <span>SuperPrint v1.7.657</span>
   </div>
 </div>
 
@@ -2955,7 +2966,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
           </span>
         </a>
 
-        <!-- 🆕 v1.7.656 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
+        <!-- 🆕 v1.7.657 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
              Demande utilisateur, après avoir vu la première tentative reléguée au
              colophon : « Footer de superprint.cc LA BARRE QUI EST FIXE SUR LA PAGE
              et pas le footer de la page, à droite de github on va ajouter notre
@@ -2996,7 +3007,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
           </span>
         </a>
 
-            <!-- 🆕 v1.7.656 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
+            <!-- 🆕 v1.7.657 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
                  Demande utilisateur : « à la fin du footer fixe en carré mets le bouton
                  WhatsApp directement, cela sera plus simple directement dans la barre
                  plutôt que flottant ; cependant garde-le bien en mobile (cette bulle
@@ -3088,7 +3099,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.656</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.657</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>

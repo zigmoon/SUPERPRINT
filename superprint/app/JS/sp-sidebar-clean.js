@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   v1.7.656 — _SP_RANGEMENT_655 : LES SOUFFLETS DES DEUX COLONNES
+   v1.7.657 — _SP_RANGEMENT_655 : LES SOUFFLETS DES DEUX COLONNES
    Demande utilisateur : « ajouter un soufflet aux titres suivants et ranger
    leur partie dedans » — Justification, Tons directs, Éléments de texte dans la
    colonne de droite, Calques dans la colonne de gauche.
@@ -19,7 +19,7 @@
 (function () {
   'use strict';
 
-  var CLEF = 'sp.soufflets.v656';
+  var CLEF = 'sp.soufflets.v657';
   var etats = {};
   try { etats = JSON.parse(localStorage.getItem(CLEF) || '{}') || {}; } catch (_) { etats = {}; }
 

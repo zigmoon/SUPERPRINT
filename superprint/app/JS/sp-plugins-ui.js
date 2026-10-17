@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.656)
+   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.657)
    ═══════════════════════════════════════════════════════════════════════════════
 
    DEUX SURFACES, ET C'EST VOULU :
 
      · la BIBLIOTHÈQUE est une pop-in — on y installe, on supprime, on allume ou
        on éteint. Elle n'a pas besoin de voir la page : elle gère des fichiers.
-       ⚠️ v1.7.656 — ELLE NE FILTRE PLUS. La barre « Tous / 7 jours / 30 jours /
+       ⚠️ v1.7.657 — ELLE NE FILTRE PLUS. La barre « Tous / 7 jours / 30 jours /
        intégrés » a été retirée sur demande : elle découpait une liste qui tient à
        l'écran. La date d'installation reste écrite sur chaque carte.
 
@@ -34,7 +34,7 @@
     return e;
   }
 
-  /* ⚠️ v1.7.656 — `el()` PREND UN STYLE, PAS UNE CLASSE. Et ça s'était vu.
+  /* ⚠️ v1.7.657 — `el()` PREND UN STYLE, PAS UNE CLASSE. Et ça s'était vu.
      MESURÉ : `el('div', 'sp-pl-aide', …)` posait `style="sp-pl-aide"` — une
      déclaration invalide, donc ignorée par le navigateur. Résultat : les textes
      d'aide des plug-ins s'affichaient SANS leur style (9 px gris), et la valeur
@@ -142,7 +142,7 @@
     var ligne = el('div', 'padding:0 12px;margin-bottom:5px;');
     var id = 'spPluginOpt_' + option.key;
 
-    /* ═══ v1.7.656 — LE GRAND APERÇU ═══════════════════════════════════════
+    /* ═══ v1.7.657 — LE GRAND APERÇU ═══════════════════════════════════════
        Demande utilisateur : « une preview plus grand de mon image ou de mes
        images ». Un motif ne se juge pas sur une vignette de 28 px : ce champ pose
        une TOILE de la largeur de la trappe, et le plug-in y dessine lui-même la
@@ -166,7 +166,7 @@
       return { ligne: ligne, champ: null, option: option, toile: toile };
     }
 
-    /* ═══ v1.7.656 — LE MIXEUR D'IMAGES ════════════════════════════════════
+    /* ═══ v1.7.657 — LE MIXEUR D'IMAGES ════════════════════════════════════
        Demande utilisateur : « une preview plus grand de mon image ou de mes
        images (un mixer ?) ». Ce champ porte un TABLEAU de dataURL : on en ajoute
        autant qu'on veut, chacune se retire par sa croix, et le plug-in les
@@ -280,7 +280,7 @@
       if (valeurs && valeurs[option.key]) apercu.style.backgroundImage = 'url("' + valeurs[option.key] + '")';
       var bImg = petitBouton(texte('pluginsChooseImage', 'Image'), false);
       var etat = el('span', 'font-size:9px;color:#999;font-family:"IBM Plex Mono",monospace;', '—');
-      /* 🆕 v1.7.656 — l'aperçu doit RELANCER le plug-in quand l'image change.
+      /* 🆕 v1.7.657 — l'aperçu doit RELANCER le plug-in quand l'image change.
          Le bouton n'émet aucun événement natif : on publie donc un rappel, que la
          trappe branche sur l'aperçu en direct. Sans lui, choisir une image ne
          montrait rien tant qu'on n'avait pas cliqué « Appliquer » — exactement le
@@ -370,7 +370,7 @@
      ══════════════════════════════════════════════════════════════════════════ */
   var trappe = { id: null, champs: [], valeurs: {}, occupe: false };
 
-  /* ⚠️ v1.7.656 — L'APERÇU EN DIRECT.
+  /* ⚠️ v1.7.657 — L'APERÇU EN DIRECT.
      Demande utilisateur : « pourquoi et temps réel c'est-à-dire que je n'ai pas
      besoin de faire apply à chaque fois pour visualiser les modifications ».
      Chaque champ relance donc le plug-in, 140 ms après le dernier mouvement (assez
@@ -525,7 +525,7 @@
 
     if (t.titre) t.titre.textContent = p.name + '  ·  v' + p.version;
     t.corps.innerHTML = '';
-    /* ⚠️ v1.7.656 — LA DESCRIPTION DU PLUG-IN N'EST PLUS RÉPÉTÉE DANS LA TRAPPE.
+    /* ⚠️ v1.7.657 — LA DESCRIPTION DU PLUG-IN N'EST PLUS RÉPÉTÉE DANS LA TRAPPE.
        Demande utilisateur : « il y a beaucoup trop de texte d'info partout ».
        Elle est déjà sur la carte de la bibliothèque, où elle sert à choisir le
        plug-in ; ici, on a déjà choisi. La reprendre en tête de trappe repoussait
@@ -580,7 +580,7 @@
       ouvrirPanneau();
     });
 
-    /* ⚠️ v1.7.656 — « ENREGISTRER » N'EXÉCUTE PLUS LE PLUG-IN.
+    /* ⚠️ v1.7.657 — « ENREGISTRER » N'EXÉCUTE PLUS LE PLUG-IN.
        L'aperçu l'a déjà fait, et une exécution de plus écraserait le dessin par un
        état identique en apparence — mais avec un nouveau tirage de hasard si la
        graine avait changé entre-temps. Ce bouton ne fait donc qu'une chose :
@@ -592,7 +592,7 @@
   /* ══════════════════════════════════════════════════════════════════════════
      BIBLIOTHÈQUE (pop-in)
      ══════════════════════════════════════════════════════════════════════════
-     ⚠️ v1.7.656 — PLUS DE BARRE DE FILTRES. Demande utilisateur : « supprime toute
+     ⚠️ v1.7.657 — PLUS DE BARRE DE FILTRES. Demande utilisateur : « supprime toute
      cette ligne de filtre All 2 / 7 days / 30 days / built-in 2 ».
      Elle coûtait 28 px de haut sur une liste qui en fait 83 par carte, pour
      découper une liste qui tient à l'écran — deux plug-ins livrés, et le plus
@@ -667,7 +667,7 @@
       }
       m.fermer();
       ouvrirPanneau();
-      /* 🆕 v1.7.656 — L'ICÔNE DE LA BARRE DU HAUT SUIT L'INTERRUPTEUR. Sans cet
+      /* 🆕 v1.7.657 — L'ICÔNE DE LA BARRE DU HAUT SUIT L'INTERRUPTEUR. Sans cet
          appel, éteindre un plug-in laissait son icône dans la barre : elle ouvrait
          un outil que la bibliothèque venait de déclarer hors service. */
       actualiserBarrePlugIns();
@@ -717,7 +717,7 @@
 
     actions.appendChild(interrupteur(p, m));
 
-    /* 🆕 v1.7.656 — « UTILISER » EST UNE GÉLULE, SANS FLÈCHE (cf. `.sp-pl-use`).
+    /* 🆕 v1.7.657 — « UTILISER » EST UNE GÉLULE, SANS FLÈCHE (cf. `.sp-pl-use`).
        La flèche a été retirée : elle allongeait le bouton de 12 px pour redire ce
        que le mot dit déjà. Le libellé seul se lit d'un coup d'œil. */
     var bUtiliser = el('button', '');
@@ -753,7 +753,7 @@
             window.SPPlugins.desinstaller(p.id);
             if (trappe.id === p.id) fermerTrappe();
             ouvrirPanneau();
-            /* 🆕 v1.7.656 — l'icône du plug-in désinstallé doit quitter la barre. */
+            /* 🆕 v1.7.657 — l'icône du plug-in désinstallé doit quitter la barre. */
             actualiserBarrePlugIns();
             try { window.spShowToast(p.name + ' — ' + texte('pluginsDeleted', 'désinstallé'), { kind: 'info', duration: 2600 }); } catch (_) {}
           } catch (e) {
@@ -863,7 +863,7 @@
       try {
         var res = window.SPPlugins.installerSource(String(r.result), f.name);
         ouvrirPanneau();
-        /* 🆕 v1.7.656 — un plug-in fraîchement installé est actif : sa place dans
+        /* 🆕 v1.7.657 — un plug-in fraîchement installé est actif : sa place dans
            la barre du haut doit apparaître sans attendre un rechargement. */
         actualiserBarrePlugIns();
         try { window.spShowToast(texte('pluginsInstalled', 'Plug-in installé : ') + res.name, { kind: 'info' }); } catch (_) {}
@@ -877,7 +877,7 @@
   }
 
   /* ── Ouverture de la trappe pour un plug-in donné ─────────────────────────── */
-  /* ═══ v1.7.656 — LES ICÔNES DE LA BARRE DU HAUT ═══════════════════════════
+  /* ═══ v1.7.657 — LES ICÔNES DE LA BARRE DU HAUT ═══════════════════════════
      Demande utilisateur : « affiche une icône dans la top nav quand c'est en on
      (global refactor on doit encore l'avoir, elle était dans la top nav avant en
      permanence) ». Un plug-in ALLUMÉ apparaît donc dans la barre du haut ; éteint,
@@ -963,7 +963,7 @@
   function ouvrirTrappePlugIn(id) {
     var p = window.SPPlugins.get(id);
 
-    /* 🆕 v1.7.656 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
+    /* 🆕 v1.7.657 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
        Il n'a pas de formulaire à construire : son `run()` ouvre le panneau qu'il
        possède déjà. On l'EXÉCUTE donc directement, sans passer par la trappe
        générique — sinon on aurait deux panneaux pour un seul outil, et un bouton
@@ -990,7 +990,7 @@
     brancherTrappe();
     var bPlug = document.getElementById('openPluginsPanel');
     if (bPlug) bPlug.addEventListener('click', function () {
-      /* ⚠️ v1.7.656 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
+      /* ⚠️ v1.7.657 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
          Il la refermait quand la trappe d'un plug-in était ouverte (« va-et-vient,
          pas une ouverture forcée »). MESURÉ : depuis que « Global Refactor » est un
          plug-in, cela fait deux clics pour l'atteindre — le premier referme la
@@ -1003,7 +1003,7 @@
     var bMcp = document.getElementById('openMcpPanel');
     if (bMcp) bMcp.addEventListener('click', ouvrirPanneauMCP);
 
-    /* 🆕 v1.7.656 — LA RANGÉE D'ICÔNES DE LA BARRE DU HAUT.
+    /* 🆕 v1.7.657 — LA RANGÉE D'ICÔNES DE LA BARRE DU HAUT.
        ⚠️ ELLE SE REMPLIT ICI, ET PAS AU CHARGEMENT DU SCRIPT : les fichiers de
        `app/plugins/` sont insérés par `index.html` APRÈS `main.js` et s'enregistrent
        de façon asynchrone. Un premier remplissage immédiat trouverait donc une liste
@@ -1015,7 +1015,7 @@
     setTimeout(actualiserBarrePlugIns, 400);
     setTimeout(actualiserBarrePlugIns, 1500);
 
-    /* 🆕 v1.7.656 — LA RANGÉE SUIT LA LANGUE DE L'INTERFACE.
+    /* 🆕 v1.7.657 — LA RANGÉE SUIT LA LANGUE DE L'INTERFACE.
        MESURÉ : `setLanguage('fr')` changeait bien les libellés de la bibliothèque
        (`liste()` traduit à la lecture), mais la barre du haut restait dans la
        langue précédente — elle avait été dessinée une fois, et rien ne la
@@ -1144,7 +1144,7 @@
     installerFichier: installerFichier
   };
 
-  /* ═══ v1.7.656 — LA TOILE D'APERÇU, VUE PAR LE REGISTRE ═══════════════════
+  /* ═══ v1.7.657 — LA TOILE D'APERÇU, VUE PAR LE REGISTRE ═══════════════════
      `sp-plugins.js` construit l'API offerte au plug-in, mais c'est CE module qui
      possède la trappe et donc la toile du champ « aperçu ». On publie un
      accesseur, et rien de plus : le registre n'a pas à connaître la structure de
