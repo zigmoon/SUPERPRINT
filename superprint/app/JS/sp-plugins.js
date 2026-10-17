@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-INS  (v1.7.645)
+   SUPERPRINT — PLUG-INS  (v1.7.646)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Un plug-in SuperPrint est un fichier `.plugin.js` que l'utilisateur installe
@@ -26,7 +26,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.645';
+  var VERSION = '1.7.646';
   var CLE_REGISTRE = 'sp_plugins_v1';        // plug-ins installés (code source + manifeste)
   var CLE_ACTIFS = 'sp_plugins_actifs_v1';   // { [id]: true/false }
 
@@ -250,7 +250,7 @@
       description: String(m.description || ''),
       icon: String(m.icon || '◆'),
       options: options,
-      /* 🆕 v1.7.645 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
+      /* 🆕 v1.7.646 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
          « Global Refactor » n'est pas un formulaire : c'est un panneau entier, avec
          un aperçu en direct, un Annuler et un Valider qui existaient déjà. Le
          réécrire dans une trappe générique aurait été un second code à maintenir
@@ -290,7 +290,7 @@
     installes[m.id] = {
       source: src, name: m.name, version: m.version, author: m.author, integre: false,
       description: m.description, icon: m.icon, options: m.options, fichier: nomFichier || '',
-      /* 🆕 v1.7.645 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
+      /* 🆕 v1.7.646 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
          Les plug-ins installés AVANT cette version n'en ont pas : le filtre les
          traite alors comme « anciens » (visibles dans « Tous » et « 30 jours »),
          jamais comme « récents » — on ne date pas rétroactivement un fichier
@@ -327,7 +327,7 @@
     }
     if (!m) throw new Error('plug-in inconnu : ' + id);
     if (!m.run) throw new Error('ce plug-in n\'a pas de fonction run()');
-    /* ⚠️ v1.7.645 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
+    /* ⚠️ v1.7.646 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
        LE DIT. L'état `actif` existait depuis 1.7.642 mais n'était qu'une pastille
        d'affichage : `definirActif` écrivait dans le stockage et personne ne le
        relisait. Un interrupteur qui ne coupe rien est un mensonge — la garde est
@@ -373,7 +373,7 @@
         integre: !!m.integre || !!(inst && inst.integre),
         actif: actifs[id] !== false,
         /* Date d'installation, pour les filtres de la bibliothèque (cf. installe
-           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.645. */
+           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.646. */
         installe: (inst && inst.installe) ? inst.installe : null,
         /* Trappe propre au plug-in (cf. `normaliser`) — intégrés uniquement. */
         trappe: m.integre ? m.trappe : ''
@@ -419,7 +419,7 @@
   window.SPPlugins = {
     version: VERSION,
     register: enregistrerIntegre,
-    /* 🆕 v1.7.645 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
+    /* 🆕 v1.7.646 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
        besoin AVANT qu'un plug-in tourne : c'est un champ de son formulaire, pas un
        appel du plug-in. Il délègue à la même fonction que `api.imageDataUrl`, donc
        un seul comportement pour les deux chemins. */
