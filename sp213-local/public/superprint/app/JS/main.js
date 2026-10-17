@@ -101755,16 +101755,63 @@ function initObjectRightClickMenu() {
         return !!(o.isMargin || o.isBleed || o.isTrimBox || o.excludeFromExport || o._isUiHelper);
     }
     function estTexte(o) { return o.type === 'textbox' || o.type === 'text' || o.type === 'i-text'; }
-    /* « Cadres » : les rectangles et les images. Les tracés et les groupes restent en
-       dehors — c'est le périmètre demandé — et l'application les ramène déjà dans la
-       page par `clampObjectsToCurrentFormat()`. */
+    /* « Cadres » : les rectangles et les images. Ce sont les objets dont la taille se
+       règle par `width`/`height` et dont le rendu suit (le motif de photo d'un cadre
+       masqué se recalcule depuis la taille affichée). */
     function estCadre(o) { return o.type === 'rect' || o.type === 'image'; }
+
+    /* ⚠️ v1.7.637 — LES FORMES ET LES GROUPES ÉTAIENT PUREMENT IGNORÉS, ET C'EST CE
+       QUI « CASSAIT TOUT ». MESURÉ, page 1207 → 858 px de large (A4 paysage) : les deux
+       blocs texte, le rectangle, l'image et le cadre photo suivaient ; le CERCLE, le
+       TRIANGLE, le TRACÉ et le GROUPE restaient à leurs coordonnées d'origine (cercle
+       à x=420, tracé à x=300, groupe à x=560, tous inchangés). Sur une maquette mêlant
+       texte et formes, la page rétrécissait donc autour d'un décor figé — le texte se
+       tassait à gauche et les formes débordaient à droite.
+       La cause était une liste blanche : `objetsMaquette` ne retenait que texte,
+       rectangles et images. On prend désormais TOUT ce qui n'est pas de la décoration
+       de page, et on choisit plus loin COMMENT chaque famille se redimensionne —
+       `width`/`height` pour celles qui le supportent, `scaleX`/`scaleY` pour les
+       autres (cercle, triangle, polygone, tracé, ligne, groupe), seules capables de
+       les transformer sans toucher à leur géométrie interne. */
+    function estForme(o) { return !estTexte(o) && !estCadre(o); }
 
     function objetsMaquette(cv) {
         if (!cv || typeof cv.getObjects !== 'function') return [];
         return cv.getObjects().filter(function (o) {
-            return o && !estDecoration(o) && (estTexte(o) || estCadre(o));
+            if (!o || estDecoration(o)) return false;
+            /* Un objet sans géométrie (curseur, repère de saisie, widget) n'a rien à
+               faire dans une recomposition : il multiplierait ses coordonnées par le
+               rapport d'échelle sans que personne ne l'ait demandé. */
+            if (typeof o.left !== 'number' || typeof o.top !== 'number') return false;
+            if (typeof o.getScaledWidth !== 'function') return false;
+            return true;
         });
+    }
+
+    /* ⚠️ LA POSITION SE MET À L'ÉCHELLE PAR LE CENTRE, PAS PAR LE COIN. MESURÉ : les
+       objets d'une maquette n'ont pas tous la même origine (`originX`/`originY`), et
+       un objet TOURNÉ n'a pas son coin sur son axe. Multiplier `left`/`top` par le
+       rapport décale alors l'objet d'une quantité qui dépend de son angle — et deux
+       objets de même angle ne se décalent pas pareil si leurs tailles diffèrent.
+       On calcule donc le centre avant, on met le centre à l'échelle, et on repose
+       l'objet par ce centre : c'est vrai quel que soit le couple origine/angle. */
+    function centreDe(o) {
+        try { var c = o.getCenterPoint(); if (c && isFinite(c.x) && isFinite(c.y)) return c; } catch (_) {}
+        var w = (typeof o.getScaledWidth === 'function') ? o.getScaledWidth() : (o.width || 0);
+        var h = (typeof o.getScaledHeight === 'function') ? o.getScaledHeight() : (o.height || 0);
+        return { x: (o.left || 0) + w / 2, y: (o.top || 0) + h / 2 };
+    }
+    function poserAuCentre(o, x, y) {
+        try {
+            if (typeof fabric !== 'undefined' && fabric.Point && typeof o.setPositionByOrigin === 'function') {
+                o.setPositionByOrigin(new fabric.Point(x, y), 'center', 'center');
+                return;
+            }
+        } catch (_) {}
+        /* Repli sans fabric.Point : on repose le coin depuis le centre calculé. */
+        var w = (typeof o.getScaledWidth === 'function') ? o.getScaledWidth() : (o.width || 0);
+        var h = (typeof o.getScaledHeight === 'function') ? o.getScaledHeight() : (o.height || 0);
+        o.set({ left: x - w / 2, top: y - h / 2 });
     }
 
     /* Taille de chaque vue AVANT l'écriture du format.
@@ -101806,21 +101853,48 @@ function initObjectRightClickMenu() {
            ce que ce réglage ne doit pas faire, et c'est ce que faisait le studio ;
          · un CADRE (rectangle, image) suit la page : position et fenêtre. Sur une image
            à fenêtre de recadrage, c'est le cadrage qui suit le format, comme le studio
-           qui régénérait ses images à la nouvelle taille. */
+           qui régénérait ses images à la nouvelle taille ;
+         · une FORME (cercle, triangle, polygone, tracé, ligne, groupe) ne se
+           redimensionne QUE par `scaleX`/`scaleY` : elle n'a pas de `width`/`height`
+           réglables qui suivent le rendu. C'est ce que faisait défaut — voir la note
+           de `objetsMaquette`.
+       Et dans les trois cas la position passe par le CENTRE (voir `centreDe`). */
     function recomposerAuFormat(avant) {
-        var fait = { blocs: 0, cadres: 0 };
+        var fait = { blocs: 0, cadres: 0, formes: 0 };
+        /* ⚠️ LE RAPPORT D'ÉCHELLE SE CALCULE SUR LE CONTENU DE LA PAGE, PAS SUR LE
+           CANVAS ENTIER — et c'est ce qui rend l'aller-retour exact. Le canvas vaut
+           « page(s) + fond perdu de chaque côté », et le FOND PERDU NE CHANGE PAS
+           avec le format : c'est une constante de 3 mm. Rapporter la largeur totale
+           revient donc à mélanger une grandeur qui s'échelle (la page) et une qui ne
+           s'échelle pas (le fond perdu). MESURÉ sur une double page : les tailles
+           revenaient exactement (écart 0,0002 px) mais les POSITIONS dérivaient de
+           26,264 px après un aller-retour 210 → 170 → 210, et de 17,809 px sur une
+           autre planche. On retire donc le fond perdu des deux côtés avant de faire
+           le rapport, et on replace les objets dans le même repère :
+               nouveau = fondPerdu + (ancien - fondPerdu) × rapport
+           Ce repère est celui de la page, donc identique quel que soit le nombre de
+           pages de la vue (une double page donne exactement le même rapport qu'une
+           page seule). */
+        var fpx = (typeof mmToPx === 'function' && typeof bleed === 'number' && isFinite(bleed)) ? mmToPx(bleed) : 0;
         avant.forEach(function (mesure) {
             /* La vue est RETROUVÉE : l'application a pu la recréer en appliquant le
                format, et c'est la nouvelle qu'il faut recomposer. */
             var cv = retrouverVue(mesure);
             var el = cv && cv.lowerCanvasEl;
             if (!el || !el.width || !el.height) return;
-            var rx = el.width / mesure.w;
-            var ry = el.height / mesure.h;
+            var contenuAvantW = mesure.w - 2 * fpx, contenuApresW = el.width - 2 * fpx;
+            var contenuAvantH = mesure.h - 2 * fpx, contenuApresH = el.height - 2 * fpx;
+            if (!(contenuAvantW > 1) || !(contenuAvantH > 1) || !(contenuApresW > 1) || !(contenuApresH > 1)) return;
+            var rx = contenuApresW / contenuAvantW;
+            var ry = contenuApresH / contenuAvantH;
             if (!isFinite(rx) || !isFinite(ry) || rx <= 0 || ry <= 0) return;
             if (rx === 1 && ry === 1) return;
+            /* Repère de la page : le fond perdu est l'origine du contenu. */
+            var repere = function (v, r) { return fpx + (v - fpx) * r; };
             objetsMaquette(cv).forEach(function (o) {
                 var texte = estTexte(o);
+                var cadre = estCadre(o);
+                var centre = centreDe(o);
                 /* ⚠️ `_fixedWidth` / `_fixedHeight` SONT LA RÉFÉRENCE, PAS `width`/`height`.
                    Ce sont les miroirs que l'application tient à jour, et une synchro
                    ultérieure repose `width` depuis eux. MESURÉ, en les laissant en
@@ -101829,13 +101903,24 @@ function initObjectRightClickMenu() {
                    code, mais `_fixedWidth` écrasait la largeur et `_fixedHeight`
                    n'écrasait pas la hauteur. On pose donc les deux : la valeur et sa
                    référence. */
-                var fw0 = (typeof o._fixedWidth === 'number' && o._fixedWidth > 0) ? o._fixedWidth : 0;
-                var fh0 = (typeof o._fixedHeight === 'number' && o._fixedHeight > 0) ? o._fixedHeight : 0;
-                if (o.width > 0) o.set('width', o.width * rx);
-                if (o.height > 0) o.set('height', o.height * ry);
-                if (fw0 > 0) o._fixedWidth = fw0 * rx;
-                if (fh0 > 0) o._fixedHeight = fh0 * ry;
-                o.set({ left: (o.left || 0) * rx, top: (o.top || 0) * ry });
+                if (texte || cadre) {
+                    var fw0 = (typeof o._fixedWidth === 'number' && o._fixedWidth > 0) ? o._fixedWidth : 0;
+                    var fh0 = (typeof o._fixedHeight === 'number' && o._fixedHeight > 0) ? o._fixedHeight : 0;
+                    if (o.width > 0) o.set('width', o.width * rx);
+                    if (o.height > 0) o.set('height', o.height * ry);
+                    if (fw0 > 0) o._fixedWidth = fw0 * rx;
+                    if (fh0 > 0) o._fixedHeight = fh0 * ry;
+                } else {
+                    /* ⚠️ ON MULTIPLIE L'ÉCHELLE, ON NE LA REMPLACE PAS. Un tracé ou un
+                       groupe peut déjà porter un `scaleX` non nul (import SVG, mise à
+                       l'échelle manuelle) : l'écraser à la valeur du rapport
+                       redimensionnerait l'objet une seconde fois depuis zéro. */
+                    o.set({
+                        scaleX: (typeof o.scaleX === 'number' && o.scaleX ? o.scaleX : 1) * rx,
+                        scaleY: (typeof o.scaleY === 'number' && o.scaleY ? o.scaleY : 1) * ry
+                    });
+                }
+                poserAuCentre(o, repere(centre.x, rx), repere(centre.y, ry));
                 try { if (typeof o.setCoords === 'function') o.setCoords(); } catch (_) {}
                 if (texte) {
                     try { if (typeof o._clearCache === 'function') o._clearCache(); } catch (_) {}
@@ -101843,7 +101928,24 @@ function initObjectRightClickMenu() {
                     try { if (typeof applyTextboxClipPath === 'function') applyTextboxClipPath(o); } catch (_) {}
                     try { if (typeof updateOverflowIndicator === 'function') updateOverflowIndicator(o, cv); } catch (_) {}
                     fait.blocs++;
-                } else fait.cadres++;
+                } else if (cadre) {
+                    /* ⚠️ UN CADRE PHOTO DOIT RECALCULER SON MOTIF. La photo d'un cadre
+                       masqué est peinte comme un motif dimensionné À PARTIR de la taille
+                       affichée du cadre. Changer `width` sans redemander le calcul
+                       laisse l'ancien motif : la photo est alors étirée ou rognée au
+                       mauvais endroit. L'appel est idempotent — il recalcule depuis la
+                       taille courante — donc le refaire ne nuit pas. */
+                    /* ⚠️ ON NE RECALCULE QUE SI LA PHOTO EST LÀ. Un cadre masqué dont
+                       l'image n'est pas encore chargée (`fabric.Image.fromURL` est
+                       asynchrone) porte `_isImageMask` mais pas `_maskImage` :
+                       `recalculateMaskPattern` sort alors en avertissement, et un
+                       changement de format sur un document fraîchement ouvert
+                       produirait une console bruyante pour rien. */
+                    if (o._isImageMask && o._maskImage && typeof window.recalculateMaskPattern === 'function') {
+                        try { window.recalculateMaskPattern(o, cv); } catch (_) {}
+                    }
+                    fait.cadres++;
+                } else fait.formes++;
             });
             try { if (cv.requestRenderAll) cv.requestRenderAll(); } catch (_) {}
         });
@@ -101904,10 +102006,36 @@ function initObjectRightClickMenu() {
             }
         });
 
-        /* ── 4b. Recale sur la grille de colonnes ── */
+        /* ── 4b. Recale sur la grille de colonnes ──
+           ⚠️ v1.7.637 — LES CADRES PHOTO SONT RECALÉS EUX AUSSI. La version précédente
+           ne parcourait que `blocs` (les blocs texte) : sur une maquette mêlant texte
+           et photos, le texte venait se ranger dans les colonnes pendant que les photos
+           restaient où elles étaient — le « recalage » désalignait la page au lieu de
+           l'aligner. Un cadre photo EST un bloc : il se range dans une colonne comme
+           le texte. Les formes pures (cercle, tracé, groupe) restent en dehors : ce
+           sont des éléments graphiques, pas des blocs de composition, et les ranger
+           dans une colonne n'aurait aucun sens.
+           ⚠️ ET CHAQUE FAMILLE SE RECALE À SA MANIÈRE : un cadre masqué garde sa
+           hauteur et laisse son cadrage s'ajuster (le motif se recalcule) ; une image
+           nue est mise à l'échelle UNIFORMÉMENT, sinon elle serait étirée. */
+        var recalables = blocs.slice();
+        (function () {
+            var listes = [];
+            try { if (typeof canvases !== 'undefined' && canvases) listes.push(canvases); } catch (_) {}
+            listes.forEach(function (liste) {
+                liste.forEach(function (cv) {
+                    if (!cv || typeof cv.getObjects !== 'function') return;
+                    cv.getObjects().forEach(function (o) {
+                        if (!o || estDecoration(o)) return;
+                        if (!(o.type === 'image' || o._isImageMask)) return;
+                        recalables.push({ obj: o, canvas: cv });
+                    });
+                });
+            });
+        })();
         var geo = geometrieColonnes();
         if (geo && etat.recalerColonnes) {
-            blocs.forEach(function (entree) {
+            recalables.forEach(function (entree) {
                 var o = entree.obj, cv = entree.canvas;
                 var cotes = cotesDuCanvas(cv);
                 if (!cotes.length) return;
@@ -101939,8 +102067,21 @@ function initObjectRightClickMenu() {
                    ne poser que `width` laissait l'application rétablir l'ANCIENNE largeur dès
                    le rendu suivant — MESURÉ, des blocs recalés à 236 px revenaient à 426 px au
                    seul changement de mode d'affichage. On pose donc les deux. */
-                o.set('width', cols[k].w);
-                o._fixedWidth = cols[k].w;
+                if (estTexte(o) || o._isImageMask) {
+                    o.set('width', cols[k].w);
+                    o._fixedWidth = cols[k].w;
+                    if (o._isImageMask && o._maskImage && typeof window.recalculateMaskPattern === 'function') {
+                        try { window.recalculateMaskPattern(o, cv); } catch (_) {}
+                    }
+                } else {
+                    /* Une image nue se met à l'échelle uniformément : lui poser une largeur
+                       sans toucher à sa hauteur l'étirerait. Le centre est relevé AVANT la
+                       mise à l'échelle — après, il a déjà bougé et le recentrage dérive. */
+                    var centreImage = centreDe(o);
+                    var ech = (o.width > 0) ? (cols[k].w / o.width) : 1;
+                    o.set({ scaleX: ech, scaleY: ech });
+                    poserAuCentre(o, page.decalage + cols[k].x + cols[k].w / 2, centreImage.y);
+                }
                 try { if (typeof o.setCoords === 'function') o.setCoords(); } catch (_) {}
                 fait.recales++;
             });
@@ -101978,7 +102119,7 @@ function initObjectRightClickMenu() {
         if (etat.recompose) {
             var rc = etat.recompose;
             etat.recompose = null;
-            msg = 'Format recomposé (' + rc.blocs + ' bloc(s), ' + rc.cadres + ' cadre(s)) · ' + msg;
+            msg = 'Format recomposé (' + rc.blocs + ' bloc(s), ' + rc.cadres + ' cadre(s), ' + (rc.formes || 0) + ' forme(s)) · ' + msg;
         }
         /* ⚠️ ON RESYNCHRONISE LE MODÈLE APRÈS LA REFONTE — et pas seulement après la
            recomposition au format. « Recaler » change la largeur des blocs : si `pages[]`
@@ -102020,17 +102161,58 @@ function initObjectRightClickMenu() {
         }
     }
 
-    /* ══ 5bis. ATTENDRE QUE LES VUES REVIENNENT ══
+    /* ══ 5bis. ATTENDRE QUE LES VUES REVIENNENT, ET QUE LEUR CONTENU SOIT LÀ ══
        ⚠️ CE DÉLAI EST MESURÉ, PAS UN CONFORT. Juste après l'écriture des champs,
        l'application a VIDÉ `canvases` — relevé : `[]` — et elle les reconstruit AU TOUR
        SUIVANT, aux nouvelles dimensions (relevé à +0 ms : la vue est revenue, 436 px).
        Recomposer dans la foulée reviendrait donc à recomposer zéro objet, ce qui s'est
        produit : « Format recomposé (0 bloc(s), 0 cadre(s)) » alors que le bloc était là
-       avant et après. On attend donc le retour des vues, en bornant l'attente pour
-       qu'un document vide conclue au lieu d'attendre indéfiniment. */
-    function attendreVues(fn, essais) {
-        if (!vues().length && (essais || 0) < 25) {
-            setTimeout(function () { attendreVues(fn, (essais || 0) + 1); }, 20);
+       avant et après.
+
+       ⚠️ v1.7.637 — NI « AU MOINS UNE VUE », NI « TOUTES LES VUES » NE SUFFISENT : IL
+       FAUT QUE LES OBJETS SOIENT CHARGÉS. MESURÉ sur le gabarit « Fashion Magazine »
+       (8 pages, 5 vues). Deux corrections successives, deux mesures :
+         · ne tester que `vues().length` NON NUL → la première vue reconstruite
+           déclenchait tout, les autres n'étaient jamais recomposées ;
+         · tester le NOMBRE DE VUES → les 5 vues existaient bien, mais leur contenu
+           arrivait APRÈS : au moment de la recomposition, seules 2 vues portaient
+           leurs objets (15 + 42 = 57 objets traités, sur 118 au total). Le compte
+           rendu disait donc « 37 blocs, 18 cadres » alors que trois pages étaient
+           encore vides, et elles restaient figées à l'ancien format.
+       On attend donc TROIS choses : toutes les vues, autant d'objets qu'avant (ou
+       plus), et aucune vue en cours de chargement (`_isLoading`, le drapeau que
+       l'application pose pendant `loadFromJSON`). La borne reste large — 60 × 20 ms —
+       pour qu'un document réellement plus petit conclue au lieu de boucler. */
+    function totalObjets() {
+        var t = 0;
+        vues().forEach(function (cv) {
+            try { t += (typeof cv.getObjects === 'function') ? cv.getObjects().length : 0; } catch (_) {}
+        });
+        return t;
+    }
+    function vuesEnChargement() {
+        var liste = vues();
+        for (var i = 0; i < liste.length; i++) {
+            if (liste[i] && liste[i]._isLoading) return true;
+        }
+        return false;
+    }
+    function attendreVues(fn, essais, attendu) {
+        essais = essais || 0;
+        var liste = vues();
+        var total = totalObjets();
+        var assez = liste.length > 0 && (!attendu || (liste.length >= attendu.vues && total >= attendu.objets));
+        /* ⚠️ STABILITÉ : DEUX RELEVÉS IDENTIQUES, PAS UN SEUL. Une vue peut exister et
+           porter quelques objets alors que `loadFromJSON` est encore en train d'en
+           ajouter — l'application écrit alors dans son journal : « refus d'écraser
+           21 objets par 9 (aperçu incomplet) », c'est-à-dire que SAUVEGARDER À CET
+           INSTANT ÉCRIRAIT UN MODÈLE TRONQUÉ. Exiger deux relevés consécutifs égaux
+           coûte 20 ms et ferme cette fenêtre. */
+        var stable = !attendu || attendu._vu === total;
+        if (attendu) attendu._vu = total;
+        var pret = assez && stable && !vuesEnChargement();
+        if (!pret && essais < 80) {
+            setTimeout(function () { attendreVues(fn, essais + 1, attendu); }, 20);
             return;
         }
         try { fn(); } catch (e) { etatMessage('Erreur : ' + (e && e.message ? e.message : e)); }
@@ -102055,20 +102237,27 @@ function initObjectRightClickMenu() {
         var change = !!(pfAvant && pfApres &&
             (Math.abs(pfApres.w - pfAvant.w) > 0.01 || Math.abs(pfApres.h - pfAvant.h) > 0.01));
         if (!change) { refonte(); return; }
+        /* L'état d'avant, en nombre de vues ET d'objets : c'est ce que `attendreVues`
+           attend de retrouver avant de recomposer (voir la note de la fonction). */
+        var attendu = { vues: avant.length, objets: totalObjets() };
         attendreVues(function () {
             var fait = recomposerAuFormat(avant);
             etat.recompose = fait;
-            /* ⚠️ ON RESYNCHRONISE LE MODÈLE. Les objets qu'on vient de recomposer sont
-               ceux que l'application a RECRÉÉS depuis `pages` ; le modèle porte donc
-               encore l'ancienne géométrie. Sans cette synchronisation, le prochain
-               rendu — et il y en a un à chaque réglage — remettrait tout à sa place
-               d'avant, ce qui donnerait exactement le symptôme « ça ne refactorise
-               pas ». `saveAllPages` ne prend aucune entrée d'historique. */
-            if (fait.blocs || fait.cadres) {
-                try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
-            }
-            refonte();
-        });
+            /* ⚠️ LA SAUVEGARDE ATTEND AUSSI QUE TOUT SOIT POSÉ. Relever juste après la
+               recomposition ne suffit pas : l'application peut relancer un rendu dans
+               l'intervalle, et `saveAllPages` refuse alors d'écrire une planche
+               incomplète (journal mesuré : « refus d'écraser 21 objets par 9 »). Le
+               modèle gardait donc l'ancienne géométrie, et le rendu suivant la
+               rétablissait — c'est ce qui faisait dériver les positions de 26 px à
+               l'aller-retour. On attend une seconde fois, sur un état NEUF, puis on
+               sauvegarde. `saveAllPages` ne prend aucune entrée d'historique. */
+            attendreVues(function () {
+                if (fait.blocs || fait.cadres || fait.formes) {
+                    try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
+                }
+                refonte();
+            }, 0, { vues: attendu.vues, objets: Math.max(attendu.objets, totalObjets()) });
+        }, 0, attendu);
     }
 
     function appliquerMarges() {
@@ -102740,7 +102929,15 @@ function initObjectRightClickMenu() {
            d'origine — laisser un `saveState` inerte après coup perdrait l'historique
            de toute la suite de la session. */
         window.addEventListener('beforeunload', rendreHistorique);
-        window._spMaquette = { ouvrir: ouvrir, fermer: fermer, basculer: basculer, refonte: refonte, estOuvert: function () { return ouvert; } };
+        /* ⚠️ `_debug` N'EST PAS DE LA DÉCORATION : c'est ce qui a permis de voir que la
+           page 7/8 d'un gabarit de 8 pages n'était jamais recomposée. `vues` et
+           `objetsMaquette` sont les deux seules entrées du raisonnement — quelles vues
+           existent, et ce que le module y voit — et sans elles il fallait deviner. */
+        window._spMaquette = {
+            ouvrir: ouvrir, fermer: fermer, basculer: basculer, refonte: refonte,
+            estOuvert: function () { return ouvert; },
+            _debug: { vues: vues, objetsMaquette: objetsMaquette, mesurerVues: mesurerVues, estDecoration: estDecoration }
+        };
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installer);
