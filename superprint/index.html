@@ -2351,35 +2351,54 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-/* 🆕 v1.7.655 — LE CARRÉ WHATSAPP DE LA BARRE.
+/* 🆕 v1.7.655 — LE CARRÉ WHATSAPP DE LA BARRE, CENTRÉ DANS SA CASE.
    Même dessin, même numéro, même `aria-label` que la bulle flottante : c'est le
    MÊME lien, transporté dans la barre pour ne plus flotter au-dessus du contenu.
-   Au repos : aucun fond, l'encre du texte. Au survol : carré d'encre, pictogramme
-   de papier — l'inversion est celle des boutons du site, et elle n'ajoute aucune
-   couleur (le vert de la marque n'entre nulle part dans cette page).
-   ⚠️ 44 px, ET PAS LA TAILLE D'UNE ICÔNE : c'est la plus petite cible tactile
-   confortable, et elle reste confortable à la souris.
+
+   ⚠️ LA CASE EST PLEINE HAUTEUR, LE CARRÉ EST CENTRÉ DEDANS — ET C'EST UNE MESURE
+   QUI L'IMPOSE. Le carré, posé directement dans la grille, mesurait 44 px dans une
+   barre de 73 px : son centre tombait 14 px AU-DESSUS de celui de la barre, et le
+   filet de séparation, porté par le carré, ne couvrait que 44 px de haut — donc pas
+   la hauteur de la barre, contrairement aux trois autres filets. Relevé :
+   `waCentreY = 900` contre `barreCentreY = 914`.
+   La case ci-dessous prend toute la hauteur (`align-self: stretch`), porte le filet
+   sur toute cette hauteur et centre le carré par `margin: auto`. Les deux filets se
+   ressemblent alors exactement, et le pictogramme est au milieu de son espace.
+   ⚠️ AUCUN FOND NI CONTOUR SUR LE CARRÉ : le dessin doit se lire comme les trois
+   autres cases — un trait, un espace, un pictogramme. Un carré encadré au milieu
+   d'une barre sans cadre paraissait « posé là », c'est ce qui n'était pas propre.
+   ⚠️ 44 px, LA PLUS PETITE CIBLE TACTILE CONFORTABLE, et elle le reste à la souris.
    ⚠️ `.fondation-wa` N'EST PAS UNE `.fondation` : elle n'a ni nom ni description,
    donc elle ne doit pas hériter du soulignement de `.fondation:hover`. */
+.fondation-wa-case {
+  display: flex; align-items: center; justify-content: center;
+  align-self: stretch;
+  /* ⚠️ MÊME REMBOURRAGE À GAUCHE ET À DROITE, ET C'EST UNE MESURE QUI L'IMPOSE :
+     avec le seul rembourrage de gauche, le carré finissait à 0 px du bord droit de
+     la grille contre 21 px à gauche du filet — l'icône paraissait poussée dans le
+     coin. Les deux valeurs sont la même expression, donc elles ne peuvent pas
+     diverger. */
+  padding-left: clamp(12px,1.4vw,20px);
+  padding-right: clamp(12px,1.4vw,20px);
+  border-left: 1px solid var(--line);
+}
 .fondation-wa {
   display: inline-flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; flex: 0 0 auto;
-  border: 1px solid var(--line-strong); color: var(--ink);
-  text-decoration: none;
-  transition: background .22s var(--ease), border-color .22s var(--ease), color .22s var(--ease);
+  margin: auto;
+  color: var(--muted); text-decoration: none;
+  transition: color .22s var(--ease);
 }
 .fondation-wa svg { display: block; width: 24px; height: 24px; fill: currentColor; }
-.fondation-wa:hover, .fondation-wa:focus-visible {
-  background: var(--ink); border-color: var(--ink); color: var(--paper);
-}
+.fondation-wa:hover, .fondation-wa:focus-visible { color: var(--ink); }
 .fondation-wa:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .fondation-wa { transition: none; } }
-/* ⚠️ SOUS 901 px, LE CARRÉ S'EFFACE ET LA BULLE REPREND LE RELAIS.
+/* ⚠️ SOUS 901 px, LA CASE S'EFFACE ET LA BULLE REPREND LE RELAIS.
    Sans cette règle les deux existeraient : la barre empilée porterait un carré
    WhatsApp, ET la bulle flotterait par-dessus — deux commandes pour le même numéro,
    sur un écran où la place est comptée. La bulle est le bon objet en mobile : elle
    reste atteignable au pouce quand la barre, elle, défile avec la page. */
-@media (max-width: 900px) { .fondation-wa { display: none; } }
+@media (max-width: 900px) { .fondation-wa-case { display: none; } }
 
 /* Même seuil que les trois entrées du dessus (voir .entries) : sous 900 px on
    empile, sinon le trio laisserait un trou dans la trame. */
@@ -3121,16 +3140,25 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
                  WhatsApp directement, cela sera plus simple directement dans la barre
                  plutôt que flottant ; cependant garde-le bien en mobile (cette bulle
                  WhatsApp est à conserver en mobile) ».
-                 C'est donc le MÊME dessin et le MÊME numéro que la bulle flottante, mais
-                 posé dans la barre : un carré de 44 px, sans fond, qui prend l'encre au
-                 survol — le vocabulaire des trois autres cases.
+                 🆕 puis : « le design de l'icône WhatsApp dans la barre fixe ce n'est
+                 pas pro, mets un filet de séparation comme les autres et dépose
+                 l'icône au centre de cet espace ».
+                 La CASE porte donc le même filet que ses voisines (`border-left: 1px
+                 solid var(--line)`) et sur la même hauteur : c'est le conteneur qui
+                 est étiré, pas le carré. Un filet accroché à un carré de 44 px ne
+                 mesurait que 44 px dans une barre de 73 — mesuré, et cela se voyait.
+                 Le carré a perdu son cadre et son fond : au milieu d'une barre sans
+                 cadre, un carré encadré paraissait posé là. Il ne reste que le
+                 pictogramme, centré par `margin: auto` dans une case pleine hauteur.
                  ⚠️ LA BULLE FLOTTANTE N'EST PAS SUPPRIMÉE, ELLE EST MASQUÉE EN DESKTOP
                  (voir `.sp-wa` sous 901 px). La supprimer du balisage aurait fait
                  disparaître la seule entrée WhatsApp des téléphones. -->
-            <a class="fondation-wa" href="https://wa.me/33671614110" target="_blank" rel="noopener noreferrer"
-               title="WhatsApp — +33 6 71 61 41 10" aria-label="WhatsApp — +33 6 71 61 41 10">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="24" height="24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            </a>
+            <span class="fondation-wa-case">
+              <a class="fondation-wa" href="https://wa.me/33671614110" target="_blank" rel="noopener noreferrer"
+                 title="WhatsApp — +33 6 71 61 41 10" aria-label="WhatsApp — +33 6 71 61 41 10">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="24" height="24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              </a>
+            </span>
 
       </div>
     </div>
