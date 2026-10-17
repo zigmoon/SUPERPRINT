@@ -813,7 +813,7 @@ function syncZoomWidgetWithRightSidebar() {
     const zoomWidget = document.getElementById('zoomWidget');
     if (!rightSidebar || !zoomWidget) return;
 
-    /* ⚠️ v1.7.637 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
+    /* ⚠️ v1.7.638 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
        Cette fonction place le widget de zoom juste à gauche de la barre latérale
        droite. Or la trappe est un PANNEAU FIXE qui, lui aussi, occupe le bord
        droit : sans cette ligne, le widget tombait PAR-DESSUS elle et interceptait
@@ -823,7 +823,7 @@ function syncZoomWidgetWithRightSidebar() {
        défaut qu'aucune relecture ne trouve : les deux éléments sont corrects
        séparément, c'est leur superposition qui casse.
 
-       ⚠️ v1.7.637 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
+       ⚠️ v1.7.638 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
        C'est une correction de fond, pas un ajustement. Il y avait DEUX écrivains
        pour la même propriété : cette fonction, et une copie du même calcul au
        démarrage AVEC la trappe ; et la règle CSS en portait un troisième, écrasé
@@ -848,7 +848,7 @@ function syncZoomWidgetWithRightSidebar() {
     try {
         document.documentElement.style.setProperty('--sp-sidebar-r', largeur + 'px');
     } catch (_) {}
-    /* ⚠️ v1.7.637 — CETTE VALEUR EST UN POINT DE DÉPART, PAS LA VÉRITÉ. Elle est
+    /* ⚠️ v1.7.638 — CETTE VALEUR EST UN POINT DE DÉPART, PAS LA VÉRITÉ. Elle est
        mesurée avant que la classe `collapsed` n'ait produit son effet, donc elle vaut
        l'ancienne largeur ; `spPublierLargeursPanneauxDroits()` (juste en dessous) la
        corrige à chaque image grâce à un ResizeObserver. On garde cet appel pour que
@@ -1221,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // ✨ NOUVEAU : Initialiser le positionnement du zoom-widget selon l'état de la sidebar droite
             setTimeout(() => {
-                /* ⚠️ v1.7.637 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
+                /* ⚠️ v1.7.638 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
                    CAUSAIT LE DÉFAUT. Elle écrivait `zoomWidget.style.right` en dur
                    (« calc(56px + 16px) »), SANS la largeur de la trappe, alors que la
                    fonction deux lignes plus bas écrit la même chose AVEC la trappe. Deux
@@ -2893,6 +2893,19 @@ const SP_CUSTOM_PROPS = [
        nouveau coulage du gabarit d'en recréer un second par-dessus. */
     '_spGabaritLibere',
     '_isPageNumber',
+    /* 🆕 v1.7.638 — _SP_IDML_LIENS_638 : LES LIENS HYPERTEXTE D'UN BLOC TEXTE.
+       MESURÉ (banc d'audit, features-561.idml) : l'import IDML détecte bien la plage
+       du lien (window.__sp561Stats.plagesLien = 1), souligne le texte en bleu et lui
+       donne la couleur #0000EE — mais l'URL elle-même n'était écrite NULLE PART :
+       elle vivait dans la propriété `lien` du run, et la boucle qui construit les
+       styles par caractère ne la recopiait pas. Le lien redevenait donc du texte bleu
+       souligné, définitivement mort. On la conserve sous deux formes complémentaires :
+         · `styles[ligne][car].lien` — l'URL sur chaque caractère couvert, donc
+           disponible pour un rendu par caractère (couleur, soulignement, curseur) ;
+         · `_spLiens` — la liste [{debut, fin, url}] en indices ABSOLUS dans `text`,
+           qui survit à un changement de césure, de colonnes ou de largeur.
+       La propriété est déclarée ici pour être sérialisée par le .sp et le .json. */
+    '_spLiens',
     '_spDupId',
     '_spIndentLeft',
     '_spIndentRight',
@@ -4498,7 +4511,7 @@ if (window._spGpuEnabled) {
         };
     }
 
-    /* ══ v1.7.637 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+    /* ══ v1.7.638 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
 
        `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
        WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
@@ -4935,7 +4948,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.637 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.638 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5534,7 +5547,7 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        /* ══ v1.7.637 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
+        /* ══ v1.7.638 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
            RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
            bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
@@ -39993,6 +40006,21 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const reader = new FileReader();
             reader.onload = (ev) => {
                 try {
+                    /* 🆕 v1.7.638 — un JSON FIGMA n'est pas un projet SuperPrint : le
+                       chargeur ci-dessous le refuserait (« structure non reconnue »). On
+                       le repère ici, sans charger le module Figma, et on le passe à
+                       l'import dédié — c'est le même fichier, la même attente. */
+                    try {
+                        const _j = JSON.parse(String(ev.target.result));
+                        const _doc = _j && _j.document;
+                        if (_j && String(_j.type || '') === 'DOCUMENT' && Array.isArray(_j.children)
+                            || (_doc && String(_doc.type || '') === 'DOCUMENT' && Array.isArray(_doc.children))) {
+                            if (typeof window._spImportFigmaFile === 'function') {
+                                window._spImportFigmaFile(file);
+                                return;
+                            }
+                        }
+                    } catch (_) { /* pas du JSON Figma : chemin habituel */ }
                     // 🛡️ FIX 2026-05-01 : meme purge complete que loadProjectBtn /
                     // loadProjectSP. Sans ca, importer un .json depuis le modal
                     // Import laissait les anciens canvases / history / textLinks /
@@ -40981,6 +41009,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             if (s.fontSize) st.fontSize = s.fontSize;
             if (s.fontWeight) st.fontWeight = s.fontWeight;
             if (s.fontStyle) st.fontStyle = s.fontStyle;
+            /* 🆕 v1.7.638 — LA POLICE DU DOCUMENT, avec son repli. Le nom exact reste en
+               tête de pile (c'est lui qui repart en .sp et en PDF) ; s'il n'est pas
+               installé, le navigateur descend la pile au lieu de tomber en Times. */
+            if (s.fontFamily) st.fontFamily = '"' + String(s.fontFamily).replace(/"/g, '') + '", "Open Sans", sans-serif';
             if (s.underline) st.underline = true;
             if (s.linethrough) st.linethrough = true;
             if (s.fill) st.fill = s.fill;
@@ -41048,6 +41080,16 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     }
                     var mCo = /color\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))/i.exec(sInl);
                     if (mCo) { if (ns === s) ns = copier(s); ns.fill = mCo[1]; }
+                    /* 🆕 v1.7.638 — la POLICE du run Word (cf. _spWordRunsFmt). On garde
+                       le nom exact du document : c'est lui qui repart en PDF et en .sp.
+                       Le repli est ajouté au moment de l'application (cf. _spAppliquerRuns),
+                       pour qu'une police absente de la machine ne casse pas la mesure. */
+                    var mFo = /font-family\s*:\s*(?:'([^']+)'|"([^"]+)"|([^;]+))/i.exec(sInl);
+                    if (mFo) {
+                        if (ns === s) ns = copier(s);
+                        var _fam = String(mFo[1] || mFo[2] || mFo[3] || '').trim();
+                        if (_fam) ns.fontFamily = _fam;
+                    }
                     if (cat) {
                         var mAl = /text-align\s*:\s*(left|right|center|justify)/i.exec(sInl);
                         if (mAl) cat.align = mAl[1];
@@ -41080,7 +41122,17 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             for (var i = 0; i < (children || []).length; i++) {
                 var n = children[i];
                 if (!n) continue;
-                if (n.type === 'text') { h += ech(n.value); continue; }
+                if (n.type === 'text') {
+                    /* 🆕 v1.7.638 — couleur et police du run, relevées dans
+                       word/document.xml (cf. _spWordRunsFmt). */
+                    var _st638 = '';
+                    if (n.spColor) _st638 += 'color:' + n.spColor + ';';
+                    if (n.spFont) _st638 += "font-family:'" + String(n.spFont).replace(/'/g, '') + "';";
+                    var _txt638 = ech(n.value);
+                    if (_st638) h += '<span style="' + _st638 + '">' + _txt638 + '</span>';
+                    else h += _txt638;
+                    continue;
+                }
                 if (n.type === 'tab') { h += '\t'; continue; }
                 if (n.type === 'break') { h += '<br>'; continue; }
                 if (n.type === 'image') {
@@ -41172,6 +41224,12 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     window._spAstVersHtml = _spAstVersHtml;
 
     async function flowHtmlIntoPages(html, startPageIndex, wordOpts) {
+        /* 🆕 v1.7.638 — la famille du document Word pilote tout le flux (cf. _SP_FAM_FLUX).
+           Un appel sans `_docFont` (autre importeur) retrouve exactement Open Sans : on
+           RÉINITIALISE donc à chaque entrée, jamais seulement quand l'option est là. */
+        _SP_FAM_FLUX = (wordOpts && wordOpts._docFont)
+            ? ('"' + String(wordOpts._docFont).replace(/"/g, '') + '", "Open Sans", sans-serif')
+            : 'Open Sans';
         // Parse HTML (avec images, listes, titres, tableaux basiques)
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
@@ -41343,6 +41401,17 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             getPageObjs().push(data);
         }
 
+        /* 🆕 v1.7.638 — LA POLICE DU DOCUMENT WORD, POUR TOUT LE FLUX.
+           MESURÉ (banc d'audit) : les 15 blocs d'un .docx ressortaient tous en « Open Sans »
+           alors que le document déclare sa police (par run, ou par défaut dans
+           word/styles.xml → thème). On pose la famille RÉELLE en tête de pile, avec
+           Open Sans en repli : si la police n'est pas installée, la mesure et le rendu
+           restent ceux d'avant au lieu de tomber en Times. */
+        /* ⚠️ Déclarée ici parce que measureTextHeight s'en sert, mais SANS valeur
+           initiale : elle est posée en TÊTE de flowHtmlIntoPages. Une valeur initiale
+           ici écraserait celle du document — `var` remonte la déclaration, pas
+           l'affectation, et cette ligne s'exécute après l'entrée de la fonction. */
+        var _SP_FAM_FLUX;
         function measureTextHeight(text, fontSize, isBold, width, lh) {
             /* ⚠️ 2026-10-03 — L'INTERLIGNE RÉEL COMPTE DANS LA MESURE.
                DÉFAUT MESURÉ (retour utilisateur : « en texte coulé, 1 colonne, le texte déborde
@@ -41354,7 +41423,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                et le défaut ne se voyait pas. On mesure désormais avec l interligne exact du bloc. */
             const tb = new fabric.Textbox(text, {
                 left: 0, top: 0, width: width, fontSize,
-                fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
+                fontFamily: _SP_FAM_FLUX, fontWeight: isBold ? 'bold' : 'normal',
                 lineHeight: (typeof lh === 'number' && lh > 0) ? lh : 1.35,
                 splitByGrapheme: false, breakWords: true
             });
@@ -41480,7 +41549,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     // première partie
                     const tb1 = new fabric.Textbox(parts.first, {
                         left: currentX(), top: cursorY, width: colWidth,
-                        fontSize, fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
+                        fontSize, fontFamily: _SP_FAM_FLUX, fontWeight: isBold ? 'bold' : 'normal',
                         fontStyle: fontStyleVal,
                         fill: '#000', splitByGrapheme: false, breakWords: true, textAlign
                     });
@@ -41494,7 +41563,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         const more = splitTextToFit(rest, fontSize, isBold, colWidth, remaining, _lh);
                         const tb = new fabric.Textbox(more.first, {
                             left: currentX(), top: cursorY, width: colWidth,
-                            fontSize, fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
+                            fontSize, fontFamily: _SP_FAM_FLUX, fontWeight: isBold ? 'bold' : 'normal',
                             fontStyle: fontStyleVal,
                             fill: '#000', splitByGrapheme: false, breakWords: true, textAlign
                         });
@@ -41518,7 +41587,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 const _stylesRuns = _tbAvant.styles;
                 const tb = new fabric.Textbox(applySoftHyphenation(text), {
                     left: currentX(), top: cursorY, width: colWidth,
-                    fontSize, fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
+                    fontSize, fontFamily: _SP_FAM_FLUX, fontWeight: isBold ? 'bold' : 'normal',
                     fontStyle: fontStyleVal,
                     // v1.7.406 — les titres se serrent (1,05), le corps reste a 1,35.
                     lineHeight: _isTitre ? 1.05 : 1.35,
@@ -41747,11 +41816,25 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             Promise.resolve()
                                 .then(function () { return _spWordImageSizesMM(arrayBuffer); })
                                 .then(function (sz) { if (sz && sz.length) _opts569._imgSizesMM = sz; })
+                                /* 🆕 v1.7.638 — COULEUR ET POLICE DES RUNS (cf. _spWordRunsFmt). */
+                                .then(function () { return _spWordRunsFmt(arrayBuffer); })
+                                .then(function (fmt) {
+                                    if (!fmt) return;
+                                    if (fmt.chars && fmt.chars.length) _opts569._runsFmt = fmt.chars;
+                                    if (fmt.police) _opts569._docFont = fmt.police;
+                                })
                                 .catch(function () {})
                                 /* v1.7.579 — étape 2 : l'analyse de la mise en forme. */
                                 .then(function () { _spImpBusyEtape(1); return mammoth.convertToHtml({ arrayBuffer }, options); })
                                 .then(function () {
                                     if (!_ast569) throw new Error('AST Word indisponible');
+                                    /* 🆕 v1.7.638 — on reverse couleur et police sur l'AST
+                                       AVANT de le convertir : le HTML produit porte alors des
+                                       <span style="color:…;font-family:…"> que le compositeur
+                                       sait déjà lire (cf. _spHtmlRuns). */
+                                    try {
+                                        if (_opts569._runsFmt) _spWordAppliquerFmt(_ast569, _opts569._runsFmt, _opts569._docFont);
+                                    } catch (_) {}
                                     return _spAstVersHtml(_ast569);
                                 })
                                 .then(function (html) {
@@ -41879,6 +41962,214 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     })();
                 });
             });
+        }
+
+        /* ══ 🆕 v1.7.638 — _SP_WORD_FMT_638 : COULEUR ET POLICE DES RUNS ══
+
+           DÉFAUT MESURÉ (banc d'audit, _test_fidelite.docx) : le document Word contient
+           <w:color w:val="C00000"/> sur un run et une table de polices (fontTable.xml) ;
+           l'import rendait le texte en NOIR et en Open Sans.
+           MESURE EXACTE : « T30GROS ROUGE » ressortait avec fontSize 20 (correct) mais
+           `fill` = #000 et aucune famille ; les 15 blocs du document étaient tous en
+           « Open Sans », alors que la fixture en déclare une autre.
+
+           POURQUOI ÇA MANQUAIT : le compositeur sait déjà lire `color:` et `font-family:`
+           dans un style en ligne (cf. _spHtmlRuns, qui guette /color\s*:/) — mais
+           mammoth n'émet NI couleur NI police : son modèle d'AST ne les porte pas. La
+           capacité existait, la donnée n'arrivait jamais.
+
+           CE QU'ON FAIT : on relit `word/document.xml` — le même patron que
+           _spWordImageSizesMM et _spWordPageInfoMM, qui ont été mesurées correctes — et
+           l'on construit un flux de mise en forme PAR CARACTÈRE, puis on le reverse sur
+           l'AST de mammoth avant composition.
+
+           ⚠️ ALIGNEMENT DES DEUX FLUX. On ne s'appuie NI sur les indices de run (mammoth
+           les refond) NI sur les noms de style : on aligne sur le TEXTE. Les deux
+           lectures parcourent les mêmes runs dans le même ordre, donc le i-ème caractère
+           est le même des deux côtés. Le garde-fou est un CONTRÔLE DE LONGUEUR : si les
+           deux totaux diffèrent de plus de 2 % (et de plus de 8 caractères), on n'applique
+           RIEN et l'import se comporte exactement comme avant. Un décalage d'un seul
+           caractère repeindrait tout le document — on préfère ne rien peindre. */
+        function _spWordRunsFmt(buf) {
+            return new Promise(function (resolve) {
+                ensureDocxLibs(function () {
+                    (async function () {
+                        try {
+                            if (!window.JSZip) { resolve(null); return; }
+                            var zip = await window.JSZip.loadAsync(buf);
+                            var f = zip.file('word/document.xml');
+                            if (!f) { resolve(null); return; }
+                            var xml = await f.async('string');
+                            /* 🆕 v1.7.638 — LA POLICE PAR DÉFAUT DU DOCUMENT.
+                               MESURÉ (fixture _test_fidelite.docx) : AUCUN run ne porte
+                               <w:rFonts> — dans Word, la police du corps est déclarée une
+                               seule fois, dans word/styles.xml → w:docDefaults →
+                               rPrDefault → rFonts, et le plus souvent par THÈME
+                               (asciiTheme="minorHAnsi"), dont le nom réel est dans
+                               word/theme/theme1.xml → <a:minorFont><a:latin typeface="…"/>.
+                               Sans cette résolution, la famille reste « Open Sans ». */
+                            var policeDoc = null;
+                            try {
+                                var fsX = await (async function () {
+                                    var sf = zip.file('word/styles.xml');
+                                    return sf ? await sf.async('string') : null;
+                                })();
+                                if (fsX) {
+                                    var mDef = /<w:docDefaults>[\s\S]*?<w:rPrDefault>[\s\S]*?<\/w:rPrDefault>/.exec(fsX);
+                                    if (mDef) {
+                                        var mRF = /<w:rFonts[^>]*>/.exec(mDef[0]);
+                                        if (mRF) {
+                                            var aAscii = /w:ascii="([^"]+)"/.exec(mRF[0]);
+                                            var aTheme = /w:asciiTheme="([^"]+)"/.exec(mRF[0]);
+                                            if (aAscii && aAscii[1] && !/^\+/.test(aAscii[1])) policeDoc = aAscii[1];
+                                            else if (aTheme && aTheme[1]) {
+                                                var thX = await (async function () {
+                                                    var tf = zip.file('word/theme/theme1.xml');
+                                                    return tf ? await tf.async('string') : null;
+                                                })();
+                                                if (thX) {
+                                                    var isMajor = /major/i.test(aTheme[1]);
+                                                    var reBloc = isMajor
+                                                        ? /<a:majorFont>[\s\S]*?<\/a:majorFont>/
+                                                        : /<a:minorFont>[\s\S]*?<\/a:minorFont>/;
+                                                    var mBloc = reBloc.exec(thX);
+                                                    if (mBloc) {
+                                                        var mLatin = /<a:latin[^>]*typeface="([^"]*)"/.exec(mBloc[0]);
+                                                        if (mLatin && mLatin[1]) policeDoc = mLatin[1];
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (_) {}
+                            var doc = new DOMParser().parseFromString(xml, 'application/xml');
+                            if (!doc || !doc.documentElement) { resolve(null); return; }
+                            var tous = doc.getElementsByTagName('*');
+                            var flux = [];
+                            for (var i = 0; i < tous.length; i++) {
+                                var el = tous[i];
+                                if (el.localName !== 'r') continue;
+                                /* Un run SUPPRIMÉ (suivi de modifications) ne sort pas dans
+                                   le document : mammoth ne le rend pas. On l'écarte pour que
+                                   les deux flux restent alignés. */
+                                var par = el.parentNode, supprime = false;
+                                while (par && par.localName !== 'body') {
+                                    if (par.localName === 'del' || par.localName === 'moveFrom') { supprime = true; break; }
+                                    par = par.parentNode;
+                                }
+                                if (supprime) continue;
+                                var color = null, font = null;
+                                var rPr = null;
+                                for (var c = 0; c < el.childNodes.length; c++) {
+                                    var ch = el.childNodes[c];
+                                    if (ch.nodeType === 1 && ch.localName === 'rPr') { rPr = ch; break; }
+                                }
+                                if (rPr) {
+                                    for (var c2 = 0; c2 < rPr.childNodes.length; c2++) {
+                                        var p = rPr.childNodes[c2];
+                                        if (p.nodeType !== 1) continue;
+                                        if (p.localName === 'color') {
+                                            var vc = p.getAttribute('w:val') || p.getAttribute('val') || '';
+                                            if (/^[0-9A-Fa-f]{6}$/.test(vc) && vc.toUpperCase() !== '000000') {
+                                                /* « auto » et le noir ne sont pas des couleurs
+                                                   choisies : les transporter ajouterait un
+                                                   style par caractère sur tout le document. */
+                                                color = '#' + vc.toUpperCase();
+                                            }
+                                        } else if (p.localName === 'rFonts') {
+                                            var ff = p.getAttribute('w:ascii') || p.getAttribute('ascii')
+                                                || p.getAttribute('w:hAnsi') || p.getAttribute('hAnsi') || '';
+                                            ff = String(ff).replace(/^["']|["']$/g, '').trim();
+                                            if (ff && !/^\+/.test(ff)) font = ff;   // « +mn-lt » = thème, non résolu
+                                        }
+                                    }
+                                }
+                                for (var c3 = 0; c3 < el.childNodes.length; c3++) {
+                                    var n2 = el.childNodes[c3];
+                                    if (n2.nodeType !== 1) continue;
+                                    if (n2.localName === 't') {
+                                        var t = n2.textContent || '';
+                                        for (var k = 0; k < t.length; k++) flux.push({ color: color, font: font });
+                                    } else if (n2.localName === 'tab' || n2.localName === 'br') {
+                                        flux.push({ color: color, font: font });
+                                    }
+                                }
+                            }
+                            resolve(flux.length ? { chars: flux, police: policeDoc } : (policeDoc ? { chars: null, police: policeDoc } : null));
+                        } catch (e) { resolve(null); }
+                    })();
+                });
+            });
+        }
+
+        /* Verse le flux de mise en forme sur l'AST de mammoth, en découpant les nœuds
+           de texte quand la couleur ou la police change. Retourne true si appliqué. */
+        function _spWordAppliquerFmt(doc, flux, policeDefaut) {
+            if (!doc || !flux || !flux.length) return false;
+            var total = 0;
+            (function compte(node) {
+                if (!node || typeof node !== 'object') return;
+                var chs = node.children || [];
+                for (var i = 0; i < chs.length; i++) {
+                    var ch = chs[i];
+                    if (!ch) continue;
+                    if (ch.type === 'text') total += String(ch.value || '').length;
+                    else if (ch.type === 'tab' || ch.type === 'break') total += 1;
+                    else compte(ch);
+                }
+            })(doc);
+            /* Garde-fou : voir l'avertissement en tête. On exige l'ÉGALITÉ EXACTE des
+               deux longueurs — un décalage d'un seul caractère repeindrait tout le
+               document à partir de là. En cas d'écart, on n'applique rien (comportement
+               d'avant) et on le dit en console. */
+            if (!total || total !== flux.length) {
+                try {
+                    console.info('[SP-Word] couleur/police non appliquées : '
+                        + total + ' caractères composés pour ' + flux.length + ' lus dans document.xml');
+                } catch (_) {}
+                return false;
+            }
+            var idx = 0;
+            function parcourir(node) {
+                if (!node || typeof node !== 'object') return;
+                var chs = node.children;
+                if (!chs || !chs.length) return;
+                var out = [];
+                for (var i = 0; i < chs.length; i++) {
+                    var ch = chs[i];
+                    if (!ch) continue;
+                    if (ch.type === 'text') {
+                        var v = String(ch.value || ''), pos = 0;
+                        while (pos < v.length) {
+                            var f0 = flux[idx + pos] || {};
+                            var j = pos + 1;
+                            while (j < v.length) {
+                                var g = flux[idx + j] || {};
+                                if ((g.color || null) !== (f0.color || null) || (g.font || null) !== (f0.font || null)) break;
+                                j++;
+                            }
+                            var seg = { type: 'text', value: v.slice(pos, j) };
+                            if (f0.color) seg.spColor = f0.color;
+                            var _fam = f0.font || policeDefaut || null;
+                            /* On n'écrit PAS la famille quand c'est déjà celle de
+                               l'application : cela ajouterait un style par caractère sur
+                               tout le document pour rien. */
+                            if (_fam && _fam !== 'Open Sans') seg.spFont = _fam;
+                            out.push(seg);
+                            pos = j;
+                        }
+                        idx += v.length;
+                    } else {
+                        if (ch.type === 'tab' || ch.type === 'break') idx += 1;
+                        else parcourir(ch);
+                        out.push(ch);
+                    }
+                }
+                node.children = out;
+            }
+            parcourir(doc);
+            return true;
         }
 
         // 🆕 v1.7.570b — MISE EN PAGE DU .docx, LUE PAR NOUS-MÊMES.
@@ -42104,6 +42395,9 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             });
         }
         window._spImportDocxFile = importDocxFile;
+        /* 🆕 v1.7.638 — exposé comme _spAstVersHtml / _spTexteOdf : c'est la seule façon
+           de vérifier la lecture couleur+police sans passer par une composition entière. */
+        window._spWordRunsFmt = _spWordRunsFmt;
         window._spLancerImportWord = lancerImportWord;
 
         importDocxInput.addEventListener('change', (e) => {
@@ -42669,6 +42963,99 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             _spImportEpsFile(file);
             e.target.value = '';
         });
+    })();
+
+    // ===== Figma (.json) Import — 🆕 v1.7.638 =====
+    /* Un document Figma s'importe à partir de son JSON (API REST `/v1/files/:key`,
+       ou greffon SuperPrint). Le module `sp-figma-import.js` est chargé À LA DEMANDE,
+       comme `sp-doc-import.js` : il ne pèse rien sur le démarrage d'un utilisateur
+       qui n'importe jamais de Figma. */
+    (function initFigmaImport() {
+        const figBtn = document.getElementById('importFigmaBtn');
+        const figInput = document.getElementById('importFigmaInput');
+        if (!figBtn || !figInput) return;
+
+        function chargerModule() {
+            if (window.SPFigmaImport) return Promise.resolve(window.SPFigmaImport);
+            return new Promise(function (res, rej) {
+                const sc = document.createElement('script');
+                sc.src = 'JS/sp-figma-import.js?v=20261017-v638-figma';
+                sc.onload = function () { res(window.SPFigmaImport || null); };
+                sc.onerror = function () { rej(new Error('module Figma indisponible')); };
+                document.head.appendChild(sc);
+            });
+        }
+
+        function importerFigma(file) {
+            showPageLoader('Lecture du document Figma…');
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                let json = null;
+                try {
+                    json = JSON.parse(String(ev.target.result));
+                } catch (e) {
+                    hidePageLoader();
+                    alert(translatef('alertFigmaImportError', 'JSON illisible : ' + e.message));
+                    return;
+                }
+                chargerModule().then(function (mod) {
+                    if (!mod || typeof mod.versSP !== 'function') {
+                        hidePageLoader();
+                        alert(translatef('alertFigmaImportError', 'module d\'import indisponible'));
+                        return;
+                    }
+                    if (!mod.estFigma(json)) {
+                        hidePageLoader();
+                        /* Ce n'est pas un fichier Figma : c'est peut-être le JSON d'un
+                           projet SuperPrint — on le dit et on n'invente rien. */
+                        alert(translate('alertFigmaNotFigma'));
+                        return;
+                    }
+                    let sp = null;
+                    try {
+                        sp = mod.versSP(json, file.name);
+                    } catch (e) {
+                        hidePageLoader();
+                        alert(translatef('alertFigmaImportError', e.message));
+                        return;
+                    }
+                    try {
+                        if (!_spValidateProjectFile(sp)) throw new Error(translate('alertFormatInvalid'));
+                        const nb = sp.pages.reduce(function (n, p) { return n + ((p.objects || []).length); }, 0);
+                        loadProjectSP(sp);
+                        try {
+                            window.spShowToast(translatef('figmaImportDone', sp.pages.length, nb), { kind: 'info', duration: 6000 });
+                        } catch (_) {}
+                    } catch (err) {
+                        console.error('Figma import error', err);
+                        alert(translatef('alertFigmaImportError', err.message));
+                    } finally {
+                        hidePageLoader();
+                    }
+                }).catch(function (err) {
+                    hidePageLoader();
+                    alert(translatef('alertFigmaImportError', err.message));
+                });
+            };
+            reader.onerror = function () {
+                hidePageLoader();
+                alert(translate('alertCannotReadSpFile'));
+            };
+            reader.readAsText(file);
+        }
+
+        figBtn.addEventListener('click', function () {
+            const importModal = document.getElementById('importModal');
+            if (importModal) importModal.style.display = 'none';
+            figInput.click();
+        });
+        figInput.addEventListener('change', function (e) {
+            const file = e.target.files && e.target.files[0];
+            e.target.value = '';
+            if (file) importerFigma(file);
+        });
+        /* Exposé pour le dépôt de fichier et pour les tests de non-régression. */
+        window._spImportFigmaFile = importerFigma;
     })();
 
     // ===== SuperPrint (.sp) Import =====
@@ -43357,6 +43744,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
             // --- Read Preferences for page dimensions ---
             var docPageW = 210, docPageH = 297;
+            var _spIdmlAPref = false;
+            var _spIdmlBleedMm = null;
             var prefsFile = await readXmlFile(zip, 'Resources/Preferences.xml');
             if (prefsFile) {
                 var dpEl = prefsFile.querySelector('DocumentPreference');
@@ -43367,13 +43756,75 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         // IDML uses points (1pt = 1/72 inch)
                         docPageW = pw * 25.4 / 72;
                         docPageH = ph * 25.4 / 72;
+                        _spIdmlAPref = true;
                     }
+                    /* 🆕 v1.7.638 — _SP_IDML_GEOM_638 : LE FOND PERDU DU DOCUMENT.
+                       MESURÉ (banc d'audit, banquet_republicain_master.idml) : le fichier
+                       déclare DocumentBleed*Offset = 14,17 pt (= 5 mm) et l'import posait
+                       3 mm — la valeur par défaut de l'application — sans le dire. Le fond
+                       perdu n'était lu NULLE PART (0 occurrence de « DocumentBleed » dans
+                       ce fichier). On prend le MAXIMUM des quatre côtés : l'application
+                       n'a qu'un fond perdu uniforme, et sous-estimer est le seul choix
+                       qui ne coupe pas de contenu déjà débordant. */
+                    var _bdCotes = ['DocumentBleedTopOffset', 'DocumentBleedBottomOffset',
+                        'DocumentBleedInsideOrLeftOffset', 'DocumentBleedOutsideOrRightOffset']
+                        .map(function (k) { var v = parseFloat(dpEl.getAttribute(k)); return isFinite(v) && v > 0 ? v : 0; });
+                    var _bdMax = Math.max.apply(null, _bdCotes);
+                    if (_bdMax > 0) _spIdmlBleedMm = Math.round(_bdMax * 25.4 / 72 * 100) / 100;
                 }
             }
-            logMsg('\uD83D\uDCD0 Format : ' + docPageW.toFixed(1) + ' \u00d7 ' + docPageH.toFixed(1) + ' mm');
+            /* 🆕 v1.7.638 — _SP_IDML_GEOM_638 : REPLI SUR LA GÉOMÉTRIE DES PAGES.
+               MESURÉ (banc d'audit, features-561.idml) : un IDML sans
+               <DocumentPreference> — c'est légal : seul <Preferences> est obligatoire —
+               s'importait en A4 PORTRAIT, alors que son unique <Page> porte
+               GeometricBounds="0 0 595.27 419.53" (= 210 × 148 mm, paysage). Le format
+               ne venait que de Preferences.xml. Chaque page porte sa géométrie : elle
+               est la source de vérité de dernier recours. */
+            var _spIdmlGeom = null;
+            if (!_spIdmlAPref) {
+                try {
+                    _spIdmlGeom = await spIdmlGeometrieDesPages(zip);
+                    if (_spIdmlGeom && _spIdmlGeom.w && _spIdmlGeom.h) {
+                        docPageW = _spIdmlGeom.w;
+                        docPageH = _spIdmlGeom.h;
+                    }
+                } catch (_) {}
+            }
+            logMsg('\uD83D\uDCD0 Format : ' + docPageW.toFixed(1) + ' \u00d7 ' + docPageH.toFixed(1) + ' mm'
+                + (_spIdmlAPref ? '' : ' (lu dans la g\u00e9om\u00e9trie des pages)'));
 
             pageFormat.width = Math.round(docPageW);
             pageFormat.height = Math.round(docPageH);
+
+            /* 🆕 v1.7.638 — _SP_IDML_GEOM_638 : LES MARGES DU DOCUMENT.
+               MESURÉ (banc d'audit, banquet_republicain_master.idml) : <MarginPreference>
+               vaut Top/Bottom/Left/Right = 28,35 pt (= 10 mm) et l'import posait 20 mm
+               partout — la valeur par défaut de l'application. « MarginPreference »
+               n'était lu NULLE PART (0 occurrence dans ce fichier). On applique les
+               quatre côtés RÉELS ; à défaut, on garde le comportement d'avant. */
+            try {
+                var _spMg = (_spIdmlGeom && _spIdmlGeom.marges) ? _spIdmlGeom.marges : null;
+                if (!_spMg) {
+                    var _g2 = await spIdmlGeometrieDesPages(zip);
+                    _spMg = _g2 && _g2.marges ? _g2.marges : null;
+                }
+                if (_spMg) {
+                    spSetMargesMm(_spMg);
+                    logMsg('\uD83D\uDCD0 Marges : ' + _spMg.top + ' / ' + _spMg.bottom
+                        + ' / ' + _spMg.inner + ' / ' + _spMg.outer + ' mm');
+                }
+            } catch (_) {}
+            if (_spIdmlBleedMm !== null) {
+                bleed = _spIdmlBleedMm;
+                try {
+                    var _bEl = document.getElementById('bleed');
+                    if (_bEl) {
+                        _bEl.value = (typeof window.spPageMmVersUnite === 'function')
+                            ? window.spPageMmVersUnite(bleed) : bleed;
+                    }
+                } catch (_) {}
+                logMsg('\uD83D\uDCD0 Fond perdu : ' + bleed + ' mm');
+            }
 
             // Update UI inputs
             var formatSel = document.getElementById('pageFormat');
@@ -44021,6 +44472,55 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         }
 
         // ===================== HELPER FUNCTIONS =====================
+
+        /* 🆕 v1.7.638 — _SP_IDML_GEOM_638 : FORMAT ET MARGES, LUS DANS LES PAGES.
+           Un IDML porte sa géométrie à DEUX endroits :
+             · Resources/Preferences.xml → <DocumentPreference PageWidth PageHeight
+               DocumentBleed*Offset> — les valeurs du document ;
+             · chaque <Page GeometricBounds="haut gauche bas droite"> — la géométrie
+               RÉELLE de la page, en points, dans le repère de la planche, plus son
+               <MarginPreference Top/Bottom/Left/Right>.
+           MESURÉ (banc d'audit) : `features-561.idml` n'a PAS de <DocumentPreference>
+           (légal : seul <Preferences> est obligatoire) et s'importait en A4 portrait au
+           lieu de 210 × 148 paysage ; `banquet_republicain_master.idml` déclare 10 mm de
+           marges et l'import posait 20 mm. On lit donc la première page qui porte une
+           géométrie exploitable. Points → mm : × 25,4 / 72. */
+        async function spIdmlGeometrieDesPages(zip) {
+            try {
+                var chemins = Object.keys(zip.files)
+                    .filter(function (p) { return /^Spreads\/.*\.xml$/i.test(p) && !zip.files[p].dir; })
+                    .sort();
+                for (var i = 0; i < chemins.length; i++) {
+                    var sx = await readXmlFile(zip, chemins[i]);
+                    if (!sx) continue;
+                    var pageEls = sx.getElementsByTagName('Page');
+                    for (var j = 0; j < pageEls.length; j++) {
+                        var gb = (pageEls[j].getAttribute('GeometricBounds') || '').split(' ').map(Number);
+                        if (gb.length !== 4 || !isFinite(gb[0]) || !isFinite(gb[3])) continue;
+                        var lw = gb[3] - gb[1], lh = gb[2] - gb[0];
+                        if (!(lw > 0 && lh > 0)) continue;
+                        var res = {
+                            w: Math.round(lw * 25.4 / 72 * 10) / 10,
+                            h: Math.round(lh * 25.4 / 72 * 10) / 10,
+                            marges: null
+                        };
+                        var mp = pageEls[j].getElementsByTagName('MarginPreference')[0];
+                        if (mp) {
+                            var t = parseFloat(mp.getAttribute('Top'));
+                            var b = parseFloat(mp.getAttribute('Bottom'));
+                            var l = parseFloat(mp.getAttribute('Left'));
+                            var r = parseFloat(mp.getAttribute('Right'));
+                            if ([t, b, l, r].every(function (v) { return isFinite(v) && v >= 0; })) {
+                                var mm = function (v) { return Math.round(v * 25.4 / 72 * 10) / 10; };
+                                res.marges = { top: mm(t), bottom: mm(b), inner: mm(l), outer: mm(r) };
+                            }
+                        }
+                        return res;
+                    }
+                }
+            } catch (_) {}
+            return null;
+        }
 
         async function readXmlFile(zip, path) {
             var f = zip.files[path];
@@ -45132,6 +45632,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 }
                 var fullText = '';
                 var fabricStyles = {};
+                /* 🆕 v1.7.638 — plages de liens en indices ABSOLUS dans `fullText`. */
+                var _spLiensSpans = [];
                 var domFontSize = 12, domFontFamily = 'Open Sans', domFontWeight = 'normal', domFontStyle = 'normal', domFill = '#000000', domTracking = 0, domUnderline = false, domLinethrough = false, domLang = '', domAlign = 'left', domLeading = 0;
                 var hasBaseStyle = false;
                 var chIdx = 0;
@@ -45163,6 +45665,16 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             if (run.tracking !== domTracking) fabricStyles[lineIdx][chIdx].charSpacing = run.tracking;
                             if (run.underline !== domUnderline) fabricStyles[lineIdx][chIdx].underline = run.underline;
                             if (run.linethrough !== domLinethrough) fabricStyles[lineIdx][chIdx].linethrough = run.linethrough;
+                            /* 🆕 v1.7.638 — L'URL DU LIEN (cf. _spLiens, une seule source de
+                               vérité : la liste en indices absolus, pas une clé par caractère
+                               que le moteur de texte ne connaît pas). */
+                            if (run.lien) {
+                                if (!_spLiensSpans.length || _spLiensSpans[_spLiensSpans.length - 1].url !== run.lien
+                                    || _spLiensSpans[_spLiensSpans.length - 1].fin !== fullText.length) {
+                                    _spLiensSpans.push({ debut: fullText.length, fin: fullText.length, url: run.lien });
+                                }
+                                _spLiensSpans[_spLiensSpans.length - 1].fin = fullText.length + 1;
+                            }
                             chIdx++;
                             fullText += run.text[ci];
                             if (run.text[ci] === '\n') chIdx = 0;
@@ -45189,6 +45701,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     textAlign: domAlign,
                     lineHeight: Math.max(1, Math.min(3, lhVal)),
                     styles: fabricStyles,
+                    /* 🆕 v1.7.638 — les liens hypertexte du bloc, en indices absolus :
+                       [{debut, fin, url}]. Placé ici (et non dans les seuls styles) pour
+                       rester valide si le texte est recésuré ou recomposé. */
+                    _spLiens: _spLiensSpans.length ? _spLiensSpans.slice() : undefined,
                     // 🆕 v1.7.381 — langue du texte déduite de l'IDML : conditionne
                     //   les règles de césure. null = langue non gérée -> le bloc
                     //   suivra la langue de l'interface (comportement d'origine).
@@ -51358,7 +51874,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.637 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.638 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -51506,7 +52022,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.637) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.638) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
@@ -70975,6 +71491,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertXlsxEmpty: "Aucune donnée trouvée dans le fichier Excel",
         alertXlsxImportError: "Erreur import Excel :\n{0}",
         alertSlaInvalidXml: "Fichier .sla invalide (XML mal formé)",
+        /* 🆕 v1.7.638 — import Figma. */
+        alertFigmaImportError: "Import Figma impossible : {0}",
+        alertFigmaNotFigma: "Ce fichier JSON n'est pas un document Figma. Exportez-le depuis l'API Figma (GET /v1/files/:key) ou avec le greffon SuperPrint.",
+        figmaImportDone: "Import Figma terminé : {0} page(s), {1} objet(s).",
         alertSlaNoDocument: "Pas de DOCUMENT trouvé dans le .sla",
         alertNoActiveCanvas: "Pas de canvas actif",
         alertProvideZipOrIdml: "Veuillez fournir un fichier .zip ou .idml",
@@ -72017,6 +72537,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertXlsxEmpty: "No data found in the Excel file",
         alertXlsxImportError: "Excel import error:\n{0}",
         alertSlaInvalidXml: "Invalid .sla file (malformed XML)",
+        /* 🆕 v1.7.638 — Figma import. */
+        alertFigmaImportError: "Figma import failed: {0}",
+        alertFigmaNotFigma: "This JSON file is not a Figma document. Export it from the Figma API (GET /v1/files/:key) or with the SuperPrint plugin.",
+        figmaImportDone: "Figma import complete: {0} page(s), {1} object(s).",
         alertSlaNoDocument: "No DOCUMENT found in the .sla",
         alertNoActiveCanvas: "No active canvas",
         alertProvideZipOrIdml: "Please provide a .zip or .idml file",
@@ -96248,7 +96772,7 @@ function _spValidateProjectFile(spFile) {
     const format = spFile && spFile.document && spFile.document.format;
     const width = Number(format && format.width);
     const height = Number(format && format.height);
-    /* ⚠️ v1.7.637 — `page.objects` PEUT ARRIVER EN CHAÎNE.
+    /* ⚠️ v1.7.638 — `page.objects` PEUT ARRIVER EN CHAÎNE.
        Le filet de sécurité du Studio IA écrivait `JSON.stringify(calque)` dans
        `page.objects`. Cette fonction exigeait un TABLEAU : le document entier était
        donc rejeté, sans autre explication que « n'est pas un document SuperPrint
@@ -101781,7 +102305,7 @@ function initObjectRightClickMenu() {
     function publierLargeur(px) {
         var app = $('mainApp');
         var v = (px || 0) + 'px';
-        /* ⚠️ v1.7.637 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
+        /* ⚠️ v1.7.638 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
            Les widgets flottants du bord droit — le zoom, l'étiquette de simulation
            CMJN, le panneau Rechercher & Remplacer — ne sont pas tous dans #mainApp :
            ceux qui sont posés sur <body> n'héritaient donc PAS de la variable et
@@ -102015,7 +102539,7 @@ function initObjectRightClickMenu() {
        masqué se recalcule depuis la taille affichée). */
     function estCadre(o) { return o.type === 'rect' || o.type === 'image'; }
 
-    /* ⚠️ v1.7.637 — LES FORMES ET LES GROUPES ÉTAIENT PUREMENT IGNORÉS, ET C'EST CE
+    /* ⚠️ v1.7.638 — LES FORMES ET LES GROUPES ÉTAIENT PUREMENT IGNORÉS, ET C'EST CE
        QUI « CASSAIT TOUT ». MESURÉ, page 1207 → 858 px de large (A4 paysage) : les deux
        blocs texte, le rectangle, l'image et le cadre photo suivaient ; le CERCLE, le
        TRIANGLE, le TRACÉ et le GROUPE restaient à leurs coordonnées d'origine (cercle
@@ -102228,7 +102752,7 @@ function initObjectRightClickMenu() {
         var changeTypo = typo.police || (typo.corps !== null && typo.corps !== undefined) ||
             (typo.interligne !== null && typo.interligne !== undefined) || typo.couleur ||
             (typo.alignement && typo.alignement !== '') ||
-            /* 🆕 v1.7.637 — les trois réglages de texte ajoutés à la trappe. */
+            /* 🆕 v1.7.638 — les trois réglages de texte ajoutés à la trappe. */
             (typo.interlettrage !== null && typo.interlettrage !== undefined) ||
             (typo.graisse !== null && typo.graisse !== undefined) ||
             (typo.styleTxt !== null && typo.styleTxt !== undefined);
@@ -102262,7 +102786,7 @@ function initObjectRightClickMenu() {
         });
 
         /* ── 4b. Recale sur la grille de colonnes ──
-           ⚠️ v1.7.637 — LES CADRES PHOTO SONT RECALÉS EUX AUSSI. La version précédente
+           ⚠️ v1.7.638 — LES CADRES PHOTO SONT RECALÉS EUX AUSSI. La version précédente
            ne parcourait que `blocs` (les blocs texte) : sur une maquette mêlant texte
            et photos, le texte venait se ranger dans les colonnes pendant que les photos
            restaient où elles étaient — le « recalage » désalignait la page au lieu de
@@ -102424,7 +102948,7 @@ function initObjectRightClickMenu() {
        produit : « Format recomposé (0 bloc(s), 0 cadre(s)) » alors que le bloc était là
        avant et après.
 
-       ⚠️ v1.7.637 — NI « AU MOINS UNE VUE », NI « TOUTES LES VUES » NE SUFFISENT : IL
+       ⚠️ v1.7.638 — NI « AU MOINS UNE VUE », NI « TOUTES LES VUES » NE SUFFISENT : IL
        FAUT QUE LES OBJETS SOIENT CHARGÉS. MESURÉ sur le gabarit « Fashion Magazine »
        (8 pages, 5 vues). Deux corrections successives, deux mesures :
          · ne tester que `vues().length` NON NUL → la première vue reconstruite
@@ -102774,7 +103298,7 @@ function initObjectRightClickMenu() {
         h += '</section>';
 
         /* GRILLE ET LIGNE DE BASE
-           🆕 v1.7.637 — demandé par l'utilisateur : « il y a plus de réglages live dans
+           🆕 v1.7.638 — demandé par l'utilisateur : « il y a plus de réglages live dans
            le studio IA, plus de tirettes ». Ces deux sections ne font pas semblant : elles
            pilotent les réglages NATIFS de SuperPrint, dont l'effet a été MESURÉ avant
            d'être exposé — afficher la grille fait passer la vue de 4 à 14 objets, et
@@ -102868,7 +103392,7 @@ function initObjectRightClickMenu() {
             police: val('mqPolice', ''), corps: nb(val('mqCorps', 0), 0),
             interligne: nb(val('mqInterligne', 0), 0), couleur: (nb(val('mqCorps', 0), 0) > 0 ? val('mqCouleurTexte', '') : ''),
             alignement: etat.alignement || '',
-            /* ⚠️ v1.7.637 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
+            /* ⚠️ v1.7.638 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
                une précaution, pas une coquetterie : `charSpacing`, `fontWeight` et
                `fontStyle` ont des valeurs par DÉFAUT parfaitement légitimes (0, normal,
                normal). Les lire sans condition ferait donc que « Refaire la maquette »

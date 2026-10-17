@@ -1426,7 +1426,7 @@ html[lang="ja"] .logo::before {
     color: #e0e0e0; background: #2a2a2a; border-color: #444; box-shadow: 0 1px 0 #222;
 }
 
-/* ── v1.7.637 — SÉLECTEUR DE SYSTÈME DU PANNEAU DES RACCOURCIS ──
+/* ── v1.7.638 — SÉLECTEUR DE SYSTÈME DU PANNEAU DES RACCOURCIS ──
    Le panneau montre les touches du système de la machine ; ce sélecteur dit lequel,
    et permet de vérifier les deux autres. Il est en tête du panneau, discret : c'est
    une information, pas une commande qu'on vient chercher. */
@@ -2168,7 +2168,7 @@ textarea[data-fabric-hiddentextarea] {
     background: transparent !important;
     border: 0 !important;
 }
-/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.637). Elles étaient en #f0f0f0, à peine
+/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.638). Elles étaient en #f0f0f0, à peine
    plus clair que le plan de travail (#e8e8e8) : elles s'y fondaient, et on ne
    voyait plus où commençait la graduation. #fafafa est nettement plus clair,
    reste distinct du blanc de la page, et garde les graduations (#333/#666)
@@ -3150,7 +3150,7 @@ textarea[data-fabric-hiddentextarea] {
 .unit-btn.active { background: #1a1a1a; color: #fff; }
 .transform-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
 .transform-input label { font-size: 8px; text-transform: uppercase; opacity: 0.6; margin-bottom: 3px; display: block; }
-/* ⚠️ v1.7.637 — `font-family` MANQUAIT ICI, et c'était un oubli, pas un choix :
+/* ⚠️ v1.7.638 — `font-family` MANQUAIT ICI, et c'était un oubli, pas un choix :
    mesuré, ces champs s'affichaient en Arial au milieu d'une barre entièrement en
    IBM Plex Mono, alors que `.input-group input` (le reste de la barre) déclare bien
    la monospace. C'est le seul endroit de l'interface où un champ changeait de police.
@@ -4180,12 +4180,12 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
 /* ==================== ZOOM WIDGET (Bottom Right) ==================== */
 .zoom-widget {
     position: fixed;
-    /* ⚠️ v1.7.637 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
+    /* ⚠️ v1.7.638 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
        « Réglages de la maquette » quand elle est ouverte. Sans elle, le widget
        restait ancré à 296 px du bord droit et se retrouvait PAR-DESSUS la trappe,
        où il interceptait les clics sur « Valider » et « Annuler » (mesuré).
 
-       ⚠️ v1.7.637 — LA POSITION EST CALCULÉE ICI, ET NULLE PART AILLEURS. Il y avait
+       ⚠️ v1.7.638 — LA POSITION EST CALCULÉE ICI, ET NULLE PART AILLEURS. Il y avait
        trois écrivains pour cette seule propriété : cette règle, `style.right` posé
        par `syncZoomWidgetWithRightSidebar()`, et une copie du même calcul au
        démarrage QUI, ELLE, IGNORAIT LA TRAPPE. Le style en ligne gagnant sur la
@@ -4209,7 +4209,7 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
         calc(var(--sp-sidebar-r, 280px) + var(--sp-maquette-l, 0px) + 16px),
         calc(100vw - var(--sp-zoom-w, 223px) - 8px)
     )); /* barre latérale + trappe + marge, borné au bord gauche */
-    /* ⚠️ v1.7.637 — LA COURBE EST CELLE DE LA TRAPPE, PAS UNE AUTRE. Le widget
+    /* ⚠️ v1.7.638 — LA COURBE EST CELLE DE LA TRAPPE, PAS UNE AUTRE. Le widget
        portait `0.3s ease` alors que la trappe et la barre latérale animent sur
        `--sp-sb-dur` (260 ms) avec `--sp-sb-ease` (cubic-bezier(.2,.7,.2,1), une
        sortie rapide). Les deux courbes divergeaient donc PENDANT tout le
@@ -4229,7 +4229,7 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
     align-items: center;
     gap: 4px;
     backdrop-filter: saturate(1.2) blur(2px);
-    /* ⚠️ v1.7.637 — LA MÊME DURÉE ET LA MÊME COURBE QUE LES DEUX PANNEAUX.
+    /* ⚠️ v1.7.638 — LA MÊME DURÉE ET LA MÊME COURBE QUE LES DEUX PANNEAUX.
        `--sp-sidebar-r` et `--sp-maquette-l` reçoivent la largeur CIBLE dès que la
        classe du panneau change (voir `spPublierLargeursPanneauxDroits` dans main.js),
        donc le widget et les panneaux démarrent leur animation au même instant. En
@@ -5835,7 +5835,7 @@ input[type=number] {
    🆕 v1.7.448 — RECHERCHER & REMPLACER : panneau confortable et déplaçable
    ═══════════════════════════════════════════════════════════════════════ */
 .fr-panel {
-    /* ⚠️ v1.7.637 — MÊME FAMILLE DE DÉFAUT QUE LE WIDGET DE ZOOM : une position
+    /* ⚠️ v1.7.638 — MÊME FAMILLE DE DÉFAUT QUE LE WIDGET DE ZOOM : une position
        ancrée à droite en dur (300 px) ne tient aucun compte de la trappe. Ce panneau
        fait 400 px de large et sert tous les jours (Rechercher & Remplacer) : ouvert
        avec la trappe, il finissait sous elle. Il lit donc les mêmes largeurs
@@ -6025,7 +6025,7 @@ input[type=number] {
    restait 8 px). Modifier l'attribut `style` du div `.toolbar-center`. */
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   v1.7.637 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
+   v1.7.638 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
 
    Elle est le dernier enfant de `.app`, qui est un conteneur FLEX : sa largeur
    s'ajoute donc à droite et POUSSE l'interface, au lieu de la recouvrir comme le
@@ -6064,7 +6064,7 @@ input[type=number] {
     justify-content: space-between;
     gap: 8px;
     padding: 0 10px;
-    /* ⚠️ v1.7.637 — 56 px, COMME LE BANDEAU DE LA TRAPPE « TRANSFORM », ET PAS 34.
+    /* ⚠️ v1.7.638 — 56 px, COMME LE BANDEAU DE LA TRAPPE « TRANSFORM », ET PAS 34.
        Les deux panneaux sont côte à côte au bord droit ; avec un bandeau de 34 px
        contre 56, les deux titres ne tombaient pas sur la même ligne et le contenu
        commençait 22 px plus haut d'un panneau à l'autre. MESURÉ avant : `.mq-head`
@@ -6114,7 +6114,7 @@ input[type=number] {
     padding: 4px 0 10px;
 }
 
-/* ⚠️ v1.7.637 — LA BARRE DE DÉFILEMENT EST CELLE DU RESTE DU PROJET.
+/* ⚠️ v1.7.638 — LA BARRE DE DÉFILEMENT EST CELLE DU RESTE DU PROJET.
    Sans ces règles, `.mq-corps` gardait la barre NATIVE du navigateur : MESURÉ
    15 px de large sur Windows, contre 7 px pour la barre latérale voisine, avec
    flèches et rails gris système. Deux panneaux côte à côte, deux barres
@@ -6134,7 +6134,7 @@ input[type=number] {
 .theme-dark .mq-corps::-webkit-scrollbar-thumb:hover { background: #555; }
 
 /* ── Sections ── */
-/* ══ v1.7.637 — CE PANNEAU REPREND LE SYSTÈME DE LA BARRE « TRANSFORMATION » ══
+/* ══ v1.7.638 — CE PANNEAU REPREND LE SYSTÈME DE LA BARRE « TRANSFORMATION » ══
    Demande utilisateur : « dans Global Refactor ce n'est pas la même taille de typo,
    pas les mêmes espacements, ni les mêmes boutons que dans la sidebar de droite
    Transformation — comme s'il y avait deux UI ». C'était exact, et mesuré :
