@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.642)
+   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.643)
    ═══════════════════════════════════════════════════════════════════════════════
 
    DEUX SURFACES, ET C'EST VOULU :
@@ -414,7 +414,11 @@
     centre.appendChild(haut);
 
     if (p.description) centre.appendChild(el('div', '', p.description)).className = 'sp-pl-desc';
-    var meta = (p.options || []).length + ' ' + texte('pluginsSettings', 'réglage(s)');
+    /* Un plug-in qui apporte sa propre trappe n'a pas de formulaire : annoncer
+       « 0 réglage(s) » serait faux — il en a, ils sont dans son panneau. */
+    var meta = p.trappe
+      ? texte('pluginsOwnTrap', 'trappe dédiée')
+      : (p.options || []).length + ' ' + texte('pluginsSettings', 'réglage(s)');
     if (p.author) meta += '  ·  ' + p.author;
     centre.appendChild(el('div', '', meta)).className = 'sp-pl-meta';
     d.appendChild(centre);
@@ -573,6 +577,25 @@
 
   /* ── Ouverture de la trappe pour un plug-in donné ─────────────────────────── */
   function ouvrirTrappePlugIn(id) {
+    var p = window.SPPlugins.get(id);
+
+    /* 🆕 v1.7.643 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
+       Il n'a pas de formulaire à construire : son `run()` ouvre le panneau qu'il
+       possède déjà. On l'EXÉCUTE donc directement, sans passer par la trappe
+       générique — sinon on aurait deux panneaux pour un seul outil, et un bouton
+       « Appliquer » sans objet. `trappe` n'est transmis que pour les plug-ins
+       intégrés (cf. `liste()` dans `sp-plugins.js`), donc un fichier déposé par
+       l'utilisateur ne peut pas emprunter ce chemin. */
+    if (p && p.integre && p.trappe) {
+      fermerTrappe();
+      return Promise.resolve()
+        .then(function () { return window.SPPlugins.run(id, {}); })
+        .catch(function (e) {
+          var msg = 'Le plug-in a échoué : ' + (e && e.message ? e.message : e);
+          try { window.spAlert(msg, { title: p.name }); } catch (_) { alert(msg); }
+        });
+    }
+
     brancherTrappe();
     if (!remplirTrappe(id)) { ouvrirPanneau(); return; }
     ouvrirTrappe();
@@ -583,10 +606,13 @@
     brancherTrappe();
     var bPlug = document.getElementById('openPluginsPanel');
     if (bPlug) bPlug.addEventListener('click', function () {
-      /* Un clic sur le bouton referme la trappe si elle est ouverte : c'est un
-         va-et-vient, pas une ouverture forcée. */
-      var t = trappeEls();
-      if (t.panneau && t.panneau.classList.contains('ouvert')) { fermerTrappe(); return; }
+      /* ⚠️ v1.7.643 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
+         Il la refermait quand la trappe d'un plug-in était ouverte (« va-et-vient,
+         pas une ouverture forcée »). MESURÉ : depuis que « Global Refactor » est un
+         plug-in, cela fait deux clics pour l'atteindre — le premier referme la
+         trappe du plug-in courant, le second ouvre enfin la liste. La bibliothèque
+         est devenue LA porte d'entrée des outils ; elle doit s'ouvrir d'un clic.
+         Rien n'est perdu : la trappe a sa croix, et « Bibliothèque » dans son pied. */
       try { if (typeof window.toggleSidebar === 'function') window.toggleSidebar('right'); } catch (_) {}
       ouvrirPanneau();
     });

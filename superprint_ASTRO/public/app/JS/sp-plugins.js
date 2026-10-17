@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-INS  (v1.7.642)
+   SUPERPRINT — PLUG-INS  (v1.7.643)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Un plug-in SuperPrint est un fichier `.plugin.js` que l'utilisateur installe
@@ -26,7 +26,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.642';
+  var VERSION = '1.7.643';
   var CLE_REGISTRE = 'sp_plugins_v1';        // plug-ins installés (code source + manifeste)
   var CLE_ACTIFS = 'sp_plugins_actifs_v1';   // { [id]: true/false }
 
@@ -250,6 +250,19 @@
       description: String(m.description || ''),
       icon: String(m.icon || '◆'),
       options: options,
+      /* 🆕 v1.7.643 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
+         « Global Refactor » n'est pas un formulaire : c'est un panneau entier, avec
+         un aperçu en direct, un Annuler et un Valider qui existaient déjà. Le
+         réécrire dans une trappe générique aurait été un second code à maintenir
+         pour le même résultat. Le manifeste déclare donc l'identifiant du panneau
+         qu'il ouvre (`trappe`), et son `run()` s'occupe de l'ouvrir : la bibliothèque
+         se contente alors de l'EXÉCUTER, sans construire de formulaire.
+         ⚠️ RESERVÉ AUX PLUG-INS INTÉGRÉS. Un `.plugin.js` déposé par l'utilisateur
+         ne peut pas réclamer une trappe du produit : `liste()` ne transmet ce champ
+         que si `integre` est vrai, donc le champ est inerte pour tout le reste.
+         Sans cela, n'importe quel fichier installé contournerait le formulaire pour
+         s'exécuter d'un seul clic. */
+      trappe: String(m.trappe || ''),
       source: (typeof source === 'string') ? source : (m.source || ''),
       integre: !!m.integre,
       run: (typeof m.run === 'function') ? m.run : null
@@ -277,7 +290,7 @@
     installes[m.id] = {
       source: src, name: m.name, version: m.version, author: m.author, integre: false,
       description: m.description, icon: m.icon, options: m.options, fichier: nomFichier || '',
-      /* 🆕 v1.7.642 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
+      /* 🆕 v1.7.643 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
          Les plug-ins installés AVANT cette version n'en ont pas : le filtre les
          traite alors comme « anciens » (visibles dans « Tous » et « 30 jours »),
          jamais comme « récents » — on ne date pas rétroactivement un fichier
@@ -350,8 +363,10 @@
         integre: !!m.integre || !!(inst && inst.integre),
         actif: actifs[id] !== false,
         /* Date d'installation, pour les filtres de la bibliothèque (cf. installe
-           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.642. */
-        installe: (inst && inst.installe) ? inst.installe : null
+           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.643. */
+        installe: (inst && inst.installe) ? inst.installe : null,
+        /* Trappe propre au plug-in (cf. `normaliser`) — intégrés uniquement. */
+        trappe: m.integre ? m.trappe : ''
       });
     });
     out.sort(function (a, b) {
@@ -389,7 +404,7 @@
   window.SPPlugins = {
     version: VERSION,
     register: enregistrerIntegre,
-    /* 🆕 v1.7.642 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
+    /* 🆕 v1.7.643 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
        besoin AVANT qu'un plug-in tourne : c'est un champ de son formulaire, pas un
        appel du plug-in. Il délègue à la même fonction que `api.imageDataUrl`, donc
        un seul comportement pour les deux chemins. */

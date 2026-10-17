@@ -1,6 +1,6 @@
 {
   "name": "superprint-desktop",
-  "version": "1.7.642",
+  "version": "1.7.643",
   "private": true,
   "type": "module",
   "description": "SuperPrint — application de bureau (Tauri) autour de la PAO SuperPrint",

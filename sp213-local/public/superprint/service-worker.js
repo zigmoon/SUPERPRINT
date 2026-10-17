@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.642-trappe-plug-ins';
+const CACHE_NAME = 'superprint-shell-v1.7.643-global-refactor-plug-in';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
