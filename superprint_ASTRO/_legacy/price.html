@@ -441,6 +441,9 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   font-style: italic;
   background: linear-gradient(100deg, var(--magenta) 0%, var(--cyan) 60%, var(--yellow) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
+  /* ⚠️ Le débord de l'italique doit être peint — voir index.html, même règle. */
+  padding: 0 .1em;
+  margin: 0 -.1em;
 }
 /* Pastilles quadri CMJN centrées — sous l'installeur */
 .hero-dots {
