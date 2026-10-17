@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN INTÉGRÉ « GLOBAL REFACTOR »  (v1.7.658)
+   SUPERPRINT — PLUG-IN INTÉGRÉ « GLOBAL REFACTOR »  (v1.7.659)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Demande utilisateur : « on va déplacer l'outil global refactor de la top nav sous
@@ -25,7 +25,7 @@
    le demande. On ouvre, et si c'est déjà ouvert on ne fait rien : l'utilisateur a
    exactement ce qu'il a demandé.
    ─────────────────────────────────────────────────────────────────────────────── */
-/* ═══ v1.7.658 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
+/* ═══ v1.7.659 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
    Le nom et la description sont désormais écrits `L(français, english, 日本語)`.
    Cf. le commentaire équivalent en tête de `motif-vectoriel.plugin.js`. */
 var L = window.SPPluginL || function (fr, en, ja) { return { fr: fr, en: en || fr, ja: ja || en || fr }; };
@@ -37,7 +37,7 @@ SPPluginAPI({
   author: 'SuperPrint',
   icon: '≡',
   description: L('Règle d\'un coup les styles, tailles, marges et couleurs de tout le document — aperçu en direct, et un seul « Annuler » pour revenir à l\'état d\'avant.', 'Rules styles, sizes, margins and colours across the whole document in one pass — live preview, and a single “Undo” to get back where you were.', '文書全体のスタイル・サイズ・余白・色を一度に整えます — ライブプレビュー、元に戻すは 1 回だけ。'),
-  /* 🆕 v1.7.658 — L'ICÔNE DE LA BARRE DU HAUT.
+  /* 🆕 v1.7.659 — L'ICÔNE DE LA BARRE DU HAUT.
      Demande utilisateur : « affiche une icône dans la top nav quand c'est en on
      (global refactor on doit encore l'avoir, elle était dans la top nav avant en
      permanence) ». Ce dessin est donc celui du bouton que l'outil occupait là
@@ -45,7 +45,7 @@ SPPluginAPI({
      valeurs », et non « on refait la mise en page ».
      ⚠️ MÊME FACTURE QUE LES AUTRES ICÔNES DE CETTE ZONE : 24×24, `fill="none"`,
      `stroke="currentColor"`, épaisseur 1,8.
-     ⚠️ v1.7.658 — DEUX RÉGLETTES ET NON TROIS, ET C'EST UNE MESURE.
+     ⚠️ v1.7.659 — DEUX RÉGLETTES ET NON TROIS, ET C'EST UNE MESURE.
      Demande utilisateur : « les icons que les plugins ajoute dans la top
      navigation me semble plus noir que les autre en chromie ». La COULEUR était
      identique (`rgb(26,26,26)` relevé sur les deux, comme sur la loupe) : c'est
