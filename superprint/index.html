@@ -2387,46 +2387,40 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-/* 🆕 v1.7.655 — LE CARRÉ WHATSAPP DE LA BARRE, CENTRÉ DANS SA CASE.
-   Même dessin, même numéro, même `aria-label` que la bulle flottante : c'est le
-   MÊME lien, transporté dans la barre pour ne plus flotter au-dessus du contenu.
-
-   ⚠️ LA CASE EST PLEINE HAUTEUR, LE CARRÉ EST CENTRÉ DEDANS — ET C'EST UNE MESURE
-   QUI L'IMPOSE. Le carré, posé directement dans la grille, mesurait 44 px dans une
-   barre de 73 px : son centre tombait 14 px AU-DESSUS de celui de la barre, et le
-   filet de séparation, porté par le carré, ne couvrait que 44 px de haut — donc pas
-   la hauteur de la barre, contrairement aux trois autres filets. Relevé :
-   `waCentreY = 900` contre `barreCentreY = 914`.
-   La case ci-dessous prend toute la hauteur (`align-self: stretch`), porte le filet
-   sur toute cette hauteur et centre le carré par `margin: auto`. Les deux filets se
-   ressemblent alors exactement, et le pictogramme est au milieu de son espace.
-   ⚠️ AUCUN FOND NI CONTOUR SUR LE CARRÉ : le dessin doit se lire comme les trois
-   autres cases — un trait, un espace, un pictogramme. Un carré encadré au milieu
-   d'une barre sans cadre paraissait « posé là », c'est ce qui n'était pas propre.
-   ⚠️ 44 px, LA PLUS PETITE CIBLE TACTILE CONFORTABLE, et elle le reste à la souris.
-   ⚠️ `.fondation-wa` N'EST PAS UNE `.fondation` : elle n'a ni nom ni description,
-   donc elle ne doit pas hériter du soulignement de `.fondation:hover`. */
+/* 🆕 v1.7.656 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+   Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
+   ICON MÊME NOIR QUE RUST ».
+   ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
+     · la case mesurait 85 × 72 px — un RECTANGLE de rapport 1,18, parce que sa
+       largeur valait 44 px de carré plus deux rembourrages, alors que sa hauteur
+       était celle de la barre ;
+     · le pictogramme était peint en rgb(117,106,91) — le GRIS des notes
+       secondaires — quand Rust, GitHub et Discord sont à rgb(23,19,13), l'encre
+       #17130D. À côté d'eux, il paraissait délavé.
+   ⚠️ LA LARGEUR DEVIENT CELLE DE LA BARRE (`var(--barre-h)`), et non une valeur
+   écrite à la main : les deux dimensions ne peuvent donc plus diverger, même si la
+   hauteur de la barre change. Le rembourrage disparaît — c'est la case elle-même
+   qui est le carré, plus le dessin dans un rectangle. Mesuré après : 72 × 72,
+   rapport 1,00.
+   ⚠️ LA COULEUR PASSE DE `--muted` À `--ink` : c'est exactement la teinte cuite
+   dans les trois autres pictogrammes (#17130D). Le survol conserve un retour
+   visible — il s'éclaircit vers `--ink-2` — sans réintroduire de cadre ni de fond,
+   qui avaient été retirés au retour précédent. */
 .fondation-wa-case {
   display: flex; align-items: center; justify-content: center;
   align-self: stretch;
-  /* ⚠️ MÊME REMBOURRAGE À GAUCHE ET À DROITE, ET C'EST UNE MESURE QUI L'IMPOSE :
-     avec le seul rembourrage de gauche, le carré finissait à 0 px du bord droit de
-     la grille contre 21 px à gauche du filet — l'icône paraissait poussée dans le
-     coin. Les deux valeurs sont la même expression, donc elles ne peuvent pas
-     diverger. */
-  padding-left: clamp(12px,1.4vw,20px);
-  padding-right: clamp(12px,1.4vw,20px);
+  width: var(--barre-h, 72px);
   border-left: 1px solid var(--line);
 }
 .fondation-wa {
   display: inline-flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; flex: 0 0 auto;
   margin: auto;
-  color: var(--muted); text-decoration: none;
+  color: var(--ink); text-decoration: none;
   transition: color .22s var(--ease);
 }
 .fondation-wa svg { display: block; width: 24px; height: 24px; fill: currentColor; }
-.fondation-wa:hover, .fondation-wa:focus-visible { color: var(--ink); }
+.fondation-wa:hover, .fondation-wa:focus-visible { color: var(--ink-2); }
 .fondation-wa:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .fondation-wa { transition: none; } }
 /* ⚠️ SOUS 901 px, LA CASE S'EFFACE ET LA BULLE REPREND LE RELAIS.
