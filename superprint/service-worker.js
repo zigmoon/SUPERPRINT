@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.654-hero-os-discord';
+const CACHE_NAME = 'superprint-shell-v1.7.655-rangement-colonnes';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
