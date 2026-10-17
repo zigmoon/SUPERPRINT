@@ -923,15 +923,44 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    ⚠️ 26 px ET NON 20 : la ligne n'a plus de texte pour la porter, ce sont les
    pictogrammes seuls qui doivent se voir. L'écart passe à 26 px, et la zone
    cliquable est plus grande que le dessin (padding 4px), pour qu'on ne vise pas
-   un carré de 26 px à la souris. */
+   un carré de 26 px à la souris.
+
+   🆕 v1.7.656 — UN FILET DE TÊTE, AVEC « INSTALLEUR » AU MILIEU.
+   Demande utilisateur : « avant les 3 icônes Windows macOS Linux j'aimerais un
+   séparateur fin centré avec au centre la typo Installeur (même typo que Le n°1 de
+   la PAO gratuite) ».
+   La ligne devient donc une COLONNE : un filet de tête portant le mot, puis les
+   trois logos. Le bloc reprend ainsi son sens de lecture — il annonce ce qu'il
+   contient avant de le montrer — sans réintroduire le « Compatible » supprimé au
+   retour précédent, qui parlait des SYSTÈMES et non de ce qu'on y télécharge.
+   ⚠️ LA TYPO EST CELLE DU KICKER, RELEVÉE ET NON APPROCHÉE : IBM Plex Mono,
+   11 px, graisse 600, interlettrage .4em, capitales, couleur `var(--muted)`
+   (`rgb(117,106,91)`). Le filet fait 1 px de `var(--line)`, la même que tous les
+   filets de la page, et les deux segments se partagent la largeur (`flex: 1`) :
+   le mot reste donc exactement au milieu, quelle que soit la longueur traduite. */
 .hero-os {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-  gap: 6px 26px; margin: clamp(18px,2.2vw,26px) 0 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; margin: clamp(18px,2.2vw,26px) 0 0;
+  /* La largeur est BORNÉE : sans elle, un enfant de conteneur en colonne se
+     réduirait à son contenu et les deux filets n'auraient aucune longueur. */
+  width: min(100%, 480px);
+}
+.hero-os-titre {
+  display: flex; align-items: center; gap: 16px;
+  width: 100%; margin: 0;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .4em; text-transform: uppercase; color: var(--muted);
+  /* ⚠️ LES CAPITALES AJOUTENT DE L'INTERLETTRAGE APRÈS LA DERNIÈRE LETTRE : sans ce
+     retrait, le mot paraît décalé d'un demi-caractère vers la gauche entre ses deux
+     filets. */
+  text-indent: .4em;
+}
+.hero-os-titre::before, .hero-os-titre::after {
+  content: ''; flex: 1 1 0; height: 1px; background: var(--line);
 }
 /* LE LOGO EST LE LIEN. Aucun contour, aucun fond : au repos la ligne se lit comme
    trois marques posées sur le papier, et seul le survol dit qu'elles sont
-   cliquables. Le grossissement est léger (1.08), pour rester dans le vocabulaire
-   discret du hero — ce n'est pas un bouton d'appel à l'action. */
+   cliquables. Aucun grossissement — voir la règle plus bas. */
 .hero-os-list {
   display: inline-flex; align-items: center; gap: 6px 26px; flex-wrap: wrap;
   justify-content: center;
@@ -3068,6 +3097,15 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
          aux vingt et un fichiers (sept par application), exactement comme le
          sous-menu « Télécharger » du haut de page. -->
     <div class="hero-os">
+      <!-- 🆕 v1.7.656 — LE FILET DE TÊTE, « INSTALLEUR » AU MILIEU.
+           Demande utilisateur : « avant les 3 icônes Windows macOS Linux j'aimerais
+           un séparateur fin centré avec au centre la typo Installeur (même typo que
+           Le n°1 de la PAO gratuite) ». Le libellé est traduit : EN « Installers »,
+           JA « インストーラー » — c'est un mot, pas un nom de plateforme.
+           Il est DÉCORATIF pour l'accessibilité : les trois liens juste en dessous
+           portent déjà « Windows — installateurs » dans leur `aria-label`. Un
+           lecteur d'écran annoncerait donc deux fois la même chose. -->
+      <p class="hero-os-titre" aria-hidden="true"><span class="inline-fr">Installeur</span><span class="inline-en">Installers</span><span class="inline-ja">インストーラー</span></p>
       <span class="hero-os-list">
         <a href="https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest" target="_blank" rel="noopener noreferrer"
            aria-label="Windows — installateurs" title="Windows — installateurs"><img src="icons/windows.svg" alt="" width="26" height="26" loading="lazy" decoding="async"><span class="hero-os-nom">Windows</span></a>
