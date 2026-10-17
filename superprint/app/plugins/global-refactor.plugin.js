@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN INTÉGRÉ « GLOBAL REFACTOR »  (v1.7.649)
+   SUPERPRINT — PLUG-IN INTÉGRÉ « GLOBAL REFACTOR »  (v1.7.650)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Demande utilisateur : « on va déplacer l'outil global refactor de la top nav sous
@@ -28,10 +28,23 @@
 SPPluginAPI({
   id: 'global-refactor',
   name: 'Global Refactor',
-  version: '1.0.0',
+  version: '1.1.0',
   author: 'SuperPrint',
   icon: '≡',
   description: 'Règle d\'un coup les styles, tailles, marges et couleurs de tout le document — aperçu en direct, et un seul « Annuler » pour revenir à l\'état d\'avant.',
+  /* 🆕 v1.7.650 — L'ICÔNE DE LA BARRE DU HAUT.
+     Demande utilisateur : « affiche une icône dans la top nav quand c'est en on
+     (global refactor on doit encore l'avoir, elle était dans la top nav avant en
+     permanence) ». Ce dessin est donc celui du bouton que l'outil occupait là
+     avant la 1.7.643 : trois réglettes à curseur, c'est-à-dire « on règle des
+     valeurs », et non « on refait la mise en page ».
+     ⚠️ MÊME FACTURE QUE LES AUTRES ICÔNES DE CETTE ZONE : 24×24, `fill="none"`,
+     `stroke="currentColor"`, épaisseur 1,8. Une icône pleine aurait la même
+     couleur mais beaucoup plus d'encre, donc paraîtrait plus sombre que ses
+     voisines (même raisonnement que pour l'icône « Prompt IA »). */
+  icone: '<line x1="3.5" y1="6.5" x2="20.5" y2="6.5"/><circle cx="9" cy="6.5" r="2.3"/>' +
+         '<line x1="3.5" y1="12" x2="20.5" y2="12"/><circle cx="15.5" cy="12" r="2.3"/>' +
+         '<line x1="3.5" y1="17.5" x2="20.5" y2="17.5"/><circle cx="7.5" cy="17.5" r="2.3"/>',
   /* Le panneau que ce plug-in possède. Reconnu uniquement pour un plug-in INTÉGRÉ
      (cf. `normaliser` et `liste` dans `sp-plugins.js`). */
   trappe: 'maquettePanel',

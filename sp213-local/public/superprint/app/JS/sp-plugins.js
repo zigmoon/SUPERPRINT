@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-INS  (v1.7.649)
+   SUPERPRINT — PLUG-INS  (v1.7.650)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Un plug-in SuperPrint est un fichier `.plugin.js` que l'utilisateur installe
@@ -26,7 +26,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.649';
+  var VERSION = '1.7.650';
   var CLE_REGISTRE = 'sp_plugins_v1';        // plug-ins installés (code source + manifeste)
   var CLE_ACTIFS = 'sp_plugins_actifs_v1';   // { [id]: true/false }
 
@@ -75,7 +75,7 @@
     var api = {
       version: VERSION,
 
-      /* 🆕 v1.7.649 — L'APERÇU EST UN MODE, ET LE PLUG-IN DOIT LE SAVOIR.
+      /* 🆕 v1.7.650 — L'APERÇU EST UN MODE, ET LE PLUG-IN DOIT LE SAVOIR.
          Une trappe peut exécuter un plug-in à chaque mouvement de tirette. Dans ce
          mode, `api.apercu` vaut `true` : un plug-in qui écrit quelque chose de
          coûteux (un historique, un message, un dialogue) peut s'en abstenir. Le
@@ -90,7 +90,7 @@
       mm: mmVersPx,
       px: pxVersMm,
 
-      /* 🆕 v1.7.649 — TOUS LES PLANS DE TRAVAIL.
+      /* 🆕 v1.7.650 — TOUS LES PLANS DE TRAVAIL.
          Un plug-in qui remplace son propre dessin doit pouvoir le RETIRER partout
          où il l'a posé. Sans cette liste, le plug-in Motif devait passer par
          `window._spMaquette._debug.vues()` — l'échafaudage de débogage d'un autre
@@ -163,7 +163,7 @@
         try { if (H().sync) H().sync(); } catch (_) {}
       },
 
-      /* 🆕 v1.7.649 — LA GRANDE TOILE D'APERÇU DE LA TRAPPE.
+      /* 🆕 v1.7.650 — LA GRANDE TOILE D'APERÇU DE LA TRAPPE.
          Renvoie `{ canvas, ctx, largeur, hauteur }` (en pixels du support, donc
          déjà doublé pour un écran à densité 2), ou `null` si le plug-in n'a pas
          déclaré de champ `{ type: 'apercu' }` ou si aucune trappe n'est ouverte.
@@ -215,7 +215,7 @@
             inp.type = 'file';
             inp.accept = 'image/*,.svg';
             inp.style.display = 'none';
-            /* ⚠️ v1.7.649 — L'ÉLÉMENT EST RETIRÉ DÈS QU'IL A SERVI.
+            /* ⚠️ v1.7.650 — L'ÉLÉMENT EST RETIRÉ DÈS QU'IL A SERVI.
                MESURÉ : le retrait n'était prévu qu'au bout de 60 s, et le champ
                n'était jamais enlevé si l'utilisateur fermait le sélecteur sans
                choisir de fichier. Un mixeur d'images demande plusieurs choix de
@@ -287,6 +287,50 @@
   }
 
   /* Normalise un manifeste : un plug-in mal écrit ne doit pas casser le panneau. */
+  /* 🆕 v1.7.650 — FILTRE DE L'ICÔNE VECTORIELLE.
+     Le contenu est injecté par `innerHTML` dans un `<svg>` : c'est donc une porte
+     d'entrée, et elle doit être filtrée. Le manifeste peut venir d'un fichier
+     déposé par l'utilisateur.
+
+     ⚠️ PREMIER ESSAI FAUX, ET MESURÉ : je refusais tout ce qui contenait `<` ou
+     `>`. Or un fragment SVG EST fait de balises — `liste()` renvoyait donc une
+     icône vide pour les deux plug-ins intégrés, et la barre du haut affichait
+     leurs glyphes de police au lieu des dessins. Un filtre trop large ne protège
+     rien, il casse la fonction.
+     On procède donc par LISTE BLANCHE : seules les formes sont acceptées. Tout le
+     reste est refusé en bloc (et l'appelant retombe sur le glyphe, sans erreur) :
+       · `<script`, `<foreignObject`, `<iframe`  → exécution de code
+       · `<image`, `<use`, `href`                → chargement d'une ressource externe
+       · `on…=`                                  → gestionnaire d'événement
+       · `javascript:` / `url(`                  → URI chargée à l'affichage
+       · `style=`                                → `expression()` et compagnie
+       · toute balise hors de la liste des formes */
+  var FORMES_SVG = ['path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'ellipse', 'g'];
+
+  function iconeVectorielle(brut) {
+    if (typeof brut !== 'string') return '';
+    var s = brut.trim();
+    if (!s || s.length > 2000) return '';
+    if (/<\s*(script|foreignObject|iframe|image|use|a|animate|set)\b/i.test(s)) return '';
+    if (/\bon[a-z]+\s*=/i.test(s)) return '';
+    if (/javascript\s*:/i.test(s)) return '';
+    if (/url\s*\(/i.test(s)) return '';
+    if (/\bstyle\s*=/i.test(s)) return '';
+    if (/\bhref\s*=/i.test(s)) return '';
+    /* Chaque balise ouvrante doit être une forme connue. Une balise de fermeture
+       (`</path>`) est acceptée sans condition : elle ne peut rien porter. */
+    var m, re = /<\s*\/?\s*([a-zA-Z][a-zA-Z0-9:-]*)/g, ok = true;
+    while ((m = re.exec(s))) {
+      var nom = m[1].toLowerCase();
+      if (FORMES_SVG.indexOf(nom) < 0) { ok = false; break; }
+    }
+    if (!ok) return '';
+    /* Il doit rester au moins une forme : du texte libre ne dessinerait rien, et
+       la barre du haut afficherait un bouton muet. */
+    if (!/(path|circle|rect|line|polyline|polygon|ellipse)/i.test(s)) return '';
+    return s;
+  }
+
   function normaliser(m, source) {
     if (!m || typeof m !== 'object') throw new Error('manifeste absent');
     var id = String(m.id || '').trim();
@@ -298,7 +342,7 @@
       return {
         key: String(o.key || ''),
         label: String(o.label || o.key || ''),
-        /* 🆕 v1.7.649 — `apercu` (grande toile dessinée par le plug-in) et
+        /* 🆕 v1.7.650 — `apercu` (grande toile dessinée par le plug-in) et
            `images` (mixeur multi-images) rejoignent les types reconnus. Sans
            cette ligne, le normalisateur les rabattait sur `text` : la trappe
            affichait alors une bêtise au lieu du champ demandé. */
@@ -323,8 +367,21 @@
       author: String(m.author || ''),
       description: String(m.description || ''),
       icon: String(m.icon || '◆'),
+      /* 🆕 v1.7.650 — L'ICÔNE VECTORIELLE, POUR LA BARRE DU HAUT.
+         Demande utilisateur : « affiche une icône dans la top nav quand c'est en
+         on ». Un glyphe de police (`icon: '≡'`) ne se dessine pas de la même façon
+         sur toutes les machines et, étant PLEIN, il paraîtrait plus sombre que les
+         icônes en contour de cette zone. Un plug-in peut donc fournir le CONTENU
+         d'un `<svg>` (chemins seuls, sans la balise).
+         ⚠️ ON N'ACCEPTE QUE DES FORMES SVG, jamais de balise ni de script : le
+         contenu est injecté par `innerHTML`, donc une chaîne hostile pourrait y
+         placer un `<script>` ou un gestionnaire d'événement. On refuse tout ce qui
+         contient `<`, `on…=` ou `javascript:`, et on plafonne la longueur : un
+         dessin d'icône tient largement en 2000 caractères. Un manifeste qui échoue
+         à ce filtre n'est PAS rejeté — il retombe simplement sur son glyphe. */
+      icone: iconeVectorielle(m.icone),
       options: options,
-      /* 🆕 v1.7.649 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
+      /* 🆕 v1.7.650 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
          « Global Refactor » n'est pas un formulaire : c'est un panneau entier, avec
          un aperçu en direct, un Annuler et un Valider qui existaient déjà. Le
          réécrire dans une trappe générique aurait été un second code à maintenir
@@ -364,7 +421,7 @@
     installes[m.id] = {
       source: src, name: m.name, version: m.version, author: m.author, integre: false,
       description: m.description, icon: m.icon, options: m.options, fichier: nomFichier || '',
-      /* 🆕 v1.7.649 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
+      /* 🆕 v1.7.650 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
          Les plug-ins installés AVANT cette version n'en ont pas : le filtre les
          traite alors comme « anciens » (visibles dans « Tous » et « 30 jours »),
          jamais comme « récents » — on ne date pas rétroactivement un fichier
@@ -401,7 +458,7 @@
     }
     if (!m) throw new Error('plug-in inconnu : ' + id);
     if (!m.run) throw new Error('ce plug-in n\'a pas de fonction run()');
-    /* ⚠️ v1.7.649 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
+    /* ⚠️ v1.7.650 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
        LE DIT. L'état `actif` existait depuis 1.7.642 mais n'était qu'une pastille
        d'affichage : `definirActif` écrivait dans le stockage et personne ne le
        relisait. Un interrupteur qui ne coupe rien est un mensonge — la garde est
@@ -415,7 +472,7 @@
     (m.options || []).forEach(function (o) { opts[o.key] = (valeurs && o.key in valeurs) ? valeurs[o.key] : o.defaut; });
     var api = creerApi(m, options);
     var apercu = !!(options && options.apercu);
-    /* 🆕 v1.7.649 — L'APERÇU SE DÉROULE EN SILENCE D'HISTORIQUE.
+    /* 🆕 v1.7.650 — L'APERÇU SE DÉROULE EN SILENCE D'HISTORIQUE.
        ⚠️ MESURÉ : sans cela, chaque forme posée par le plug-in déclenchait le
        `object:added` global de `main.js` → `debouncedSaveState('Objet ajouté')`.
        La pile d'undo montait de 13 à 29 en trente secondes d'aperçus, et Ctrl+Z
@@ -435,7 +492,7 @@
       );
   }
 
-  /* 🆕 v1.7.649 — VALIDER UN APERÇU.
+  /* 🆕 v1.7.650 — VALIDER UN APERÇU.
      Une trappe en aperçu direct peut avoir exécuté le plug-in trente fois. Une
      seule entrée d'historique doit en sortir, et c'est celle-ci : elle synchronise
      puis fige. Le plug-in n'a rien à en savoir. */
@@ -470,11 +527,11 @@
       var inst = installes[id] || null;
       out.push({
         id: id, name: m.name, version: m.version, author: m.author,
-        description: m.description, icon: m.icon, options: m.options,
+        description: m.description, icon: m.icon, icone: m.icone || '', options: m.options,
         integre: !!m.integre || !!(inst && inst.integre),
         actif: actifs[id] !== false,
         /* Date d'installation, pour les filtres de la bibliothèque (cf. installe
-           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.649. */
+           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.650. */
         installe: (inst && inst.installe) ? inst.installe : null,
         /* Trappe propre au plug-in (cf. `normaliser`) — intégrés uniquement. */
         trappe: m.integre ? m.trappe : ''
@@ -520,7 +577,7 @@
   window.SPPlugins = {
     version: VERSION,
     register: enregistrerIntegre,
-    /* 🆕 v1.7.649 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
+    /* 🆕 v1.7.650 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
        besoin AVANT qu'un plug-in tourne : c'est un champ de son formulaire, pas un
        appel du plug-in. Il délègue à la même fonction que `api.imageDataUrl`, donc
        un seul comportement pour les deux chemins. */

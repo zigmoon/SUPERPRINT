@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.649)
+   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.650)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce que fait ce plug-in : il habille un fond de page — ou un bloc sélectionné —
@@ -84,10 +84,20 @@
 SPPluginAPI({
   id: 'motif-vectoriel',
   name: 'Motif vectoriel',
-  version: '3.0.0',
+  version: '3.1.0',
   author: 'SuperPrint',
   icon: '▦',
   description: 'Motif, rosace, kaléidoscope ou chaos — à partir d\'une forme ou d\'un mélange d\'images. Aperçu en direct dans la trappe.',
+
+  /* 🆕 v1.7.650 — L'ICÔNE DE LA BARRE DU HAUT.
+     Demande utilisateur : « pour motif trouve une icône ». Le glyphe de la
+     bibliothèque (« ▦ ») ne se dessine pas de la même façon sur toutes les
+     machines, et il est plein : il aurait paru plus sombre que les icônes en
+     contour de cette zone. On dessine donc un MOTIF : cinq points en quinconce,
+     c'est-à-dire ce que fait ce plug-in — une forme répétée en grille décalée.
+     Même facture que les autres : 24×24, `fill="none"`, `stroke="currentColor"`,
+     épaisseur 1,8. */
+  icone: '<path d="M5 5h3.2v3.2H5zM15.8 5H19v3.2h-3.2zM10.4 10.4h3.2v3.2h-3.2zM5 15.8h3.2V19H5zM15.8 15.8H19V19h-3.2z"/>',
 
   options: [
     /* ── Le grand aperçu. En tête, et sans libellé : il se comprend seul. ──── */
