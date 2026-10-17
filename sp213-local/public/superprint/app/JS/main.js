@@ -813,7 +813,7 @@ function syncZoomWidgetWithRightSidebar() {
     const zoomWidget = document.getElementById('zoomWidget');
     if (!rightSidebar || !zoomWidget) return;
 
-    /* ⚠️ v1.7.643 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
+    /* ⚠️ v1.7.644 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
        Cette fonction place le widget de zoom juste à gauche de la barre latérale
        droite. Or la trappe est un PANNEAU FIXE qui, lui aussi, occupe le bord
        droit : sans cette ligne, le widget tombait PAR-DESSUS elle et interceptait
@@ -823,7 +823,7 @@ function syncZoomWidgetWithRightSidebar() {
        défaut qu'aucune relecture ne trouve : les deux éléments sont corrects
        séparément, c'est leur superposition qui casse.
 
-       ⚠️ v1.7.643 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
+       ⚠️ v1.7.644 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
        C'est une correction de fond, pas un ajustement. Il y avait DEUX écrivains
        pour la même propriété : cette fonction, et une copie du même calcul au
        démarrage AVEC la trappe ; et la règle CSS en portait un troisième, écrasé
@@ -848,7 +848,7 @@ function syncZoomWidgetWithRightSidebar() {
     try {
         document.documentElement.style.setProperty('--sp-sidebar-r', largeur + 'px');
     } catch (_) {}
-    /* ⚠️ v1.7.643 — CETTE VALEUR EST UN POINT DE DÉPART, PAS LA VÉRITÉ. Elle est
+    /* ⚠️ v1.7.644 — CETTE VALEUR EST UN POINT DE DÉPART, PAS LA VÉRITÉ. Elle est
        mesurée avant que la classe `collapsed` n'ait produit son effet, donc elle vaut
        l'ancienne largeur ; `spPublierLargeursPanneauxDroits()` (juste en dessous) la
        corrige à chaque image grâce à un ResizeObserver. On garde cet appel pour que
@@ -908,7 +908,7 @@ function spPublierLargeursPanneauxDroits() {
             }
             racine.setProperty('--sp-sidebar-r', Math.round(w) + 'px');
         }
-        /* 🆕 v1.7.643 — DEUX TRAPPES, UNE SEULE LARGEUR CUMULÉE.
+        /* 🆕 v1.7.644 — DEUX TRAPPES, UNE SEULE LARGEUR CUMULÉE.
            `#maquettePanel` (Global Refactor) et `#pluginPanel` (plug-ins) sont deux
            panneaux distincts, empilés au même bord droit. Le widget de zoom et les
            encarts flottants se positionnent avec `--sp-maquette-l` : il doit donc
@@ -1226,7 +1226,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // ✨ NOUVEAU : Initialiser le positionnement du zoom-widget selon l'état de la sidebar droite
             setTimeout(() => {
-                /* ⚠️ v1.7.643 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
+                /* ⚠️ v1.7.644 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
                    CAUSAIT LE DÉFAUT. Elle écrivait `zoomWidget.style.right` en dur
                    (« calc(56px + 16px) »), SANS la largeur de la trappe, alors que la
                    fonction deux lignes plus bas écrit la même chose AVEC la trappe. Deux
@@ -2898,7 +2898,7 @@ const SP_CUSTOM_PROPS = [
        nouveau coulage du gabarit d'en recréer un second par-dessus. */
     '_spGabaritLibere',
     '_isPageNumber',
-    /* 🆕 v1.7.643 — _SP_IDML_LIENS_638 : LES LIENS HYPERTEXTE D'UN BLOC TEXTE.
+    /* 🆕 v1.7.644 — _SP_IDML_LIENS_638 : LES LIENS HYPERTEXTE D'UN BLOC TEXTE.
        MESURÉ (banc d'audit, features-561.idml) : l'import IDML détecte bien la plage
        du lien (window.__sp561Stats.plagesLien = 1), souligne le texte en bleu et lui
        donne la couleur #0000EE — mais l'URL elle-même n'était écrite NULLE PART :
@@ -2911,7 +2911,7 @@ const SP_CUSTOM_PROPS = [
            qui survit à un changement de césure, de colonnes ou de largeur.
        La propriété est déclarée ici pour être sérialisée par le .sp et le .json. */
     '_spLiens',
-    /* 🆕 v1.7.643 — LES MOTIFS POSÉS PAR LE PLUG-IN « MOTIF VECTORIEL ».
+    /* 🆕 v1.7.644 — LES MOTIFS POSÉS PAR LE PLUG-IN « MOTIF VECTORIEL ».
        Le plug-in retire ses motifs précédents avant d'en reposer un, sinon un
        utilisateur qui essaie trois pas successifs empile trois fonds. Ce retrait
        ne fonctionne que si la marque SURVIT à la sérialisation : sans ces deux
@@ -4525,7 +4525,7 @@ if (window._spGpuEnabled) {
         };
     }
 
-    /* ══ v1.7.643 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+    /* ══ v1.7.644 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
 
        `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
        WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
@@ -4962,7 +4962,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.643 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.644 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5561,7 +5561,7 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        /* ══ v1.7.643 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
+        /* ══ v1.7.644 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
            RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
            bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
@@ -40020,7 +40020,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const reader = new FileReader();
             reader.onload = (ev) => {
                 try {
-                    /* 🆕 v1.7.643 — un JSON FIGMA n'est pas un projet SuperPrint : le
+                    /* 🆕 v1.7.644 — un JSON FIGMA n'est pas un projet SuperPrint : le
                        chargeur ci-dessous le refuserait (« structure non reconnue »). On
                        le repère ici, sans charger le module Figma, et on le passe à
                        l'import dédié — c'est le même fichier, la même attente. */
@@ -41023,7 +41023,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             if (s.fontSize) st.fontSize = s.fontSize;
             if (s.fontWeight) st.fontWeight = s.fontWeight;
             if (s.fontStyle) st.fontStyle = s.fontStyle;
-            /* 🆕 v1.7.643 — LA POLICE DU DOCUMENT, avec son repli. Le nom exact reste en
+            /* 🆕 v1.7.644 — LA POLICE DU DOCUMENT, avec son repli. Le nom exact reste en
                tête de pile (c'est lui qui repart en .sp et en PDF) ; s'il n'est pas
                installé, le navigateur descend la pile au lieu de tomber en Times. */
             if (s.fontFamily) st.fontFamily = '"' + String(s.fontFamily).replace(/"/g, '') + '", "Open Sans", sans-serif';
@@ -41094,7 +41094,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     }
                     var mCo = /color\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))/i.exec(sInl);
                     if (mCo) { if (ns === s) ns = copier(s); ns.fill = mCo[1]; }
-                    /* 🆕 v1.7.643 — la POLICE du run Word (cf. _spWordRunsFmt). On garde
+                    /* 🆕 v1.7.644 — la POLICE du run Word (cf. _spWordRunsFmt). On garde
                        le nom exact du document : c'est lui qui repart en PDF et en .sp.
                        Le repli est ajouté au moment de l'application (cf. _spAppliquerRuns),
                        pour qu'une police absente de la machine ne casse pas la mesure. */
@@ -41137,7 +41137,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 var n = children[i];
                 if (!n) continue;
                 if (n.type === 'text') {
-                    /* 🆕 v1.7.643 — couleur et police du run, relevées dans
+                    /* 🆕 v1.7.644 — couleur et police du run, relevées dans
                        word/document.xml (cf. _spWordRunsFmt). */
                     var _st638 = '';
                     if (n.spColor) _st638 += 'color:' + n.spColor + ';';
@@ -41238,7 +41238,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     window._spAstVersHtml = _spAstVersHtml;
 
     async function flowHtmlIntoPages(html, startPageIndex, wordOpts) {
-        /* 🆕 v1.7.643 — la famille du document Word pilote tout le flux (cf. _SP_FAM_FLUX).
+        /* 🆕 v1.7.644 — la famille du document Word pilote tout le flux (cf. _SP_FAM_FLUX).
            Un appel sans `_docFont` (autre importeur) retrouve exactement Open Sans : on
            RÉINITIALISE donc à chaque entrée, jamais seulement quand l'option est là. */
         _SP_FAM_FLUX = (wordOpts && wordOpts._docFont)
@@ -41415,7 +41415,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             getPageObjs().push(data);
         }
 
-        /* 🆕 v1.7.643 — LA POLICE DU DOCUMENT WORD, POUR TOUT LE FLUX.
+        /* 🆕 v1.7.644 — LA POLICE DU DOCUMENT WORD, POUR TOUT LE FLUX.
            MESURÉ (banc d'audit) : les 15 blocs d'un .docx ressortaient tous en « Open Sans »
            alors que le document déclare sa police (par run, ou par défaut dans
            word/styles.xml → thème). On pose la famille RÉELLE en tête de pile, avec
@@ -41830,7 +41830,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             Promise.resolve()
                                 .then(function () { return _spWordImageSizesMM(arrayBuffer); })
                                 .then(function (sz) { if (sz && sz.length) _opts569._imgSizesMM = sz; })
-                                /* 🆕 v1.7.643 — COULEUR ET POLICE DES RUNS (cf. _spWordRunsFmt). */
+                                /* 🆕 v1.7.644 — COULEUR ET POLICE DES RUNS (cf. _spWordRunsFmt). */
                                 .then(function () { return _spWordRunsFmt(arrayBuffer); })
                                 .then(function (fmt) {
                                     if (!fmt) return;
@@ -41842,7 +41842,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                                 .then(function () { _spImpBusyEtape(1); return mammoth.convertToHtml({ arrayBuffer }, options); })
                                 .then(function () {
                                     if (!_ast569) throw new Error('AST Word indisponible');
-                                    /* 🆕 v1.7.643 — on reverse couleur et police sur l'AST
+                                    /* 🆕 v1.7.644 — on reverse couleur et police sur l'AST
                                        AVANT de le convertir : le HTML produit porte alors des
                                        <span style="color:…;font-family:…"> que le compositeur
                                        sait déjà lire (cf. _spHtmlRuns). */
@@ -41978,7 +41978,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             });
         }
 
-        /* ══ 🆕 v1.7.643 — _SP_WORD_FMT_638 : COULEUR ET POLICE DES RUNS ══
+        /* ══ 🆕 v1.7.644 — _SP_WORD_FMT_638 : COULEUR ET POLICE DES RUNS ══
 
            DÉFAUT MESURÉ (banc d'audit, _test_fidelite.docx) : le document Word contient
            <w:color w:val="C00000"/> sur un run et une table de polices (fontTable.xml) ;
@@ -42014,7 +42014,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             var f = zip.file('word/document.xml');
                             if (!f) { resolve(null); return; }
                             var xml = await f.async('string');
-                            /* 🆕 v1.7.643 — LA POLICE PAR DÉFAUT DU DOCUMENT.
+                            /* 🆕 v1.7.644 — LA POLICE PAR DÉFAUT DU DOCUMENT.
                                MESURÉ (fixture _test_fidelite.docx) : AUCUN run ne porte
                                <w:rFonts> — dans Word, la police du corps est déclarée une
                                seule fois, dans word/styles.xml → w:docDefaults →
@@ -42409,7 +42409,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             });
         }
         window._spImportDocxFile = importDocxFile;
-        /* 🆕 v1.7.643 — exposé comme _spAstVersHtml / _spTexteOdf : c'est la seule façon
+        /* 🆕 v1.7.644 — exposé comme _spAstVersHtml / _spTexteOdf : c'est la seule façon
            de vérifier la lecture couleur+police sans passer par une composition entière. */
         window._spWordRunsFmt = _spWordRunsFmt;
         window._spLancerImportWord = lancerImportWord;
@@ -42979,7 +42979,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         });
     })();
 
-    // ===== Figma (.json) Import — 🆕 v1.7.643 =====
+    // ===== Figma (.json) Import — 🆕 v1.7.644 =====
     /* Un document Figma s'importe à partir de son JSON (API REST `/v1/files/:key`,
        ou greffon SuperPrint). Le module `sp-figma-import.js` est chargé À LA DEMANDE,
        comme `sp-doc-import.js` : il ne pèse rien sur le démarrage d'un utilisateur
@@ -42994,7 +42994,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return new Promise(function (res, rej) {
                 const sc = document.createElement('script');
                 /* ⚠️ MESURÉ PENDANT L'AUDIT : l'URL était figée à
-                   `?v=20261017-v643-figma`. Après correction du module, le navigateur a
+                   `?v=20261017-v644-figma`. Après correction du module, le navigateur a
                    resservi la version en cache et l'import a continué d'échouer — un
                    fichier de code dont l'URL ne change pas est un fichier qu'on ne peut
                    pas corriger. On reprend donc l'empreinte de `main.js`, celle que le
@@ -43801,7 +43801,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         docPageH = ph * 25.4 / 72;
                         _spIdmlAPref = true;
                     }
-                    /* 🆕 v1.7.643 — _SP_IDML_GEOM_638 : LE FOND PERDU DU DOCUMENT.
+                    /* 🆕 v1.7.644 — _SP_IDML_GEOM_638 : LE FOND PERDU DU DOCUMENT.
                        MESURÉ (banc d'audit, banquet_republicain_master.idml) : le fichier
                        déclare DocumentBleed*Offset = 14,17 pt (= 5 mm) et l'import posait
                        3 mm — la valeur par défaut de l'application — sans le dire. Le fond
@@ -43816,7 +43816,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     if (_bdMax > 0) _spIdmlBleedMm = Math.round(_bdMax * 25.4 / 72 * 100) / 100;
                 }
             }
-            /* 🆕 v1.7.643 — _SP_IDML_GEOM_638 : REPLI SUR LA GÉOMÉTRIE DES PAGES.
+            /* 🆕 v1.7.644 — _SP_IDML_GEOM_638 : REPLI SUR LA GÉOMÉTRIE DES PAGES.
                MESURÉ (banc d'audit, features-561.idml) : un IDML sans
                <DocumentPreference> — c'est légal : seul <Preferences> est obligatoire —
                s'importait en A4 PORTRAIT, alors que son unique <Page> porte
@@ -43839,7 +43839,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             pageFormat.width = Math.round(docPageW);
             pageFormat.height = Math.round(docPageH);
 
-            /* 🆕 v1.7.643 — _SP_IDML_GEOM_638 : LES MARGES DU DOCUMENT.
+            /* 🆕 v1.7.644 — _SP_IDML_GEOM_638 : LES MARGES DU DOCUMENT.
                MESURÉ (banc d'audit, banquet_republicain_master.idml) : <MarginPreference>
                vaut Top/Bottom/Left/Right = 28,35 pt (= 10 mm) et l'import posait 20 mm
                partout — la valeur par défaut de l'application. « MarginPreference »
@@ -44516,7 +44516,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
         // ===================== HELPER FUNCTIONS =====================
 
-        /* 🆕 v1.7.643 — _SP_IDML_GEOM_638 : FORMAT ET MARGES, LUS DANS LES PAGES.
+        /* 🆕 v1.7.644 — _SP_IDML_GEOM_638 : FORMAT ET MARGES, LUS DANS LES PAGES.
            Un IDML porte sa géométrie à DEUX endroits :
              · Resources/Preferences.xml → <DocumentPreference PageWidth PageHeight
                DocumentBleed*Offset> — les valeurs du document ;
@@ -45675,7 +45675,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 }
                 var fullText = '';
                 var fabricStyles = {};
-                /* 🆕 v1.7.643 — plages de liens en indices ABSOLUS dans `fullText`. */
+                /* 🆕 v1.7.644 — plages de liens en indices ABSOLUS dans `fullText`. */
                 var _spLiensSpans = [];
                 var domFontSize = 12, domFontFamily = 'Open Sans', domFontWeight = 'normal', domFontStyle = 'normal', domFill = '#000000', domTracking = 0, domUnderline = false, domLinethrough = false, domLang = '', domAlign = 'left', domLeading = 0;
                 var hasBaseStyle = false;
@@ -45708,7 +45708,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             if (run.tracking !== domTracking) fabricStyles[lineIdx][chIdx].charSpacing = run.tracking;
                             if (run.underline !== domUnderline) fabricStyles[lineIdx][chIdx].underline = run.underline;
                             if (run.linethrough !== domLinethrough) fabricStyles[lineIdx][chIdx].linethrough = run.linethrough;
-                            /* 🆕 v1.7.643 — L'URL DU LIEN (cf. _spLiens, une seule source de
+                            /* 🆕 v1.7.644 — L'URL DU LIEN (cf. _spLiens, une seule source de
                                vérité : la liste en indices absolus, pas une clé par caractère
                                que le moteur de texte ne connaît pas). */
                             if (run.lien) {
@@ -45744,7 +45744,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     textAlign: domAlign,
                     lineHeight: Math.max(1, Math.min(3, lhVal)),
                     styles: fabricStyles,
-                    /* 🆕 v1.7.643 — les liens hypertexte du bloc, en indices absolus :
+                    /* 🆕 v1.7.644 — les liens hypertexte du bloc, en indices absolus :
                        [{debut, fin, url}]. Placé ici (et non dans les seuls styles) pour
                        rester valide si le texte est recésuré ou recomposé. */
                     _spLiens: _spLiensSpans.length ? _spLiensSpans.slice() : undefined,
@@ -51917,7 +51917,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.643 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.644 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -52065,7 +52065,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.643) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.644) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
@@ -67563,7 +67563,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
     })
-    /* 🆕 v1.7.643 — ÉCHEC RÉSEAU DU PROXY : BASCULE SUR L'API DIRECTE.
+    /* 🆕 v1.7.644 — ÉCHEC RÉSEAU DU PROXY : BASCULE SUR L'API DIRECTE.
        MESURÉ (banc d'audit, conditions desktop : `ai-proxy.php` intercepté en échec
        réseau, comme le fait le protocole d'actifs de Tauri quand l'asset n'existe
        pas) : le journal affichait « ❌ Test échoué: Failed to fetch » et RIEN ne
@@ -70793,6 +70793,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         pluginsNoOptions: "Ce plug-in n'a aucun réglage.",
         pluginsSettings: "réglage(s)",
                 pluginsOwnTrap: "trappe dédiée",
+                pluginsActivate: "Activer",
+                pluginsDeactivate: "Désactiver",
+                pluginsActivated: "activé",
+                pluginsDeactivated: "désactivé",
+                pluginsInactive: "désactivé",
+                pluginsInactiveHint: "Réactivez le plug-in pour l'utiliser.",
         pluginsChooseImage: "Image",
         pluginsImageLoaded: "chargée",
         pluginsWorking: "Traitement…",
@@ -71580,10 +71586,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertXlsxEmpty: "Aucune donnée trouvée dans le fichier Excel",
         alertXlsxImportError: "Erreur import Excel :\n{0}",
         alertSlaInvalidXml: "Fichier .sla invalide (XML mal formé)",
-        /* 🆕 v1.7.643 — import Figma. */
+        /* 🆕 v1.7.644 — import Figma. */
         alertFigmaImportError: "Import Figma impossible : {0}",
         alertFigmaNotFigma: "Ce fichier JSON n'est pas un document Figma. Exportez-le depuis l'API Figma (GET /v1/files/:key) ou avec le greffon SuperPrint.",
-        /* 🆕 v1.7.643 — un .fig est un ZIP binaire, pas du JSON : on le dit et on donne
+        /* 🆕 v1.7.644 — un .fig est un ZIP binaire, pas du JSON : on le dit et on donne
            la marche à suivre exacte, au lieu de « JSON illisible ». */
         alertFigmaIsFigBinary: "Un fichier .fig est une archive binaire (fig-kiwi), pas du JSON : SuperPrint ne peut pas le lire directement.\n\nDeux façons d'obtenir le bon fichier :\n• Figma → clic droit sur le fichier → Copy link, puis API Figma GET /v1/files/:clé et enregistrez la réponse en .json ;\n• ou avec le greffon SuperPrint, qui exporte directement ce .json.",
         figmaImportDone: "Import Figma terminé : {0} page(s), {1} objet(s).",
@@ -71870,6 +71876,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         pluginsNoOptions: "This plug-in has no settings.",
         pluginsSettings: "setting(s)",
                 pluginsOwnTrap: "dedicated panel",
+                pluginsActivate: "Enable",
+                pluginsDeactivate: "Disable",
+                pluginsActivated: "enabled",
+                pluginsDeactivated: "disabled",
+                pluginsInactive: "disabled",
+                pluginsInactiveHint: "Enable the plug-in to use it.",
         pluginsChooseImage: "Image",
         pluginsImageLoaded: "loaded",
         pluginsWorking: "Working…",
@@ -72657,10 +72669,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertXlsxEmpty: "No data found in the Excel file",
         alertXlsxImportError: "Excel import error:\n{0}",
         alertSlaInvalidXml: "Invalid .sla file (malformed XML)",
-        /* 🆕 v1.7.643 — Figma import. */
+        /* 🆕 v1.7.644 — Figma import. */
         alertFigmaImportError: "Figma import failed: {0}",
         alertFigmaNotFigma: "This JSON file is not a Figma document. Export it from the Figma API (GET /v1/files/:key) or with the SuperPrint plugin.",
-        /* 🆕 v1.7.643 — a .fig is a binary archive, not JSON. */
+        /* 🆕 v1.7.644 — a .fig is a binary archive, not JSON. */
         alertFigmaIsFigBinary: "A .fig file is a binary archive (fig-kiwi), not JSON: SuperPrint cannot read it directly.\n\nTwo ways to get the right file:\n• Figma → right-click the file → Copy link, then Figma API GET /v1/files/:key and save the response as .json;\n• or with the SuperPrint plugin, which exports that .json directly.",
         figmaImportDone: "Figma import complete: {0} page(s), {1} object(s).",
         alertSlaNoDocument: "No DOCUMENT found in the .sla",
@@ -72946,6 +72958,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         pluginsNoOptions: "このプラグインに設定はありません。",
         pluginsSettings: "設定",
                 pluginsOwnTrap: "専用パネル",
+                pluginsActivate: "有効にする",
+                pluginsDeactivate: "無効にする",
+                pluginsActivated: "有効",
+                pluginsDeactivated: "無効",
+                pluginsInactive: "無効",
+                pluginsInactiveHint: "使用するにはプラグインを有効にしてください。",
         pluginsChooseImage: "画像",
         pluginsImageLoaded: "読み込み済み",
         pluginsWorking: "処理中…",
@@ -82964,7 +82982,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 const matchExt = (f, exts) => exts.some(ext => lower(f).endsWith(ext));
                 const matchMime = (f, mimes) => mimes.some(m => (f.type || '').toLowerCase().includes(m));
 
-                /* 🆕 v1.7.643 — UN PLUG-IN DÉPOSÉ S'INSTALLE, OÙ QU'IL TOMBE.
+                /* 🆕 v1.7.644 — UN PLUG-IN DÉPOSÉ S'INSTALLE, OÙ QU'IL TOMBE.
                    ⚠️ MESURÉ : ce gestionnaire tourne en CAPTURE et coupe la
                    propagation. Sans cette route, déposer un `.plugin.js` tombait
                    dans « Format non supporté » — la bibliothèque de plug-ins ne
@@ -82979,7 +82997,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                     return;
                 }
 
-                /* 🆕 v1.7.643 — Et un fichier qui n'est PAS un plug-in, lâché SUR la
+                /* 🆕 v1.7.644 — Et un fichier qui n'est PAS un plug-in, lâché SUR la
                    bibliothèque ouverte, reçoit le refus explicite au lieu d'être
                    importé comme une image derrière la pop-in : c'est l'endroit où
                    l'utilisateur croit déposer un plug-in. */
@@ -83050,7 +83068,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 }
                 const slaFile = files.find(f => matchExt(f, ['.sla']));
                 if (slaFile) { e.preventDefault(); e.stopPropagation(); if (dispatchToInput(slaFile, 'importScribusInput', 'Document Scribus')) return; }
-                /* 🆕 v1.7.643 — un `.fig` déposé part vers l'import Figma, qui répond
+                /* 🆕 v1.7.644 — un `.fig` déposé part vers l'import Figma, qui répond
                    précisément (c'est une archive binaire, pas du JSON). Sans cette
                    ligne, le fichier tombait dans les gestionnaires d'images et
                    l'utilisateur ne recevait RIEN. */
@@ -96965,7 +96983,7 @@ function _spValidateProjectFile(spFile) {
     const format = spFile && spFile.document && spFile.document.format;
     const width = Number(format && format.width);
     const height = Number(format && format.height);
-    /* ⚠️ v1.7.643 — `page.objects` PEUT ARRIVER EN CHAÎNE.
+    /* ⚠️ v1.7.644 — `page.objects` PEUT ARRIVER EN CHAÎNE.
        Le filet de sécurité du Studio IA écrivait `JSON.stringify(calque)` dans
        `page.objects`. Cette fonction exigeait un TABLEAU : le document entier était
        donc rejeté, sans autre explication que « n'est pas un document SuperPrint
@@ -96990,7 +97008,7 @@ function _spValidateProjectFile(spFile) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   🆕 v1.7.643 — PONT POUR LES PLUG-INS
+   🆕 v1.7.644 — PONT POUR LES PLUG-INS
    ═══════════════════════════════════════════════════════════════════════════════
 
    `sp-plugins.js` a besoin de trois choses que `main.js` garde dans sa portée de
@@ -102543,7 +102561,7 @@ function initObjectRightClickMenu() {
     function publierLargeur(px) {
         var app = $('mainApp');
         var v = (px || 0) + 'px';
-        /* ⚠️ v1.7.643 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
+        /* ⚠️ v1.7.644 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
            Les widgets flottants du bord droit — le zoom, l'étiquette de simulation
            CMJN, le panneau Rechercher & Remplacer — ne sont pas tous dans #mainApp :
            ceux qui sont posés sur <body> n'héritaient donc PAS de la variable et
@@ -102777,7 +102795,7 @@ function initObjectRightClickMenu() {
        masqué se recalcule depuis la taille affichée). */
     function estCadre(o) { return o.type === 'rect' || o.type === 'image'; }
 
-    /* ⚠️ v1.7.643 — LES FORMES ET LES GROUPES ÉTAIENT PUREMENT IGNORÉS, ET C'EST CE
+    /* ⚠️ v1.7.644 — LES FORMES ET LES GROUPES ÉTAIENT PUREMENT IGNORÉS, ET C'EST CE
        QUI « CASSAIT TOUT ». MESURÉ, page 1207 → 858 px de large (A4 paysage) : les deux
        blocs texte, le rectangle, l'image et le cadre photo suivaient ; le CERCLE, le
        TRIANGLE, le TRACÉ et le GROUPE restaient à leurs coordonnées d'origine (cercle
@@ -102990,7 +103008,7 @@ function initObjectRightClickMenu() {
         var changeTypo = typo.police || (typo.corps !== null && typo.corps !== undefined) ||
             (typo.interligne !== null && typo.interligne !== undefined) || typo.couleur ||
             (typo.alignement && typo.alignement !== '') ||
-            /* 🆕 v1.7.643 — les trois réglages de texte ajoutés à la trappe. */
+            /* 🆕 v1.7.644 — les trois réglages de texte ajoutés à la trappe. */
             (typo.interlettrage !== null && typo.interlettrage !== undefined) ||
             (typo.graisse !== null && typo.graisse !== undefined) ||
             (typo.styleTxt !== null && typo.styleTxt !== undefined);
@@ -103024,7 +103042,7 @@ function initObjectRightClickMenu() {
         });
 
         /* ── 4b. Recale sur la grille de colonnes ──
-           ⚠️ v1.7.643 — LES CADRES PHOTO SONT RECALÉS EUX AUSSI. La version précédente
+           ⚠️ v1.7.644 — LES CADRES PHOTO SONT RECALÉS EUX AUSSI. La version précédente
            ne parcourait que `blocs` (les blocs texte) : sur une maquette mêlant texte
            et photos, le texte venait se ranger dans les colonnes pendant que les photos
            restaient où elles étaient — le « recalage » désalignait la page au lieu de
@@ -103186,7 +103204,7 @@ function initObjectRightClickMenu() {
        produit : « Format recomposé (0 bloc(s), 0 cadre(s)) » alors que le bloc était là
        avant et après.
 
-       ⚠️ v1.7.643 — NI « AU MOINS UNE VUE », NI « TOUTES LES VUES » NE SUFFISENT : IL
+       ⚠️ v1.7.644 — NI « AU MOINS UNE VUE », NI « TOUTES LES VUES » NE SUFFISENT : IL
        FAUT QUE LES OBJETS SOIENT CHARGÉS. MESURÉ sur le gabarit « Fashion Magazine »
        (8 pages, 5 vues). Deux corrections successives, deux mesures :
          · ne tester que `vues().length` NON NUL → la première vue reconstruite
@@ -103536,7 +103554,7 @@ function initObjectRightClickMenu() {
         h += '</section>';
 
         /* GRILLE ET LIGNE DE BASE
-           🆕 v1.7.643 — demandé par l'utilisateur : « il y a plus de réglages live dans
+           🆕 v1.7.644 — demandé par l'utilisateur : « il y a plus de réglages live dans
            le studio IA, plus de tirettes ». Ces deux sections ne font pas semblant : elles
            pilotent les réglages NATIFS de SuperPrint, dont l'effet a été MESURÉ avant
            d'être exposé — afficher la grille fait passer la vue de 4 à 14 objets, et
@@ -103630,7 +103648,7 @@ function initObjectRightClickMenu() {
             police: val('mqPolice', ''), corps: nb(val('mqCorps', 0), 0),
             interligne: nb(val('mqInterligne', 0), 0), couleur: (nb(val('mqCorps', 0), 0) > 0 ? val('mqCouleurTexte', '') : ''),
             alignement: etat.alignement || '',
-            /* ⚠️ v1.7.643 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
+            /* ⚠️ v1.7.644 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
                une précaution, pas une coquetterie : `charSpacing`, `fontWeight` et
                `fontStyle` ont des valeurs par DÉFAUT parfaitement légitimes (0, normal,
                normal). Les lire sans condition ferait donc que « Refaire la maquette »
@@ -103685,7 +103703,7 @@ function initObjectRightClickMenu() {
         var corps = $('maquetteBody');
         if (corps) { corps.innerHTML = panneau(); corps.__mqRempli = true; brancher(); }
         if (typeof lireControles === 'function') lireControles();
-        /* ⚠️ v1.7.643 — UNE SEULE TRAPPE À LA FOIS, DANS LES DEUX SENS.
+        /* ⚠️ v1.7.644 — UNE SEULE TRAPPE À LA FOIS, DANS LES DEUX SENS.
            Depuis que Global Refactor s'ouvre depuis la bibliothèque de plug-ins, il
            peut s'ouvrir alors que la trappe d'un plug-in (motif vectoriel) est déjà
            là. Les deux occupent le MÊME bord droit : ouvertes ensemble elles prennent
@@ -103936,7 +103954,7 @@ function initObjectRightClickMenu() {
     }
 
     function installer() {
-        /* ⚠️ v1.7.643 — PLUS DE BOUTON `#maquetteToggle` À BRANCHER.
+        /* ⚠️ v1.7.644 — PLUS DE BOUTON `#maquetteToggle` À BRANCHER.
            L'outil est devenu un plug-in intégré (`plugins/global-refactor.plugin.js`)
            et a quitté la barre du haut ; c'est la bibliothèque de plug-ins qui en
            prend la porte d'entrée. Ce module ne garde donc que `window._spMaquette`,

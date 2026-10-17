@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.643)
+   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.644)
    ═══════════════════════════════════════════════════════════════════════════════
 
    DEUX SURFACES, ET C'EST VOULU :
@@ -396,9 +396,66 @@
     return b;
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     INTERRUPTEUR D'ACTIVATION
+     ══════════════════════════════════════════════════════════════════════════
+     Demandé : « sur chaque plug-in activé/désactivé, plus que USE ».
+     Un interrupteur, et non une case à cocher : il a deux états et un seul geste,
+     et son dessin dit lequel est le courant sans lire de libellé.
+     ⚠️ `role="switch"` ET `aria-checked` : un `<button>` stylé en interrupteur
+     reste annoncé comme un bouton par un lecteur d'écran, et l'état n'est alors
+     porté par RIEN. Les deux attributs sont donc posés, et l'étiquette dit
+     l'action à venir (« Désactiver X »), pas l'état courant. */
+  function interrupteur(p, m) {
+    var b = el('button', '');
+    b.type = 'button';
+    b.className = 'sp-pl-switch' + (p.actif ? ' on' : '');
+    b.setAttribute('role', 'switch');
+    b.setAttribute('aria-checked', p.actif ? 'true' : 'false');
+    var libelle = (p.actif ? texte('pluginsDeactivate', 'Désactiver') : texte('pluginsActivate', 'Activer')) + ' ' + p.name;
+    b.title = libelle;
+    b.setAttribute('aria-label', libelle);
+    b.appendChild(el('span', '')).className = 'sp-pl-switch-piste';
+    b.appendChild(el('span', '')).className = 'sp-pl-switch-bouton';
+    b.addEventListener('click', function () {
+      var actif = !p.actif;
+      try { window.SPPlugins.definirActif(p.id, actif); } catch (e) {
+        try { window.spAlert('Changement impossible : ' + e.message); } catch (_) { alert(e.message); }
+        return;
+      }
+      /* ⚠️ DÉSACTIVER FERME CE QUI TOURNE. Laisser la trappe d'un plug-in qu'on
+         vient d'éteindre, c'est laisser à l'écran un outil que la bibliothèque
+         déclare hors service — et pour « Global Refactor », un aperçu en direct
+         qui modifie le document sans plus aucune porte pour le refermer.
+         On ferme par le bouton du panneau concerné, pour que l'annulation de
+         l'aperçu et la restitution de l'historique soient faites correctement.
+         À l'ACTIVATION on ne touche à rien : il n'y a rien à refermer. */
+      if (!actif) {
+        try {
+          if (p.trappe) {
+            var cb = document.getElementById('maquetteClose');
+            var panneau = document.getElementById(p.trappe);
+            if (cb && panneau && panneau.classList.contains('ouvert')) cb.click();
+          }
+          if (trappe.id === p.id) fermerTrappe();
+        } catch (_) {}
+      }
+      m.fermer();
+      ouvrirPanneau();
+      try {
+        window.spShowToast(p.name + ' — ' + (actif ? texte('pluginsActivated', 'activé') : texte('pluginsDeactivated', 'désactivé')),
+          { kind: 'info', duration: 2400 });
+      } catch (_) {}
+    });
+    return b;
+  }
+
   function carte(p, m) {
     var d = el('div', '');
-    d.className = 'sp-pl-item';
+    /* ⚠️ L'ÉTAT EST DANS LA CLASSE, PAS DANS UN STYLE. La carte éteinte doit être
+       visiblement en retrait (icône et titre grisés) sans changer sa géométrie :
+       une carte qui rétrécit ferait sauter la liste d'un pixel à chaque bascule. */
+    d.className = 'sp-pl-item' + (p.actif ? '' : ' sp-pl-inactif');
     d.appendChild(el('div', '', p.icon || '◆')).className = 'sp-pl-icon';
 
     var centre = el('div', 'flex:1 1 auto;min-width:0;');
@@ -411,6 +468,9 @@
       var dt = dateCourte(p.installe);
       if (dt) haut.appendChild(el('span', '', dt)).className = 'sp-pl-date';
     }
+    /* L'état écrit, en plus de l'interrupteur : la carte éteinte se lit sans
+       interpréter la position d'un dessin. */
+    if (!p.actif) haut.appendChild(el('span', '', texte('pluginsInactive', 'désactivé'))).className = 'sp-pl-badge sp-pl-badge-off';
     centre.appendChild(haut);
 
     if (p.description) centre.appendChild(el('div', '', p.description)).className = 'sp-pl-desc';
@@ -426,7 +486,17 @@
     var actions = el('div', '');
     actions.className = 'sp-pl-actions';
 
+    actions.appendChild(interrupteur(p, m));
+
     var bUtiliser = petitBouton(texte('pluginsUse', 'Utiliser'), true);
+    /* ⚠️ « UTILISER » S'ÉTEINT AVEC LE PLUG-IN, IL NE DISPARAÎT PAS. Le retirer
+       ferait sauter la colonne d'un cran et l'utilisateur chercherait le bouton
+       qu'il voyait à l'instant. Désactivé, il reste à sa place, et le registre
+       refuse de toute façon l'exécution (cf. `executer`). */
+    if (!p.actif) {
+      bUtiliser.disabled = true;
+      bUtiliser.title = texte('pluginsInactiveHint', 'Réactivez le plug-in pour l\'utiliser.');
+    }
     bUtiliser.addEventListener('click', function () { m.fermer(); ouvrirTrappePlugIn(p.id); });
     actions.appendChild(bUtiliser);
 
@@ -579,7 +649,7 @@
   function ouvrirTrappePlugIn(id) {
     var p = window.SPPlugins.get(id);
 
-    /* 🆕 v1.7.643 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
+    /* 🆕 v1.7.644 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
        Il n'a pas de formulaire à construire : son `run()` ouvre le panneau qu'il
        possède déjà. On l'EXÉCUTE donc directement, sans passer par la trappe
        générique — sinon on aurait deux panneaux pour un seul outil, et un bouton
@@ -606,7 +676,7 @@
     brancherTrappe();
     var bPlug = document.getElementById('openPluginsPanel');
     if (bPlug) bPlug.addEventListener('click', function () {
-      /* ⚠️ v1.7.643 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
+      /* ⚠️ v1.7.644 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
          Il la refermait quand la trappe d'un plug-in était ouverte (« va-et-vient,
          pas une ouverture forcée »). MESURÉ : depuis que « Global Refactor » est un
          plug-in, cela fait deux clics pour l'atteindre — le premier referme la

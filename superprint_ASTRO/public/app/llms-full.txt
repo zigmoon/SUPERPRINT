@@ -9,7 +9,7 @@
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
 - **Trademarks**: "SuperPrint", "SP213" and "SuperTyPo" names and logos remain trademarks of the publisher, governed separately from the code license — see https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/TRADEMARKS.md
-- **Version**: 1.7.643 (October 2026)
+- **Version**: 1.7.644 (October 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
@@ -191,7 +191,7 @@ SPPluginAPI({
 
 Option types: `text`, `number`, `range`, `color`, `select`, `checkbox`, `image`. The panel renders the form from the declaration, so a plug-in never touches the application DOM and automatically inherits the light and dark theme.
 
-Two plug-ins ship with the app. **Global Refactor** (`app/plugins/global-refactor.plugin.js`) sets the styles, sizes, margins and colours of the whole document in one pass, with a live preview, a single undo step on Apply and a Cancel that restores the previous state exactly. Since 1.7.643 it has no button in the top bar: it is launched from the plug-in library like any other.
+Two plug-ins ship with the app. **Global Refactor** (`app/plugins/global-refactor.plugin.js`) sets the styles, sizes, margins and colours of the whole document in one pass, with a live preview, a single undo step on Apply and a Cancel that restores the previous state exactly. Since 1.7.644 it has no button in the top bar: it is launched from the plug-in library like any other.
 
 A plug-in that already owns a panel declares `trappe: '<panel id>'` and opens it from `run()`; the library then just executes it and builds no form. The field is honoured only for built-in plug-ins (`integre`), so a file dropped by the user cannot claim a panel of the product.
 
@@ -201,7 +201,7 @@ A plug-in runs with the page's privileges — JavaScript offers no watertight sa
 
 The bundled example, **Vector Pattern** (`app/plugins/motif-vectoriel.plugin.js`), fills a page or a selected block with a repeated pattern built from a geometric shape (circle, square, diamond, triangle, star, cross, wave, diagonal lines) or an imported image. It uses a `fabric.Pattern` — a single object — rather than thousands of shapes: a full A4 page at 8 mm spacing is filled in about 9 ms and produces one object, which stays fast to select and exports correctly to PDF.
 
-The library lists installed plug-ins with date filters (all / 7 days / 30 days / built-in), a drop zone and a bin per installed plug-in. A `.plugin.js` can be dropped anywhere — onto the library or straight onto the canvas. Anything else dropped onto the library is refused explicitly instead of being imported as an image behind the pop-in.
+The library lists installed plug-ins with date filters (all / 7 days / 30 days / built-in), a drop zone and a bin per installed plug-in. Each card carries an activation switch: a disabled plug-in stays installed but greys out, its badge reads *disabled*, *Use* is switched off, and the registry refuses to run it. Built-in plug-ins can be disabled but not uninstalled — the bin only appears on files you dropped in. A `.plugin.js` can be dropped anywhere — onto the library or straight onto the canvas. Anything else dropped onto the library is refused explicitly instead of being imported as an image behind the pop-in.
 
 ### MCP server
 

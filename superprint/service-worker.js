@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.643-global-refactor-plug-in';
+const CACHE_NAME = 'superprint-shell-v1.7.644-plug-ins-actifs';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
