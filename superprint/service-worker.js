@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.650-icones-plugins';
+const CACHE_NAME = 'superprint-shell-v1.7.651-i18n-gelule';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

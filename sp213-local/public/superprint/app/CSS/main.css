@@ -1426,7 +1426,7 @@ html[lang="ja"] .logo::before {
     color: #e0e0e0; background: #2a2a2a; border-color: #444; box-shadow: 0 1px 0 #222;
 }
 
-/* ── v1.7.650 — SÉLECTEUR DE SYSTÈME DU PANNEAU DES RACCOURCIS ──
+/* ── v1.7.651 — SÉLECTEUR DE SYSTÈME DU PANNEAU DES RACCOURCIS ──
    Le panneau montre les touches du système de la machine ; ce sélecteur dit lequel,
    et permet de vérifier les deux autres. Il est en tête du panneau, discret : c'est
    une information, pas une commande qu'on vient chercher. */
@@ -2168,7 +2168,7 @@ textarea[data-fabric-hiddentextarea] {
     background: transparent !important;
     border: 0 !important;
 }
-/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.650). Elles étaient en #f0f0f0, à peine
+/* 🎨 FOND DES RÈGLES, ÉCLAIRCI (v1.7.651). Elles étaient en #f0f0f0, à peine
    plus clair que le plan de travail (#e8e8e8) : elles s'y fondaient, et on ne
    voyait plus où commençait la graduation. #fafafa est nettement plus clair,
    reste distinct du blanc de la page, et garde les graduations (#333/#666)
@@ -3150,7 +3150,7 @@ textarea[data-fabric-hiddentextarea] {
 .unit-btn.active { background: #1a1a1a; color: #fff; }
 .transform-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
 .transform-input label { font-size: 8px; text-transform: uppercase; opacity: 0.6; margin-bottom: 3px; display: block; }
-/* ⚠️ v1.7.650 — `font-family` MANQUAIT ICI, et c'était un oubli, pas un choix :
+/* ⚠️ v1.7.651 — `font-family` MANQUAIT ICI, et c'était un oubli, pas un choix :
    mesuré, ces champs s'affichaient en Arial au milieu d'une barre entièrement en
    IBM Plex Mono, alors que `.input-group input` (le reste de la barre) déclare bien
    la monospace. C'est le seul endroit de l'interface où un champ changeait de police.
@@ -4180,12 +4180,12 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
 /* ==================== ZOOM WIDGET (Bottom Right) ==================== */
 .zoom-widget {
     position: fixed;
-    /* ⚠️ v1.7.650 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
+    /* ⚠️ v1.7.651 — `var(--sp-maquette-l)`, c'est la largeur de la trappe
        « Réglages de la maquette » quand elle est ouverte. Sans elle, le widget
        restait ancré à 296 px du bord droit et se retrouvait PAR-DESSUS la trappe,
        où il interceptait les clics sur « Valider » et « Annuler » (mesuré).
 
-       ⚠️ v1.7.650 — LA POSITION EST CALCULÉE ICI, ET NULLE PART AILLEURS. Il y avait
+       ⚠️ v1.7.651 — LA POSITION EST CALCULÉE ICI, ET NULLE PART AILLEURS. Il y avait
        trois écrivains pour cette seule propriété : cette règle, `style.right` posé
        par `syncZoomWidgetWithRightSidebar()`, et une copie du même calcul au
        démarrage QUI, ELLE, IGNORAIT LA TRAPPE. Le style en ligne gagnant sur la
@@ -4209,7 +4209,7 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
         calc(var(--sp-sidebar-r, 280px) + var(--sp-maquette-l, 0px) + 16px),
         calc(100vw - var(--sp-zoom-w, 223px) - 8px)
     )); /* barre latérale + trappe + marge, borné au bord gauche */
-    /* ⚠️ v1.7.650 — LA COURBE EST CELLE DE LA TRAPPE, PAS UNE AUTRE. Le widget
+    /* ⚠️ v1.7.651 — LA COURBE EST CELLE DE LA TRAPPE, PAS UNE AUTRE. Le widget
        portait `0.3s ease` alors que la trappe et la barre latérale animent sur
        `--sp-sb-dur` (260 ms) avec `--sp-sb-ease` (cubic-bezier(.2,.7,.2,1), une
        sortie rapide). Les deux courbes divergeaient donc PENDANT tout le
@@ -4229,7 +4229,7 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
     align-items: center;
     gap: 4px;
     backdrop-filter: saturate(1.2) blur(2px);
-    /* ⚠️ v1.7.650 — LA MÊME DURÉE ET LA MÊME COURBE QUE LES DEUX PANNEAUX.
+    /* ⚠️ v1.7.651 — LA MÊME DURÉE ET LA MÊME COURBE QUE LES DEUX PANNEAUX.
        `--sp-sidebar-r` et `--sp-maquette-l` reçoivent la largeur CIBLE dès que la
        classe du panneau change (voir `spPublierLargeursPanneauxDroits` dans main.js),
        donc le widget et les panneaux démarrent leur animation au même instant. En
@@ -5388,7 +5388,7 @@ input[type=number] {
 /* ⚠️ v1.7.634 — `#sp3dPlayBtn` (Aperçu 3D) ne portait pas le traitement « icône nue »
    des autres : sans classe du tout, il n'avait AUCUN état de survol. Il rejoint donc
    ce groupe, plutôt que de recevoir sa propre rustine.
-   ⚠️ v1.7.650 — `#maquetteToggle` A QUITTÉ CETTE LISTE AVEC SON BOUTON.
+   ⚠️ v1.7.651 — `#maquetteToggle` A QUITTÉ CETTE LISTE AVEC SON BOUTON.
    Global Refactor n'est plus dans la barre du haut : c'est un plug-in intégré, et sa
    porte d'entrée est la bibliothèque de plug-ins. Les sélecteurs morts sont retirés
    pour qu'on ne cherche pas longtemps un élément qui n'existe plus. */
@@ -5831,7 +5831,7 @@ input[type=number] {
    🆕 v1.7.448 — RECHERCHER & REMPLACER : panneau confortable et déplaçable
    ═══════════════════════════════════════════════════════════════════════ */
 .fr-panel {
-    /* ⚠️ v1.7.650 — MÊME FAMILLE DE DÉFAUT QUE LE WIDGET DE ZOOM : une position
+    /* ⚠️ v1.7.651 — MÊME FAMILLE DE DÉFAUT QUE LE WIDGET DE ZOOM : une position
        ancrée à droite en dur (300 px) ne tient aucun compte de la trappe. Ce panneau
        fait 400 px de large et sert tous les jours (Rechercher & Remplacer) : ouvert
        avec la trappe, il finissait sous elle. Il lit donc les mêmes largeurs
@@ -6021,7 +6021,7 @@ input[type=number] {
    restait 8 px). Modifier l'attribut `style` du div `.toolbar-center`. */
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   v1.7.650 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
+   v1.7.651 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
 
    Elle est le dernier enfant de `.app`, qui est un conteneur FLEX : sa largeur
    s'ajoute donc à droite et POUSSE l'interface, au lieu de la recouvrir comme le
@@ -6060,7 +6060,7 @@ input[type=number] {
     justify-content: space-between;
     gap: 8px;
     padding: 0 10px;
-    /* ⚠️ v1.7.650 — 56 px, COMME LE BANDEAU DE LA TRAPPE « TRANSFORM », ET PAS 34.
+    /* ⚠️ v1.7.651 — 56 px, COMME LE BANDEAU DE LA TRAPPE « TRANSFORM », ET PAS 34.
        Les deux panneaux sont côte à côte au bord droit ; avec un bandeau de 34 px
        contre 56, les deux titres ne tombaient pas sur la même ligne et le contenu
        commençait 22 px plus haut d'un panneau à l'autre. MESURÉ avant : `.mq-head`
@@ -6110,7 +6110,7 @@ input[type=number] {
     padding: 4px 0 10px;
 }
 
-/* ⚠️ v1.7.650 — LA BARRE DE DÉFILEMENT EST CELLE DU RESTE DU PROJET.
+/* ⚠️ v1.7.651 — LA BARRE DE DÉFILEMENT EST CELLE DU RESTE DU PROJET.
    Sans ces règles, `.mq-corps` gardait la barre NATIVE du navigateur : MESURÉ
    15 px de large sur Windows, contre 7 px pour la barre latérale voisine, avec
    flèches et rails gris système. Deux panneaux côte à côte, deux barres
@@ -6130,7 +6130,7 @@ input[type=number] {
 .theme-dark .mq-corps::-webkit-scrollbar-thumb:hover { background: #555; }
 
 /* ── Sections ── */
-/* ══ v1.7.650 — CE PANNEAU REPREND LE SYSTÈME DE LA BARRE « TRANSFORMATION » ══
+/* ══ v1.7.651 — CE PANNEAU REPREND LE SYSTÈME DE LA BARRE « TRANSFORMATION » ══
    Demande utilisateur : « dans Global Refactor ce n'est pas la même taille de typo,
    pas les mêmes espacements, ni les mêmes boutons que dans la sidebar de droite
    Transformation — comme s'il y avait deux UI ». C'était exact, et mesuré :
@@ -6318,7 +6318,7 @@ input[type=number] {
 .theme-dark .mq-chip.on { background: #eee; border-color: #eee; color: #111; }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   🆕 v1.7.650 — PLUG-INS : LA TRAPPE ET LA BIBLIOTHÈQUE
+   🆕 v1.7.651 — PLUG-INS : LA TRAPPE ET LA BIBLIOTHÈQUE
 
    ⚠️ POURQUOI DES CLASSES ET NON DES STYLES EN LIGNE.
    La première version de ce panneau posait les couleurs en attribut `style` sur
@@ -6341,7 +6341,7 @@ input[type=number] {
     margin-bottom: 3px;
     font-family: 'IBM Plex Mono', monospace;
     color: inherit;
-    /* ⚠️ v1.7.650 — POSITION RELATIVE POUR LA VALEUR CHIFFRÉE.
+    /* ⚠️ v1.7.651 — POSITION RELATIVE POUR LA VALEUR CHIFFRÉE.
        `float:right` ne convenait pas : le flottant est placé APRÈS le texte du
        libellé dans le flux, donc il basculait à la ligne suivante dès que le
        libellé était un peu long, et la valeur se retrouvait sous le champ. En
@@ -6375,12 +6375,12 @@ input[type=number] {
     width: 28px; height: 28px; flex: 0 0 auto;
     border: 1px solid #e0e0e0; background: #fafafa center/contain no-repeat;
 }
-/* ═══ v1.7.650 — LE GRAND APERÇU ET LE MIXEUR D'IMAGES ═══════════════════════
+/* ═══ v1.7.651 — LE GRAND APERÇU ET LE MIXEUR D'IMAGES ═══════════════════════
    Demande utilisateur : « une preview plus grand de mon image ou de mes images ».
    Le champ « aperçu » est une TOILE, pas une image : le plug-in y dessine lui-même
    la tuile, ce qui montre exactement ce qui sera posé — un motif répété ne se juge
    pas sur une vignette de 28 px. Fond en damier pour que la transparence se voie. */
-/* ═══ v1.7.650 — L'APERÇU EST UN ROND, ET IL COMMENCE PLUS BAS ══════════════
+/* ═══ v1.7.651 — L'APERÇU EST UN ROND, ET IL COMMENCE PLUS BAS ══════════════
    Demande utilisateur : « preview en haut met un rond pour preview les motifs et
    démarre un peu plus tard, mets une marge au-dessus du rond de preview de 15 px ».
    Deux conséquences, et la seconde n'est pas cosmétique :
@@ -6479,35 +6479,33 @@ input[type=number] {
 .sp-pl-pied { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 10px 16px; border-top: 1px solid #eee; flex: 0 0 auto; background: #fafafa; }
 .sp-pl-actions { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; padding-top: 1px; }
 
-/* ═══ v1.7.650 — LE BOUTON « UTILISER », REDESSINÉ ═══════════════════════════
-   Demande utilisateur : « met le bouton Use avec une autre mise en forme ».
-   Il était un pavé noir plein, de la même famille visuelle que l'interrupteur
-   juste à côté — deux blocs sombres collés, dont un seul se clique. Nouvelle
-   forme : CONTOUR, angles droits (comme tous les champs du produit), et une
-   flèche qui avance au survol. Le remplissage n'arrive qu'au survol, donc
-   l'œil distingue immédiatement « ce qui est réglé » (l'interrupteur plein) de
-   « ce qui se lance » (le bouton creux).
-   ⚠️ LA FLÈCHE EST UN VRAI CARACTÈRE, PAS UNE BORDURE CSS : elle reste alignée
-   sur la ligne de base de la police mono et ne dépend d'aucune taille de boîte. */
+/* ═══ v1.7.651 — LE BOUTON « UTILISER », EN GÉLULE ═══════════════════════════
+   Demande utilisateur : « le bouton use n'est pas encore parfait fait le en
+   gélule et la fleche pas obligatoire ».
+   · GÉLULE : `border-radius: 999px` — la forme la plus douce du produit, et la
+     seule qui ne ressemble à aucun champ de la trappe (tous à angles droits).
+     Un bouton qui se clique ne doit pas se confondre avec un champ qui se règle.
+   · LA FLÈCHE EST RETIRÉE. Elle était là pour dire « ça part vers un panneau »,
+     mais elle allongeait le bouton de 12 px et le mot suffit. Un libellé seul
+     dans une gélule se lit d'un coup d'œil.
+   Le remplissage n'arrive qu'au survol : au repos le bouton est creux, donc
+   l'œil distingue « ce qui est réglé » (l'interrupteur plein, à côté) de « ce
+   qui se lance ». */
 .sp-pl-use {
-    height: 26px;
-    padding: 0 8px 0 10px;
+    height: 24px;
+    padding: 0 14px;
     border: 1px solid #1a1a1a;
+    border-radius: 999px;
     background: transparent;
     color: #1a1a1a;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9px; line-height: 1; letter-spacing: .5px;
     text-transform: uppercase;
     cursor: pointer;
-    display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+    display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
     transition: background .13s ease, color .13s ease;
 }
-.sp-pl-use-fleche {
-    font-size: 11px; line-height: 1;
-    transition: transform .16s ease;
-}
 .sp-pl-use:hover:not(:disabled) { background: #1a1a1a; color: #fff; }
-.sp-pl-use:hover:not(:disabled) .sp-pl-use-fleche { transform: translateX(2px); }
 .sp-pl-use:active:not(:disabled) { background: #000; }
 .sp-pl-use:focus-visible { outline: 2px solid #2bb7ff; outline-offset: 2px; }
 /* Éteint : contour en pointillés. Le bouton reste à sa place (cf. le commentaire
@@ -6517,7 +6515,7 @@ input[type=number] {
     cursor: not-allowed; background: transparent;
 }
 
-/* ═══ v1.7.650 — L'ICÔNE DU PLUG-IN DANS LA BARRE DU HAUT ════════════════════
+/* ═══ v1.7.651 — L'ICÔNE DU PLUG-IN DANS LA BARRE DU HAUT ════════════════════
    Elle doit se lire comme les autres icônes de cette zone (gomme, recherche,
    collaboration, imprimante) : même hauteur, même graisse, aucun fond au repos.
    On n'ajoute donc AUCUNE couleur propre — `currentColor` fait le travail, et le
@@ -6550,7 +6548,7 @@ input[type=number] {
 }
 .sp-pl-corbeille:hover { border-color: #c0392b; color: #c0392b; }
 
-/* ── Interrupteur d'activation (v1.7.650) ──
+/* ── Interrupteur d'activation (v1.7.651) ──
    Refonte demandée : « le switch on/off n'est pas beau en design ».
    ⚠️ CE QUI N'ALLAIT PAS, MESURÉ SUR LA VERSION PRÉCÉDENTE : un rail de 26 px de
    large pour 12 de haut, un bouton de 10 px qui ne l'occupait pas (3 px de marge
@@ -6602,7 +6600,7 @@ input[type=number] {
 .sp-pl-inactif .sp-pl-nom,
 .sp-pl-inactif .sp-pl-desc { opacity: .45; }
 .sp-pl-badge-off { color: #999; border-color: #ddd; }
-/* ⚠️ v1.7.650 — `.sp-pl-filtre` (et sa variante `.on`) sont retirées avec la barre
+/* ⚠️ v1.7.651 — `.sp-pl-filtre` (et sa variante `.on`) sont retirées avec la barre
    de filtres. Les garder aurait laissé trois règles qui ne peuvent plus
    s'appliquer à rien : à la relecture suivante, on cherche la barre. */
 .sp-pl-pre {

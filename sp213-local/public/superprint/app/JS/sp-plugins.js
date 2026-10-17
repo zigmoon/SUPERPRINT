@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-INS  (v1.7.650)
+   SUPERPRINT — PLUG-INS  (v1.7.651)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Un plug-in SuperPrint est un fichier `.plugin.js` que l'utilisateur installe
@@ -26,7 +26,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.650';
+  var VERSION = '1.7.651';
   var CLE_REGISTRE = 'sp_plugins_v1';        // plug-ins installés (code source + manifeste)
   var CLE_ACTIFS = 'sp_plugins_actifs_v1';   // { [id]: true/false }
 
@@ -64,7 +64,7 @@
 
     function canevas() {
       var c = H().canvasActif ? H().canvasActif() : null;
-      if (!c) throw new Error('aucun plan de travail actif');
+      if (!c) throw new Error(resoudreTexte(L('aucun plan de travail actif', 'no active canvas', '作業中のキャンバスがありません')));
       return c;
     }
 
@@ -75,7 +75,7 @@
     var api = {
       version: VERSION,
 
-      /* 🆕 v1.7.650 — L'APERÇU EST UN MODE, ET LE PLUG-IN DOIT LE SAVOIR.
+      /* 🆕 v1.7.651 — L'APERÇU EST UN MODE, ET LE PLUG-IN DOIT LE SAVOIR.
          Une trappe peut exécuter un plug-in à chaque mouvement de tirette. Dans ce
          mode, `api.apercu` vaut `true` : un plug-in qui écrit quelque chose de
          coûteux (un historique, un message, un dialogue) peut s'en abstenir. Le
@@ -90,7 +90,7 @@
       mm: mmVersPx,
       px: pxVersMm,
 
-      /* 🆕 v1.7.650 — TOUS LES PLANS DE TRAVAIL.
+      /* 🆕 v1.7.651 — TOUS LES PLANS DE TRAVAIL.
          Un plug-in qui remplace son propre dessin doit pouvoir le RETIRER partout
          où il l'a posé. Sans cette liste, le plug-in Motif devait passer par
          `window._spMaquette._debug.vues()` — l'échafaudage de débogage d'un autre
@@ -101,6 +101,19 @@
           return l.filter(Boolean);
         } catch (_) { return []; }
       },
+
+      /* 🆕 v1.7.651 — TRADUIRE DANS UN PLUG-IN.
+         `api.t(v)` résout une valeur multilingue dans la langue de l'interface.
+         Un plug-in écrit `api.t(L('aucun bloc sélectionné', 'no block selected',
+         'ブロックが選択されていません'))`. La même fonction accepte une chaîne
+         ordinaire, qu'elle rend telle quelle : un plug-in monolingue n'a rien à
+         changer, et un auteur peut traduire progressivement. */
+      t: function (v) { return resoudreTexte(v); },
+      /* Le constructeur de valeur multilingue, pour les fichiers qui préfèrent ne
+         pas dépendre du global `window.SPPluginL`. */
+      L: L,
+      /* La langue courante ('fr' | 'en' | 'ja') : utile pour un message composé. */
+      get langue() { return langueCourante(); },
 
       /* Le document, en lecture. */
       get document() {
@@ -163,7 +176,7 @@
         try { if (H().sync) H().sync(); } catch (_) {}
       },
 
-      /* 🆕 v1.7.650 — LA GRANDE TOILE D'APERÇU DE LA TRAPPE.
+      /* 🆕 v1.7.651 — LA GRANDE TOILE D'APERÇU DE LA TRAPPE.
          Renvoie `{ canvas, ctx, largeur, hauteur }` (en pixels du support, donc
          déjà doublé pour un écran à densité 2), ou `null` si le plug-in n'a pas
          déclaré de champ `{ type: 'apercu' }` ou si aucune trappe n'est ouverte.
@@ -215,7 +228,7 @@
             inp.type = 'file';
             inp.accept = 'image/*,.svg';
             inp.style.display = 'none';
-            /* ⚠️ v1.7.650 — L'ÉLÉMENT EST RETIRÉ DÈS QU'IL A SERVI.
+            /* ⚠️ v1.7.651 — L'ÉLÉMENT EST RETIRÉ DÈS QU'IL A SERVI.
                MESURÉ : le retrait n'était prévu qu'au bout de 60 s, et le champ
                n'était jamais enlevé si l'utilisateur fermait le sélecteur sans
                choisir de fichier. Un mixeur d'images demande plusieurs choix de
@@ -287,7 +300,7 @@
   }
 
   /* Normalise un manifeste : un plug-in mal écrit ne doit pas casser le panneau. */
-  /* 🆕 v1.7.650 — FILTRE DE L'ICÔNE VECTORIELLE.
+  /* 🆕 v1.7.651 — FILTRE DE L'ICÔNE VECTORIELLE.
      Le contenu est injecté par `innerHTML` dans un `<svg>` : c'est donc une porte
      d'entrée, et elle doit être filtrée. Le manifeste peut venir d'un fichier
      déposé par l'utilisateur.
@@ -331,24 +344,113 @@
     return s;
   }
 
+  /* ═══ v1.7.651 — LES TROIS LANGUES DANS UN PLUG-IN ═════════════════════════
+     Demande utilisateur : « relie bien la partie plug-in et nos deux plugins en
+     trois langue EN fr ja ».
+     Un manifeste ne pouvait écrire que des chaînes : les noms de réglages, les
+     choix d'une liste et les messages restaient donc en français quelle que soit
+     la langue de l'interface. Un auteur écrit maintenant
+
+         label: L('Pas du motif', 'Pattern step', 'パターンの間隔')
+
+     et la résolution se fait à la LECTURE (`liste()`, `get()`), pas à
+     l'enregistrement : changer de langue prend ainsi effet à la prochaine
+     ouverture de la bibliothèque ou de la trappe, sans recharger la page.
+     ⚠️ ON NE RÉSOUT PAS DANS `normaliser`. Le manifeste est enregistré une fois,
+     au chargement du fichier ; y figer la langue d'alors obligerait à recharger
+     l'application pour voir un plug-in dans une autre langue. */
+  function langueCourante() {
+    try {
+      var l = localStorage.getItem('sp_lang') || document.documentElement.lang || 'fr';
+      l = String(l).slice(0, 2).toLowerCase();
+      return (l === 'en' || l === 'ja') ? l : 'fr';
+    } catch (_) { return 'fr'; }
+  }
+
+  /* Résout une valeur qui peut être une chaîne OU un objet {fr,en,ja}. Le repli
+     est le français : un auteur qui n'a pas encore traduit un libellé voit son
+     texte d'origine, jamais un trou. */
+  function resoudreTexte(v) {
+    if (v && typeof v === 'object') {
+      var l = langueCourante();
+      if (typeof v[l] === 'string' && v[l]) return v[l];
+      if (typeof v.fr === 'string' && v.fr) return v.fr;
+      if (typeof v.en === 'string' && v.en) return v.en;
+      return '';
+    }
+    return (v === undefined || v === null) ? '' : String(v);
+  }
+
+  /* Un libellé multilingue se DÉCLARE ainsi : L(fr, en, ja). Le troisième
+     paramètre est facultatif — sans lui, le japonais retombe sur l'anglais, ce qui
+     est préférable à un trou (règle déjà appliquée par `translate()`). */
+  function L(fr, en, ja) { return { fr: fr, en: en || fr, ja: ja || en || fr }; }
+
+  window.SPPluginL = L;
+  window.SPPluginTexte = resoudreTexte;
+
+  /* Réécrit un manifeste normalisé avec les libellés de la langue courante.
+     Renvoie une COPIE : le manifeste enregistré garde ses trois langues, sinon la
+     première lecture figerait toutes les suivantes. */
+  function traduireManifeste(m) {
+    var out = {};
+    for (var k in m) { if (Object.prototype.hasOwnProperty.call(m, k)) out[k] = m[k]; }
+    out.name = resoudreTexte(m.name);
+    out.description = resoudreTexte(m.description);
+    out.options = (m.options || []).map(function (o) {
+      var c = {};
+      for (var kk in o) { if (Object.prototype.hasOwnProperty.call(o, kk)) c[kk] = o[kk]; }
+      c.label = resoudreTexte(o.label) || o.key;
+      c.aide = resoudreTexte(o.aide);
+      if (o.choix) {
+        c.choix = o.choix.map(function (ch) {
+          if (ch && typeof ch === 'object') {
+            return { value: ch.value, label: resoudreTexte(ch.label) || String(ch.value) };
+          }
+          return { value: ch, label: String(ch) };
+        });
+      }
+      return c;
+    });
+    return out;
+  }
+
+  /* Conserve une valeur multilingue telle quelle ; convertit le reste en chaîne.
+     C'est ce qui permet à `traduireManifeste` de retraduire plus tard : le
+     manifeste enregistré garde ses TROIS langues. */
+  function gardeTexte(v) {
+    if (v && typeof v === 'object' && (typeof v.fr === 'string' || typeof v.en === 'string')) {
+      return { fr: String(v.fr || ''), en: String(v.en || v.fr || ''), ja: String(v.ja || v.en || v.fr || '') };
+    }
+    return (v === undefined || v === null) ? '' : String(v);
+  }
+
   function normaliser(m, source) {
-    if (!m || typeof m !== 'object') throw new Error('manifeste absent');
+    if (!m || typeof m !== 'object') throw new Error(resoudreTexte(L('manifeste absent', 'missing manifest', 'マニフェストがありません')));
     var id = String(m.id || '').trim();
     if (!/^[a-z0-9][a-z0-9._-]{1,63}$/i.test(id)) {
-      throw new Error('identifiant de plug-in invalide (lettres, chiffres, point, tiret ; 2 à 64 caractères)');
+      throw new Error(resoudreTexte(L('identifiant de plug-in invalide (lettres, chiffres, point, tiret ; 2 à 64 caractères)',
+        'invalid plug-in identifier (letters, digits, dot, dash; 2 to 64 characters)',
+        'プラグイン ID が不正です（英数字・ドット・ハイフン、2〜64 文字）')));
     }
-    if (!m.name) throw new Error('nom du plug-in manquant');
+    if (!m.name) throw new Error(resoudreTexte(L('nom du plug-in manquant', 'missing plug-in name', 'プラグイン名がありません')));
     var options = Array.isArray(m.options) ? m.options.map(function (o) {
       return {
         key: String(o.key || ''),
-        label: String(o.label || o.key || ''),
-        /* 🆕 v1.7.650 — `apercu` (grande toile dessinée par le plug-in) et
+        /* ⚠️ v1.7.651 — ON GARDE LA VALEUR MULTILINGUE, ON NE LA FIGE PAS ICI.
+           `String(o.label)` écrasait un objet {fr,en,ja} en « [object Object] ».
+           Voir l'en-tête de `traduireManifeste`. */
+        label: gardeTexte(o.label || o.key),
+        /* 🆕 v1.7.651 — `apercu` (grande toile dessinée par le plug-in) et
            `images` (mixeur multi-images) rejoignent les types reconnus. Sans
            cette ligne, le normalisateur les rabattait sur `text` : la trappe
            affichait alors une bêtise au lieu du champ demandé. */
         type: ['text', 'number', 'color', 'select', 'checkbox', 'image', 'images', 'range', 'apercu'].indexOf(o.type) >= 0 ? o.type : 'text',
         defaut: (o.defaut !== undefined) ? o.defaut : '',
-        choix: Array.isArray(o.choix) ? o.choix.slice() : null,
+        choix: Array.isArray(o.choix) ? o.choix.map(function (ch) {
+          if (ch && typeof ch === 'object') return { value: ch.value, label: gardeTexte(ch.label || ch.value) };
+          return ch;
+        }) : null,
         min: (typeof o.min === 'number') ? o.min : undefined,
         max: (typeof o.max === 'number') ? o.max : undefined,
         pas: (typeof o.pas === 'number') ? o.pas : undefined,
@@ -357,17 +459,17 @@
         unite: o.unite ? String(o.unite) : '',
         /* Rapport hauteur/largeur de la toile d'aperçu (1.414 = A4 portrait). */
         ratio: (typeof o.ratio === 'number' && o.ratio > 0.1 && o.ratio < 10) ? o.ratio : undefined,
-        aide: o.aide ? String(o.aide) : ''
+        aide: gardeTexte(o.aide)
       };
     }).filter(function (o) { return o.key; }) : [];
     return {
       id: id,
-      name: String(m.name),
+      name: gardeTexte(m.name),
       version: String(m.version || '1.0.0'),
       author: String(m.author || ''),
-      description: String(m.description || ''),
+      description: gardeTexte(m.description),
       icon: String(m.icon || '◆'),
-      /* 🆕 v1.7.650 — L'ICÔNE VECTORIELLE, POUR LA BARRE DU HAUT.
+      /* 🆕 v1.7.651 — L'ICÔNE VECTORIELLE, POUR LA BARRE DU HAUT.
          Demande utilisateur : « affiche une icône dans la top nav quand c'est en
          on ». Un glyphe de police (`icon: '≡'`) ne se dessine pas de la même façon
          sur toutes les machines et, étant PLEIN, il paraîtrait plus sombre que les
@@ -381,7 +483,7 @@
          à ce filtre n'est PAS rejeté — il retombe simplement sur son glyphe. */
       icone: iconeVectorielle(m.icone),
       options: options,
-      /* 🆕 v1.7.650 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
+      /* 🆕 v1.7.651 — UN PLUG-IN PEUT AVOIR SA PROPRE TRAPPE.
          « Global Refactor » n'est pas un formulaire : c'est un panneau entier, avec
          un aperçu en direct, un Annuler et un Valider qui existaient déjà. Le
          réécrire dans une trappe générique aurait été un second code à maintenir
@@ -403,15 +505,15 @@
   /* Charge un manifeste depuis son code source. Le code reçoit un objet unique et
      n'a donc accès ni aux variables de `main.js` ni à celles de ce module. */
   function evaluerSource(src, nom) {
-    if (typeof src !== 'string' || !src.trim()) throw new Error('code source vide');
+    if (typeof src !== 'string' || !src.trim()) throw new Error(resoudreTexte(L('code source vide', 'empty source code', 'ソースコードが空です')));
     var capture = null;
     function SPPluginAPI(manifeste) { capture = manifeste; }
     /* eslint-disable no-new-func */
     var f = new Function('SPPluginAPI', '"use strict";\n' + src + '\n//# sourceURL=sp-plugin://' + encodeURIComponent(nom || 'plugin'));
     try { f(SPPluginAPI); } catch (e) {
-      throw new Error('le plug-in a échoué au chargement : ' + (e && e.message ? e.message : e));
+      throw new Error(resoudreTexte(L('le plug-in a échoué au chargement : ', 'the plug-in failed to load: ', 'プラグインの読み込みに失敗しました: ')) + (e && e.message ? e.message : e));
     }
-    if (!capture) throw new Error('le plug-in n\'appelle pas SPPluginAPI({ … })');
+    if (!capture) throw new Error(resoudreTexte(L('le plug-in n\'appelle pas SPPluginAPI({ … })', 'the plug-in does not call SPPluginAPI({ … })', 'プラグインが SPPluginAPI({ … }) を呼んでいません')));
     return capture;
   }
 
@@ -421,7 +523,7 @@
     installes[m.id] = {
       source: src, name: m.name, version: m.version, author: m.author, integre: false,
       description: m.description, icon: m.icon, options: m.options, fichier: nomFichier || '',
-      /* 🆕 v1.7.650 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
+      /* 🆕 v1.7.651 — DATE D'INSTALLATION, pour les filtres de la bibliothèque.
          Les plug-ins installés AVANT cette version n'en ont pas : le filtre les
          traite alors comme « anciens » (visibles dans « Tous » et « 30 jours »),
          jamais comme « récents » — on ne date pas rétroactivement un fichier
@@ -456,9 +558,9 @@
       chargerTous();
       m = MANIFESTES[id] || null;
     }
-    if (!m) throw new Error('plug-in inconnu : ' + id);
-    if (!m.run) throw new Error('ce plug-in n\'a pas de fonction run()');
-    /* ⚠️ v1.7.650 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
+    if (!m) throw new Error(resoudreTexte(L('plug-in inconnu : ', 'unknown plug-in: ', '不明なプラグイン: ')) + id);
+    if (!m.run) throw new Error(resoudreTexte(L('ce plug-in n\'a pas de fonction run()', 'this plug-in has no run() function', 'このプラグインには run() がありません')));
+    /* ⚠️ v1.7.651 — UN PLUG-IN DÉSACTIVÉ NE S'EXÉCUTE PAS, ET C'EST LE REGISTRE QUI
        LE DIT. L'état `actif` existait depuis 1.7.642 mais n'était qu'une pastille
        d'affichage : `definirActif` écrivait dans le stockage et personne ne le
        relisait. Un interrupteur qui ne coupe rien est un mensonge — la garde est
@@ -466,13 +568,13 @@
        comme un appel direct). Le message nomme le plug-in et dit quoi faire. */
     var actifs = lireActifs();
     if (actifs[id] === false) {
-      throw new Error('« ' + m.name + ' » est désactivé. Réactivez-le dans la bibliothèque de plug-ins.');
+      throw new Error('« ' + m.name + ' » ' + resoudreTexte(L('est désactivé. Réactivez-le dans la bibliothèque de plug-ins.', 'is disabled. Re-enable it in the plug-in library.', 'は無効です。プラグインライブラリで有効にしてください。')));
     }
     var opts = {};
     (m.options || []).forEach(function (o) { opts[o.key] = (valeurs && o.key in valeurs) ? valeurs[o.key] : o.defaut; });
     var api = creerApi(m, options);
     var apercu = !!(options && options.apercu);
-    /* 🆕 v1.7.650 — L'APERÇU SE DÉROULE EN SILENCE D'HISTORIQUE.
+    /* 🆕 v1.7.651 — L'APERÇU SE DÉROULE EN SILENCE D'HISTORIQUE.
        ⚠️ MESURÉ : sans cela, chaque forme posée par le plug-in déclenchait le
        `object:added` global de `main.js` → `debouncedSaveState('Objet ajouté')`.
        La pile d'undo montait de 13 à 29 en trente secondes d'aperçus, et Ctrl+Z
@@ -492,7 +594,7 @@
       );
   }
 
-  /* 🆕 v1.7.650 — VALIDER UN APERÇU.
+  /* 🆕 v1.7.651 — VALIDER UN APERÇU.
      Une trappe en aperçu direct peut avoir exécuté le plug-in trente fois. Une
      seule entrée d'historique doit en sortir, et c'est celle-ci : elle synchronise
      puis fige. Le plug-in n'a rien à en savoir. */
@@ -525,13 +627,18 @@
     Object.keys(MANIFESTES).forEach(function (id) {
       var m = MANIFESTES[id];
       var inst = installes[id] || null;
+      /* ⚠️ v1.7.651 — LA TRADUCTION SE FAIT ICI, À LA LECTURE.
+         Le manifeste enregistré garde ses trois langues ; cette copie porte celle
+         de l'interface. Changer de langue prend donc effet à la prochaine
+         ouverture de la bibliothèque, sans recharger la page. */
+      var t = traduireManifeste(m);
       out.push({
-        id: id, name: m.name, version: m.version, author: m.author,
-        description: m.description, icon: m.icon, icone: m.icone || '', options: m.options,
+        id: id, name: t.name, version: m.version, author: m.author,
+        description: t.description, icon: m.icon, icone: m.icone || '', options: t.options,
         integre: !!m.integre || !!(inst && inst.integre),
         actif: actifs[id] !== false,
         /* Date d'installation, pour les filtres de la bibliothèque (cf. installe
-           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.650. */
+           dans installerSource). `null` = plug-in intégré ou installé avant 1.7.651. */
         installe: (inst && inst.installe) ? inst.installe : null,
         /* Trappe propre au plug-in (cf. `normaliser`) — intégrés uniquement. */
         trappe: m.integre ? m.trappe : ''
@@ -577,13 +684,26 @@
   window.SPPlugins = {
     version: VERSION,
     register: enregistrerIntegre,
-    /* 🆕 v1.7.650 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
+    /* 🆕 v1.7.651 — le sélecteur d'image, exposé pour la trappe. Le panneau en a
        besoin AVANT qu'un plug-in tourne : c'est un champ de son formulaire, pas un
        appel du plug-in. Il délègue à la même fonction que `api.imageDataUrl`, donc
        un seul comportement pour les deux chemins. */
     imageDataUrl: function () { return creerApi({ id: 'panneau', name: 'Panneau', options: [] }).imageDataUrl(); },
     list: liste,
-    get: function (id) { chargerTous(); return MANIFESTES[id] || null; },
+    /* ⚠️ v1.7.651 — `get()` TRADUIT AUSSI. La trappe lit ce manifeste pour
+       construire ses champs : sans cette copie traduite, les libellés de la trappe
+       seraient restés en français alors que la bibliothèque, elle, aurait été
+       traduite. Les deux surfaces doivent parler la même langue. */
+    get: function (id) {
+      chargerTous();
+      var m = MANIFESTES[id];
+      if (!m) return null;
+      var t = traduireManifeste(m);
+      t.integre = m.integre;
+      t.trappe = m.trappe;
+      t.icone = m.icone;
+      return t;
+    },
     run: executer,
     valider: valider,
     installerSource: installerSource,

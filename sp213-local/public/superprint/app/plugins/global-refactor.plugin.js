@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN INTÉGRÉ « GLOBAL REFACTOR »  (v1.7.650)
+   SUPERPRINT — PLUG-IN INTÉGRÉ « GLOBAL REFACTOR »  (v1.7.651)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Demande utilisateur : « on va déplacer l'outil global refactor de la top nav sous
@@ -25,26 +25,37 @@
    le demande. On ouvre, et si c'est déjà ouvert on ne fait rien : l'utilisateur a
    exactement ce qu'il a demandé.
    ─────────────────────────────────────────────────────────────────────────────── */
+/* ═══ v1.7.651 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
+   Le nom et la description sont désormais écrits `L(français, english, 日本語)`.
+   Cf. le commentaire équivalent en tête de `motif-vectoriel.plugin.js`. */
+var L = window.SPPluginL || function (fr, en, ja) { return { fr: fr, en: en || fr, ja: ja || en || fr }; };
+
 SPPluginAPI({
   id: 'global-refactor',
-  name: 'Global Refactor',
+  name: L('Global Refactor', 'Global Refactor', 'グローバルリファクター'),
   version: '1.1.0',
   author: 'SuperPrint',
   icon: '≡',
-  description: 'Règle d\'un coup les styles, tailles, marges et couleurs de tout le document — aperçu en direct, et un seul « Annuler » pour revenir à l\'état d\'avant.',
-  /* 🆕 v1.7.650 — L'ICÔNE DE LA BARRE DU HAUT.
+  description: L('Règle d\'un coup les styles, tailles, marges et couleurs de tout le document — aperçu en direct, et un seul « Annuler » pour revenir à l\'état d\'avant.', 'Rules styles, sizes, margins and colours across the whole document in one pass — live preview, and a single “Undo” to get back where you were.', '文書全体のスタイル・サイズ・余白・色を一度に整えます — ライブプレビュー、元に戻すは 1 回だけ。'),
+  /* 🆕 v1.7.651 — L'ICÔNE DE LA BARRE DU HAUT.
      Demande utilisateur : « affiche une icône dans la top nav quand c'est en on
      (global refactor on doit encore l'avoir, elle était dans la top nav avant en
      permanence) ». Ce dessin est donc celui du bouton que l'outil occupait là
-     avant la 1.7.643 : trois réglettes à curseur, c'est-à-dire « on règle des
+     avant la 1.7.643 : des réglettes à curseur, c'est-à-dire « on règle des
      valeurs », et non « on refait la mise en page ».
      ⚠️ MÊME FACTURE QUE LES AUTRES ICÔNES DE CETTE ZONE : 24×24, `fill="none"`,
-     `stroke="currentColor"`, épaisseur 1,8. Une icône pleine aurait la même
-     couleur mais beaucoup plus d'encre, donc paraîtrait plus sombre que ses
-     voisines (même raisonnement que pour l'icône « Prompt IA »). */
-  icone: '<line x1="3.5" y1="6.5" x2="20.5" y2="6.5"/><circle cx="9" cy="6.5" r="2.3"/>' +
-         '<line x1="3.5" y1="12" x2="20.5" y2="12"/><circle cx="15.5" cy="12" r="2.3"/>' +
-         '<line x1="3.5" y1="17.5" x2="20.5" y2="17.5"/><circle cx="7.5" cy="17.5" r="2.3"/>',
+     `stroke="currentColor"`, épaisseur 1,8.
+     ⚠️ v1.7.651 — DEUX RÉGLETTES ET NON TROIS, ET C'EST UNE MESURE.
+     Demande utilisateur : « les icons que les plugins ajoute dans la top
+     navigation me semble plus noir que les autre en chromie ». La COULEUR était
+     identique (`rgb(26,26,26)` relevé sur les deux, comme sur la loupe) : c'est
+     l'ENCRE qui différait. Comptée en pixels opaques sur un rendu 48×48, la
+     première version pesait 732 px contre 421 pour la loupe et 411 pour l'étoile
+     IA — presque le double, d'où l'impression de noir. Trois réglettes sur toute
+     la largeur, c'était trop de trait pour un carré de 24. Deux réglettes plus
+     courtes ramènent le dessin dans la gamme des icônes voisines. */
+  icone: '<line x1="4.5" y1="8.5" x2="19.5" y2="8.5"/><circle cx="9.5" cy="8.5" r="2.1"/>' +
+         '<line x1="4.5" y1="15.5" x2="19.5" y2="15.5"/><circle cx="15.5" cy="15.5" r="2.1"/>',
   /* Le panneau que ce plug-in possède. Reconnu uniquement pour un plug-in INTÉGRÉ
      (cf. `normaliser` et `liste` dans `sp-plugins.js`). */
   trappe: 'maquettePanel',
@@ -52,7 +63,7 @@ SPPluginAPI({
   run: function () {
     var mq = window._spMaquette;
     if (!mq || typeof mq.ouvrir !== 'function') {
-      throw new Error('le module Global Refactor n\'est pas disponible dans cette version.');
+      throw new Error(api.t(L('le module Global Refactor n\'est pas disponible dans cette version.', 'the Global Refactor module is not available in this version.', 'このバージョンではグローバルリファクターを利用できません。')));
     }
     if (typeof mq.estOuvert === 'function' && mq.estOuvert()) return;
     mq.ouvrir();

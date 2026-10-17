@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.650)
+   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.651)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce que fait ce plug-in : il habille un fond de page — ou un bloc sélectionné —
@@ -81,151 +81,172 @@
    `api.apercu`, `api.toileApercu`. S'il fonctionne sans rien d'autre, l'API est
    suffisante pour un plug-in réel.
    ─────────────────────────────────────────────────────────────────────────────── */
+/* ═══ v1.7.651 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
+   Demande utilisateur : « relie bien la partie plug-in et nos deux plugins en
+   trois langue EN fr ja ».
+   Chaque libellé visible est écrit `L(français, english, 日本語)` et résolu à
+   l'affichage : par `traduireManifeste` pour les réglages (dans `sp-plugins.js`),
+   par `api.t()` pour les messages d'exécution. Rien n'est figé à l'enregistrement,
+   donc changer de langue prend effet à la prochaine ouverture du panneau, sans
+   recharger la page.
+   ⚠️ `L` EST REPRIS DU GLOBAL quand il existe, avec un repli local. Les fichiers
+   de `app/plugins/` sont insérés APRÈS `sp-plugins.js`, donc `window.SPPluginL`
+   est déjà là ; le repli couvre le cas d'un chargement dans un autre ordre, et
+   évite un « L is not defined » qui viderait la bibliothèque d'un coup. */
+var L = window.SPPluginL || function (fr, en, ja) { return { fr: fr, en: en || fr, ja: ja || en || fr }; };
+
 SPPluginAPI({
   id: 'motif-vectoriel',
-  name: 'Motif vectoriel',
+  name: L('Motif vectoriel', 'Vector Pattern', 'ベクター柄'),
   version: '3.1.0',
   author: 'SuperPrint',
   icon: '▦',
-  description: 'Motif, rosace, kaléidoscope ou chaos — à partir d\'une forme ou d\'un mélange d\'images. Aperçu en direct dans la trappe.',
+  description: L('Motif, rosace, kaléidoscope ou chaos — à partir d\'une forme ou d\'un mélange d\'images. Aperçu en direct dans la trappe.', 'Pattern, rosette, kaleidoscope or chaos — from a shape or a mix of images. Live preview in the panel.', 'パターン・ロゼット・万華鏡・混沌 — 図形または画像のミックスから。パネル内でライブプレビュー。'),
 
-  /* 🆕 v1.7.650 — L'ICÔNE DE LA BARRE DU HAUT.
-     Demande utilisateur : « pour motif trouve une icône ». Le glyphe de la
-     bibliothèque (« ▦ ») ne se dessine pas de la même façon sur toutes les
-     machines, et il est plein : il aurait paru plus sombre que les icônes en
-     contour de cette zone. On dessine donc un MOTIF : cinq points en quinconce,
-     c'est-à-dire ce que fait ce plug-in — une forme répétée en grille décalée.
-     Même facture que les autres : 24×24, `fill="none"`, `stroke="currentColor"`,
-     épaisseur 1,8. */
-  icone: '<path d="M5 5h3.2v3.2H5zM15.8 5H19v3.2h-3.2zM10.4 10.4h3.2v3.2h-3.2zM5 15.8h3.2V19H5zM15.8 15.8H19V19h-3.2z"/>',
+  /* 🆕 v1.7.651 — L'ICÔNE DE LA BARRE DU HAUT.
+     Demande utilisateur : « pour motif trouve une icône ». On dessine un MOTIF :
+     des points en quinconce, c'est-à-dire ce que fait ce plug-in — une forme
+     répétée en grille décalée.
+     ⚠️ MÊME FACTURE QUE LES AUTRES ICÔNES DE CETTE ZONE : 24×24, `fill="none"`,
+     `stroke="currentColor"`, épaisseur 1,8.
+     ⚠️ v1.7.651 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
+     Demande utilisateur : « les icons que les plugins ajoute dans la top
+     navigation me semble plus noir que les autre en chromie ». La couleur était la
+     même ; c'est l'encre qui pesait. Mesuré en pixels opaques sur un rendu 48×48 :
+     cinq carrés de 3,2 = 526 px contre 421 pour la loupe. Un carré de 3,2 unités a
+     un périmètre de 12,8 ; un cercle de rayon 1,55 n'en a que 9,7, pour une surface
+     visuelle équivalente. Cinq cercles ramènent le dessin dans la gamme. */
+  icone: '<circle cx="5.2" cy="5.2" r="1.55"/><circle cx="18.8" cy="5.2" r="1.55"/>' +
+         '<circle cx="12" cy="12" r="1.55"/>' +
+         '<circle cx="5.2" cy="18.8" r="1.55"/><circle cx="18.8" cy="18.8" r="1.55"/>',
 
   options: [
     /* ── Le grand aperçu. En tête, et sans libellé : il se comprend seul. ──── */
-    { key: 'apercu', label: 'Aperçu', type: 'apercu', ratio: 1 },
+    { key: 'apercu', label: L('Aperçu', 'Preview', 'プレビュー'), type: 'apercu', ratio: 1 },
 
     /* ── Où poser ─────────────────────────────────────────────────────────── */
     {
-      key: 'cible', label: 'Appliquer à', type: 'select', defaut: 'auto',
+      key: 'cible', label: L('Appliquer à', 'Apply to', '適用先'), type: 'select', defaut: 'auto',
       choix: [
-        { value: 'auto', label: 'Le bloc sélectionné, sinon la page' },
-        { value: 'page', label: 'Toute la page' },
-        { value: 'selection', label: 'Le bloc sélectionné' }
+        { value: 'auto', label: L('Le bloc sélectionné, sinon la page', 'Selected block, otherwise the page', '選択ブロック、なければページ全体') },
+        { value: 'page', label: L('Toute la page', 'Whole page', 'ページ全体') },
+        { value: 'selection', label: L('Le bloc sélectionné', 'Selected block', '選択ブロック') }
       ]
     },
     {
-      key: 'mode', label: 'Effet', type: 'select', defaut: 'tuile',
+      key: 'mode', label: L('Effet', 'Effect', '効果'), type: 'select', defaut: 'tuile',
       choix: [
-        { value: 'tuile', label: 'Motif répété' },
-        { value: 'crazy', label: 'Crazy — chaos contrôlé' },
-        { value: 'rosette', label: 'Rosace (une seule)' },
-        { value: 'miroir', label: 'Kaléidoscope de la page' }
+        { value: 'tuile', label: L('Motif répété', 'Repeated pattern', '繰り返しパターン') },
+        { value: 'crazy', label: L('Crazy — chaos contrôlé', 'Crazy — controlled chaos', 'クレイジー — 制御された混沌') },
+        { value: 'rosette', label: L('Rosace (une seule)', 'Rosette (single)', 'ロゼット（1 つ）') },
+        { value: 'miroir', label: L('Kaléidoscope de la page', 'Page kaleidoscope', 'ページ万華鏡') }
       ]
     },
 
     /* ── La forme ─────────────────────────────────────────────────────────── */
     {
-      key: 'forme', label: 'Forme', type: 'select', defaut: 'cercle',
+      key: 'forme', label: L('Forme', 'Shape', '図形'), type: 'select', defaut: 'cercle',
       choix: [
-        { value: 'cercle', label: 'Cercle' },
-        { value: 'anneau', label: 'Anneau' },
-        { value: 'carre', label: 'Carré' },
-        { value: 'losange', label: 'Losange' },
-        { value: 'triangle', label: 'Triangle' },
-        { value: 'hexagone', label: 'Hexagone' },
-        { value: 'etoile5', label: 'Étoile 5 branches' },
-        { value: 'etoile6', label: 'Étoile 6 branches' },
-        { value: 'croix', label: 'Croix' },
-        { value: 'goutte', label: 'Goutte' },
-        { value: 'fleur', label: 'Fleur' },
-        { value: 'spirale', label: 'Spirale' },
-        { value: 'vague', label: 'Vague' },
-        { value: 'lignes', label: 'Lignes' },
-        { value: 'nid', label: 'Nid d\'abeille' }
+        { value: 'cercle', label: L('Cercle', 'Circle', '円') },
+        { value: 'anneau', label: L('Anneau', 'Ring', 'リング') },
+        { value: 'carre', label: L('Carré', 'Square', '正方形') },
+        { value: 'losange', label: L('Losange', 'Diamond', 'ひし形') },
+        { value: 'triangle', label: L('Triangle', 'Triangle', '三角形') },
+        { value: 'hexagone', label: L('Hexagone', 'Hexagon', '六角形') },
+        { value: 'etoile5', label: L('Étoile 5 branches', '5-point star', '5 芒星') },
+        { value: 'etoile6', label: L('Étoile 6 branches', '6-point star', '6 芒星') },
+        { value: 'croix', label: L('Croix', 'Cross', '十字') },
+        { value: 'goutte', label: L('Goutte', 'Drop', 'しずく') },
+        { value: 'fleur', label: L('Fleur', 'Flower', '花') },
+        { value: 'spirale', label: L('Spirale', 'Spiral', '渦巻き') },
+        { value: 'vague', label: L('Vague', 'Wave', '波') },
+        { value: 'lignes', label: L('Lignes', 'Lines', '線') },
+        { value: 'nid', label: L('Nid d\'abeille', 'Honeycomb', 'ハニカム') }
       ]
     },
     {
-      key: 'symetrie', label: 'Symétrie', type: 'select', defaut: 'aucune',
+      key: 'symetrie', label: L('Symétrie', 'Symmetry', '対称'), type: 'select', defaut: 'aucune',
       choix: [
-        { value: 'aucune', label: 'Aucune' },
-        { value: 'miroir-x', label: 'Miroir horizontal' },
-        { value: 'miroir-y', label: 'Miroir vertical' },
-        { value: 'miroir-xy', label: 'Miroir deux axes' },
-        { value: 'quart', label: 'Rotation 90°' },
-        { value: 'kaleido', label: 'Kaléidoscope 8' },
-        { value: 'kaleido16', label: 'Kaléidoscope 16' }
+        { value: 'aucune', label: L('Aucune', 'None', 'なし') },
+        { value: 'miroir-x', label: L('Miroir horizontal', 'Horizontal mirror', '左右反転') },
+        { value: 'miroir-y', label: L('Miroir vertical', 'Vertical mirror', '上下反転') },
+        { value: 'miroir-xy', label: L('Miroir deux axes', 'Two-axis mirror', '上下左右反転') },
+        { value: 'quart', label: L('Rotation 90°', '90° rotation', '90° 回転') },
+        { value: 'kaleido', label: L('Kaléidoscope 8', 'Kaleidoscope 8', '万華鏡 8') },
+        { value: 'kaleido16', label: L('Kaléidoscope 16', 'Kaleidoscope 16', '万華鏡 16') }
       ]
     },
 
     /* ── Géométrie : des tirettes, avec leur valeur en clair ──────────────── */
-    { key: 'pas', label: 'Pas du motif', type: 'range', defaut: 8, min: 1, max: 60, pas: 0.5, unite: ' mm' },
-    { key: 'taille', label: 'Taille de la forme', type: 'range', defaut: 4, min: 0.4, max: 60, pas: 0.2, unite: ' mm' },
-    { key: 'ecart', label: 'Écart au centre', type: 'range', defaut: 30, min: 0, max: 50, pas: 1, unite: '%' },
-    { key: 'angle', label: 'Rotation de la forme', type: 'range', defaut: 0, min: 0, max: 360, pas: 1, unite: '°' },
-    { key: 'rotationCellule', label: 'Vrille d\'une cellule à l\'autre', type: 'range', defaut: 0, min: -90, max: 90, pas: 1, unite: '°' },
-    { key: 'variation', label: 'Variation', type: 'range', defaut: 0, min: 0, max: 100, pas: 1, unite: '%' },
-    { key: 'quinconce', label: 'Quinconce', type: 'range', defaut: 0, min: 0, max: 100, pas: 1, unite: '%' },
-    { key: 'onde', label: 'Onde', type: 'range', defaut: 0, min: 0, max: 40, pas: 0.5, unite: ' mm' },
-    { key: 'folie', label: 'Folie', type: 'range', defaut: 45, min: 0, max: 100, pas: 1, unite: '%' },
-    { key: 'graine', label: 'Graine', type: 'range', defaut: 7, min: 1, max: 200, pas: 1, unite: '' },
+    { key: 'pas', label: L('Pas du motif', 'Pattern step', 'パターンの間隔'), type: 'range', defaut: 8, min: 1, max: 60, pas: 0.5, unite: ' mm' },
+    { key: 'taille', label: L('Taille de la forme', 'Shape size', '図形のサイズ'), type: 'range', defaut: 4, min: 0.4, max: 60, pas: 0.2, unite: ' mm' },
+    { key: 'ecart', label: L('Écart au centre', 'Offset from centre', '中心からのずれ'), type: 'range', defaut: 30, min: 0, max: 50, pas: 1, unite: '%' },
+    { key: 'angle', label: L('Rotation de la forme', 'Shape rotation', '図形の回転'), type: 'range', defaut: 0, min: 0, max: 360, pas: 1, unite: '°' },
+    { key: 'rotationCellule', label: L('Vrille d\'une cellule à l\'autre', 'Twist per cell', 'セルごとのひねり'), type: 'range', defaut: 0, min: -90, max: 90, pas: 1, unite: '°' },
+    { key: 'variation', label: L('Variation', 'Variation', 'ばらつき'), type: 'range', defaut: 0, min: 0, max: 100, pas: 1, unite: '%' },
+    { key: 'quinconce', label: L('Quinconce', 'Stagger', '市松ずらし'), type: 'range', defaut: 0, min: 0, max: 100, pas: 1, unite: '%' },
+    { key: 'onde', label: L('Onde', 'Ripple', '波打ち'), type: 'range', defaut: 0, min: 0, max: 40, pas: 0.5, unite: ' mm' },
+    { key: 'folie', label: L('Folie', 'Wildness', '奔放さ'), type: 'range', defaut: 45, min: 0, max: 100, pas: 1, unite: '%' },
+    { key: 'graine', label: L('Graine', 'Seed', 'シード'), type: 'range', defaut: 7, min: 1, max: 200, pas: 1, unite: '' },
 
     /* ── Couleur ──────────────────────────────────────────────────────────── */
-    { key: 'couleur', label: 'Couleur 1', type: 'color', defaut: '#1a1a1a' },
-    { key: 'couleur2', label: 'Couleur 2', type: 'color', defaut: '#c8102e' },
+    { key: 'couleur', label: L('Couleur 1', 'Colour 1', '色 1'), type: 'color', defaut: '#1a1a1a' },
+    { key: 'couleur2', label: L('Couleur 2', 'Colour 2', '色 2'), type: 'color', defaut: '#c8102e' },
     {
-      key: 'degrade', label: 'Dégradé', type: 'select', defaut: 'aucun',
+      key: 'degrade', label: L('Dégradé', 'Gradient', 'グラデーション'), type: 'select', defaut: 'aucun',
       choix: [
-        { value: 'aucun', label: 'Aucun' },
-        { value: 'lineaire', label: 'Linéaire' },
-        { value: 'radial', label: 'Radial' }
+        { value: 'aucun', label: L('Aucun', 'None', 'なし') },
+        { value: 'lineaire', label: L('Linéaire', 'Linear', '線形') },
+        { value: 'radial', label: L('Radial', 'Radial', '放射状') }
       ]
     },
-    { key: 'opacite', label: 'Opacité', type: 'range', defaut: 100, min: 5, max: 100, pas: 1, unite: '%' },
-    { key: 'fondActif', label: 'Remplir le fond', type: 'checkbox', defaut: false },
-    { key: 'fondTuile', label: 'Fond', type: 'color', defaut: '#ffffff' },
-    { key: 'trait', label: 'Trait seulement', type: 'checkbox', defaut: false },
-    { key: 'epaisseur', label: 'Épaisseur du trait', type: 'range', defaut: 0.5, min: 0.05, max: 8, pas: 0.05, unite: ' mm' },
+    { key: 'opacite', label: L('Opacité', 'Opacity', '不透明度'), type: 'range', defaut: 100, min: 5, max: 100, pas: 1, unite: '%' },
+    { key: 'fondActif', label: L('Remplir le fond', 'Fill the background', '背景を塗る'), type: 'checkbox', defaut: false },
+    { key: 'fondTuile', label: L('Fond', 'Background', '背景'), type: 'color', defaut: '#ffffff' },
+    { key: 'trait', label: L('Trait seulement', 'Stroke only', '線のみ'), type: 'checkbox', defaut: false },
+    { key: 'epaisseur', label: L('Épaisseur du trait', 'Stroke width', '線の太さ'), type: 'range', defaut: 0.5, min: 0.05, max: 8, pas: 0.05, unite: ' mm' },
 
     /* ── Le mixeur d'images ───────────────────────────────────────────────── */
     /* Déclaré APRÈS la couleur : une image remplace la forme géométrique, et la
        couleur ne sert plus qu'aux modes où aucune image n'est chargée. */
-    { key: 'images', label: 'Images (mixeur)', type: 'images' },
+    { key: 'images', label: L('Images (mixeur)', 'Images (mixer)', '画像（ミキサー）'), type: 'images' },
     {
-      key: 'melange', label: 'Fusion', type: 'select', defaut: 'source-over',
+      key: 'melange', label: L('Fusion', 'Blend', '合成'), type: 'select', defaut: 'source-over',
       choix: [
-        { value: 'source-over', label: 'Normale' },
-        { value: 'multiply', label: 'Produit' },
-        { value: 'screen', label: 'Écran' },
-        { value: 'overlay', label: 'Incrustation' },
-        { value: 'difference', label: 'Différence' },
-        { value: 'lighter', label: 'Addition' },
-        { value: 'hard-light', label: 'Lumière crue' }
+        { value: 'source-over', label: L('Normale', 'Normal', '通常') },
+        { value: 'multiply', label: L('Produit', 'Multiply', '乗算') },
+        { value: 'screen', label: L('Écran', 'Screen', 'スクリーン') },
+        { value: 'overlay', label: L('Incrustation', 'Overlay', 'オーバーレイ') },
+        { value: 'difference', label: L('Différence', 'Difference', '差の絶対値') },
+        { value: 'lighter', label: L('Addition', 'Add', '加算') },
+        { value: 'hard-light', label: L('Lumière crue', 'Hard light', 'ハードライト') }
       ]
     },
-    { key: 'melangeOpacite', label: 'Opacité des images', type: 'range', defaut: 100, min: 5, max: 100, pas: 1, unite: '%' },
+    { key: 'melangeOpacite', label: L('Opacité des images', 'Image opacity', '画像の不透明度'), type: 'range', defaut: 100, min: 5, max: 100, pas: 1, unite: '%' },
 
     /* ── Technique ────────────────────────────────────────────────────────── */
     {
-      key: 'cellules', label: 'Cellules par tuile', type: 'select', defaut: '1',
+      key: 'cellules', label: L('Cellules par tuile', 'Cells per tile', 'タイルあたりのセル数'), type: 'select', defaut: '1',
       choix: [
-        { value: '1', label: '1 × 1' },
-        { value: '2', label: '2 × 2' },
-        { value: '3', label: '3 × 3' }
+        { value: '1', label: L('1 × 1', '1 × 1', '1 × 1') },
+        { value: '2', label: L('2 × 2', '2 × 2', '2 × 2') },
+        { value: '3', label: L('3 × 3', '3 × 3', '3 × 3') }
       ]
     },
     {
-      key: 'facteur', label: 'Netteté', type: 'select', defaut: '4',
+      key: 'facteur', label: L('Netteté', 'Sharpness', '精細さ'), type: 'select', defaut: '4',
       choix: [
-        { value: '2', label: '×2 — rapide' },
-        { value: '4', label: '×4 — recommandé' },
-        { value: '8', label: '×8 — export' }
+        { value: '2', label: L('×2 — rapide', '×2 — fast', '×2 — 高速') },
+        { value: '4', label: L('×4 — recommandé', '×4 — recommended', '×4 — 推奨') },
+        { value: '8', label: L('×8 — export', '×8 — export', '×8 — 書き出し') }
       ]
     },
-    { key: 'libelle', label: 'Nom de l\'objet', type: 'text', defaut: 'Motif' }
+    { key: 'libelle', label: L('Nom de l\'objet', 'Object name', 'オブジェクト名'), type: 'text', defaut: 'Motif' }
   ],
 
   run: function (api, o) {
     var fabric = api.fabric;
-    if (!fabric) throw new Error('moteur graphique indisponible');
+    if (!fabric) throw new Error(api.t(L('moteur graphique indisponible', 'graphics engine unavailable', '描画エンジンが利用できません')));
 
     /* ── Les réglages, normalisés une fois pour toutes ──────────────────────
        Les tirettes rendent des POURCENTAGES (0–100). Le dessin, lui, raisonne en
@@ -587,7 +608,7 @@ SPPluginAPI({
       cv.width = Math.max(8, Math.round(cote));
       cv.height = Math.max(8, Math.round(cote));
       var g = cv.getContext('2d');
-      if (!g) throw new Error('canvas 2D indisponible');
+      if (!g) throw new Error(api.t(L('canvas 2D indisponible', '2D canvas unavailable', '2D キャンバスが利用できません')));
 
       if (o.fondActif) {
         g.fillStyle = o.fondTuile || '#ffffff';
@@ -689,7 +710,7 @@ SPPluginAPI({
         };
       }
       if (o.cible === 'selection') {
-        throw new Error('aucun bloc sélectionné : sélectionnez un cadre, ou choisissez « toute la page »');
+        throw new Error(api.t(L('aucun bloc sélectionné : sélectionnez un cadre, ou choisissez « toute la page »', 'no block selected: select a frame, or choose “whole page”', 'ブロックが選択されていません。フレームを選ぶか「ページ全体」を選んでください')));
       }
       return { objet: null, largeur: doc.largeur, hauteur: doc.hauteur, gauche: 0, haut: 0, remplace: false };
     }
@@ -708,7 +729,7 @@ SPPluginAPI({
 
     function poserMiroir(c) {
       var source = sourcePage();
-      if (!source) throw new Error('la page ne peut pas être relue pour le kaléidoscope');
+      if (!source) throw new Error(api.t(L('la page ne peut pas être relue pour le kaléidoscope', 'the page cannot be re-read for the kaleidoscope', '万華鏡のためにページを読み直せません')));
       var cote = Math.max(64, Math.round(Math.min(c.largeur, c.hauteur) * 2));
       return new Promise(function (resolve, reject) {
         var src = new Image();
@@ -736,7 +757,7 @@ SPPluginAPI({
             resolve(cv);
           } catch (e) { reject(e); }
         };
-        src.onerror = function () { reject(new Error('kaléidoscope : rendu de page illisible')); };
+        src.onerror = function () { reject(new Error(api.t(L('kaléidoscope : rendu de page illisible', 'kaleidoscope: page render unreadable', '万華鏡：ページの描画を読み取れません')))); };
         src.src = source;
       });
     }

@@ -349,7 +349,7 @@
 <!-- ═══════════════════  TOP BAR  ═══════════════════ -->
 <div class="topbar">
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.650</span>
+  <span class="version">v1.7.651</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -1307,7 +1307,7 @@ SUPERPRINT12master/
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
-     v1.7.650 — ÉTENDRE SUPERPRINT : PLUG-INS ET SERVEUR MCP
+     v1.7.651 — ÉTENDRE SUPERPRINT : PLUG-INS ET SERVEUR MCP
      ═══════════════════════════════════════════════════════════════════════ -->
 
 <h2 id="m-plugins">
@@ -1315,8 +1315,8 @@ SUPERPRINT12master/
   <span data-lang="en">Plug-ins — write one</span>
 </h2>
 
-<p data-lang="fr">Un plug-in SuperPrint est un fichier <code>.plugin.js</code> que l'utilisateur installe depuis le bouton <strong>Plug-ins</strong>, en bas de la barre de droite. Il reçoit une API hôte, décrit ses réglages, et peut ajouter des objets au document. Deux plug-ins sont livrés : <strong>Global Refactor</strong>, qui règle d'un coup les styles, tailles, marges et couleurs du document entier, et <strong>Motif vectoriel</strong>, qui habille une page ou un bloc d'un motif répété, d'une rosace, d'un kaléidoscope ou d'un chaos réglable — à partir de formes géométriques ou d'un mélange d'images. Depuis la 1.7.650, chaque plug-in allumé affiche de nouveau son icône dans la barre du haut, et un clic ouvre directement son panneau : la bibliothèque n'est plus qu'un détour pour découvrir et installer.</p>
-<p data-lang="en">A SuperPrint plug-in is a <code>.plugin.js</code> file the user installs from the <strong>Plug-ins</strong> button, at the bottom of the right bar. It receives a host API, declares its settings, and can add objects to the document. Two plug-ins ship with the app: <strong>Global Refactor</strong>, which sets the styles, sizes, margins and colours of the whole document in one pass, and <strong>Vector Pattern</strong>, which fills a page or a block with a repeated pattern, a rosette, a kaleidoscope or an adjustable chaos — from geometric shapes or a mix of images. From 1.7.650, every enabled plug-in shows its icon in the top bar again, and one click opens its panel directly: the library is now only a place to discover and install.</p>
+<p data-lang="fr">Un plug-in SuperPrint est un fichier <code>.plugin.js</code> que l'utilisateur installe depuis le bouton <strong>Plug-ins</strong>, en bas de la barre de droite. Il reçoit une API hôte, décrit ses réglages, et peut ajouter des objets au document. Deux plug-ins sont livrés : <strong>Global Refactor</strong>, qui règle d'un coup les styles, tailles, marges et couleurs du document entier, et <strong>Motif vectoriel</strong>, qui habille une page ou un bloc d'un motif répété, d'une rosace, d'un kaléidoscope ou d'un chaos réglable — à partir de formes géométriques ou d'un mélange d'images. Depuis la 1.7.651, chaque plug-in allumé affiche de nouveau son icône dans la barre du haut, et un clic ouvre directement son panneau : la bibliothèque n'est plus qu'un détour pour découvrir et installer.</p>
+<p data-lang="en">A SuperPrint plug-in is a <code>.plugin.js</code> file the user installs from the <strong>Plug-ins</strong> button, at the bottom of the right bar. It receives a host API, declares its settings, and can add objects to the document. Two plug-ins ship with the app: <strong>Global Refactor</strong>, which sets the styles, sizes, margins and colours of the whole document in one pass, and <strong>Vector Pattern</strong>, which fills a page or a block with a repeated pattern, a rosette, a kaleidoscope or an adjustable chaos — from geometric shapes or a mix of images. From 1.7.651, every enabled plug-in shows its icon in the top bar again, and one click opens its panel directly: the library is now only a place to discover and install.</p>
 <h3 data-lang="fr">Deux surfaces : la bibliothèque et la trappe</h3>
 <h3 data-lang="en">Two surfaces: the library and the trap</h3>
 <p data-lang="fr">Le bouton <strong>Plug-ins</strong> ouvre la <strong>bibliothèque</strong> : une pop-in qui liste ce qui est installé — avec la date d'installation de chaque fichier — une zone de dépôt et une corbeille par plug-in venu de l'extérieur. Aucun filtre : la liste tient à l'écran, et un tri qui ne trie presque rien ne fait qu'ajouter une décision avant chaque coup d'œil. Le bouton <strong>Utiliser</strong> ouvre ensuite la <strong>trappe</strong> du plug-in — le panneau latéral qui pousse l'interface au lieu de la recouvrir, donc la page reste visible pendant qu'on la règle. <em>Appliquer</em> laisse la trappe ouverte pour enchaîner les essais ; <em>Bibliothèque</em> y revient. Une seule trappe est ouverte à la fois : lancer Global Refactor referme celle d'un plug-in, et l'inverse est vrai aussi.</p>
@@ -1344,14 +1344,18 @@ SUPERPRINT12master/
 
 <pre><code>SPPluginAPI({
   id: 'mon-plug-in',            // minuscules, chiffres, point, tiret
-  name: 'Mon plug-in',
+  name: L('Mon plug-in', 'My plug-in', 'マイプラグイン'),
   version: '1.0.0',
   author: 'Votre nom',
   icon: '◆',                    // un caractère, affiché dans la liste
   icone: '<path d="M4 12h16"/>',// facultatif : le dessin de la barre du haut (cf. plus bas)
-  description: 'Ce qu\'il fait, en une phrase.',
+  description: L(
+    'Ce qu\'il fait, en une phrase.',
+    'What it does, in one sentence.',
+    '何をするのか、一文で。'
+  ),
   options: [                    // les réglages — le panneau les rend
-    { key: 'pas', label: 'Pas (mm)', type: 'number', defaut: 8, min: 1, max: 80 },
+    { key: 'pas', label: L('Pas (mm)', 'Step (mm)', '間隔 (mm)'), type: 'number', defaut: 8, min: 1, max: 80 },
     { key: 'couleur', label: 'Couleur', type: 'color', defaut: '#1a1a1a' }
   ],
   // trappe: 'maquettePanel',   // intégrés seulement : le panneau que le run() ouvre
@@ -1370,6 +1374,36 @@ SUPERPRINT12master/
 <p data-lang="fr">Le panneau construit lui-même le formulaire à partir de <code>options</code>. Un plug-in ne fabrique donc jamais son propre DOM : il ne peut pas casser l'interface, et il hérite automatiquement du thème clair et du thème sombre.</p>
 <p data-lang="en">The panel builds the form from <code>options</code> itself. A plug-in therefore never creates its own DOM: it cannot break the interface, and it automatically inherits both the light and dark theme.</p>
 
+<h4 data-lang="fr">Écrire un plug-in en trois langues</h4>
+<h4 data-lang="en">Writing a plug-in in three languages</h4>
+
+<p data-lang="fr">SuperPrint parle <strong>français, anglais et japonais</strong>. Un plug-in doit en faire autant, sinon ses réglages restent dans une langue au milieu d'une interface traduite. La fonction <code>L(fr, en, ja)</code> déclare un libellé dans les trois : elle est disponible telle quelle dans votre fichier, et aussi par <code>api.L</code>.</p>
+<p data-lang="en">SuperPrint speaks <strong>French, English and Japanese</strong>. A plug-in must do the same, or its settings stay in one language in the middle of a translated interface. The <code>L(fr, en, ja)</code> function declares a label in all three: it is available as-is in your file, and through <code>api.L</code>.</p>
+
+<pre><code>name: L('Motif vectoriel', 'Vector Pattern', 'ベクター柄'),
+
+options: [{
+  key: 'symetrie', label: L('Symétrie', 'Symmetry', '対称'), type: 'select',
+  choix: [
+    { value: 'aucune',  label: L('Aucune', 'None', 'なし') },
+    { value: 'kaleido', label: L('Kaléidoscope 8', 'Kaleidoscope 8', '万華鏡 8') }
+  ]
+}],
+
+run: function (api, o) {
+  if (!api.selection().length) {
+    throw new Error(api.t(L(
+      'aucun bloc sélectionné', 'no block selected', 'ブロックが選択されていません'
+    )));
+  }
+}</code></pre>
+
+<div class="note" data-lang="fr">⚠️ <strong>La traduction se fait à la lecture, pas à l'enregistrement.</strong> Votre manifeste est enregistré <em>une fois</em> ; SuperPrint y relit la langue de l'interface à chaque ouverture de la bibliothèque ou du panneau. Changer de langue prend donc effet immédiatement, sans recharger la page. Corollaire : n'appelez pas <code>api.t()</code> au moment de déclarer vos réglages — écrivez <code>L(…)</code> et laissez le registre résoudre. <code>api.t()</code> sert aux messages <em>d'exécution</em>, ceux qui naissent dans <code>run()</code>.</div>
+<div class="note" data-lang="en">⚠️ <strong>Translation happens on read, not on registration.</strong> Your manifest is registered <em>once</em>; SuperPrint re-reads the interface language from it every time the library or panel opens. Changing language therefore takes effect immediately, without reloading the page. Corollary: do not call <code>api.t()</code> when declaring your settings — write <code>L(…)</code> and let the registry resolve. <code>api.t()</code> is for <em>runtime</em> messages, the ones born inside <code>run()</code>.</div>
+
+<div class="note" data-lang="fr">💡 <strong>Les trois paramètres, et le repli.</strong> <code>L(fr, en, ja)</code> : le japonais manquant retombe sur l'anglais, l'anglais manquant sur le français. Vous pouvez donc traduire progressivement — un libellé non traduit ne laisse jamais un trou à l'écran. Une chaîne ordinaire reste acceptée partout : un plug-in monolingue continue de fonctionner tel quel.</div>
+<div class="note" data-lang="en">💡 <strong>The three parameters, and the fallback.</strong> <code>L(fr, en, ja)</code>: a missing Japanese falls back to English, a missing English to French. You can therefore translate gradually — an untranslated label never leaves a hole on screen. A plain string is still accepted everywhere: a monolingual plug-in keeps working as-is.</div>
+
 <h4 data-lang="fr">L'icône de la barre du haut</h4>
 <h4 data-lang="en">The top-bar icon</h4>
 
@@ -1378,8 +1412,8 @@ SUPERPRINT12master/
 
 <pre><code>icone: '&lt;line x1="3.5" y1="6.5" x2="20.5" y2="6.5"/&gt;&lt;circle cx="9" cy="6.5" r="2.3"/&gt;'</code></pre>
 
-<div class="note" data-lang="fr">⚠️ <strong>Dessinez en contour, sur une grille de 24.</strong> Le conteneur impose <code>fill="none" stroke="currentColor" stroke-width="1.8"</code> et un <code>viewBox="0 0 24 24"</code> : une icône pleine aurait la même couleur mais beaucoup plus d'encre, et paraîtrait plus sombre que les icônes voisines. <strong>Liste blanche de formes</strong> : <code>path</code>, <code>circle</code>, <code>rect</code>, <code>line</code>, <code>polyline</code>, <code>polygon</code>, <code>ellipse</code>, <code>g</code>. Tout le reste est refusé — <code>script</code>, <code>image</code>, <code>use</code>, <code>href</code>, <code>style=</code>, <code>on…=</code>, <code>javascript:</code>, <code>url(</code> — et le plug-in retombe alors sur son <code>icon</code>. Ce n'est pas une erreur : c'est un repli.</div>
-<div class="note" data-lang="en">⚠️ <strong>Draw in outline, on a 24-unit grid.</strong> The container imposes <code>fill="none" stroke="currentColor" stroke-width="1.8"</code> and a <code>viewBox="0 0 24 24"</code>: a solid icon would have the same colour but far more ink, and would look darker than its neighbours. <strong>Shape whitelist</strong>: <code>path</code>, <code>circle</code>, <code>rect</code>, <code>line</code>, <code>polyline</code>, <code>polygon</code>, <code>ellipse</code>, <code>g</code>. Everything else is refused — <code>script</code>, <code>image</code>, <code>use</code>, <code>href</code>, <code>style=</code>, <code>on…=</code>, <code>javascript:</code>, <code>url(</code> — and the plug-in falls back to its <code>icon</code>. That is not an error: it is a fallback.</div>
+<div class="note" data-lang="fr">⚠️ <strong>Dessinez en contour, sur une grille de 24, et léger.</strong> Le conteneur impose <code>fill="none" stroke="currentColor" stroke-width="1.8"</code> et un <code>viewBox="0 0 24 24"</code> : une icône pleine aurait la même couleur mais beaucoup plus d'encre, et paraîtrait plus sombre que les icônes voisines. <strong>Peser le même poids se mesure</strong> : une icône de cette zone fait 410 à 430 pixels opaques sur un rendu 48 × 48 (loupe 421, étoile IA 411). Un dessin chargé — trois réglettes sur toute la largeur — pesait 732 et se lisait comme un carré noir. Comptez large : peu de traits, courts. <strong>Liste blanche de formes</strong> : <code>path</code>, <code>circle</code>, <code>rect</code>, <code>line</code>, <code>polyline</code>, <code>polygon</code>, <code>ellipse</code>, <code>g</code>. Tout le reste est refusé — <code>script</code>, <code>image</code>, <code>use</code>, <code>href</code>, <code>style=</code>, <code>on…=</code>, <code>javascript:</code>, <code>url(</code> — et le plug-in retombe alors sur son <code>icon</code>. Ce n'est pas une erreur : c'est un repli.</div>
+<div class="note" data-lang="en">⚠️ <strong>Draw in outline, on a 24-unit grid, and keep it light.</strong> The container imposes <code>fill="none" stroke="currentColor" stroke-width="1.8"</code> and a <code>viewBox="0 0 24 24"</code>: a solid icon would have the same colour but far more ink, and would look darker than its neighbours. <strong>Matching the weight is measurable</strong>: an icon in this zone carries 410 to 430 opaque pixels on a 48 × 48 render (magnifier 421, AI star 411). A heavy drawing — three full-width sliders — weighed 732 and read as a black square. Draw sparingly: few strokes, short. <strong>Shape whitelist</strong>: <code>path</code>, <code>circle</code>, <code>rect</code>, <code>line</code>, <code>polyline</code>, <code>polygon</code>, <code>ellipse</code>, <code>g</code>. Everything else is refused — <code>script</code>, <code>image</code>, <code>use</code>, <code>href</code>, <code>style=</code>, <code>on…=</code>, <code>javascript:</code>, <code>url(</code> — and the plug-in falls back to its <code>icon</code>. That is not an error: it is a fallback.</div>
 
 <h3 data-lang="fr">Types de réglage</h3>
 <h3 data-lang="en">Setting types</h3>
@@ -1496,6 +1530,7 @@ function dessinerImages(g, taillePx, melange, opacite) {
 <tr><td><code>api.sync()</code></td><td data-lang="fr">synchronise <code>pages[]</code> <strong>sans</strong> écrire d'historique</td><td data-lang="en">syncs <code>pages[]</code> <strong>without</strong> a history entry</td></tr>
 <tr><td><code>api.commit(libelle)</code></td><td data-lang="fr">écrit l'entrée d'historique (sans effet en aperçu)</td><td data-lang="en">writes the history entry (no-op during preview)</td></tr>
 <tr><td><code>api.imageDataUrl()</code></td><td data-lang="fr">ouvre un sélecteur, rend une dataURL</td><td data-lang="en">opens a file picker, yields a dataURL</td></tr>
+<tr><td><code>api.t(v)</code></td><td data-lang="fr">résout un libellé <code>L(fr, en, ja)</code> dans la langue de l'interface — pour les messages d'exécution</td><td data-lang="en">resolves an <code>L(fr, en, ja)</code> label into the interface language — for runtime messages</td></tr>
 <tr><td><code>api.alert(msg)</code> / <code>api.prompt(q, def)</code></td><td data-lang="fr">dialogues de la DA SuperPrint</td><td data-lang="en">SuperPrint-styled dialogs</td></tr>
 <tr><td><code>api.store.get/set</code></td><td data-lang="fr">un stockage persistant, propre au plug-in</td><td data-lang="en">persistent storage, scoped to the plug-in</td></tr>
 <tr><td><code>api.log(msg)</code></td><td data-lang="fr">écrit dans la console du navigateur</td><td data-lang="en">writes to the browser console</td></tr>
@@ -1892,7 +1927,7 @@ node server.mjs
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.650</span>
+  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.651</span>
   <span data-lang="en">Documentation generated September 16, 2026 — v1.7.456</span>
 </div>
 
@@ -2911,7 +2946,7 @@ log('Filet posé sur ' + Math.round(largeur) + ' mm de large');</pre>
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.650</span>
+  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.651</span>
   <span data-lang="en">Manual updated September 16, 2026 — v1.7.456</span>
 </div>
 
