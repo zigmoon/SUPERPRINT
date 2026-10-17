@@ -876,9 +876,16 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-kicker::before { content:''; display: none; }
 /* #hero h1 SEULE, PAS h1 EN GÉNÉRAL : les pages tarif, rock, doc, api et
    install ont leur propre h1, et leur taille ne doit pas bouger avec l'accueil.
-   Réduction mesurée de 8 % sur la courbe entière (96 → 88 px), pour que le
-   titre reste aussi proportionné sur portable et sur mobile. */
-#hero h1 { max-width: 980px; margin-top: 0; font-size: clamp(38px, 6.6vw, 88px); }
+   🆕 v1.7.656 — LE TITRE RÉTRÉCIT ENCORE. Demande utilisateur : « l'édition
+   créative nouvelle génération, typo un peu plus petite ». MESURÉ AVANT :
+   #hero h1 { clamp(38px, 6.6vw, 88px) } → 88 px à 1600 px de large, deux lignes
+   sur 180 px de haut.
+   APRÈS : clamp(34px, 5.8vw, 76px) → 76 px, soit −13,6 % au plafond et −12 % sur
+   la pente. La borne basse descend de 38 à 34 px dans la même proportion, sinon le
+   titre n'aurait plus la même allure sur un téléphone.
+   ⚠️ LE PLAFOND DE 980 px RESTE : il borne les DEUX lignes, pas la taille. Le
+   réduire aurait coupé la phrase autrement — ce n'est pas ce qui était demandé. */
+#hero h1 { max-width: 980px; margin-top: 0; font-size: clamp(34px, 5.8vw, 76px); }
 #hero h1 .line { display: block; }
 #hero h1 .italic {
   font-style: italic;
