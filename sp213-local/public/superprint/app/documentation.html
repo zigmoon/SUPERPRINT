@@ -349,7 +349,7 @@
 <!-- ═══════════════════  TOP BAR  ═══════════════════ -->
 <div class="topbar">
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.675</span>
+  <span class="version">v1.7.676</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -1307,7 +1307,7 @@ SUPERPRINT12master/
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
-     v1.7.675 — ÉTENDRE SUPERPRINT : PLUG-INS ET SERVEUR MCP
+     v1.7.676 — ÉTENDRE SUPERPRINT : PLUG-INS ET SERVEUR MCP
      ═══════════════════════════════════════════════════════════════════════ -->
 
 <h2 id="m-plugins">
@@ -1315,8 +1315,8 @@ SUPERPRINT12master/
   <span data-lang="en">Plug-ins — write one</span>
 </h2>
 
-<p data-lang="fr">Un plug-in SuperPrint est un fichier <code>.plugin.js</code> que l'utilisateur installe depuis le bouton <strong>Plug-ins</strong>, en bas de la barre de droite. Il reçoit une API hôte, décrit ses réglages, et peut ajouter des objets au document. Deux plug-ins sont livrés : <strong>Global Refactor</strong>, qui règle d'un coup les styles, tailles, marges et couleurs du document entier, et <strong>Motif vectoriel</strong>, qui habille une page ou un bloc d'un motif répété, d'une rosace, d'un kaléidoscope ou d'un chaos réglable — à partir de formes géométriques ou d'un mélange d'images. Depuis la 1.7.675, chaque plug-in allumé affiche de nouveau son icône dans la barre du haut, et un clic ouvre directement son panneau : la bibliothèque n'est plus qu'un détour pour découvrir et installer.</p>
-<p data-lang="en">A SuperPrint plug-in is a <code>.plugin.js</code> file the user installs from the <strong>Plug-ins</strong> button, at the bottom of the right bar. It receives a host API, declares its settings, and can add objects to the document. Two plug-ins ship with the app: <strong>Global Refactor</strong>, which sets the styles, sizes, margins and colours of the whole document in one pass, and <strong>Vector Pattern</strong>, which fills a page or a block with a repeated pattern, a rosette, a kaleidoscope or an adjustable chaos — from geometric shapes or a mix of images. From 1.7.675, every enabled plug-in shows its icon in the top bar again, and one click opens its panel directly: the library is now only a place to discover and install.</p>
+<p data-lang="fr">Un plug-in SuperPrint est un fichier <code>.plugin.js</code> que l'utilisateur installe depuis le bouton <strong>Plug-ins</strong>, en bas de la barre de droite. Il reçoit une API hôte, décrit ses réglages, et peut ajouter des objets au document. Deux plug-ins sont livrés : <strong>Global Refactor</strong>, qui règle d'un coup les styles, tailles, marges et couleurs du document entier, et <strong>Motif</strong>, qui habille une page ou un bloc d'un motif répété, d'une rosace, d'un kaléidoscope ou d'un chaos réglable — à partir de formes géométriques ou d'un mélange d'images. Depuis la 1.7.676, chaque plug-in allumé affiche de nouveau son icône dans la barre du haut, et un clic ouvre directement son panneau : la bibliothèque n'est plus qu'un détour pour découvrir et installer.</p>
+<p data-lang="en">A SuperPrint plug-in is a <code>.plugin.js</code> file the user installs from the <strong>Plug-ins</strong> button, at the bottom of the right bar. It receives a host API, declares its settings, and can add objects to the document. Two plug-ins ship with the app: <strong>Global Refactor</strong>, which sets the styles, sizes, margins and colours of the whole document in one pass, and <strong>Vector Pattern</strong>, which fills a page or a block with a repeated pattern, a rosette, a kaleidoscope or an adjustable chaos — from geometric shapes or a mix of images. From 1.7.676, every enabled plug-in shows its icon in the top bar again, and one click opens its panel directly: the library is now only a place to discover and install.</p>
 <h3 data-lang="fr">Deux surfaces : la bibliothèque et la trappe</h3>
 <h3 data-lang="en">Two surfaces: the library and the trap</h3>
 <p data-lang="fr">Le bouton <strong>Plug-ins</strong> ouvre la <strong>bibliothèque</strong> : une pop-in qui liste ce qui est installé — avec la date d'installation de chaque fichier — une zone de dépôt et une corbeille par plug-in venu de l'extérieur. Aucun filtre : la liste tient à l'écran, et un tri qui ne trie presque rien ne fait qu'ajouter une décision avant chaque coup d'œil. Le bouton <strong>Utiliser</strong> ouvre ensuite la <strong>trappe</strong> du plug-in — le panneau latéral qui pousse l'interface au lieu de la recouvrir, donc la page reste visible pendant qu'on la règle. <em>Appliquer</em> laisse la trappe ouverte pour enchaîner les essais ; <em>Bibliothèque</em> y revient. Une seule trappe est ouverte à la fois : lancer Global Refactor referme celle d'un plug-in, et l'inverse est vrai aussi.</p>
@@ -1380,7 +1380,7 @@ SUPERPRINT12master/
 <p data-lang="fr">SuperPrint parle <strong>français, anglais et japonais</strong>. Un plug-in doit en faire autant, sinon ses réglages restent dans une langue au milieu d'une interface traduite. La fonction <code>L(fr, en, ja)</code> déclare un libellé dans les trois : elle est disponible telle quelle dans votre fichier, et aussi par <code>api.L</code>.</p>
 <p data-lang="en">SuperPrint speaks <strong>French, English and Japanese</strong>. A plug-in must do the same, or its settings stay in one language in the middle of a translated interface. The <code>L(fr, en, ja)</code> function declares a label in all three: it is available as-is in your file, and through <code>api.L</code>.</p>
 
-<pre><code>name: L('Motif vectoriel', 'Vector Pattern', 'ベクター柄'),
+<pre><code>name: L('Motif', 'Pattern', 'パターン'),
 
 options: [{
   key: 'symetrie', label: L('Symétrie', 'Symmetry', '対称'), type: 'select',
@@ -1671,14 +1671,14 @@ function dessinerImages(g, taillePx, melange, opacite) {
 <p data-lang="fr">Les deux sont propres au navigateur et au profil : un plug-in installé sur un poste ne l'est pas sur un autre. C'est voulu — un plug-in est du code exécutable, il ne doit pas voyager avec un document. Pour la même raison, <strong>aucun <code>.sp</code> ne contient de plug-in</strong> : ce qu'un plug-in a produit est enregistré comme des objets ordinaires, mais le plug-in lui-même reste chez vous.</p>
 <p data-lang="en">Both are per-browser and per-profile: a plug-in installed on one machine is not installed on another. That is deliberate — a plug-in is executable code and must not travel inside a document. For the same reason <strong>no <code>.sp</code> contains a plug-in</strong>: what a plug-in produced is saved as ordinary objects, but the plug-in itself stays with you.</p>
 
-<h3 data-lang="fr">Le plug-in de référence : Motif vectoriel</h3>
+<h3 data-lang="fr">Le plug-in de référence : Motif</h3>
 <h3 data-lang="en">The reference plug-in: Vector Pattern</h3>
-<p data-lang="fr">Livré avec SuperPrint, <strong>Motif vectoriel</strong> est le plus gros plug-in du produit et sert de modèle : 29 réglages dont 13 tirettes, 15 formes, 7 symétries du groupe du carré (D4), un tirage pseudo-aléatoire à graine — donc reproductible —, une super-tuile de <em>N×N</em> cellules pour casser la répétition, un mode <em>kaléidoscope de page</em> qui reflète un quadrant sur les quatre, et un mode <em>crazy</em> qui tire forme, angle, échelle et couleur à chaque copie. Son mixeur empile jusqu'à huit images avec un mode de fusion. Ouvrez-le dans un éditeur : c'est le meilleur exemple de ce que l'API permet — le grand aperçu (<code>api.toileApercu()</code>), les champs <code>'apercu'</code> et <code>'images'</code>, l'aperçu en direct et le retrait de ses propres objets d'un rendu à l'autre.</p>
+<p data-lang="fr">Livré avec SuperPrint, <strong>Motif</strong> est le plus gros plug-in du produit et sert de modèle : 29 réglages dont 13 tirettes, 15 formes, 7 symétries du groupe du carré (D4), un tirage pseudo-aléatoire à graine — donc reproductible —, une super-tuile de <em>N×N</em> cellules pour casser la répétition, un mode <em>kaléidoscope de page</em> qui reflète un quadrant sur les quatre, et un mode <em>crazy</em> qui tire forme, angle, échelle et couleur à chaque copie. Son mixeur empile jusqu'à huit images avec un mode de fusion. Ouvrez-le dans un éditeur : c'est le meilleur exemple de ce que l'API permet — le grand aperçu (<code>api.toileApercu()</code>), les champs <code>'apercu'</code> et <code>'images'</code>, l'aperçu en direct et le retrait de ses propres objets d'un rendu à l'autre.</p>
 <p data-lang="en">Shipped with SuperPrint, <strong>Vector Pattern</strong> is the product's largest plug-in and serves as the model: 29 settings including 13 sliders, 15 shapes, 7 symmetries of the square group (D4), a seeded pseudo-random draw — hence reproducible —, an <em>N×N</em> super-tile to break up repetition, a <em>page kaleidoscope</em> mode that mirrors one quadrant onto all four, and a <em>crazy</em> mode that draws shape, angle, scale and colour afresh for every copy. Its mixer stacks up to eight images with a blend mode. Open it in an editor: it is the best example of what the API allows — the large preview (<code>api.toileApercu()</code>), the <code>'apercu'</code> and <code>'images'</code> fields, live preview, and removing its own objects between renders.</p>
 
 <h3 data-lang="fr">Un mot sur les performances</h3>
 <h3 data-lang="en">A word on performance</h3>
-<p data-lang="fr">Pour répéter une forme, ne créez pas des milliers d'objets : une page A4 à 8 mm de pas en demanderait ≈ 2 300, et la sélection comme l'export s'effondrent. Utilisez un <code>fabric.Pattern</code> — un seul objet, que le navigateur répète au rendu et que l'export PDF répète de la même façon. C'est ce que fait le plug-in Motif vectoriel : <strong>9 ms</strong> pour habiller une page entière, mesuré.</p>
+<p data-lang="fr">Pour répéter une forme, ne créez pas des milliers d'objets : une page A4 à 8 mm de pas en demanderait ≈ 2 300, et la sélection comme l'export s'effondrent. Utilisez un <code>fabric.Pattern</code> — un seul objet, que le navigateur répète au rendu et que l'export PDF répète de la même façon. C'est ce que fait le plug-in Motif : <strong>9 ms</strong> pour habiller une page entière, mesuré.</p>
 <p data-lang="en">To repeat a shape, do not create thousands of objects: an A4 page at 8 mm spacing would need ≈ 2,300, and both selection and export collapse. Use a <code>fabric.Pattern</code> — a single object the browser repeats at render time and the PDF export repeats the same way. That is what the Vector Pattern plug-in does: <strong>9 ms</strong> to fill an entire page, measured.</p>
 
 <h2 id="m-mcp">
@@ -1927,7 +1927,7 @@ node server.mjs
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.675</span>
+  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.676</span>
   <span data-lang="en">Documentation generated September 16, 2026 — v1.7.456</span>
 </div>
 
@@ -2946,7 +2946,7 @@ log('Filet posé sur ' + Math.round(largeur) + ' mm de large');</pre>
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.675</span>
+  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.676</span>
   <span data-lang="en">Manual updated September 16, 2026 — v1.7.456</span>
 </div>
 

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.675)
+   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.676)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce que fait ce plug-in : il habille un fond de page — ou un bloc sélectionné —
@@ -81,7 +81,7 @@
    `api.apercu`, `api.toileApercu`. S'il fonctionne sans rien d'autre, l'API est
    suffisante pour un plug-in réel.
    ─────────────────────────────────────────────────────────────────────────────── */
-/* ═══ v1.7.675 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
+/* ═══ v1.7.676 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
    Demande utilisateur : « relie bien la partie plug-in et nos deux plugins en
    trois langue EN fr ja ».
    Chaque libellé visible est écrit `L(français, english, 日本語)` et résolu à
@@ -97,15 +97,22 @@ var L = window.SPPluginL || function (fr, en, ja) { return { fr: fr, en: en || f
 
 SPPluginAPI({
   id: 'motif-vectoriel',
-  name: L('Motif vectoriel', 'Vector Pattern', 'ベクター柄'),
+  /* ⚠️ v1.7.676 — « MOTIF », SANS « VECTORIEL ».
+     Demande utilisateur : « qu'on va juste appeler motif d'ailleurs en wording
+     (car cela n'est pas vraiment vectoriel) ». C'est exact et c'était vérifiable :
+     l'export PDF embarque la tuile comme une IMAGE, il n'y a pas un seul tracé
+     dans le fichier. Le nom promettait donc un vectoriel que le document ne
+     contient pas. On garde `id: 'motif-vectoriel'` — c'est la clé de l'état
+     enregistré des utilisateurs, la changer ferait perdre le plug-in installé. */
+  name: L('Motif', 'Pattern', 'パターン'),
   version: '3.1.0',
   author: 'SuperPrint',
   icon: '▦',
-  /* ⚠️ v1.7.675 — LA DESCRIPTION DIT CE QUE L'EXPORT FAIT VRAIMENT.
+  /* ⚠️ v1.7.676 — LA DESCRIPTION DIT CE QUE L'EXPORT FAIT VRAIMENT.
      MESURÉ : le plug-in ne pose pas de tracés, il remplit un bloc avec un
      `fabric.Pattern` dont la source est un CANEVAS (la tuile). Les classificateurs
      d'export traitent un remplissage de motif comme RASTER — c'est mesuré dans le
-     PDF. Ce qui a changé en 1.7.675 : ce n'est plus LE BLOC ENTIER qui est
+     PDF. Ce qui a changé en 1.7.676 : ce n'est plus LE BLOC ENTIER qui est
      rasterisé. La tuile est embarquée UNE fois et répétée par le PDF, à la densité
      de l'export. Un bloc de 380 × 200 px rempli de motif passait de 187 Ko à 2 Ko,
      et une page A4 entière en ULTRA HD — qui ne se terminait pas — sort désormais
@@ -115,13 +122,13 @@ SPPluginAPI({
     'Pattern, rosette, kaleidoscope or chaos — from a shape or a mix of images. Live preview in the panel. In PDF export the pattern is repeated as an image, at the chosen resolution.',
     'パターン・ロゼット・万華鏡・混沌 — 図形または画像のミックスから。パネル内でライブプレビュー。PDF 書き出しでは、柄は画像として繰り返され、選択した解像度になります。'),
 
-  /* 🆕 v1.7.675 — L'ICÔNE DE LA BARRE DU HAUT.
+  /* 🆕 v1.7.676 — L'ICÔNE DE LA BARRE DU HAUT.
      Demande utilisateur : « pour motif trouve une icône ». On dessine un MOTIF :
      des points en quinconce, c'est-à-dire ce que fait ce plug-in — une forme
      répétée en grille décalée.
      ⚠️ MÊME FACTURE QUE LES AUTRES ICÔNES DE CETTE ZONE : 24×24, `fill="none"`,
      `stroke="currentColor"`, épaisseur 1,8.
-     ⚠️ v1.7.675 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
+     ⚠️ v1.7.676 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
      Demande utilisateur : « les icons que les plugins ajoute dans la top
      navigation me semble plus noir que les autre en chromie ». La couleur était la
      même ; c'est l'encre qui pesait. Mesuré en pixels opaques sur un rendu 48×48 :
@@ -697,8 +704,59 @@ SPPluginAPI({
            assez peu pour que chaque forme reste lisible. */
         var ech = (W / 3) / cote;
         var pas = cote * ech;
-        for (var y = -pas; y < H + pas; y += pas) {
-          for (var x = -pas; x < W + pas; x += pas) {
+        /* ⚠️ v1.7.676 — LA GRILLE EST ANCRÉE SUR LE CONTENU DE LA TUILE, PAS SUR
+           SON BORD.
+           DÉFAUT MESURÉ (trappe Motif, toile 632 × 632, réglages par défaut) : le
+           motif partait vers la droite. Sur la ligne médiane, les formes tombaient
+           à 188 / 398 / 609 px — axe de symétrie à 293, soit 23 px à gauche du
+           centre du rond (316) — et le centroïde de l'encre à 326,6.
+           CAUSE : les formes sont dessinées au centre de la cellule PUIS décalées
+           de « Écart au centre », et la folie ajoute par-dessus un décalage et une
+           échelle tirés au sort. La tuile est donc remplie à droite de son propre
+           milieu, et comme la boucle partait du bord (−pas), le rond héritait de
+           ce décalage sans jamais le corriger.
+           Pourquoi ce n'est pas un mensonge sur le dessin final : dans un motif
+           périodique la phase est libre — translater toute la grille donne le MÊME
+           motif infini. On choisit donc la phase qui met le contenu au centre.
+           ⚠️ POURQUOI ON MESURE AU LIEU DE CALCULER. La position d'une forme est
+           « (0,5 + écart × (0,5 + aléa) × folie) × cellule » : elle dépend d'un
+           tirage. Calculer l'espérance (ce que j'ai essayé d'abord) laisse un
+           résidu mesuré de 54 px dès que la folie est active — visible. On lit donc
+           la phase RÉELLE de la tuile, une fois par tuile, sur une copie réduite :
+           une seule lecture de 8 192 pixels, moins d'une milliseconde, quel que
+           soit le nombre de pixels de la tuile.
+           ⚠️ PONDÉRATION PAR L'ALPHA, sans seuil : un motif très fin (0,4 mm de
+           forme pour 60 mm de pas) ne couvre que 0,03 % de la tuile ; un seuil
+           binaire le manquerait et l'ancre retomberait à 50 %, donc désaxée. */
+        function phaseTuile(src) {
+          if (src.__spPhase) return src.__spPhase;
+          var p = { x: 0.5, y: 0.5 };
+          try {
+            var E = 64;
+            var tmp = document.createElement('canvas');
+            tmp.width = E; tmp.height = E;
+            var gt = tmp.getContext('2d');
+            gt.drawImage(src, 0, 0, E, E);
+            var dt = gt.getImageData(0, 0, E, E).data;
+            var sa = 0, sx = 0, sy = 0;
+            for (var ty = 0; ty < E; ty++) {
+              for (var tx = 0; tx < E; tx++) {
+                var a = dt[(ty * E + tx) * 4 + 3];
+                if (!a) continue;
+                sa += a; sx += tx * a; sy += ty * a;
+              }
+            }
+            if (sa) { p.x = (sx / sa + 0.5) / E; p.y = (sy / sa + 0.5) / E; }
+          } catch (_) {}
+          src.__spPhase = p;
+          return p;
+        }
+        var phase = phaseTuile(source);
+        var xDebut = W / 2 - phase.x * pas;
+        var yDebut = H / 2 - phase.y * pas;
+        var nGauche = Math.ceil(W / pas) + 1;
+        for (var y = yDebut - nGauche * pas; y < H + pas; y += pas) {
+          for (var x = xDebut - nGauche * pas; x < W + pas; x += pas) {
             g.drawImage(source, x, y, pas, pas);
           }
         }

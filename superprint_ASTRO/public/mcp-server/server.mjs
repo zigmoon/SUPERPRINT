@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — SERVEUR MCP  (v1.7.675)
+   SUPERPRINT — SERVEUR MCP  (v1.7.676)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce serveur expose SuperPrint à un client MCP : Claude Desktop, Claude Code,
@@ -27,7 +27,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { basename, resolve, dirname } from 'node:path';
 
-const VERSION = '1.7.675';
+const VERSION = '1.7.676';
 const PROTOCOLE = '2025-06-18';
 
 /* ── Unités ────────────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ function resumer(info) {
   };
 }
 
-/* ── Motif : la même géométrie que le plug-in « Motif vectoriel » ─────────────
+/* ── Motif : la même géométrie que le plug-in « Motif » ──────────────────────
    On ne réimplémente PAS le rendu : on décrit le motif, et c'est le document
    produit qui le porte. Un consommateur (l'app, un export) retrouve donc
    exactement ce que le plug-in aurait posé. */

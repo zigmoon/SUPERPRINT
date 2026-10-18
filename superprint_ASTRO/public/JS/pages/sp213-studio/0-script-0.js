@@ -6892,7 +6892,7 @@ function spRtfLayoutInfo(src) {
     } catch (_) { return null; }
   }
 
-  /* ⚠️ v1.7.675 — POURQUOI LE PASSAGE DIRECT NE SE DÉCLENCHAIT PAS : IL SE MESURE.
+  /* ⚠️ v1.7.676 — POURQUOI LE PASSAGE DIRECT NE SE DÉCLENCHAIT PAS : IL SE MESURE.
      `_SP_NATIF_637` promet qu'une page reçue de l'application et NON RETOUCHÉE par
      l'IA repart avec ses objets d'origine. MESURÉ sur le bouton ÉDITER : après un
      import d'un .sp de 7 objets, `_spNatif` valait `false` — donc le studio
@@ -20332,7 +20332,7 @@ function spRtfLayoutInfo(src) {
            directe (contrat « N photos en contenu = N placements VISIBLES »). */
         let _spPhotosManquantes = [];
         try { _spPhotosManquantes = spPhotosAbsentesDuDoc(doc, attachments); } catch (_) { _spPhotosManquantes = []; }
-        /* ══ 🆕 v1.7.675 — LA POSE DIRECTE PASSE AVANT, ET ELLE SUFFIT ══════════════
+        /* ══ 🆕 v1.7.676 — LA POSE DIRECTE PASSE AVANT, ET ELLE SUFFIT ══════════════
            Retour utilisateur : « avec ma clé DeepSeek les logos joints n'apparaissent
            pas dans la preview ; avec OpenRouter, oui ».
 
@@ -20447,7 +20447,7 @@ function spRtfLayoutInfo(src) {
   }
 
   // Convertit les userImage de l'IA en éléments image réels avec data URI
-  /* ══ 🆕 v1.7.675 — LE LOGO JOINT N'ARRIVE PLUS « SELON LE MODÈLE » ════════════
+  /* ══ 🆕 v1.7.676 — LE LOGO JOINT N'ARRIVE PLUS « SELON LE MODÈLE » ════════════
      Retour utilisateur : « j'ai mis ma clé DeepSeek, j'ai placé les logos qui étaient
      bien chargés mais ils n'apparaissent pas dans la preview de la maquette. Cela
      fonctionne pourtant avec une clé OpenRouter. Contrôle tous les modèles. »
@@ -21331,7 +21331,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
   //   statique…), le proxy renvoie une erreur non-JSON (501/404 page HTML) → on
   //   retombe sur un appel DIRECT à l'API (OpenRouter/DeepSeek/Groq/OpenAI autorisent
   //   le CORS). Détection : statut hors 2xx OU body qui n'est pas du JSON.
-  /* ⚠️ v1.7.675 — UN DÉLAI DE REPLI AVAIT ÉTÉ ENVISAGÉ ICI, ET IL A ÉTÉ RETIRÉ.
+  /* ⚠️ v1.7.676 — UN DÉLAI DE REPLI AVAIT ÉTÉ ENVISAGÉ ICI, ET IL A ÉTÉ RETIRÉ.
      Pendant les essais DeepSeek, le POST vers `ai-proxy.php` paraissait ne jamais
      rendre la main (120 s d'attente, puis « Délai dépassé »). MESURE PLUS TARD,
      SUR UNE PAGE NEUVE : le fichier répond en 3 ms. L'attente venait d'une

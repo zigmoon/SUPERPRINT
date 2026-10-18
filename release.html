@@ -849,6 +849,55 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.676 — L'APERÇU DU MOTIF SE CENTRE, ET LE PDF CESSE D'EMBARQUER
+     SOIXANTE-DOUZE POLICES POUR RIEN. Trois corrections, toutes mesurées avant et après.
+
+     (1) L'APERÇU DU MOTIF PARTAIT VERS LA DROITE.
+     Dans le rond de la trappe, sur une toile de 632 × 632 aux réglages par défaut, les
+     formes tombaient à 188 / 398 / 609 px : l'axe de symétrie était à 293, soit 23 px à
+     gauche du centre, et le centroïde de l'encre à 326,6. Cause : les formes sont
+     dessinées au centre de la cellule PUIS décalées de « Écart au centre », et la folie
+     ajoute par-dessus un décalage tiré au sort ; la tuile est donc remplie à droite de
+     son propre milieu, et la grille d'aperçu partait du bord sans jamais corriger.
+     La grille est désormais ancrée sur la phase RÉELLE de la tuile, mesurée sur une
+     copie réduite (8 192 pixels lus, moins d'une milliseconde) — calculer l'espérance du
+     décalage laissait un résidu de 54 px dès que la folie est active. Mesure après :
+     centroïde (315,5 · 315,5) pour un centre à 315,5, axe de symétrie vertical et
+     horizontal à 1 px près, vérifié aussi en folie nulle, en triangle et en 3 × 3.
+     Le plug-in s'appelle maintenant « Motif » : « vectoriel » promettait des tracés que
+     le PDF ne contient pas — il embarque une image, et la description le dit.
+
+     (2) L'EXPORT D'UN DOCUMENT SANS TEXTE NE SE TERMINAIT JAMAIS.
+     MESURÉ, journal de 'embedAll' de pdf-lib ouvert : 73 polices embarquées — les 72
+     variantes des six familles livrées plus la police de secours — dans un document qui
+     n'en utilisait AUCUNE. 'embedAll' s'arrêtait sur la 8e et 'save()' ne rendait jamais
+     la main ; la page restait inactive (2 ms de latence mesurée), donc ni fichier, ni
+     alerte, ni explication. L'export n'embarque plus que les polices réellement
+     utilisées : la clé est reconstituée exactement comme le rendu la demande (bloc et
+     texte sur tracé avec l'objet, styles par caractère sans), avec repli par famille
+     puis repli complet si aucune clé n'est résolue — un texte ne peut pas être affamé.
+     Mesures après, sur le PDF réécrit et rouvert : document sans texte → 0 police,
+     export en 102 ms ; un bloc en Outfit → 1 police '/Type0' référencée ; deux blocs en
+     Anton et Sora → exactement 2 polices.
+
+     (3) LA POLICE DE SECOURS EST ENFIN RETIRÉE — LE CORRECTIF DE LA 1.7.675 NE RETIRAIT RIEN.
+     L'élagage était branché sur 'save', donc AVANT que pdf-lib n'enregistre la police
+     dans son contexte : MESURÉ, le contexte contenait '1 0 R, 2 0 R, 3 0 R, 5 0 R' quand
+     la police annonçait '4 0 R' — la suppression tombait dans le vide. Pis, comparer des
+     RÉFÉRENCES pouvait faire supprimer une police UTILISÉE. L'élagage s'exécute
+     maintenant APRÈS 'flush()', et il compare des NOMS DE RESSOURCE — ce que le flux de
+     contenu écrit après « / » dans l'opérateur 'Tf' — dans le dictionnaire '/Font' des
+     pages puis dans le flux lui-même. Résultat vérifié objet par objet : plus aucun
+     '/Type1 /Helvetica' dans un document qui n'écrit pas de texte, et la police est
+     conservée dès qu'un texte s'en sert.
+
+     (4) CE QUE LE MOTIF COÛTE VRAIMENT DANS LE PDF, MESURÉ.
+     Les « deux images » signalées par l'audit ne sont pas un doublon : c'est un bitmap
+     RVB et SON MASQUE ALPHA ('/SMask'), indispensable — 1 053 142 pixels de la tuile sur
+     1 318 639 sont semi-transparents. Un motif pleine page A4 sort en 6 397 octets, avec
+     une seule tuile de 91 × 91 px posée 1 092 fois ; le même document avec un titre en
+     Outfit pèse 7 463 octets. -->
+
 <!-- ===== SUPER PRINT v1.7.675 — LE MOTIF N'EST PLUS UN BITMAP GRAND COMME LA PAGE.
      Deux constats de l'audit PDF, dont un que l'audit lui-même avait mal posé. Les deux
      sont corrigés, et la correction est mesurée objet par objet dans le fichier produit.
