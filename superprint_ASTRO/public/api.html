@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuperPrint — API (automate your layouts)</title>
+<meta name="description" content="SuperPrint scripting API reference: window.SuperPrint exposes addText, addRect, addCircle, addEllipse, addImage, generateGrid, bulkText, getPages, setPage, loadProject, saveProject, exportPDF and aiGenerate. Automate print layouts from your own JavaScript.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://superprint.cc/api.html">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icons/icon-192x192.png">
+<link rel="stylesheet" href="CSS/fonts.css">
+<style>
+  :root {
+    --bg: #f8f8f8; --bg2: #ffffff; --bg3: #f0f0f0; --border: #dcdcdc;
+    --text: #1a1a1a; --text2: #666666; --accent: #0c0c0f;
+    --tag-bg: #e8f0fe; --tag-text: #1d4ed8;
+    --accent-link: #0969da; --sidebar-bg: #ffffff;
+    --code-bg: #f7f7f7; --code-border: #e0e0e0;
+    --kbd-bg: #f5f5f5; --kbd-border: #d0d0d0;
+    --info-bg: #e7f1ff; --info-border: #a8c8f0;
+    --warn-bg: #fff8e6; --warn-border: #e8c14a;
+    --tb-bg: #ffffff; --tb-border: #e0e0e0; --tb-text: #1a1a1a; --tb-text2: #666666;
+    --tb-chip-bg: #f5f5f5; --tb-chip-border: #d9d9d9;
+    --tb-btn-hover: #f2f2f2; --tb-btn-active-bg: #0c0c0f; --tb-btn-active-text: #ffffff;
+    --tb-toggle-border: #d9d9d9;
+    --fn-name: #6639ba;
+  }
+  body.theme-dark {
+    --bg: #121212; --bg2: #1e1e1e; --bg3: #2a2a2a; --border: #333333;
+    --text: #eaeaea; --text2: #999999; --accent: #ffffff;
+    --tag-bg: #1f2a38; --tag-text: #79c0ff;
+    --accent-link: #58a6ff; --sidebar-bg: #1e1e1e;
+    --code-bg: #1a1a1a; --code-border: #2f2f2f;
+    --kbd-bg: #2a2a2a; --kbd-border: #444;
+    --info-bg: #0d1f3c; --info-border: #1f4175;
+    --warn-bg: #2b2413; --warn-border: #6b5a20;
+    --tb-bg: #0c0c0f; --tb-border: #2a2a2a; --tb-text: #ffffff; --tb-text2: rgba(255,255,255,0.6);
+    --tb-chip-bg: rgba(255,255,255,0.08); --tb-chip-border: rgba(255,255,255,0.2);
+    --tb-btn-hover: rgba(255,255,255,0.08); --tb-btn-active-bg: #ffffff; --tb-btn-active-text: #0c0c0f;
+    --tb-toggle-border: rgba(255,255,255,0.25);
+    --fn-name: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--bg); color: var(--text); line-height: 1.6; font-size: 13px;
+  }
+  a { color: var(--accent-link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :where(button, input, a):focus-visible { outline: 2px solid var(--accent-link); outline-offset: 2px; }
+
+  /* ═══ TOPBAR (clair, aligné sur la toolbar SuperPrint — identique à documentation.html) ═══ */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--tb-bg); border-bottom: 1px solid var(--tb-border);
+    display: flex; align-items: center; padding: 0 20px; height: 52px; gap: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .topbar .logo { font-size: 17px; font-weight: 900; letter-spacing: 2.5px; color: var(--tb-text); white-space: nowrap; }
+  .topbar .logo span { color: var(--tb-text); opacity: 0.55; }
+  .topbar .version {
+    font-size: 10px; color: var(--tb-text2); background: var(--tb-chip-bg);
+    border: 1px solid var(--tb-chip-border); padding: 2px 9px; border-radius: 12px; letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .topbar-controls { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .theme-toggle {
+    display: flex; gap: 0; border: 1px solid var(--tb-toggle-border); border-radius: 6px; overflow: hidden;
+    background: transparent;
+  }
+  .theme-toggle button {
+    background: transparent; color: var(--tb-text2); border: none; padding: 6px 10px;
+    cursor: pointer; font-size: 14px; transition: all .2s; line-height: 1;
+  }
+  .theme-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
+  .theme-toggle button:hover:not(.active) { background: var(--tb-btn-hover); }
+  .lang-toggle {
+    display: flex; gap: 0; border: 1px solid var(--tb-toggle-border); border-radius: 6px; overflow: hidden;
+    background: transparent;
+  }
+  .lang-toggle button {
+    background: transparent; color: var(--tb-text2); border: none; padding: 6px 14px;
+    cursor: pointer; font-size: 12px; font-weight: 600; transition: all .2s;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .lang-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
+  .lang-toggle button:hover:not(.active) { background: var(--tb-btn-hover); }
+
+  /* ─── LAYOUT ─── */
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 84px 24px 80px; }
+
+  /* ─── i18n : n'afficher que la langue active ───
+     `display: revert` restaure le style PAR DÉFAUT de chaque élément
+     (block pour h1/h2/p/div, table-cell pour td/th, inline pour a/span).
+     Sans cela, un simple `display:block` casserait les cellules de tableau
+     et `display:inline` casserait les titres. */
+  [data-lang] { display: none; }
+  body.lang-en [data-lang="en"],
+  body.lang-fr [data-lang="fr"] { display: revert; }
+
+  h1 { font-size: 27px; font-weight: 700; letter-spacing: .4px; margin-bottom: 10px; }
+  .lede { font-size: 14px; color: var(--text2); margin-bottom: 26px; max-width: 720px; line-height: 1.7; }
+  h2 {
+    font-size: 15px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    margin: 44px 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  }
+  h3 { font-size: 14px; font-weight: 700; margin: 26px 0 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 5px; }
+  code { font-family: inherit; background: var(--code-bg); border: 1px solid var(--code-border); padding: 1px 5px; font-size: 12px; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    padding: 14px 16px; overflow-x: auto; margin: 0 0 16px; font-size: 12px; line-height: 1.65;
+  }
+  pre code { background: none; border: 0; padding: 0; }
+  kbd { font-family: inherit; background: var(--kbd-bg); border: 1px solid var(--kbd-border); border-bottom-width: 2px; padding: 1px 6px; font-size: 11px; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); padding: 20px 22px; margin-bottom: 18px; }
+  .info { background: var(--info-bg); border: 1px solid var(--info-border); padding: 12px 16px; margin-bottom: 18px; font-size: 12.5px; }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); padding: 12px 16px; margin-bottom: 18px; font-size: 12.5px; }
+
+  /* ─── TABLE DES MÉTHODES ─── */
+  .tbl-wrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--border); background: var(--bg2); }
+  table { width: 100%; border-collapse: collapse; margin: 0; font-size: 12.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text2); font-weight: 700; }
+  td.fn { font-weight: 700; color: var(--fn-name); white-space: nowrap; }
+  tbody tr:hover { background: var(--bg3); }
+
+  /* ─── SIGNATURE DE MÉTHODE ─── */
+  .sig {
+    background: var(--code-bg); border-left: 3px solid var(--accent);
+    padding: 8px 12px; margin: 0 0 8px; font-size: 12.5px; font-weight: 700;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .opts { font-size: 12px; color: var(--text2); margin-bottom: 10px; }
+  .opts b { color: var(--text); }
+
+  .footer {
+    margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text2); display: flex; gap: 14px; flex-wrap: wrap;
+  }
+  @media (max-width: 900px) {
+    .topbar {
+      height: auto; min-height: 52px; padding: 8px 12px; gap: 8px;
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+    }
+    .topbar .logo { font-size: 15px; letter-spacing: 2px; min-width: 0; }
+    .topbar .version { display: none; }
+    .topbar-controls { margin-left: 0; gap: 5px; }
+    .wrap { padding-top: 96px; }
+    body { overflow-x: hidden; }
+  }
+  @media (max-width: 430px) {
+    .theme-toggle button { padding: 6px 8px; }
+    .lang-toggle button { padding: 6px 10px; }
+    .wrap { padding-inline: 14px; }
+  }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BARRE FIXE DE BAS DE PAGE — recopiée depuis index.html en v1.7.670.
+   Demande utilisateur : « applique bien le même footer fixe sur toutes les pages
+   de présentation ». Le CSS et le balisage sont EXTRAITS de la page d'accueil,
+   jamais retapés : une correction là-bas se reporte ici par le même script.
+   ⚠️ CETTE PAGE N'A PAS LE SYSTÈME DE COULEURS DU SITE : chaque var() porte donc
+   sa valeur de repli, sans quoi le fond de la barre serait transparent.
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* `align-self: stretch` : MÊME LARGEUR DE BANDE QUE LES TROIS ENTRÉES (voir
+   .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
+   cette grille serait plus étroite que celle du dessus. */
+.fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
+/* (v1.7.670 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+   logiciels libres » / « Built with open-source software » annonçait ce que les
+   trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
+/* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
+   trois entrées, et chaque filet vertical tombe sous le bord gauche de la carte
+   correspondante. */
+.fondations-grid {
+  display: grid;
+  /* 🆕 v1.7.670 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+     Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
+     bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
+     363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
+     quatre cases d'information se partagent le reste à parts égales. */
+  grid-template-columns: repeat(4, minmax(0,1fr)) auto;
+  column-gap: clamp(12px,1.6vw,20px);
+  /* 🆕 v1.7.670 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+     GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
+     353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
+     la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
+  /* Le filet du haut reste le gris clair de 1 px (--line) : un essai à 2 px en
+     encre pleine a été fait, puis REVENU EN ARRIÈRE — trop lourd au-dessus d'un
+     bloc qui reste discret. Le filet du bas est identique. */
+  border-top: 1px solid var(--line, #DCD3C3); border-bottom: 1px solid var(--line, #DCD3C3);
+}
+.fondation {
+  display: flex; align-items: flex-start; gap: 13px; min-width: 0;
+  padding: clamp(15px,1.7vw,21px) clamp(12px,1.4vw,20px);
+  border-left: 1px solid var(--line, #DCD3C3);
+  background: none; text-decoration: none;
+}
+.fondation:first-child { border-left: 0; padding-left: 0; }
+.fondation:last-child { padding-right: 0; }
+.fondation-logo { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+.fondation-logo img { display: block; width: 32px; height: 32px; }
+.fondation-txt { min-width: 0; text-align: left; display: grid; align-items: center; }
+.fondation-nom {
+  display: block; font-family: var(--f-caps, 'Bebas Neue', 'Arial Narrow', sans-serif); font-size: clamp(15.5px,1.5vw,17px);
+  letter-spacing: .02em; line-height: 1.05; color: var(--ink, #17130D);
+}
+.fondation-desc { display: block; font-size: clamp(11.5px,1.05vw,13px); line-height: 1.45; color: var(--muted, #756A5B); }
+/* Le chiffre (téléchargements npm) ressort : c'est la seule PREUVE chiffrée du
+   bloc. Il est daté dans le commentaire HTML qui l'entoure — à rafraîchir. */
+.fondation-chiffre { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 1.02em; color: var(--ink, #17130D); font-weight: 600; }
+.fondation-date { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 0.85em; color: var(--muted, #756A5B); }
+/* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
+/* 🆕 v1.7.670 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
+   Demande : « on met juste les marques au premier abord ; au survol la marque disparaît
+   et affiche la phrase ».
+   ⚠️ LES DEUX SONT DANS LA MÊME CELLULE DE GRILLE (grid-area 1/1) : la hauteur du bloc
+   vaut donc le MAXIMUM des deux, et la barre ne saute pas quand la phrase apparaît.
+   Mesuré : la phrase npm passe à 2 lignes en japonais à 1280 px (38 px) quand le nom en
+   fait 18 — une mise en page en flux aurait fait grandir la case de 20 px au survol.
+   🆕 v1.7.670 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
+   Retour utilisateur : « sur les grands écrans on pouvait garder finalement la petite
+   phrase qui était en dessous grise, désolé… garde le comportement actuellement pour
+   les écrans moyens (les petits laptops, les tablettes) ».
+   Le croisement est donc borné à 1024–1279,9 px — la plage des portables moyens — et
+   au-delà de 1280 px la phrase revient SOUS le nom, en permanence, comme avant.
+   ⚠️ SOUS 1024 px LA PHRASE RESTE MASQUÉE : à cette largeur les quatre cases tiennent
+   à peine le nom, et une deuxième ligne ferait passer la barre de 73 à 254 px
+   (mesuré sur `index.html`, mise en page mobile). */
+@media (min-width: 1024px) and (max-width: 1279.9px) {
+  /* Ici seulement, les deux textes partagent la même cellule : c'est ce qui permet
+     le croisement sans faire bouger la barre. Au-delà de 1280 px, ils reprennent
+     leur place naturelle, l'un sous l'autre. */
+  .fondation-nom { grid-area: 1 / 1; }
+  .fondation-desc { grid-area: 1 / 1; }
+  .fondation-nom, .fondation-desc {
+    transition: opacity .16s ease;
+  }
+  .fondation-desc { opacity: 0; }
+  .fondation:hover .fondation-nom,
+  .fondation:focus-visible .fondation-nom { opacity: 0; }
+  .fondation:hover .fondation-desc,
+  .fondation:focus-visible .fondation-desc { opacity: 1; }
+}
+/* Le nom garde son soulignement d'affordance — mais seulement là où la phrase ne prend
+   pas sa place, sinon le trait resterait sous un texte invisible. */
+@media (max-width: 1023.9px) {
+  .fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+  .fondation-nom, .fondation-desc { transition: none; }
+}
+.fondation:focus-visible { outline: 2px solid var(--ink, #17130D); outline-offset: 6px; }
+/* 🆕 v1.7.670 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+   Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
+   ICON MÊME NOIR QUE RUST ».
+   ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
+     · la case mesurait 85 × 72 px — un RECTANGLE de rapport 1,18, parce que sa
+       largeur valait 44 px de carré plus deux rembourrages, alors que sa hauteur
+       était celle de la barre ;
+     · le pictogramme était peint en rgb(117,106,91) — le GRIS des notes
+       secondaires — quand Rust, GitHub et Discord sont à rgb(23,19,13), l'encre
+       #17130D. À côté d'eux, il paraissait délavé.
+   ⚠️ LA LARGEUR DEVIENT CELLE DE LA BARRE (`var(--barre-h)`), et non une valeur
+   écrite à la main : les deux dimensions ne peuvent donc plus diverger, même si la
+   hauteur de la barre change. Le rembourrage disparaît — c'est la case elle-même
+   qui est le carré, plus le dessin dans un rectangle. Mesuré après : 72 × 72,
+   rapport 1,00.
+   ⚠️ LA COULEUR PASSE DE `--muted` À `--ink` : c'est exactement la teinte cuite
+   dans les trois autres pictogrammes (#17130D). Le survol conserve un retour
+   visible — il s'éclaircit vers `--ink-2` — sans réintroduire de cadre ni de fond,
+   qui avaient été retirés au retour précédent. */
+.fondation-wa-case {
+  display: flex; align-items: center; justify-content: center;
+  align-self: stretch;
+  /* ⚠️ LA CASE DOIT ALLER JUSQU'AU BORD DE L'ÉCRAN, ET C'EST TOUTE LA DIFFÉRENCE.
+     MESURÉ APRÈS LA PREMIÈRE TENTATIVE : la case faisait bien 72 × 72, mais l'œil
+     ne voit pas la case — il voit l'espace entre LE FILET et LE BORD DE L'ÉCRAN.
+     Cet espace mesurait 112 × 73 px (rapport 1,53), parce que le rembourrage droit
+     de la grille (40 px) restait vide à côté d'elle. Et l'icône, centrée dans la
+     case, tombait 20 px À GAUCHE du centre de cet espace : d'où l'impression
+     tenace de rectangle, alors que les nombres de la case étaient justes.
+     La marge droite négative reprend exactement le rembourrage de la grille : la
+     case déborde donc jusqu'au bord, et l'espace filet → bord devient 72 × 72.
+     ⚠️ LA VALEUR EST LA MÊME EXPRESSION QUE LE REMBOURRAGE (`clamp(18px,2.5vw,40px)`),
+     pas une constante : les deux ne peuvent pas diverger si la feuille change.
+     `box-sizing: border-box` garde le filet DANS les 72 px, sinon la case
+     mesurerait 73 et le carré serait faux d'un pixel. */
+  width: calc(var(--barre-h, 72px) - 1px);
+  margin-right: calc(-1 * clamp(18px,2.5vw,40px));
+  border-left: 1px solid var(--line, #DCD3C3);
+  box-sizing: content-box;
+}
+.fondation-wa {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; flex: 0 0 auto;
+  margin: auto;
+  color: var(--ink, #17130D); text-decoration: none;
+  transition: color .22s var(--ease);
+}
+.fondation-wa svg { display: block; width: 24px; height: 24px; fill: currentColor; }
+.fondation-wa:hover, .fondation-wa:focus-visible { color: var(--ink-2, #2A251D); }
+.fondation-wa:focus-visible { outline: 2px solid var(--ink, #17130D); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .fondation-wa { transition: none; } }
+/* ⚠️ SOUS 901 px, LA CASE S'EFFACE ET LA BULLE REPREND LE RELAIS.
+   Sans cette règle les deux existeraient : la barre empilée porterait un carré
+   WhatsApp, ET la bulle flotterait par-dessus — deux commandes pour le même numéro,
+   sur un écran où la place est comptée. La bulle est le bon objet en mobile : elle
+   reste atteignable au pouce quand la barre, elle, défile avec la page. */
+@media (max-width: 900px) { .fondation-wa-case { display: none; } }
+
+/* Même seuil que les trois entrées du dessus (voir .entries) : sous 900 px on
+   empile, sinon le trio laisserait un trou dans la trame. */
+@media (max-width: 900px) {
+  .fondations-grid { grid-template-columns: 1fr; }
+  .fondation { border-left: 0; padding-left: 0; padding-right: 0; }
+  .fondation:nth-child(n+2) { border-top: 1px solid var(--line, #DCD3C3); }
+}
+
+/* ══════════════ 🆕 v1.7.613 — LES FONDATIONS SONT UNE BARRE FIXE ══════════════
+   GitHub, npm et Rust étaient trois colonnes dans le flux du hero, sous les trois
+   entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
+   toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
+   elles se lisent sans qu'on aille les chercher.
+   🆕 v1.7.670 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   cette même barre.
+
+   LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
+   donc HORS FLUX : le hero se referme tout seul et l'accroche remonte sous les trois
+   entrées. Sous 901 px elle redevient exactement la grille empilée d'avant — une
+   barre fixe sur un téléphone mangerait un tiers de l'écran pour trois liens.
+
+   CE QUE LA BARRE IMPOSE, ET QUI N'EST PAS OPTIONNEL :
+     · `body { padding-bottom }` — une barre fixe RECOUVRE la fin de page. Sans ce
+       dégagement, les mentions légales du pied de page seraient inatteignables ;
+     · la bulle WhatsApp remonte d'autant : elle vit en bas à droite, exactement là
+       où la barre arrive, et elle la chevaucherait ;
+     · le fond est OPAQUE, puisque le contenu défile dessous.
+
+   ⚠️ `--barre-h` EST MESURÉ, PAS DEVINÉ. Les deux usages ci-dessus en dépendent :
+   trop court, le pied de page reste rogné ; trop long, un blanc s'ouvre sous lui. */
+@media (min-width: 901px) {
+  :root { --barre-h: 72px; }
+
+  /* ⚠️ SANS CE RELÈVEMENT, LA BARRE PASSE *DERRIÈRE* LA PAGE DÈS QU'ON DÉFILE.
+     Mesuré, et non supposé : au repos la barre est devant ; à 1519 px puis à 3040 px
+     de défilement, le clic atteint `article.auteur`, `summary.spf-bar` ou un `p` — la
+     barre est recouverte.
+
+     La cause n'est PAS la barre, c'est son ANCÊTRE. `.container` porte
+     `position: relative; z-index: 2`, et la page en compte SIX. Toutes valent 2, donc
+     l'égalité se tranche par l'ordre du DOM — et celui du hero est le PREMIER, donc
+     le dernier peint. Aucun `z-index` posé sur la barre ne peut la sauver : sa valeur
+     serait locale à `.container`, dont le contexte d'empilement est déjà en
+     position 2, sous celui des sections suivantes.
+
+     🆕 v1.7.670 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
+     des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
+     DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
+     amené à hauteur de barre : recouvrement de 15 px, et `elementFromPoint` rendait
+     `tpl-arrow tpl-prev` — le clic visait le chevron, sous la barre.
+     40 passe devant tout le contenu de page (2 et 3) tout en restant SOUS ce qui doit
+     couvrir la barre : la bulle WhatsApp mobile (100), le menu mobile (118), la
+     navigation (120) et les fenêtres légales (300). */
+  .container:has(.fondations) { z-index: 40; }
+
+  /* ⚠️ HAUTEUR FIXE, ET C'EST LE POINT DÉLICAT DE TOUTE LA BARRE. `--barre-h` sert à
+     dégager le pied de page : réserver une valeur devinée serait toujours faux, car
+     la hauteur naturelle VARIE avec les retours à la ligne. Mesuré à 901 px de large :
+     60 px en français, 76 px en anglais, 77 px en japonais — une des trois
+     descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
+     réservée devient exacte par construction. */
+  .fondations {
+    /* ⚠️ v1.7.670 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
+       Mesuré sur rock.html : en pleine case GitHub, elementFromPoint rendait
+       « li.rk-fn < div.container » — le contenu passait devant la barre, qui restait en
+       z-index auto. La règle d'index.html (.container:has(.fondations) { z-index: 40 })
+       n'y peut rien : la barre n'y est pas dans un .container.
+       40 = devant le contenu (2 et 3), sous la bulle WhatsApp (100), le menu mobile
+       (118), la navigation (120) et les fenêtres légales (300). */
+    z-index: 40;
+    position: fixed; left: 0; right: 0; bottom: 0;
+    height: var(--barre-h);
+    /* `content-box` : la hauteur NE COMPREND NI le filet ni le dégagement de zone
+       sûre, qui s'y ajoutent. C'est ce qui rend le calcul du dégagement exact. */
+    box-sizing: content-box;
+    margin: 0;
+    background: var(--paper, #F7F3EC);
+    border-top: 1px solid var(--line, #DCD3C3);
+    box-shadow: 0 -12px 28px -22px rgba(23,19,13,.6);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Les filets du haut et du bas appartiennent à la BARRE, plus à la grille : sans
+     ce retrait, la barre porterait deux traits en haut (le sien et celui de la
+     grille) et un troisième au ras de l'écran. */
+  .fondations-grid {
+    width: 100%; height: 100%;
+    /* 🆕 v1.7.670 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+       Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
+       desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
+       d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
+       bord sur un écran de 1600. Le `max-width` disparaît donc : les quatre cases
+       se partagent la largeur entière. Mesuré à 1600 px : les colonnes passent de
+       260 à 380 px et la première case commence à 40 px du bord.
+       ⚠️ LE REMBOURRAGE RESTE, et il n'est pas décoratif : sans lui le premier logo
+       toucherait le bord de l'écran et le dernier, le bord opposé.
+       ⚠️ SOUS 901 px LA BARRE N'EST PLUS FIXE (grille empilée) : cette règle vit
+       dans la requête de média desktop, elle ne les touche donc pas. */
+    max-width: none; margin: 0;
+    padding: 0 clamp(18px,2.5vw,40px);
+    border-top: 0; border-bottom: 0;
+  }
+  /* Le rembourrage vertical part : c'est la HAUTEUR FIXE de la barre qui fait le
+     travail. Les colonnes restent étirées — sinon les filets verticaux qui les
+     séparent ne couvriraient que la hauteur du texte. Le contenu, lui, se centre. */
+  .fondation { align-items: center; padding-top: 0; padding-bottom: 0; }
+
+  /* Le dégagement vaut exactement l'emprise de la barre : sa hauteur, son filet
+     d'un pixel, et le dégagement de zone sûre qui s'y ajoute sur iPad. */
+  body { padding-bottom: calc(var(--barre-h) + env(safe-area-inset-bottom, 0px) + 1px); }
+  body:has(.fondations) .sp-wa { bottom: calc(var(--barre-h) + env(safe-area-inset-bottom, 0px) + 19px); }
+}
+/* Une barre fixe s'imprimerait sur la première page de tout document : à l'écran
+   elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
+@media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
+
+/* ═══ NOMS SEULS SOUS 1024 px (v1.7.670) ═══
+   Demande utilisateur : « quand le footer fixe passe en dessous de 1024 px, mets
+   que GitHub, Discord, npm et Rust ; ne mets pas les petites phrases en gris en
+   dessous à cette résolution ». La règle est bornée des DEUX côtés : sous 901 px
+   la barre n'est plus fixe (liste empilée du fil du document), et les
+   descriptions y ont la place — cette mise en page n'est pas touchée.
+   Le texte est MASQUÉ, pas supprimé : il reste lisible par un lecteur d'écran et
+   revient dès 1024 px. */
+@media (min-width: 901px) and (max-width: 1023.9px) {
+  .fondation-desc { display: none; }
+}
+
+/* ═══ RÈGLES DE LANGUE DE LA BARRE (v1.7.670) ═══
+   Cette page ne charge pas la feuille du site : sans ces quatre règles, chaque
+   case de la barre fixe affichait ses trois langues à la suite. Elles ne portent
+   que sur les `.inline-fr/…` de la barre — la page n'emploie pas cette
+   convention ailleurs (vérifié : leurs seules occurrences sont dans le balisage
+   recopié). */
+.inline-en, .inline-ja { display: none; }
+html[lang="en"] .inline-fr, html[lang="en"] .inline-ja { display: none; }
+html[lang="en"] .inline-en { display: inline; }
+html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none; }
+html[lang="ja"] .inline-ja { display: inline; }
+</style>
+</head>
+<body class="lang-en">
+
+<div class="topbar">
+  <div class="logo">SUPER<span>PRINT</span></div>
+  <span class="version">v1.7.670</span>
+  <div class="topbar-controls">
+    <div class="theme-toggle">
+      <button class="active" onclick="setTheme('light')" title="Light" id="btnLight" aria-label="Light theme">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M2 12h2.2M19.8 12H22M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M19.4 4.6l-1.6 1.6M6.2 17.8l-1.6 1.6"/></svg>
+      </button>
+      <button onclick="setTheme('dark')" title="Dark" id="btnDark" aria-label="Dark theme">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+    <div class="lang-toggle">
+      <button onclick="setLang('fr')">FR</button>
+      <button class="active" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1 data-lang="en">SuperPrint API</h1>
+<h1 data-lang="fr">API SuperPrint</h1>
+
+<p class="lede blk" data-lang="en">
+  SuperPrint exposes a scripting API on the global object <code>window.SuperPrint</code> inside the
+  editor. Use it from the browser console, from a <code>&lt;script&gt;</code> you inject, or from an
+  automation tool driving the page. It lets you build layouts programmatically: add text, shapes and
+  images, manage pages, load and save documents, export PDF, and trigger AI generation.
+</p>
+<p class="lede blk" data-lang="fr">
+  SuperPrint expose une API de script sur l'objet global <code>window.SuperPrint</code> à l'intérieur de
+  l'éditeur. Utilisez-la depuis la console du navigateur, depuis un <code>&lt;script&gt;</code> que vous
+  injectez, ou depuis un outil d'automatisation qui pilote la page. Elle permet de construire des
+  maquettes par programme : ajouter du texte, des formes et des images, gérer les pages, charger et
+  enregistrer des documents, exporter en PDF et déclencher la génération par IA.
+</p>
+
+<div class="info blk" data-lang="en">
+  <b>Where to run it.</b> Open <a href="app/index.html">SuperPrint Editor</a>, then press
+  <kbd>F12</kbd> to open the console. The API only exists <b>after a document is open</b>
+  (the editor must be initialised).
+</div>
+<div class="info blk" data-lang="fr">
+  <b>Où l'exécuter.</b> Ouvrez <a href="app/index.html">SuperPrint Editor</a>, puis appuyez sur
+  <kbd>F12</kbd> pour ouvrir la console. L'API n'existe <b>qu'une fois un document ouvert</b>
+  (l'éditeur doit être initialisé).
+</div>
+
+<h2 data-lang="en">Quick start</h2>
+<h2 data-lang="fr">Prise en main</h2>
+
+<pre><code>// Afficher la surface disponible
+console.log(Object.keys(window.SuperPrint));
+
+// Un carton d'invitation, en millimètres
+SuperPrint.addRect(0, 0, 210, 297, { fill: '#f7f3ec' });
+SuperPrint.addRect(20, 20, 170, 6,  { fill: '#0c0c0f' });
+SuperPrint.addText(20, 40, 'Ouverture le 14 mars', { fontSize: 28, fontWeight: 'bold' });
+SuperPrint.addText(20, 70, 'Galerie du Port, 12 quai Sud', { fontSize: 13 });
+
+SuperPrint.exportPDF({ quality: 'hd', colorMode: 'cmyk' });</code></pre>
+
+<div class="warn blk" data-lang="en">
+  <b>Units.</b> All coordinates and sizes are in <b>millimetres</b>, relative to the top-left corner of the
+  page. They are converted to canvas pixels internally.
+</div>
+<div class="warn blk" data-lang="fr">
+  <b>Unités.</b> Toutes les coordonnées et tailles sont en <b>millimètres</b>, depuis le coin
+  supérieur gauche de la page. Elles sont converties en pixels du canevas en interne.
+</div>
+
+<h2 data-lang="en">Content methods</h2>
+<h2 data-lang="fr">Méthodes de contenu</h2>
+
+<h3>addText</h3>
+<div class="sig">SuperPrint.addText(x, y, text, options?) &rarr; fabric.Textbox</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>width</code> (mm, default 100), <code>fontSize</code>, <code>fontFamily</code>, <code>fontWeight</code>, <code>fill</code>, <code>textAlign</code>.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>width</code> (mm, défaut 100), <code>fontSize</code>, <code>fontFamily</code>, <code>fontWeight</code>, <code>fill</code>, <code>textAlign</code>.</p>
+<pre><code>SuperPrint.addText(20, 20, 'Titre', { fontSize: 24, fontWeight: 'bold', width: 120 });</code></pre>
+<div class="warn blk" data-lang="en">The first three arguments are required and validated: passing a non-string text or a non-numeric coordinate throws an explicit error.</div>
+<div class="warn blk" data-lang="fr">Les trois premiers arguments sont obligatoires et contrôlés : un texte non-chaîne ou une coordonnée non-numérique lève une erreur explicite.</div>
+
+<h3>addRect</h3>
+<div class="sig">SuperPrint.addRect(x, y, width, height, options?) &rarr; fabric.Rect</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>fill</code> (default <code>#cccccc</code>), <code>stroke</code>, <code>strokeWidth</code>.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>fill</code> (défaut <code>#cccccc</code>), <code>stroke</code>, <code>strokeWidth</code>.</p>
+<pre><code>SuperPrint.addRect(20, 20, 60, 40, { fill: '#1a1a1a', stroke: 'none', strokeWidth: 0 });</code></pre>
+
+<h3>addCircle</h3>
+<div class="sig">SuperPrint.addCircle(x, y, radius, options?)</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>x</code> / <code>y</code> position the centre.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>x</code> / <code>y</code> positionnent le centre.</p>
+
+<h3>addEllipse</h3>
+<div class="sig">SuperPrint.addEllipse(x, y, rx, ry, options?)</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>rx</code> / <code>ry</code> are the two radii, in mm.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>rx</code> / <code>ry</code> sont les deux rayons, en mm.</p>
+
+<h3>addImage</h3>
+<div class="sig">SuperPrint.addImage(x, y, imageUrl, options?) &rarr; Promise</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>scaleX</code>, <code>scaleY</code>. Returns a Promise resolving to the created image — <b>await it</b> before measuring or exporting.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>scaleX</code>, <code>scaleY</code>. Renvoie une promesse résolue avec l'image créée — <b>attendez-la</b> avant de mesurer ou d'exporter.</p>
+<pre><code>await SuperPrint.addImage(20, 120, 'photo.jpg', { scaleX: 0.5, scaleY: 0.5 });</code></pre>
+
+<h3>generateGrid</h3>
+<div class="sig">SuperPrint.generateGrid(...)</div>
+<p class="blk" data-lang="en">Creates a set of layout guides on the current page (columns / rows / gutters).</p>
+<p class="blk" data-lang="fr">Crée un jeu de repères de mise en page sur la page courante (colonnes / lignes / gouttières).</p>
+
+<h3>bulkText</h3>
+<div class="sig">SuperPrint.bulkText(...)</div>
+<p class="blk" data-lang="en">Batch text creation — inserts several text blocks in one call, useful for catalogues and lists.</p>
+<p class="blk" data-lang="fr">Création de textes en lot — insère plusieurs blocs en un seul appel, pratique pour les catalogues et les listes.</p>
+
+<h2 data-lang="en">Page &amp; document methods</h2>
+<h2 data-lang="fr">Méthodes page &amp; document</h2>
+
+<h3>getPages</h3>
+<div class="sig">SuperPrint.getPages() &rarr; Array</div>
+<p class="blk" data-lang="en">Returns one entry per page: <code>{ index, objects, active }</code>.</p>
+<p class="blk" data-lang="fr">Renvoie une entrée par page : <code>{ index, objects, active }</code>.</p>
+
+<h3>setPage</h3>
+<div class="sig">SuperPrint.setPage(pageIndex) &rarr; Boolean</div>
+<p class="blk" data-lang="en">Switches the active page. Returns <code>false</code> if the index is out of range.</p>
+<p class="blk" data-lang="fr">Change la page active. Renvoie <code>false</code> si l'index est hors limites.</p>
+
+<h3>loadProject</h3>
+<div class="sig">SuperPrint.loadProject(jsonData)</div>
+<p class="blk" data-lang="en">Loads a project from a parsed JSON object (the same structure as the <code>.json</code> export).</p>
+<p class="blk" data-lang="fr">Charge un projet depuis un objet JSON déjà analysé (même structure que l'export <code>.json</code>).</p>
+
+<h3>saveProject</h3>
+<div class="sig">SuperPrint.saveProject() &rarr; Object</div>
+<p class="blk" data-lang="en">Flushes all pages and returns the serialised project object. You can <code>JSON.stringify()</code> it and store it wherever you like.</p>
+<p class="blk" data-lang="fr">Synchronise toutes les pages et renvoie l'objet projet sérialisé. Vous pouvez le passer à <code>JSON.stringify()</code> et le stocker où vous voulez.</p>
+
+<h3>exportPDF</h3>
+<div class="sig">SuperPrint.exportPDF(options?) &rarr; confirmExport()</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>quality</code> (<code>hd</code> = 300 DPI), <code>colorMode</code> (<code>rgb</code> | <code>cmyk</code>). The options pre-set the export dialog, then the export runs.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>quality</code> (<code>hd</code> = 300 DPI), <code>colorMode</code> (<code>rgb</code> | <code>cmyk</code>). Les options pré-règlent la boîte d'export, puis l'export se lance.</p>
+<pre><code>SuperPrint.exportPDF({ quality: 'hd', colorMode: 'cmyk' });</code></pre>
+
+<h3>aiGenerate</h3>
+<div class="sig">SuperPrint.aiGenerate(prompt)</div>
+<p class="blk" data-lang="en">Sends a natural-language prompt to the configured AI engine (SP213) and builds the resulting layout on the canvas. Requires an API key configured in the AI panel.</p>
+<p class="blk" data-lang="fr">Envoie une consigne en langage naturel au moteur IA configuré (SP213) et construit la maquette résultante sur le canevas. Nécessite une clé API configurée dans le panneau IA.</p>
+<pre><code>SuperPrint.aiGenerate('A4 poster for a jazz festival, deep blue and gold, bold title');</code></pre>
+
+<h2 data-lang="en">Full reference</h2>
+<h2 data-lang="fr">Référence complète</h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th data-lang="en">Method</th><th data-lang="fr">Méthode</th>
+      <th data-lang="en">Returns</th><th data-lang="fr">Renvoie</th>
+      <th data-lang="en">Purpose</th><th data-lang="fr">Rôle</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="fn">addText(x, y, text, options)</td><td>Textbox</td>
+        <td data-lang="en">Adds a text block</td><td data-lang="fr">Ajoute un bloc texte</td></tr>
+    <tr><td class="fn">addRect(x, y, w, h, options)</td><td>Rect</td>
+        <td data-lang="en">Adds a rectangle</td><td data-lang="fr">Ajoute un rectangle</td></tr>
+    <tr><td class="fn">addCircle(x, y, r, options)</td><td>Circle</td>
+        <td data-lang="en">Adds a circle</td><td data-lang="fr">Ajoute un cercle</td></tr>
+    <tr><td class="fn">addEllipse(x, y, rx, ry, options)</td><td>Ellipse</td>
+        <td data-lang="en">Adds an ellipse</td><td data-lang="fr">Ajoute une ellipse</td></tr>
+    <tr><td class="fn">addImage(x, y, url, options)</td><td>Promise</td>
+        <td data-lang="en">Adds an image (async)</td><td data-lang="fr">Ajoute une image (asynchrone)</td></tr>
+    <tr><td class="fn">generateGrid(...)</td><td>&mdash;</td>
+        <td data-lang="en">Creates layout guides</td><td data-lang="fr">Crée des repères de mise en page</td></tr>
+    <tr><td class="fn">bulkText(...)</td><td>&mdash;</td>
+        <td data-lang="en">Batch text creation</td><td data-lang="fr">Création de textes en lot</td></tr>
+    <tr><td class="fn">getPages()</td><td>Array</td>
+        <td data-lang="en">Lists the pages</td><td data-lang="fr">Liste les pages</td></tr>
+    <tr><td class="fn">setPage(i)</td><td>Boolean</td>
+        <td data-lang="en">Switches the active page</td><td data-lang="fr">Change la page active</td></tr>
+    <tr><td class="fn">loadProject(json)</td><td>&mdash;</td>
+        <td data-lang="en">Loads a project</td><td data-lang="fr">Charge un projet</td></tr>
+    <tr><td class="fn">saveProject()</td><td>Object</td>
+        <td data-lang="en">Serialises the project</td><td data-lang="fr">Sérialise le projet</td></tr>
+    <tr><td class="fn">exportPDF(options)</td><td>&mdash;</td>
+        <td data-lang="en">Exports the PDF</td><td data-lang="fr">Exporte le PDF</td></tr>
+    <tr><td class="fn">aiGenerate(prompt)</td><td>&mdash;</td>
+        <td data-lang="en">Generates a layout with AI</td><td data-lang="fr">Génère une maquette par IA</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 data-lang="en">Example: a data-driven catalogue</h2>
+<h2 data-lang="fr">Exemple : un catalogue piloté par des données</h2>
+
+<pre><code>const products = [
+  { nom: 'Vase Kano',   prix: '140 EUR', ref: 'VK-014' },
+  { nom: 'Coupe Sora',  prix: '95 EUR',  ref: 'CS-009' },
+  { nom: 'Plateau Ito', prix: '180 EUR', ref: 'PI-021' },
+  { nom: 'Bougeoir Mei',prix: '65 EUR',  ref: 'BM-007' }
+];
+
+SuperPrint.addText(15, 18, 'COLLECTION HIVER 2026', { fontSize: 11, fill: '#C7382B' });
+SuperPrint.addText(15, 26, 'Objets en pierre et laiton', { fontSize: 30, fontWeight: 'bold' });
+
+products.forEach((p, i) => {
+  const col = i % 2, row = Math.floor(i / 2);
+  const x = 15 + col * 92, y = 78 + row * 96;
+  SuperPrint.addRect(x, y, 88, 56, { fill: '#EFE9DD', stroke: 'none' });
+  SuperPrint.addText(x, y + 60, p.nom,  { fontSize: 14, fontWeight: 'bold' });
+  SuperPrint.addText(x, y + 68, p.ref,  { fontSize: 8 });
+  SuperPrint.addText(x + 60, y + 60, p.prix, { fontSize: 20, fontWeight: 'bold', fill: '#C7382B' });
+});</code></pre>
+
+<p class="blk" data-lang="en">
+  Combine this with <a href="supertypo/index.html">SuperTyPo</a> for type work, the
+  <a href="sp213-studio.html">SP213 Studio</a> for AI-first layouts, and the
+  <a href="documentation.html">documentation</a> for the interface itself.
+</p>
+<p class="blk" data-lang="fr">
+  À combiner avec <a href="supertypo/index.html">SuperTyPo</a> pour le travail typographique, le
+  <a href="sp213-studio.html">studio SP213</a> pour les maquettes pilotées par IA, et la
+  <a href="documentation.html">documentation</a> pour l'interface elle-même.
+</p>
+
+<div class="footer">
+  <span>SuperPrint</span>
+  <span>&middot;</span>
+  <a href="index.html" data-lang="en">Home</a><a href="index.html" data-lang="fr">Accueil</a>
+  <span>&middot;</span>
+  <a href="documentation.html">Documentation</a>
+  <span>&middot;</span>
+  <a href="https://github.com/zigmoon/SUPERPRINT" target="_blank" rel="noopener">GitHub</a>
+</div>
+
+</div>
+
+<script>
+  // Thème (préférence partagée avec documentation.html)
+  function setTheme(theme) {
+    document.body.classList.toggle('theme-dark', theme === 'dark');
+    document.getElementById('btnLight').classList.toggle('active', theme === 'light');
+    document.getElementById('btnDark').classList.toggle('active', theme === 'dark');
+    localStorage.setItem('sp-doc-theme', theme);
+  }
+  const savedTheme = localStorage.getItem('sp-doc-theme');
+  if (savedTheme) setTheme(savedTheme);
+
+  // Langue (préférence partagée avec documentation.html)
+  function setLang(lang) {
+    document.body.classList.toggle('lang-fr', lang === 'fr');
+    document.body.classList.toggle('lang-en', lang === 'en');
+    document.querySelectorAll('.lang-toggle button').forEach(function (b) {
+      b.classList.toggle('active', b.textContent.trim() === lang.toUpperCase());
+    });
+    document.title = lang === 'fr'
+      ? 'SuperPrint — API (automatisez vos maquettes)'
+      : 'SuperPrint — API (automate your layouts)';
+    localStorage.setItem('sp-doc-lang', lang);
+  }
+  setLang(localStorage.getItem('sp-doc-lang') || 'en');
+</script>
+<div class="fondations">
+      <div class="fondations-grid">
+
+        <a class="fondation" href="https://github.com/zigmoon/SUPERPRINT" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/github.svg" alt="" width="32" height="32"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">GitHub</span>
+            <span class="fondation-desc"><span class="inline-fr">Le code source</span><span class="inline-en">The source code</span><span class="inline-ja">ソースコード</span></span>
+          </span>
+        </a>
+
+        <!-- 🆕 v1.7.670 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
+             Demande utilisateur, après avoir vu la première tentative reléguée au
+             colophon : « Footer de superprint.cc LA BARRE QUI EST FIXE SUR LA PAGE
+             et pas le footer de la page, à droite de github on va ajouter notre
+             discord ». C'est donc ici, et pas en bas du document.
+             Le pictogramme est le tracé officiel monochrome (icons/discord.svg,
+             Simple Icons, CC0-1.0), cuit à l'encre du site (#17130D) comme ses
+             trois voisins : la barre est en noir et blanc, aucune couleur de marque
+             n'y entre. Mesuré : 1 289 pixels d'encre à 48 × 48, contre 1 055 pour
+             GitHub, 1 341 pour Rust et 1 232 pour macOS — le poids visuel est donc
+             dans la même famille, il ne « saute » pas aux yeux.
+             `rel="noopener"` est obligatoire : la page s'ouvre dans un onglet tiers. -->
+        <a class="fondation" href="https://discord.gg/B8EXBY8P" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/discord.svg" alt="" width="32" height="32"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">Discord</span>
+            <span class="fondation-desc"><span class="inline-fr">Questions et feedback</span><span class="inline-en">Questions and feedback</span><span class="inline-ja">質問とフィードバック</span></span>
+          </span>
+        </a>
+
+        <!-- ⚠️ CHIFFRE À RAFRAÎCHIR : « 5 231 » = téléchargements npm des 30 derniers
+             jours, relevé le 11 octobre 2026 via l'API npmjs
+             (api.npmjs.org/downloads/point/last-month/superprint).
+             Il n'est PAS chargé en direct : le site n'appelle aucun CDN. Changer
+             aussi le « 2026-10 » de la phrase. -->
+        <a class="fondation" href="https://www.npmjs.com/package/superprint" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/npm.svg" alt="" width="32" height="32"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">npm</span>
+            <span class="fondation-desc"><span class="inline-fr"><span class="fondation-chiffre">5&nbsp;231</span> install.<span class="fondation-chiffre">/30 j</span> <span class="fondation-date">(2026-10)</span></span><span class="inline-en"><span class="fondation-chiffre">5,231</span> installs<span class="fondation-chiffre">/30 d</span> <span class="fondation-date">(2026-10)</span></span><span class="inline-ja"><span class="fondation-chiffre">5,231</span> インストール<span class="fondation-chiffre">/30日</span> <span class="fondation-date">(2026-10)</span></span></span>
+          </span>
+        </a>
+
+        <a class="fondation" href="https://www.rust-lang.org" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/rust.svg" alt="" width="32" height="32"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">Rust</span>
+            <span class="fondation-desc"><span class="inline-fr">Calcul : sûr et prévisible</span><span class="inline-en">Computing: safe and predictable</span><span class="inline-ja">計算：安全で予測可能</span></span>
+          </span>
+        </a>
+
+            <!-- 🆕 v1.7.670 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
+                 Demande utilisateur : « à la fin du footer fixe en carré mets le bouton
+                 WhatsApp directement, cela sera plus simple directement dans la barre
+                 plutôt que flottant ; cependant garde-le bien en mobile (cette bulle
+                 WhatsApp est à conserver en mobile) ».
+                 🆕 puis : « le design de l'icône WhatsApp dans la barre fixe ce n'est
+                 pas pro, mets un filet de séparation comme les autres et dépose
+                 l'icône au centre de cet espace ».
+                 La CASE porte donc le même filet que ses voisines (`border-left: 1px
+                 solid var(--line)`) et sur la même hauteur : c'est le conteneur qui
+                 est étiré, pas le carré. Un filet accroché à un carré de 44 px ne
+                 mesurait que 44 px dans une barre de 73 — mesuré, et cela se voyait.
+                 Le carré a perdu son cadre et son fond : au milieu d'une barre sans
+                 cadre, un carré encadré paraissait posé là. Il ne reste que le
+                 pictogramme, centré par `margin: auto` dans une case pleine hauteur.
+                 ⚠️ LA BULLE FLOTTANTE N'EST PAS SUPPRIMÉE, ELLE EST MASQUÉE EN DESKTOP
+                 (voir `.sp-wa` sous 901 px). La supprimer du balisage aurait fait
+                 disparaître la seule entrée WhatsApp des téléphones. -->
+            <span class="fondation-wa-case">
+              <a class="fondation-wa" href="https://wa.me/33671614110" target="_blank" rel="noopener noreferrer"
+                 title="WhatsApp — +33 6 71 61 41 10" aria-label="WhatsApp — +33 6 71 61 41 10">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="24" height="24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              </a>
+            </span>
+
+      </div>
+    </div>
+
+</body>
+</html>

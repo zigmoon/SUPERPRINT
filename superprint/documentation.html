@@ -126,7 +126,7 @@
   .sidebar-section.active { display: block; }
 
   /* ═══ SIDEBAR TOC ═══ */
-  /* ⚠️ v1.7.669 — LE SOMMAIRE S'ARRÊTE AU-DESSUS DE LA BARRE DU BAS.
+  /* ⚠️ v1.7.670 — LE SOMMAIRE S'ARRÊTE AU-DESSUS DE LA BARRE DU BAS.
      MESURÉ : la barre latérale allait jusqu'à `bottom: 0` avec `z-index: 50`, donc elle
      recouvrait les 280 premiers pixels de la barre fixe (`z-index: 40`) sur ses 73 px de
      haut — les deux premières cases (GitHub, Discord) étaient inatteignables : ni
@@ -137,12 +137,14 @@
      Sous 901 px la barre n'est plus fixe (grille empilée) : elle reprend `bottom: 0`. */
   .sidebar {
     position: fixed; top: 52px; left: 0;
-    bottom: calc(var(--barre-h, 72px) + env(safe-area-inset-bottom, 0px));
+    /* 🆕 v1.7.670 — la barre n'existe plus sur cette page (voir `.fondations`), donc
+       le sommaire descend jusqu'au bas de l'écran : lui laisser 73 px de vide serait
+       une deuxième fois payer la barre qu'on vient de retirer. */
+    bottom: 0;
     width: 280px;
     background: var(--sidebar-bg); border-right: 1px solid var(--border);
     overflow-y: auto; padding: 16px 0 40px; z-index: 50;
   }
-  @media (max-width: 900px) { .sidebar { bottom: 0; } }
   .sidebar-search { padding: 0 14px 10px; border-bottom: 1px solid var(--border); margin-bottom: 8px; position: sticky; top: 0; background: var(--sidebar-bg); z-index: 2; }
   .sidebar-search .ss-wrap { position: relative; display: flex; align-items: center; }
   .sidebar-search .ss-ic { position: absolute; left: 10px; width: 14px; height: 14px; stroke: var(--text2); fill: none; stroke-width: 2; stroke-linecap: round; pointer-events: none; }
@@ -402,7 +404,7 @@
   .interface-card p { font-size: 12px; color: var(--text2); line-height: 1.5; margin: 0; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   BARRE FIXE DE BAS DE PAGE — recopiée depuis index.html en v1.7.669.
+   BARRE FIXE DE BAS DE PAGE — recopiée depuis index.html en v1.7.670.
    Demande utilisateur : « applique bien le même footer fixe sur toutes les pages
    de présentation ». Le CSS et le balisage sont EXTRAITS de la page d'accueil,
    jamais retapés : une correction là-bas se reporte ici par le même script.
@@ -413,7 +415,7 @@
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.669 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.670 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -421,14 +423,14 @@
    correspondante. */
 .fondations-grid {
   display: grid;
-  /* 🆕 v1.7.669 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+  /* 🆕 v1.7.670 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
      Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
      bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
      363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
      quatre cases d'information se partagent le reste à parts égales. */
   grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.669 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+  /* 🆕 v1.7.670 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
      353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
      la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
@@ -458,18 +460,28 @@
 .fondation-chiffre { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 1.02em; color: var(--ink, #17130D); font-weight: 600; }
 .fondation-date { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 0.85em; color: var(--muted, #756A5B); }
 /* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
-/* 🆕 v1.7.669 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
+/* 🆕 v1.7.670 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
    Demande : « on met juste les marques au premier abord ; au survol la marque disparaît
    et affiche la phrase ».
    ⚠️ LES DEUX SONT DANS LA MÊME CELLULE DE GRILLE (grid-area 1/1) : la hauteur du bloc
    vaut donc le MAXIMUM des deux, et la barre ne saute pas quand la phrase apparaît.
    Mesuré : la phrase npm passe à 2 lignes en japonais à 1280 px (38 px) quand le nom en
    fait 18 — une mise en page en flux aurait fait grandir la case de 20 px au survol.
-   ⚠️ LE CROISEMENT COMMENCE À 1024 px, ET PAS AVANT : sous cette largeur la phrase est
-   déjà `display: none` ; sans cette borne le nom s'effacerait en laissant la case vide. */
-.fondation-nom { grid-area: 1 / 1; }
-.fondation-desc { grid-area: 1 / 1; }
-@media (min-width: 1024px) {
+   🆕 v1.7.670 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
+   Retour utilisateur : « sur les grands écrans on pouvait garder finalement la petite
+   phrase qui était en dessous grise, désolé… garde le comportement actuellement pour
+   les écrans moyens (les petits laptops, les tablettes) ».
+   Le croisement est donc borné à 1024–1279,9 px — la plage des portables moyens — et
+   au-delà de 1280 px la phrase revient SOUS le nom, en permanence, comme avant.
+   ⚠️ SOUS 1024 px LA PHRASE RESTE MASQUÉE : à cette largeur les quatre cases tiennent
+   à peine le nom, et une deuxième ligne ferait passer la barre de 73 à 254 px
+   (mesuré sur `index.html`, mise en page mobile). */
+@media (min-width: 1024px) and (max-width: 1279.9px) {
+  /* Ici seulement, les deux textes partagent la même cellule : c'est ce qui permet
+     le croisement sans faire bouger la barre. Au-delà de 1280 px, ils reprennent
+     leur place naturelle, l'un sous l'autre. */
+  .fondation-nom { grid-area: 1 / 1; }
+  .fondation-desc { grid-area: 1 / 1; }
   .fondation-nom, .fondation-desc {
     transition: opacity .16s ease;
   }
@@ -490,7 +502,7 @@
   .fondation-nom, .fondation-desc { transition: none; }
 }
 .fondation:focus-visible { outline: 2px solid var(--ink, #17130D); outline-offset: 6px; }
-/* 🆕 v1.7.669 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+/* 🆕 v1.7.670 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
    Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
    ICON MÊME NOIR QUE RUST ».
    ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
@@ -561,8 +573,15 @@
    entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
    toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
    elles se lisent sans qu'on aille les chercher.
-   🆕 v1.7.669 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   🆕 v1.7.670 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
    cette même barre.
+   🆕 v1.7.670 — PAS DE BARRE FIXE DANS LE MANUEL.
+   Demande utilisateur : « sur le manuel (documentation de SuperPrint) on ne doit pas
+   afficher le footer fixe ». C'est un choix juste : une barre collée en bas mange
+   72 px sur les 900 d'un portable, et le manuel est une page qu'on LIT en faisant
+   défiler — les trois liens n'y sont pas une information de service, ils sont dans
+   le pied de page normal, plus bas. On masque donc la barre ici SEULEMENT : elle
+   reste sur index, faq, price, rock et api.
 
    LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
    donc HORS FLUX : le hero se referme tout seul et l'accroche remonte sous les trois
@@ -593,7 +612,7 @@
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     🆕 v1.7.669 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     🆕 v1.7.670 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
      À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
      des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
      DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
@@ -611,7 +630,7 @@
      descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
      réservée devient exacte par construction. */
   .fondations {
-    /* ⚠️ v1.7.669 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
+    /* ⚠️ v1.7.670 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
        Mesuré sur rock.html : en pleine case GitHub, elementFromPoint rendait
        « li.rk-fn < div.container » — le contenu passait devant la barre, qui restait en
        z-index auto. La règle d'index.html (.container:has(.fondations) { z-index: 40 })
@@ -635,7 +654,7 @@
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    /* 🆕 v1.7.669 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+    /* 🆕 v1.7.670 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
        Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
        desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
        d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
@@ -664,7 +683,18 @@
    elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
 @media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
 
-/* ═══ NOMS SEULS SOUS 1024 px (v1.7.669) ═══
+/* 🆕 v1.7.670 — LE MANUEL N'A PAS DE BARRE FIXE (demande utilisateur).
+   ⚠️ `display: none` ET NON `position: static` : la page est faite pour être LUE en
+   défilant, et les trois liens (GitHub, Discord, npm, Rust) figurent déjà dans le
+   pied de page du document, plus bas. Les garder en bas de l'écran coûtait 72 px de
+   hauteur de lecture sur un portable — mesuré : 900 px de fenêtre, 73 px de barre,
+   8 % de l'écran immobilisés pour une information qui n'est pas de service ici.
+   ⚠️ LE DÉGAGEMENT DU BAS DE PAGE SAUTE AVEC ELLE : `body:has(.fondations)` ne
+   s'applique plus, donc plus de bande vide de 73 px sous le contenu. */
+.fondations { display: none; }
+body:has(.fondations) { padding-bottom: 0; }
+
+/* ═══ NOMS SEULS SOUS 1024 px (v1.7.670) ═══
    Demande utilisateur : « quand le footer fixe passe en dessous de 1024 px, mets
    que GitHub, Discord, npm et Rust ; ne mets pas les petites phrases en gris en
    dessous à cette résolution ». La règle est bornée des DEUX côtés : sous 901 px
@@ -676,7 +706,7 @@
   .fondation-desc { display: none; }
 }
 
-/* ═══ RÈGLES DE LANGUE DE LA BARRE (v1.7.669) ═══
+/* ═══ RÈGLES DE LANGUE DE LA BARRE (v1.7.670) ═══
    Cette page ne charge pas la feuille du site : sans ces quatre règles, chaque
    case de la barre fixe affichait ses trois langues à la suite. Elles ne portent
    que sur les `.inline-fr/…` de la barre — la page n'emploie pas cette
@@ -697,7 +727,7 @@ html[lang="ja"] .inline-ja { display: inline; }
     <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
   </button>
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.669</span>
+  <span class="version">v1.7.670</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -872,6 +902,11 @@ html[lang="ja"] .inline-ja { display: inline; }
   <a href="#m-gpu" class="sub" data-lang="en">⚡ GPU Acceleration</a>
   <a href="#m-devtool" class="sub" data-lang="fr">dev tool — console de script</a>
   <a href="#m-devtool" class="sub" data-lang="en">dev tool — script console</a>
+
+  <h3 data-lang="fr">Extensions</h3>
+  <h3 data-lang="en">Extensions</h3>
+  <a href="#m-plugins" class="sub" data-lang="fr">Plug-ins — en écrire un</a>
+  <a href="#m-plugins" class="sub" data-lang="en">Plug-ins — writing one</a>
 
   <h3 data-lang="fr">IA / Studio</h3>
   <h3 data-lang="en">AI / Studio</h3>
@@ -1796,7 +1831,7 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.669</span>
+  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.670</span>
   <span data-lang="en">Documentation generated September 16, 2026 — v1.7.456</span>
 </div>
 
@@ -2795,11 +2830,161 @@ log('Filet posé sur ' + Math.round(largeur) + ' mm de large');</pre>
   <p data-lang="en">Click the <strong>AI</strong> button in the toolbar to open the AI assistant. It can help generate text content, suggest layouts, and more. Requests go through the server proxy (<code>ai-proxy.php</code>) to secure API keys.</p>
 </div>
 
+<!-- ─── PLUG-INS ─── -->
+<h2 id="m-plugins">
+  <span data-lang="fr">Plug-ins — en écrire un</span>
+  <span data-lang="en">Plug-ins — writing one</span>
+</h2>
+
+<div class="step-block">
+  <h4 data-lang="fr">Ce qu'est un plug-in</h4>
+  <h4 data-lang="en">What a plug-in is</h4>
+  <p data-lang="fr">Un plug-in est <strong>un seul fichier texte</strong>, nommé <code>mon-plugin.plugin.js</code>. Il n'a ni dossier, ni manifeste séparé, ni dépendance à installer : le fichier <em>est</em> le plug-in. Il déclare ce qu'il sait faire, et l'application construit elle-même sa trappe (le panneau de réglages) et son bouton.</p>
+  <p data-lang="en">A plug-in is <strong>a single text file</strong> named <code>my-plugin.plugin.js</code>. No folder, no separate manifest, no dependency to install: the file <em>is</em> the plug-in. It declares what it can do, and the application builds its panel (French “trappe”) and its button on its own.</p>
+  <p data-lang="fr">Deux plug-ins sont livrés avec l'application et servent de référence lisible : <strong>Global Refactor</strong> (<code>app/plugins/global-refactor.plugin.js</code>) et <strong>Motif vectoriel</strong> (<code>app/plugins/motif-vectoriel.plugin.js</code>). Ce sont de vrais plug-ins, pas des exemples : leur code est la documentation la plus à jour.</p>
+  <p data-lang="en">Two plug-ins ship with the application and are readable references: <strong>Global Refactor</strong> (<code>app/plugins/global-refactor.plugin.js</code>) and <strong>Vector Pattern</strong> (<code>app/plugins/motif-vectoriel.plugin.js</code>). They are real plug-ins, not samples: their code is the most up-to-date documentation.</p>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">1 · Installer et désinstaller</h4>
+  <h4 data-lang="en">1 · Install and uninstall</h4>
+  <ul>
+    <li data-lang="fr">Ouvrez la bibliothèque : bouton <strong>Plug-ins</strong> en bas de la barre latérale gauche.</li>
+    <li data-lang="en">Open the library: <strong>Plug-ins</strong> button at the bottom of the left sidebar.</li>
+    <li data-lang="fr">Glissez le fichier <code>.plugin.js</code> n'importe où dans la fenêtre — sur le plan de travail comme sur la bibliothèque. Le dépôt d'un plug-in est reconnu où qu'il tombe.</li>
+    <li data-lang="en">Drag the <code>.plugin.js</code> file anywhere in the window — on the workspace or on the library. A plug-in drop is recognised wherever it lands.</li>
+    <li data-lang="fr">Le plug-in est installé, activé, et conservé dans le navigateur (il survit à un rechargement). Un interrupteur permet de le désactiver sans le désinstaller.</li>
+    <li data-lang="en">The plug-in is installed, enabled and kept in the browser (it survives a reload). A switch disables it without uninstalling.</li>
+  </ul>
+  <div class="tip" data-lang="fr">Un plug-in désactivé n'est jamais exécuté, mais son code reste enregistré : le réactiver ne demande aucun nouveau fichier.</div>
+  <div class="tip" data-lang="en">A disabled plug-in is never executed, but its code stays stored: re-enabling it needs no new file.</div>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">2 · Le squelette d'un plug-in</h4>
+  <h4 data-lang="en">2 · The skeleton of a plug-in</h4>
+  <p data-lang="fr">Le fichier appelle une seule fonction, <code>SPPluginAPI</code>, avec un objet :</p>
+  <p data-lang="en">The file calls a single function, <code>SPPluginAPI</code>, with one object:</p>
+  <pre><code>SPPluginAPI({
+  id: 'mon-plugin',              // 2 à 64 caractères : lettres, chiffres, . _ -
+  name: { fr: 'Mon plug-in', en: 'My plug-in', ja: 'マイプラグイン' },
+  version: '1.0.0',
+  author: 'Votre nom',
+  description: {
+    fr: 'Ce que fait le plug-in, en une phrase.',
+    en: 'What the plug-in does, in one sentence.'
+  },
+  icon: '◆',                     // glyphe de secours
+  options: [
+    { key: 'mot', label: { fr: 'Mot', en: 'Word' }, type: 'text', defaut: 'SuperPrint' },
+    { key: 'taille', label: { fr: 'Corps', en: 'Size' }, type: 'number', min: 6, max: 200, defaut: 48, unite: 'pt' }
+  ],
+  run: function (valeurs, api) {
+    const t = new api.fabric.Textbox(valeurs.mot, {
+      left: 80, top: 80, width: api.mm(120),
+      fontSize: valeurs.taille, fill: '#000000'
+    });
+    api.add(t, { libelle: 'Plug-in : texte' });   // annulable par Ctrl+Z
+  }
+});</code></pre>
+  <p data-lang="fr">Tous les libellés (<code>name</code>, <code>description</code>, <code>label</code>, <code>aide</code>) acceptent soit une chaîne, soit un objet <code>{ fr, en, ja }</code> : un plug-in monolingue n'a rien à traduire, un plug-in soigné suit la langue de l'interface.</p>
+  <p data-lang="en">Every label (<code>name</code>, <code>description</code>, <code>label</code>, <code>aide</code>) accepts either a string or a <code>{ fr, en, ja }</code> object: a single-language plug-in has nothing to translate, a careful one follows the interface language.</p>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">3 · Les champs de la trappe (<code>options</code>)</h4>
+  <h4 data-lang="en">3 · Panel fields (<code>options</code>)</h4>
+  <div class="tbl-wrap"><table>
+  <thead><tr><th>type</th><th data-lang="fr">Ce qu'il affiche</th><th data-lang="en">What it shows</th></tr></thead>
+  <tbody>
+  <tr><td><code>text</code></td><td data-lang="fr">Champ de texte libre</td><td data-lang="en">Free text field</td></tr>
+  <tr><td><code>number</code></td><td data-lang="fr">Nombre ; respecte <code>min</code>, <code>max</code>, <code>pas</code> et <code>unite</code></td><td data-lang="en">Number; honours <code>min</code>, <code>max</code>, <code>pas</code> and <code>unite</code></td></tr>
+  <tr><td><code>range</code></td><td data-lang="fr">Tirette ; le plug-in est relancé à chaque mouvement, avec <code>api.apercu === true</code></td><td data-lang="en">Slider; the plug-in is re-run on each move with <code>api.apercu === true</code></td></tr>
+  <tr><td><code>color</code></td><td data-lang="fr">Sélecteur de couleur</td><td data-lang="en">Colour picker</td></tr>
+  <tr><td><code>checkbox</code></td><td data-lang="fr">Case à cocher (booléen)</td><td data-lang="en">Checkbox (boolean)</td></tr>
+  <tr><td><code>select</code></td><td data-lang="fr">Liste déroulante ; les choix sont dans <code>choix</code></td><td data-lang="en">Drop-down; the choices live in <code>choix</code></td></tr>
+  <tr><td><code>image</code></td><td data-lang="fr">Sélecteur de fichier ; la valeur reçue est une <code>dataURL</code></td><td data-lang="en">File picker; the value received is a <code>dataURL</code></td></tr>
+  <tr><td><code>images</code></td><td data-lang="fr">Plusieurs images à la fois (mixeur)</td><td data-lang="en">Several images at once (mixer)</td></tr>
+  <tr><td><code>apercu</code></td><td data-lang="fr">Grande toile que le plug-in dessine lui-même (voir <code>api.toileApercu()</code>)</td><td data-lang="en">Large canvas the plug-in draws itself (see <code>api.toileApercu()</code>)</td></tr>
+  </tbody>
+  </table></div>
+  <p data-lang="fr">Chaque champ accepte aussi <code>aide</code> (une phrase d'explication sous le champ) et, pour <code>apercu</code>, <code>ratio</code> (rapport hauteur/largeur de la toile, <code>1.414</code> pour un A4 portrait).</p>
+  <p data-lang="en">Each field also accepts <code>aide</code> (a hint under the field) and, for <code>apercu</code>, <code>ratio</code> (canvas height/width ratio, <code>1.414</code> for A4 portrait).</p>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">4 · L'API donnée à <code>run(valeurs, api)</code></h4>
+  <h4 data-lang="en">4 · The API given to <code>run(valeurs, api)</code></h4>
+  <div class="tbl-wrap"><table>
+  <thead><tr><th data-lang="fr">Membre</th><th data-lang="en">Member</th><th data-lang="fr">À quoi il sert</th><th data-lang="en">What it is for</th></tr></thead>
+  <tbody>
+  <tr><td><code>api.fabric</code></td><td data-lang="fr">Le moteur graphique : on construit les objets avec lui</td><td data-lang="en">The graphics engine: objects are built with it</td></tr>
+  <tr><td><code>api.mm(v)</code> / <code>api.px(v)</code></td><td data-lang="fr">Conversion millimètres ↔ points (l'unité interne est le point : 1 mm = 72/25,4)</td><td data-lang="en">Millimetres ↔ points (internal unit is the point: 1 mm = 72/25.4)</td></tr>
+  <tr><td><code>api.add(obj, opts)</code></td><td data-lang="fr">Ajoute un objet <strong>et écrit une entrée d'historique</strong> : le plug-in reste annulable par Ctrl+Z</td><td data-lang="en">Adds an object <strong>and writes a history entry</strong>: the plug-in stays undoable with Ctrl+Z</td></tr>
+  <tr><td><code>api.addMany(liste)</code></td><td data-lang="fr">Ajoute une série d'objets en une seule entrée</td><td data-lang="en">Adds a series of objects as one entry</td></tr>
+  <tr><td><code>api.selection()</code></td><td data-lang="fr">Les objets sélectionnés (tableau, vide si rien)</td><td data-lang="en">The selected objects (array, empty if none)</td></tr>
+  <tr><td><code>api.document</code></td><td data-lang="fr">Dimensions en points et en mm, page courante, nombre de pages, fond perdu, marges</td><td data-lang="en">Sizes in points and mm, current page, page count, bleed, margins</td></tr>
+  <tr><td><code>api.canvases()</code></td><td data-lang="fr">Tous les plans de travail — pour retirer un dessin partout où il a été posé</td><td data-lang="en">All workspaces — to remove a drawing everywhere it was placed</td></tr>
+  <tr><td><code>api.remove(obj)</code></td><td data-lang="fr">Retire un objet (aperçus successifs)</td><td data-lang="en">Removes an object (successive previews)</td></tr>
+  <tr><td><code>api.sync()</code></td><td data-lang="fr">Synchronise le document sans écrire d'historique</td><td data-lang="en">Syncs the document without writing history</td></tr>
+  <tr><td><code>api.commit(libellé)</code></td><td data-lang="fr">Écrit l'entrée d'historique (ignoré en aperçu)</td><td data-lang="en">Writes the history entry (ignored during preview)</td></tr>
+  <tr><td><code>api.apercu</code></td><td data-lang="fr"><code>true</code> quand la trappe est en aperçu direct : à vous de ne rien coûteux</td><td data-lang="en"><code>true</code> while live-previewing: up to you to skip expensive work</td></tr>
+  <tr><td><code>api.toileApercu()</code></td><td data-lang="fr">Toile de prévisualisation : <code>{ canvas, ctx, largeur, hauteur }</code>, ou <code>null</code></td><td data-lang="en">Preview canvas: <code>{ canvas, ctx, width, height }</code>, or <code>null</code></td></tr>
+  <tr><td><code>api.t(v)</code> / <code>api.L(fr,en,ja)</code></td><td data-lang="fr">Traduire un message dans la langue de l'interface</td><td data-lang="en">Translate a message into the interface language</td></tr>
+  <tr><td><code>api.alert(msg)</code> / <code>api.prompt(q)</code></td><td data-lang="fr">Les boîtes de l'application — jamais <code>window.alert</code>, la DA reste cohérente</td><td data-lang="en">The application's dialogs — never <code>window.alert</code>, so the UI stays consistent</td></tr>
+  <tr><td><code>api.imageDataUrl()</code></td><td data-lang="fr">Ouvre un sélecteur de fichier et rend une <code>dataURL</code></td><td data-lang="en">Opens a file picker and returns a <code>dataURL</code></td></tr>
+  <tr><td><code>api.store.get/set</code></td><td data-lang="fr">Petit stockage persistant, propre au plug-in</td><td data-lang="en">Small persistent store, private to the plug-in</td></tr>
+  <tr><td><code>api.log(msg)</code></td><td data-lang="fr">Trace dans la console, préfixée du nom du plug-in</td><td data-lang="en">Logs to the console, prefixed with the plug-in name</td></tr>
+  </tbody>
+  </table></div>
+  <div class="tip" data-lang="fr"><strong>Annuler fonctionne.</strong> Un objet posé par <code>api.add</code> écrit une entrée d'historique : l'utilisateur retrouve son document d'avant avec Ctrl+Z, comme après n'importe quelle action.</div>
+  <div class="tip" data-lang="en"><strong>Undo works.</strong> An object placed with <code>api.add</code> writes a history entry: the user gets their previous document back with Ctrl+Z, as after any action.</div>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">5 · Aperçu en direct : ce qu'il faut respecter</h4>
+  <h4 data-lang="en">5 · Live preview: the rules</h4>
+  <ul>
+    <li data-lang="fr">Un champ <code>range</code> relance <code>run</code> à chaque mouvement. Dans ce cas <code>api.apercu</code> vaut <code>true</code> : n'écrivez ni historique ni message.</li>
+    <li data-lang="en">A <code>range</code> field re-runs <code>run</code> on every move. Then <code>api.apercu</code> is <code>true</code>: write no history and no message.</li>
+    <li data-lang="fr">Retirez le dessin précédent (<code>api.remove</code>, ou <code>api.canvases()</code> pour un nettoyage global) avant de poser le nouveau, sinon les aperçus s'empilent.</li>
+    <li data-lang="en">Remove the previous drawing (<code>api.remove</code>, or <code>api.canvases()</code> for a global clean-up) before placing the new one, otherwise previews pile up.</li>
+    <li data-lang="fr">La validation écrit l'historique une seule fois : c'est l'application qui s'en charge, pas le plug-in.</li>
+    <li data-lang="en">Validation writes the history entry once: the application does it, not the plug-in.</li>
+  </ul>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">6 · Ce qu'un plug-in ne peut pas faire</h4>
+  <h4 data-lang="en">6 · What a plug-in cannot do</h4>
+  <ul>
+    <li data-lang="fr">Il ne voit <strong>aucune</strong> variable interne de l'application : son code est évalué dans une fonction isolée et ne reçoit que <code>SPPluginAPI</code>. Tout ce dont il a besoin passe par l'<code>api</code>.</li>
+    <li data-lang="en">It sees <strong>none</strong> of the application's internal variables: its code is evaluated in an isolated function and only receives <code>SPPluginAPI</code>. Everything it needs goes through the <code>api</code>.</li>
+    <li data-lang="fr">Il ne peut pas réclamer une « trappe » du produit : ce privilège est réservé aux plug-ins intégrés (<code>integre: true</code>), sinon un fichier installé pourrait exécuter du code produit d'un seul clic.</li>
+    <li data-lang="en">It cannot claim one of the product's own panels: that privilege is reserved for built-in plug-ins (<code>integre: true</code>), otherwise an installed file could run product code in one click.</li>
+    <li data-lang="fr">Il ne peut pas installer un autre plug-in, ni écrire hors de son propre stockage.</li>
+    <li data-lang="en">It cannot install another plug-in, nor write outside its own store.</li>
+  </ul>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">7 · Vérifier et déboguer</h4>
+  <h4 data-lang="en">7 · Check and debug</h4>
+  <ul>
+    <li data-lang="fr">Ouvrez la console du navigateur (<kbd>F12</kbd>) : <code>api.log()</code> y écrit, préfixé du nom du plug-in, et les erreurs de chargement y apparaissent en clair.</li>
+    <li data-lang="en">Open the browser console (<kbd>F12</kbd>): <code>api.log()</code> writes there, prefixed with the plug-in name, and loading errors appear in plain text.</li>
+    <li data-lang="fr">Un identifiant invalide, un nom manquant ou un <code>run</code> absent sont refusés à l'installation, avec le motif exact — le plug-in fautif n'entre pas dans la bibliothèque.</li>
+    <li data-lang="en">An invalid identifier, a missing name or a missing <code>run</code> is refused at install time with the exact reason — the faulty plug-in never enters the library.</li>
+    <li data-lang="fr">Un plug-in qui échoue au chargement ne casse pas la bibliothèque : il est signalé, les autres restent utilisables.</li>
+    <li data-lang="en">A plug-in that fails to load does not break the library: it is reported, the others stay usable.</li>
+  </ul>
+</div>
+
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.669</span>
-  <span data-lang="en">Manual updated September 16, 2026 — v1.7.456</span>
+  <span data-lang="fr">Manuel mis à jour le 18 octobre 2026 — v1.7.670</span>
+  <span data-lang="en">Manual updated October 18, 2026 — v1.7.670</span>
 </div>
 
 </div><!-- #tab-manual -->
@@ -3007,7 +3192,7 @@ window.addEventListener('scroll', updateSidebarActive, { passive: true });
           </span>
         </a>
 
-        <!-- 🆕 v1.7.669 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
+        <!-- 🆕 v1.7.670 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
              Demande utilisateur, après avoir vu la première tentative reléguée au
              colophon : « Footer de superprint.cc LA BARRE QUI EST FIXE SUR LA PAGE
              et pas le footer de la page, à droite de github on va ajouter notre
@@ -3048,7 +3233,7 @@ window.addEventListener('scroll', updateSidebarActive, { passive: true });
           </span>
         </a>
 
-            <!-- 🆕 v1.7.669 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
+            <!-- 🆕 v1.7.670 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
                  Demande utilisateur : « à la fin du footer fixe en carré mets le bouton
                  WhatsApp directement, cela sera plus simple directement dans la barre
                  plutôt que flottant ; cependant garde-le bien en mobile (cette bulle

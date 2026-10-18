@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
@@ -847,6 +847,126 @@ footer, footer a { color: var(--after-text-color); }
   <li data-i18n-fr-html="A7LAS (<code>index.html</code>, <code>js/script.js</code>, <code>css/style.css</code>), les trois APIs PHP (<code>wikidata-api.php</code>, <code>duckduckgo-api.php</code>, <code>news-api.php</code>) et le <code>service-worker.js</code> (v1.0.2)." data-i18n-en-html="A7LAS (<code>index.html</code>, <code>js/script.js</code>, <code>css/style.css</code>), the three PHP APIs (<code>wikidata-api.php</code>, <code>duckduckgo-api.php</code>, <code>news-api.php</code>) and the <code>service-worker.js</code> (v1.0.2)." data-i18n-jp-html="A7LAS（<code>index.html</code>・<code>js/script.js</code>・<code>css/style.css</code>）、3つのPHP API（<code>wikidata-api.php</code>・<code>duckduckgo-api.php</code>・<code>news-api.php</code>）、<code>service-worker.js</code>（v1.0.2）。">A7LAS (index.html, js/script.js, css/style.css), the three PHP APIs and the service-worker.js (v1.0.2).</li>
  </ul>
 
+</article>
+
+<!-- ===== SUPER PRINT v1.7.670 — L'IMPORT IDML PASSÉ AU CRIBLE, ET DEUX FORMATS DE SORTIE EN PLUS.
+     Quatre demandes.
+
+     (1) IMPORT FIGMA — LA PREUVE QU'IL N'A RIEN CASSÉ.
+     Demande : « relis l'import figma, en aucun cas cela doit avoir touché ou impacté la
+     version actuelle de superprint, fais très attention, refais des tests, cela doit être
+     parfait ». La seule preuve acceptable n'est pas une relecture : le module de 1.7.667
+     (avant le chantier multi-format) et le module courant ont été chargés dans deux bacs à
+     sable séparés, et leurs sorties comparées objet par objet sur les six fichiers de
+     contrôle. Résultat : quatre fichiers IDENTIQUES (cadre seul, un format, nœuds libres,
+     API nodes) et deux fichiers dont la SEULE différence est l'apparition de
+     `pages[i].format` — les deux fichiers réellement multi-formats. Aucune autre clé n'a
+     bougé. MESURÉ aussi dans l'application : le panneau Format de gauche annonçait encore
+     210 × 297 sur une page de 297 × 210 ; il suit désormais la page qu'on regarde, et une
+     largeur saisie s'applique à CETTE page au lieu de redimensionner les trois.
+
+     (2) IMPORT IDML — DEUX VRAIS DÉFAUTS, TROUVÉS EN MESURANT.
+     Demande : « re-audit et pousse à fond l'import IDML complexe et fais-moi un rapport ».
+     Un gabarit de contrôle a été écrit (`_dev/idml-test/complexe.idml`) : cinq pages en
+     trois formats, un gabarit appliqué, une story chaînée sur trois blocs, un tableau à
+     trois colonnes, une note de bas de page, une rotation à 30°, un groupe translaté, un
+     polygone, un filet, un dégradé, une opacité de 40 %, un contour pointillé, du texte
+     allemand et un texte qui déborde. Balisage recopié sur un vrai fichier InDesign.
+     · LE FILET DISPARAISSAIT. Un trait horizontal a `top === bottom` : l'intersection
+       calculée avec la page valait exactement 0 et le test `iy <= 0` le jetait. Tout filet
+       horizontal ou vertical — le cas le plus courant d'une maquette — était donc absent à
+       l'import. Il est conservé dès que SA POSITION tombe dans la page ; un objet posé hors
+       page reste dehors, la tolérance ne vaut que pour une épaisseur nulle.
+     · L'OPACITÉ N'ÉTAIT PAS LUE. Dans le format IDML l'opacité d'un objet ne vit pas sur
+       l'item mais dans `<BlendingSetting Opacity="40"/>`, en POURCENTAGE. L'objet arrivait à
+       100 %. Mesuré après correction : 40 %.
+     Le reste du gabarit passe : cinq pages, enveloppe 297 × 297 calculée sur les trois
+     formats, fond perdu 5 mm lu dans le fichier, story chaînée complète, tableau en texte à
+     tabulations avec ses neuf cellules, note de bas de page conservée sans couper la phrase,
+     allemand intact, texte débordant intégralement conservé, rotation à 30°, groupe de deux
+     objets, polygone en tracé à trois points, dégradé à sept arrêts, pointillés [6 4], image
+     liée, aucun objet hors feuille, aucune erreur JavaScript, aucune alerte. Le fichier réel
+     de référence (213 Ko) donne toujours ses 2 pages, 25 objets, 2 images et 7 objets
+     tournés.
+
+     (3) EPS ET WORD DANS « SAUVEGARDER ».
+     Demande : « on doit pouvoir enregistrer les .eps designer, et enregistrer sa maquette en
+     Word ». Deux boutons s'ajoutent sous « Exporter vers ».
+     · EPS — PostScript encapsulé VECTORIEL : rectangles, ellipses (en courbes de Bézier),
+       tracés, filets, polygones, avec remplissage, contour, épaisseur, pointillés et
+       rotation ; images embarquées en JPEG (filtre DCTDecode). BoundingBox aux dimensions
+       exactes de la page, qui SUIT le format de chaque page sur un document multi-format.
+       ⚠️ Le texte est écrit en texte, avec les polices PostScript standard : un navigateur ne
+       sait pas extraire les contours d'une police. Position et corps exacts ; le dessin de
+       la lettre n'est exact que pour Times, Helvetica et Courier, et l'interface le dit.
+       L'opacité n'est pas aplatie (PostScript niveau 2 ignore la transparence) : le fichier
+       la signale en commentaire plutôt que de faire semblant.
+     · WORD (.docx) — une image pleine page par page, dans une SECTION Word par page avec la
+       taille de papier de cette page : c'est la seule construction qui garde juste un
+       document dont les pages n'ont pas le même format. Choix assumé de la fidélité : une
+       maquette est un objet graphique, la convertir en paragraphes donnerait un document
+       éditable mais faux.
+     Vérifié : gsave/grestore équilibrés (16/16), chaque police utilisée déclarée, accents en
+     octal Latin-1, tiret cadratin ramené à ASCII ; côté Word, structure OOXML complète, une
+     image par page, sections 11 339 × 17 008 et 17 008 × 11 339 twips, relations d'images
+     cohérentes, PNG valides.
+
+     (4) LE BANDEAU, LE MODÈLE DE THÉÂTRE, ET LE MANUEL.
+     · « Sur les grands écrans on pouvait garder la petite phrase qui était en dessous grise,
+       garde le comportement actuel pour les écrans moyens. » Le croisement au survol est
+       borné à 1024–1279,9 px ; au-delà de 1280 px la phrase revient sous le nom, en
+       permanence. Mesuré : 1440 et 1280 → nom et phrase visibles ensemble ; 1279 à 1024 →
+       croisement 1/0 puis 0/1 ; 1000 → phrase masquée. La barre fait 73 px dans tous les cas.
+     · « N'affiche pas le template THEATRE PLAY - 12P » : la carte sort du carrousel de
+       présentation. Elle est COMMENTÉE, pas supprimée — le modèle s'ouvre toujours par son
+       adresse, et un lien déjà publié continue de fonctionner.
+     · « Sur le manuel on ne doit pas afficher le footer fixe » : la barre est retirée de
+       documentation.html (72 px rendus à la lecture), et le sommaire latéral descend enfin
+       jusqu'au bas de l'écran.
+     · « Je n'ai pas trouvé la partie qui explique comment faire des plug-ins » : elle
+       n'existait pas — le manuel n'en disait pas un mot. Un chapitre complet est écrit :
+       ce qu'est un fichier `.plugin.js`, installation et désinstallation, squelette complet,
+       les neuf types de champs, les dix-sept membres de l'API, les règles de l'aperçu en
+       direct, ce qu'un plug-in ne peut pas faire, et comment déboguer. ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-670">
+ <h2>SUPER PRINT <span>v1.7.670</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 octobre 2026" data-i18n-en="Released October 18, 2026" data-i18n-jp="2026年10月18日公開">Released October 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="L'import InDesign passé au crible sur un document difficile, la preuve mesurée que l'import Figma n'a rien cassé, et <strong>deux formats de sortie de plus</strong> : EPS vectoriel et Word." data-i18n-en-html="The InDesign import put through a difficult document, measured proof that the Figma import broke nothing, and <strong>two more output formats</strong>: vector EPS and Word." data-i18n-jp-html="難しい文書で InDesign 読み込みを検証し、Figma 読み込みが何も壊していないことを測定で証明。<strong>出力形式を 2 つ追加</strong>：ベクター EPS と Word。">The InDesign import tested on a difficult document, measured proof that the Figma import broke nothing, and two more output formats: vector EPS and Word.</p>
+
+ <h3 data-i18n-fr-html="📥 Import — deux défauts réels corrigés" data-i18n-en-html="📥 Import — two real defects fixed" data-i18n-jp-html="📥 読み込み — 実際の不具合を 2 件修正">📥 Import — two real defects fixed</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Les filets disparaissaient.</strong> Un trait horizontal a une hauteur nulle : l'intersection avec la page valait 0 et le test la jetait. Tout filet horizontal ou vertical — le cas le plus courant d'une maquette — était absent à l'import. Il est conservé dès que sa position tombe dans la page ; un objet posé hors page reste dehors." data-i18n-en-html="<strong>Rules vanished.</strong> A horizontal line has zero height: the intersection with the page was 0 and the test discarded it. Every horizontal or vertical rule — the most common case in a layout — was missing on import. It is kept as soon as its position falls on the page; an object placed off-page stays off." data-i18n-jp-html="<strong>罫線が消えていました。</strong>水平線は高さが 0 のため、ページとの交差が 0 になり除外されていました。レイアウトで最も一般的な横罫線・縦罫線が読み込み時に存在しませんでした。位置がページ内なら保持されます。ページ外のオブジェクトは外のままです。">Rules vanished: a horizontal line has zero height, so the intersection test discarded it. Every rule is now kept when its position falls on the page.</li>
+  <li data-i18n-fr-html="<strong>L'opacité n'était pas lue.</strong> Dans le format IDML elle ne vit pas sur l'item mais dans <code>&lt;BlendingSetting Opacity=&quot;40&quot;/&gt;</code>, en pourcentage : l'objet arrivait à 100 %. Mesuré après correction : 40 %." data-i18n-en-html="<strong>Opacity was not read.</strong> In IDML it does not live on the item but in <code>&lt;BlendingSetting Opacity=&quot;40&quot;/&gt;</code>, as a percentage: the object arrived at 100%. Measured after the fix: 40%." data-i18n-jp-html="<strong>不透明度が読まれていませんでした。</strong>IDML では item 上ではなく <code>&lt;BlendingSetting Opacity=&quot;40&quot;/&gt;</code> に割合で書かれます。オブジェクトは 100% で届いていました。修正後の実測は 40%。">Opacity was not read: in IDML it lives in BlendingSetting, as a percentage. Measured after the fix: 40%.</li>
+  <li data-i18n-fr-html="<strong>Le reste du document difficile passe.</strong> Cinq pages en trois formats, enveloppe 297 × 297 calculée, fond perdu 5 mm lu dans le fichier, story chaînée complète, tableau à neuf cellules en texte tabulé, note de bas de page sans couper la phrase, allemand intact, texte débordant intégralement conservé, rotation à 30°, groupe de deux objets, polygone en tracé, dégradé à sept arrêts, pointillés [6 4], image liée — et aucun objet hors feuille." data-i18n-en-html="<strong>The rest of the difficult document passes.</strong> Five pages in three formats, envelope 297 × 297 computed, 5 mm bleed read from the file, complete threaded story, nine-cell table as tabbed text, footnote without cutting the sentence, German intact, overflowing text fully kept, 30° rotation, two-object group, polygon as a path, seven-stop gradient, [6 4] dashes, linked image — and no object outside its sheet." data-i18n-jp-html="<strong>難しい文書の残りも通過。</strong>3 形式 5 ページ、外接 297 × 297 を算出、ファイル記載の 5 mm 塗り足し、完全なスレッドストーリー、9 セルの表をタブ区切りテキストに、文を切らない脚注、ドイツ語も無傷、あふれたテキストも完全保持、30° 回転、2 オブジェクトのグループ、多角形はパスに、7 ストップのグラデーション、破線 [6 4]、リンク画像——用紙外のオブジェクトはゼロ。">The rest passes: five pages, computed envelope, bleed, threaded story, table, footnote, German, overflow, rotation, group, polygon, gradient, dashes, image — no object outside its sheet.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🔍 Figma — la preuve que rien n'a bougé" data-i18n-en-html="🔍 Figma — proof that nothing moved" data-i18n-jp-html="🔍 Figma — 何も変わっていない証明">🔍 Figma — the proof that nothing moved</h3>
+ <ul>
+  <li data-i18n-fr-html="Le module de 1.7.667 et le module courant ont été chargés dans deux bacs à sable séparés, puis leurs sorties comparées objet par objet sur six fichiers : quatre sont <strong>identiques</strong>, et les deux autres ne diffèrent que par l'apparition de <code>pages[i].format</code> — les deux fichiers réellement multi-formats. Aucune autre clé n'a bougé." data-i18n-en-html="The 1.7.667 module and the current one were loaded in two separate sandboxes, then their outputs compared object by object on six files: four are <strong>identical</strong>, and the other two differ only by the appearance of <code>pages[i].format</code> — the two genuinely multi-format files. No other key moved." data-i18n-jp-html="1.7.667 のモジュールと現行モジュールを別々のサンドボックスで読み込み、6 ファイルで出力をオブジェクト単位で比較しました。4 ファイルは<strong>完全一致</strong>、残り 2 ファイルの違いは <code>pages[i].format</code> の出現のみ（実際に複数形式のファイル）。他のキーは動いていません。">Two sandboxes, six files, outputs compared object by object: four identical, two differing only by the appearance of <code>pages[i].format</code>.</li>
+  <li data-i18n-fr-html="<strong>Le panneau Format dit la vérité de la page qu'on regarde.</strong> Sur un document à trois formats il restait à 210 × 297 en page 2 (297 × 210) et en page 3 (141 × 141). Il suit désormais la page courante, et une largeur saisie s'applique à cette page — plus au document entier, ce qui aurait détruit les formats importés." data-i18n-en-html="<strong>The Format panel tells the truth about the page you are looking at.</strong> On a three-format document it stayed at 210 × 297 on page 2 (297 × 210) and page 3 (141 × 141). It now follows the current page, and a typed width applies to that page — not to the whole document, which would have destroyed the imported formats." data-i18n-jp-html="<strong>書式パネルが表示中のページの真実を伝えます。</strong>3 形式の文書では、2 ページ目（297 × 210）でも 3 ページ目（141 × 141）でも 210 × 297 のままでした。現在は表示中のページに追従し、入力した幅はそのページに適用されます（文書全体ではありません）。">The Format panel now follows the page you are looking at, and a typed width applies to that page only.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="💾 EPS et Word dans « Sauvegarder »" data-i18n-en-html="💾 EPS and Word in “Save”" data-i18n-jp-html="💾 「保存」に EPS と Word">💾 EPS and Word in “Save”</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>EPS vectoriel.</strong> Rectangles, ellipses en courbes de Bézier, tracés, filets, polygones — avec remplissage, contour, épaisseur, pointillés et rotation. Images embarquées en JPEG. La BoundingBox suit le format de chaque page. Le texte est écrit en texte avec les polices PostScript standard : un navigateur ne sait pas extraire les contours d'une police, et l'interface le dit au lieu de le cacher." data-i18n-en-html="<strong>Vector EPS.</strong> Rectangles, Bézier ellipses, paths, rules, polygons — with fill, stroke, width, dashes and rotation. Images embedded as JPEG. The BoundingBox follows each page's format. Text is written as text with the standard PostScript fonts: a browser cannot extract glyph outlines, and the interface says so instead of hiding it." data-i18n-jp-html="<strong>ベクター EPS。</strong>矩形、ベジェの楕円、パス、罫線、多角形——塗り・線・太さ・破線・回転に対応。画像は JPEG で埋め込み。BoundingBox は各ページの寸法に追従。テキストは標準 PostScript フォントでテキストとして出力します（ブラウザはフォントの輪郭を抽出できないため、UI で明示しています）。">Vector EPS with fill, stroke, dashes and rotation; images embedded as JPEG; BoundingBox follows each page. Text uses the standard PostScript fonts, and the UI says so.</li>
+  <li data-i18n-fr-html="<strong>Word (.docx).</strong> Une image pleine page par page, dans une SECTION Word par page avec sa taille de papier — la seule construction qui garde juste un document dont les pages n'ont pas le même format. Vérifié : structure OOXML complète, sections 11 339 × 17 008 et 17 008 × 11 339 twips, relations d'images cohérentes, PNG valides." data-i18n-en-html="<strong>Word (.docx).</strong> One full-page image per page, in one Word SECTION per page with its own paper size — the only construction that keeps a document whose pages have different formats correct. Checked: complete OOXML structure, 11 339 × 17 008 and 17 008 × 11 339 twips sections, consistent image relationships, valid PNGs." data-i18n-jp-html="<strong>Word（.docx）。</strong>ページごとに全面画像 1 枚、ページごとの用紙サイズを持つ Word セクションとして出力——ページ寸法が異なる文書を正しく保つ唯一の構成です。検証済み：OOXML 構造、セクション 11 339 × 17 008 と 17 008 × 11 339 twips、画像リレーション、有効な PNG。">Word (.docx): one full-page image per page, in one Word section per page with its own paper size.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧭 Bandeau, modèle de théâtre et manuel" data-i18n-en-html="🧭 Bottom bar, theatre template and manual" data-i18n-jp-html="🧭 下部バー、演劇テンプレート、マニュアル">🧭 Bottom bar, theatre template and manual</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>La phrase grise revient sous la marque sur les grands écrans.</strong> Le croisement au survol est borné à 1024–1279,9 px ; au-delà de 1280 px le nom et sa phrase s'affichent ensemble, en permanence. Mesuré : 1440 et 1280 → les deux visibles ; 1279 à 1024 → croisement ; 1000 → phrase masquée. Barre à 73 px dans tous les cas." data-i18n-en-html="<strong>The grey sentence is back under the brand on large screens.</strong> The hover crossfade is bounded to 1024–1279.9 px; above 1280 px the name and its sentence show together, permanently. Measured: 1440 and 1280 → both visible; 1279 to 1024 → crossfade; 1000 → sentence hidden. Bar at 73 px in every case." data-i18n-jp-html="<strong>大画面ではブランド名の下に灰色の一文が戻ります。</strong>ホバーの切り替えは 1024〜1279.9 px に限定し、1280 px 以上では名前と説明文を常時表示。実測：1440 と 1280 は両方表示、1279〜1024 は切り替え、1000 は説明文非表示。バーは常に 73 px。">The grey sentence returns under the brand on large screens; the crossfade is bounded to 1024–1279.9 px.</li>
+  <li data-i18n-fr-html="<strong>Le modèle « Theatre Play — 12p » ne figure plus dans le carrousel de présentation.</strong> Il est commenté, pas supprimé : le modèle s'ouvre toujours par son adresse et un lien déjà publié continue de fonctionner." data-i18n-en-html="<strong>The “Theatre Play — 12p” template is no longer in the showcase carousel.</strong> It is commented out, not deleted: the template still opens through its address and an already published link keeps working." data-i18n-jp-html="<strong>「Theatre Play — 12p」は紹介カルーセルから外れました。</strong>削除ではなくコメントアウトで、テンプレートは URL から開けますし、公開済みのリンクも有効なままです。">The “Theatre Play — 12p” template leaves the showcase carousel — commented out, not deleted.</li>
+  <li data-i18n-fr-html="<strong>Le manuel n'a plus de barre fixe</strong> et rend 72 px à la lecture ; son sommaire descend jusqu'au bas de l'écran. Et il explique enfin <strong>comment écrire un plug-in</strong> : le chapitre manquait complètement. Squelette complet, neuf types de champs, dix-sept membres de l'API, règles de l'aperçu en direct, limites." data-i18n-en-html="<strong>The manual no longer has a fixed bar</strong> and gives 72 px back to reading; its contents list now reaches the bottom of the screen. And it finally explains <strong>how to write a plug-in</strong>: the chapter was missing entirely. Complete skeleton, nine field types, seventeen API members, live-preview rules, limits." data-i18n-jp-html="<strong>マニュアルから固定バーを外し</strong>、読むための 72 px を取り戻しました。目次は画面下端まで届きます。そして<strong>プラグインの書き方</strong>をようやく説明します——章が丸ごと欠けていました。雛形、9 種類のフィールド、API 17 項目、ライブプレビューの規則、制限。">The manual loses its fixed bar and finally explains how to write a plug-in: skeleton, nine field types, seventeen API members, live-preview rules, limits.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="✅ Vérifications" data-i18n-en-html="✅ Checks" data-i18n-jp-html="✅ 検証">✅ Checks</h3>
+ <ul>
+  <li data-i18n-fr-html="Import IDML : 21 constats sur le document difficile, aucun écart. Import Figma : 6 fichiers comparés, aucune régression. Aller-retour .sp et .json : aucune perte. Export PDF multi-format : une taille de page par page. Export EPS : gsave/grestore équilibrés, polices déclarées, accents en octal. Export Word : structure OOXML, sections par page, images valides. Bandeau : six pages, trois largeurs. Équilibre des balises HTML : profondeur finale 0 sur les sept pages." data-i18n-en-html="IDML import: 21 checks on the difficult document, no deviation. Figma import: 6 files compared, no regression. .sp and .json round trip: no loss. Multi-format PDF export: one page size per page. EPS export: balanced gsave/grestore, declared fonts, octal accents. Word export: OOXML structure, per-page sections, valid images. Bottom bar: six pages, three widths. HTML tag balance: final depth 0 on all seven pages." data-i18n-jp-html="IDML 読み込み：難しい文書で 21 項目、逸脱なし。Figma 読み込み：6 ファイル比較、回帰なし。.sp と .json の往復：損失なし。複数形式の PDF 出力：ページごとのサイズ。EPS 出力：gsave/grestore 均衡、フォント宣言、8 進表記のアクセント。Word 出力：OOXML 構造、ページごとのセクション、有効な画像。下部バー：6 ページ・3 幅。HTML タグ均衡：7 ページすべて最終深度 0。">21 IDML checks, 6 Figma files compared, no loss on .sp/.json round trip, one PDF page size per page, balanced PostScript, valid OOXML, six pages measured, HTML depth 0.</li>
+ </ul>
 </article>
 
 <!-- ===== SUPER PRINT v1.7.669 — LA PHRASE AU SURVOL, ET UN FIGMA À SON FORMAT.
