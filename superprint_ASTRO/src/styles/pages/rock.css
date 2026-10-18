@@ -313,7 +313,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
-/* 🆕 v1.7.660 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+/* 🆕 v1.7.661 — LE MENU NE SE REFERME PLUS EN CHEMIN.
    Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
    du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
    couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
@@ -430,7 +430,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    concurrencer le nom de l'application — 8 px, sans approche forcée, et un peu
    effacé pour qu'il se lise comme une précision et non comme un titre. */
 .nav-dd-app-ver { font-family: var(--f-mono); font-size: 8px; letter-spacing: .02em; color: var(--muted); opacity: .85; }
-/* 🆕 v1.7.660 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+/* 🆕 v1.7.661 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
    peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
@@ -472,7 +472,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
   color: var(--paper); background: var(--ink);
 }
-/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.660) ══════════════
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.661) ══════════════
    Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
    plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
    systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
@@ -1634,7 +1634,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
-  /* 🎯 v1.7.660 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+  /* 🎯 v1.7.661 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
      Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
      ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
      texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc

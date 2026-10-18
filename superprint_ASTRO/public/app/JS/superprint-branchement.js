@@ -103,7 +103,7 @@
   'use strict';
 
   /** Version de ce branchement (sert aussi de paramètre `?v=` dans `index.html`). */
-  var VERSION = '20261011-v660-rust-couleurs';
+  var VERSION = '20261011-v661-rust-couleurs';
 
   /** Langues branchables, et nom du dictionnaire dans `window.Hyphenation`. */
   var LANGUES = { fr: 'fr', en: 'en-us', de: 'de', es: 'es', it: 'it' };
