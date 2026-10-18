@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.674)
+   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.675)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce que fait ce plug-in : il habille un fond de page — ou un bloc sélectionné —
@@ -81,7 +81,7 @@
    `api.apercu`, `api.toileApercu`. S'il fonctionne sans rien d'autre, l'API est
    suffisante pour un plug-in réel.
    ─────────────────────────────────────────────────────────────────────────────── */
-/* ═══ v1.7.674 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
+/* ═══ v1.7.675 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
    Demande utilisateur : « relie bien la partie plug-in et nos deux plugins en
    trois langue EN fr ja ».
    Chaque libellé visible est écrit `L(français, english, 日本語)` et résolu à
@@ -101,31 +101,27 @@ SPPluginAPI({
   version: '3.1.0',
   author: 'SuperPrint',
   icon: '▦',
-  /* ⚠️ v1.7.674 — LA DESCRIPTION DIT ENFIN CE QUE L'EXPORT FAIT VRAIMENT.
+  /* ⚠️ v1.7.675 — LA DESCRIPTION DIT CE QUE L'EXPORT FAIT VRAIMENT.
      MESURÉ : le plug-in ne pose pas de tracés, il remplit un bloc avec un
-     `fabric.Pattern` dont la source est un CANEVAS (la tuile). Les deux
-     classificateurs d'export (`_classifyObjectForHybrid` et le chemin pdf-lib)
-     traitent un remplissage `pattern` comme RASTER — c'est mesuré dans le PDF :
-     un bloc de 380 × 200 px rempli de motif sort en UNE IMAGE de 1 584 × 834 px
-     en HD (300 dpi), soit 4,17 × la taille du bloc, exactement la résolution
-     demandée. La netteté à l'impression est donc celle de l'export, pas une
-     promesse de vecteur : le nom du plug-in parle du dessin (formes
-     géométriques, pas de photo), la description doit parler, elle, du fichier
-     livré. Une vraie sortie vectorielle demanderait d'émettre un tracé par
-     cellule ET par copie de symétrie — mesuré : 26 × 37 cellules × 2 passes × 8
-     symétries = 15 392 sous-chemins pour un A4 à 8 mm, dans un seul objet. C'est
-     un chantier à part, pas une ligne de description. */
-  description: L('Motif, rosace, kaléidoscope ou chaos — à partir d\'une forme ou d\'un mélange d\'images. Aperçu en direct dans la trappe. À l\'export PDF, le motif est une image à la résolution choisie (HD = 300 dpi).',
-    'Pattern, rosette, kaleidoscope or chaos — from a shape or a mix of images. Live preview in the panel. In PDF export the pattern is an image at the chosen resolution (HD = 300 dpi).',
-    'パターン・ロゼット・万華鏡・混沌 — 図形または画像のミックスから。パネル内でライブプレビュー。PDF 書き出しでは、柄は選択した解像度の画像になります（HD = 300 dpi）。'),
+     `fabric.Pattern` dont la source est un CANEVAS (la tuile). Les classificateurs
+     d'export traitent un remplissage de motif comme RASTER — c'est mesuré dans le
+     PDF. Ce qui a changé en 1.7.675 : ce n'est plus LE BLOC ENTIER qui est
+     rasterisé. La tuile est embarquée UNE fois et répétée par le PDF, à la densité
+     de l'export. Un bloc de 380 × 200 px rempli de motif passait de 187 Ko à 2 Ko,
+     et une page A4 entière en ULTRA HD — qui ne se terminait pas — sort désormais
+     en 5,5 Ko. Le nom du plug-in parle du dessin (formes géométriques, pas de
+     photo) ; la description doit parler, elle, du fichier livré. */
+  description: L('Motif, rosace, kaléidoscope ou chaos — à partir d\'une forme ou d\'un mélange d\'images. Aperçu en direct dans la trappe. À l\'export PDF, le motif est répété comme une image, à la résolution choisie.',
+    'Pattern, rosette, kaleidoscope or chaos — from a shape or a mix of images. Live preview in the panel. In PDF export the pattern is repeated as an image, at the chosen resolution.',
+    'パターン・ロゼット・万華鏡・混沌 — 図形または画像のミックスから。パネル内でライブプレビュー。PDF 書き出しでは、柄は画像として繰り返され、選択した解像度になります。'),
 
-  /* 🆕 v1.7.674 — L'ICÔNE DE LA BARRE DU HAUT.
+  /* 🆕 v1.7.675 — L'ICÔNE DE LA BARRE DU HAUT.
      Demande utilisateur : « pour motif trouve une icône ». On dessine un MOTIF :
      des points en quinconce, c'est-à-dire ce que fait ce plug-in — une forme
      répétée en grille décalée.
      ⚠️ MÊME FACTURE QUE LES AUTRES ICÔNES DE CETTE ZONE : 24×24, `fill="none"`,
      `stroke="currentColor"`, épaisseur 1,8.
-     ⚠️ v1.7.674 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
+     ⚠️ v1.7.675 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
      Demande utilisateur : « les icons que les plugins ajoute dans la top
      navigation me semble plus noir que les autre en chromie ». La couleur était la
      même ; c'est l'encre qui pesait. Mesuré en pixels opaques sur un rendu 48×48 :

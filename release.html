@@ -849,6 +849,58 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.675 — LE MOTIF N'EST PLUS UN BITMAP GRAND COMME LA PAGE.
+     Deux constats de l'audit PDF, dont un que l'audit lui-même avait mal posé. Les deux
+     sont corrigés, et la correction est mesurée objet par objet dans le fichier produit.
+
+     (1) « LE MOTIF EST RASTERISÉ DEUX FOIS » — C'ÉTAIT FAUX, ET VOICI LA PREUVE.
+     Les « deux images » d'un export contenant un motif ne sont pas le même dessin en
+     double : c'est UN bitmap RVB et SON MASQUE ALPHA. Énumération des objets du PDF :
+     '8 0 R' est '/XObject /Image /DeviceRGB 1584×834' avec 'smask: 13 0 R', et
+     '13 0 R' est '/DeviceGray 1584×834'. Le masque est indispensable : sur la tuile du
+     plug-in, 1 053 142 pixels sur 1 318 639 sont semi-transparents — le retirer
+     remplirait les jours de noir. Le vrai coût n'était donc pas un doublon, mais la
+     TAILLE : le bloc entier était rasterisé à la résolution d'export.
+
+     (2) CE QUI ÉTAIT VRAIMENT CASSE : UNE PAGE EN MOTIF NE S'EXPORTAIT PLUS.
+     Un motif posé sur une page A4 en ULTRA HD demandait une toile de 4 958 × 7 016 px
+     (34,8 millions de pixels). MESURÉ : plus de quatre minutes sans fin, export jamais
+     rendu. Le motif est pourtant DÉJÀ une petite tuile répétée : on l'embarque UNE fois
+     et on la repose par translations, à la densité de l'export. Résultats mesurés :
+     un bloc de 380 × 200 px passe de 187 Ko à 2 Ko ; une page A4 entière en motif sort
+     en 5,5 Ko au lieu de ne jamais finir. La couverture est vérifiée au point près sur
+     sept géométries — aucun trou.
+     ⚠️ Trois pièges trouvés en écrivant ce correctif, et chacun aurait rendu la
+     correction silencieusement inutile ou fausse :
+       · un motif Fabric NE PORTE PAS de propriété 'type' : '"pattern"' n'apparaît que
+         dans sa sérialisation. Un garde-fou écrit sur 'fill.type === "pattern"' ne se
+         serait jamais déclenché ;
+       · l'ancre du motif n'est pas le centre du bloc mais son COIN haut-gauche — la
+         source de Fabric le dit : '_applyPatternGradientTransform' translate de
+         '-width/2' alors que le contexte est DÉJÀ centré, les deux demi-largeurs
+         s'annulent. Ancrer au centre aurait décalé le dessin de 8 px sur le bloc de
+         référence, soit 6 pt d'écart entre l'aperçu et le PDF ;
+       · ce chemin remplace le rendu COMPLET du bloc, donc le CONTOUR doit être
+         redessiné, sinon une bordure disparaît.
+     Tout cas que la fonction ne sait pas reproduire à l'identique — forme autre qu'un
+     rectangle, rotation, coin arrondi, découpe, ombre, opacité partielle, motif tourné,
+     motif trop fin — reprend le chemin d'origine, intact.
+
+     (3) LA POLICE DE SECOURS NE RESTE PLUS DANS LE FICHIER QUAND ELLE N'A SERVI À RIEN.
+     Second constat de l'audit, celui-là bien réel. Sur un document qui n'utilise que
+     Bebas Neue, le PDF livré portait un objet '/Type1 /Helvetica' que la page NE
+     RÉFÉRENÇAIT PAS — vérifié en lisant le dictionnaire '/Font' des ressources de la
+     page : il n'y contenait que '/BebasNeue-Regular-9742682568 → 5 0 R', Helvetica
+     restant orphelin. Pour un imprimeur, c'est une police NON EMBARQUÉE déclarée.
+     Les quatre chemins d'export embarquent Helvetica D'AVANCE, comme repli : l'appel
+     crée l'objet même si aucun texte n'en a besoin, et on ne peut pas l'embarquer « à la
+     demande » puisque le repli doit être prêt au moment où un texte en a besoin. La
+     solution retenue est donc un élagage à la sortie, branché une seule fois sur
+     'save' : si aucune page ne référence la police de secours, l'objet est supprimé ;
+     sinon il est gardé à l'identique. Mesuré dans les deux sens : sans usage, le PDF
+     passe de « Helvetica + Times-Roman » à « Times-Roman » seul ; avec usage, la police
+     est conservée. -->
+
 <!-- ===== SUPER PRINT v1.7.674 — LE PDF RETROUVE SES POLICES, ET LA BARRE FIXE SE RESSERRE.
      Deux corrections mesurées, une sortie assumée, et deux retouches de la présentation.
 

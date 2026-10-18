@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN INTÉGRÉ « PRINT VPS »  (v1.7.674)
+   SUPERPRINT — PLUG-IN INTÉGRÉ « PRINT VPS »  (v1.7.675)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Demande utilisateur : « on doit sortir "printvps" de la top navigation et cette
