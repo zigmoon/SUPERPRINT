@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — IMPORT FIGMA  (v1.7.661)
+   SUPERPRINT — IMPORT FIGMA  (v1.7.662)
    ═══════════════════════════════════════════════════════════════════════════════
 
    CE QUE CE MODULE LIT : le JSON d'un fichier Figma, tel que le rendent
@@ -40,7 +40,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.661';
+  var VERSION = '1.7.662';
   var PT_MM = 25.4 / 72;          /* 1 pt (unité Figma) = 0,3528 mm */
   var BLEED_MM_DEFAUT = 3;
 

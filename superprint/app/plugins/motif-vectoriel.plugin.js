@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.661)
+   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.662)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce que fait ce plug-in : il habille un fond de page — ou un bloc sélectionné —
@@ -81,7 +81,7 @@
    `api.apercu`, `api.toileApercu`. S'il fonctionne sans rien d'autre, l'API est
    suffisante pour un plug-in réel.
    ─────────────────────────────────────────────────────────────────────────────── */
-/* ═══ v1.7.661 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
+/* ═══ v1.7.662 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
    Demande utilisateur : « relie bien la partie plug-in et nos deux plugins en
    trois langue EN fr ja ».
    Chaque libellé visible est écrit `L(français, english, 日本語)` et résolu à
@@ -103,13 +103,13 @@ SPPluginAPI({
   icon: '▦',
   description: L('Motif, rosace, kaléidoscope ou chaos — à partir d\'une forme ou d\'un mélange d\'images. Aperçu en direct dans la trappe.', 'Pattern, rosette, kaleidoscope or chaos — from a shape or a mix of images. Live preview in the panel.', 'パターン・ロゼット・万華鏡・混沌 — 図形または画像のミックスから。パネル内でライブプレビュー。'),
 
-  /* 🆕 v1.7.661 — L'ICÔNE DE LA BARRE DU HAUT.
+  /* 🆕 v1.7.662 — L'ICÔNE DE LA BARRE DU HAUT.
      Demande utilisateur : « pour motif trouve une icône ». On dessine un MOTIF :
      des points en quinconce, c'est-à-dire ce que fait ce plug-in — une forme
      répétée en grille décalée.
      ⚠️ MÊME FACTURE QUE LES AUTRES ICÔNES DE CETTE ZONE : 24×24, `fill="none"`,
      `stroke="currentColor"`, épaisseur 1,8.
-     ⚠️ v1.7.661 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
+     ⚠️ v1.7.662 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
      Demande utilisateur : « les icons que les plugins ajoute dans la top
      navigation me semble plus noir que les autre en chromie ». La couleur était la
      même ; c'est l'encre qui pesait. Mesuré en pixels opaques sur un rendu 48×48 :

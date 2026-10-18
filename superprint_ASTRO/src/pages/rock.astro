@@ -92,7 +92,7 @@ const navNotes = "<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->"
   <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
   <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
-  <!-- (v1.7.661 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
+  <!-- (v1.7.662 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
        la barre a été déplacé dans .nav-tools, qui reste visible sous 1000 px :
        il n'y a donc plus rien à dupliquer ici.) -->
   <div class="mm-lang">
@@ -104,7 +104,7 @@ const navNotes = "<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->"
   </div>
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.661</span>
+    <span>SuperPrint v1.7.662</span>
   </div>
 </div>
 
@@ -279,9 +279,88 @@ const navNotes = "<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->"
 </section>
 
 </main>
-<Fragment slot="after">
-<script is:inline src="/JS/pages/rock/0-language-switcher.js?v=1.7.661"></script>
 
-<script is:inline type="module" src="/JS/pages/rock/1-rock-engine.js?v=1.7.661"></script>
+<div class="fondations">
+      <div class="fondations-grid">
+
+        <a class="fondation" href="https://github.com/zigmoon/SUPERPRINT" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/github.svg" alt="" width="32" height="32"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">GitHub</span>
+            <span class="fondation-desc"><span class="inline-fr">Le code source</span><span class="inline-en">The source code</span><span class="inline-ja">ソースコード</span></span>
+          </span>
+        </a>
+
+        <!-- 🆕 v1.7.662 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
+             Demande utilisateur, après avoir vu la première tentative reléguée au
+             colophon : « Footer de superprint.cc LA BARRE QUI EST FIXE SUR LA PAGE
+             et pas le footer de la page, à droite de github on va ajouter notre
+             discord ». C'est donc ici, et pas en bas du document.
+             Le pictogramme est le tracé officiel monochrome (icons/discord.svg,
+             Simple Icons, CC0-1.0), cuit à l'encre du site (#17130D) comme ses
+             trois voisins : la barre est en noir et blanc, aucune couleur de marque
+             n'y entre. Mesuré : 1 289 pixels d'encre à 48 × 48, contre 1 055 pour
+             GitHub, 1 341 pour Rust et 1 232 pour macOS — le poids visuel est donc
+             dans la même famille, il ne « saute » pas aux yeux.
+             `rel="noopener"` est obligatoire : la page s'ouvre dans un onglet tiers. -->
+        <a class="fondation" href="https://discord.gg/B8EXBY8P" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/discord.svg" alt="" width="32" height="32"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">Discord</span>
+            <span class="fondation-desc"><span class="inline-fr">Questions et feedback</span><span class="inline-en">Questions and feedback</span><span class="inline-ja">質問とフィードバック</span></span>
+          </span>
+        </a>
+
+        <!-- ⚠️ CHIFFRE À RAFRAÎCHIR : « 5 231 » = téléchargements npm des 30 derniers
+             jours, relevé le 11 octobre 2026 via l'API npmjs
+             (api.npmjs.org/downloads/point/last-month/superprint).
+             Il n'est PAS chargé en direct : le site n'appelle aucun CDN. Changer
+             aussi le « 2026-10 » de la phrase. -->
+        <a class="fondation" href="https://www.npmjs.com/package/superprint" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/npm.svg" alt="" width="32" height="32"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">npm</span>
+            <span class="fondation-desc"><span class="inline-fr"><span class="fondation-chiffre">5&nbsp;231</span> install.<span class="fondation-chiffre">/30 j</span> <span class="fondation-date">(2026-10)</span></span><span class="inline-en"><span class="fondation-chiffre">5,231</span> installs<span class="fondation-chiffre">/30 d</span> <span class="fondation-date">(2026-10)</span></span><span class="inline-ja"><span class="fondation-chiffre">5,231</span> インストール<span class="fondation-chiffre">/30日</span> <span class="fondation-date">(2026-10)</span></span></span>
+          </span>
+        </a>
+
+        <a class="fondation" href="https://www.rust-lang.org" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/rust.svg" alt="" width="32" height="32"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">Rust</span>
+            <span class="fondation-desc"><span class="inline-fr">Calcul : sûr et prévisible</span><span class="inline-en">Computing: safe and predictable</span><span class="inline-ja">計算：安全で予測可能</span></span>
+          </span>
+        </a>
+
+            <!-- 🆕 v1.7.662 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
+                 Demande utilisateur : « à la fin du footer fixe en carré mets le bouton
+                 WhatsApp directement, cela sera plus simple directement dans la barre
+                 plutôt que flottant ; cependant garde-le bien en mobile (cette bulle
+                 WhatsApp est à conserver en mobile) ».
+                 🆕 puis : « le design de l'icône WhatsApp dans la barre fixe ce n'est
+                 pas pro, mets un filet de séparation comme les autres et dépose
+                 l'icône au centre de cet espace ».
+                 La CASE porte donc le même filet que ses voisines (`border-left: 1px
+                 solid var(--line)`) et sur la même hauteur : c'est le conteneur qui
+                 est étiré, pas le carré. Un filet accroché à un carré de 44 px ne
+                 mesurait que 44 px dans une barre de 73 — mesuré, et cela se voyait.
+                 Le carré a perdu son cadre et son fond : au milieu d'une barre sans
+                 cadre, un carré encadré paraissait posé là. Il ne reste que le
+                 pictogramme, centré par `margin: auto` dans une case pleine hauteur.
+                 ⚠️ LA BULLE FLOTTANTE N'EST PAS SUPPRIMÉE, ELLE EST MASQUÉE EN DESKTOP
+                 (voir `.sp-wa` sous 901 px). La supprimer du balisage aurait fait
+                 disparaître la seule entrée WhatsApp des téléphones. -->
+            <span class="fondation-wa-case">
+              <a class="fondation-wa" href="https://wa.me/33671614110" target="_blank" rel="noopener noreferrer" title="WhatsApp — +33 6 71 61 41 10" aria-label="WhatsApp — +33 6 71 61 41 10">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="24" height="24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path></svg>
+              </a>
+            </span>
+
+      </div>
+    </div>
+<Fragment slot="after">
+<script is:inline src="/JS/pages/rock/0-language-switcher.js?v=1.7.662"></script>
+
+<script is:inline type="module" src="/JS/pages/rock/1-rock-engine.js?v=1.7.662"></script>
 </Fragment>
 </MarketingLayout>

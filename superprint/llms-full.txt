@@ -9,7 +9,7 @@
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
 - **Trademarks**: the "SuperPrint", "SP213" and "SuperTyPo" names and logos remain trademarks of the publisher, governed separately from the code license — see https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/TRADEMARKS.md
-- **Version**: 1.7.661 (October 2026)
+- **Version**: 1.7.662 (October 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking. The project accepts optional donations (see https://superprint.cc/price.html) — it has no investor and sells no user data.
 - **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.115); the launcher downloads the application once and serves it locally.
