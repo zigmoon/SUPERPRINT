@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — IMPORT FIGMA  (v1.7.667)
+   SUPERPRINT — IMPORT FIGMA  (v1.7.668)
    ═══════════════════════════════════════════════════════════════════════════════
 
    CE QUE CE MODULE LIT : le JSON d'un fichier Figma, tel que le rendent
@@ -40,7 +40,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.667';
+  var VERSION = '1.7.668';
   var PT_MM = 25.4 / 72;          /* 1 pt (unité Figma) = 0,3528 mm */
   var BLEED_MM_DEFAUT = 3;
 
@@ -365,7 +365,17 @@
   }
 
   /* ── Cadres de premier niveau → pages ───────────────────────────────────────── */
-  function cadresDe(json) {
+  /* 🆕 v1.7.668 — LES NŒUDS HORS CADRE NE SONT PLUS PERDUS.
+     MESURÉ (banc d'audit, `noeuds-libres.json`) : un canevas qui porte AU MOINS un
+     cadre voyait tous ses autres nœuds ignorés, sans un mot. Un rectangle posé à côté
+     du cadre disparaissait donc à l'import — un export de designer contient souvent
+     des éléments libres (notes, variantes écartées, cotes). On les réunit désormais
+     dans une page de synthèse, mais SEULEMENT si l'appelant le demande
+     (`opts.inclureLibres`) : par défaut le comportement d'avant est conservé, pour
+     qu'aucun document existant ne change de nombre de pages sans que l'utilisateur
+     l'ait choisi. Le choix lui est proposé à l'ouverture. */
+  function cadresDe(json, opts) {
+    var inclureLibres = !!(opts && opts.inclureLibres);
     var out = [];
     var racine = normaliserRacine(json);
     if (!racine) return out;
@@ -383,18 +393,102 @@
           out.push({ noeud: n, canvas: cv });
         }
       }
-      /* Aucun cadre : on fabrique une page avec les nœuds libres du canevas. */
+      var libres = cv.children.filter(function (n) {
+        return n && !TYPES_CADRE.test(String(n.type || '')) && boite(n);
+      });
+      /* Aucun cadre : les nœuds libres du canevas FONT la page (comportement d'origine). */
       if (out.length === avant) {
-        var libres = cv.children.filter(function (n) {
-          return n && !TYPES_CADRE.test(String(n.type || ''));
-        });
         if (libres.length) {
           out.push({ noeud: { type: 'FRAME', name: cv.name || 'Canvas', children: libres }, canvas: cv, synthetique: true });
         }
+      } else if (inclureLibres && libres.length) {
+        /* Des cadres ET des nœuds libres : une page de plus, à la fin du canevas. */
+        out.push({
+          noeud: { type: 'FRAME', name: (cv.name ? cv.name + ' — hors cadre' : 'Hors cadre'), children: libres },
+          canvas: cv, synthetique: true, horsCadre: true
+        });
       }
     }
     return out;
   }
+
+  /* ── Ce qu'un fichier contient, avant toute conversion ──────────────────────── */
+  /* 🆕 v1.7.668 — L'INVENTAIRE, POUR PROPOSER DES OPTIONS À L'OUVERTURE.
+     Un fichier Figma peut porter PLUSIEURS FORMATS DE CADRE (affiche A4 portrait,
+     A4 paysage, carré). SuperPrint n'a qu'un format de page par document : convertir
+     un tel fichier sans rien dire produit des pages trop petites, donc du contenu
+     ROGNÉ — mesuré : 235,11 pt de débordement sur le cadre paysage.
+     Cette fonction ne convertit rien : elle décrit, pour que l'application demande.
+       formats : chaque format distinct, du plus grand au plus petit, avec son nombre
+                 de cadres et leurs noms ;
+       libres  : nombre de nœuds hors cadre (susceptibles d'être réunis dans une page) ;
+       multi   : vrai dès qu'il y a plus d'un format. */
+  function mm(pt) { return Math.round(pt * PT_MM * 100) / 100; }
+  function cleFormat(ptW, ptH) {
+    /* Deux cadres sont « du même format » à 0,5 pt près : les exports Figma varient
+       de quelques centièmes sur une même maquette, et 0,5 pt = 0,18 mm, invisible. */
+    return (Math.round(ptW * 2) / 2) + 'x' + (Math.round(ptH * 2) / 2);
+  }
+
+  function analyse(json) {
+    var out = { cadres: 0, formats: [], multi: false, libres: 0, canvases: 0 };
+    var racine = normaliserRacine(json);
+    if (!racine) return out;
+    var parCle = {};
+    var cadres = cadresDe(json);
+    out.cadres = cadres.length;
+    for (var i = 0; i < cadres.length; i++) {
+      var n = cadres[i].noeud;
+      var b = boite(n);
+      if (!b || !(b.w > 0) || !(b.h > 0)) continue;
+      var cle = cleFormat(b.w, b.h);
+      if (!parCle[cle]) parCle[cle] = { w: b.w, h: b.h, count: 0, noms: [] };
+      parCle[cle].count++;
+      if (parCle[cle].noms.length < 6) parCle[cle].noms.push(String(n.name || 'Cadre'));
+    }
+    var formats = Object.keys(parCle).map(function (k) { return parCle[k]; });
+    formats.forEach(function (f) {
+      f.wmm = mm(f.w);
+      f.hmm = mm(f.h);
+      f.aire = f.w * f.h;
+    });
+    /* Du plus grand au plus petit : c'est l'ordre dans lequel on veut les proposer,
+       et le premier est le format retenu par défaut. */
+    formats.sort(function (a, b) { return (b.aire - a.aire) || (b.w - a.w); });
+    /* 🆕 v1.7.668 — COMBIEN DE CADRES CHAQUE FORMAT ROGNERAIT.
+       C'est la seule information qui permette de choisir en connaissance de cause :
+       un format qui rogne deux cadres sur trois n'est pas un bon candidat, même s'il
+       a la plus grande surface. On compte les cadres qui DÉPASSENT (tolérance 0,5 pt). */
+    formats.forEach(function (f) {
+      f.coupes = 0;
+      formats.forEach(function (g) {
+        if (g !== f && (g.w > f.w + 0.5 || g.h > f.h + 0.5)) f.coupes += g.count;
+      });
+    });
+    out.formats = formats;
+    out.multi = formats.length > 1;
+    /* Le format ENVELOPPE : la largeur maximale et la hauteur maximale de tous les
+       cadres. Il contient tout par construction, donc il ne rogne rien — c'est le
+       choix par défaut d'un fichier multi-formats. */
+    out.enveloppe = formats.length ? {
+      w: Math.max.apply(null, formats.map(function (f) { return f.w; })),
+      h: Math.max.apply(null, formats.map(function (f) { return f.h; }))
+    } : null;
+    if (out.enveloppe) {
+      out.enveloppe.wmm = mm(out.enveloppe.w);
+      out.enveloppe.hmm = mm(out.enveloppe.h);
+    }
+    var canvases = Array.isArray(racine.children) ? racine.children : [];
+    out.canvases = canvases.length;
+    canvases.forEach(function (cv) {
+      if (!cv || !Array.isArray(cv.children)) return;
+      out.libres += cv.children.filter(function (n) {
+        return n && !TYPES_CADRE.test(String(n.type || '')) && boite(n);
+      }).length;
+    });
+    return out;
+  }
+
 
   /* ── Détection ──────────────────────────────────────────────────────────────── */
   function estFigma(json) {
@@ -409,12 +503,66 @@
   }
 
   /* ── Conversion complète vers un document SuperPrint ────────────────────────── */
-  function versSP(json, nomFichier, bleedMm) {
+  /* 🆕 v1.7.668 — LES OPTIONS D'OUVERTURE.
+     Signature compatible : `versSP(json, nom, bleedMm)` se comporte EXACTEMENT comme
+     avant. Un quatrième argument facultatif ajoute le choix laissé à l'utilisateur :
+       opts.strategie  'auto' (défaut) | 'enveloppe' | 'plus-grand' | 'premier' | 'format'
+         'auto'       : un seul format → comportement d'origine ; plusieurs formats →
+                        l'ENVELOPPE (largeur max × hauteur max : rien n'est rogné)
+         'enveloppe'  : toutes les pages au format enveloppe, cadres CENTRÉS, échelle 1
+         'plus-grand' : toutes les pages au format du plus GRAND cadre (vraie feuille,
+                        mais les cadres plus hauts ou plus larges sont rognés)
+         'premier'    : comportement d'origine, même avec plusieurs formats (rogne)
+         'format'     : ne garder que les cadres du format demandé (`opts.format`), le
+                        document prend CE format exact — c'est le moyen d'obtenir « un
+                        document par format » en relançant l'import pour chaque format
+       opts.format     { width, height } en MILLIMÈTRES, pour 'format'
+       opts.inclureLibres  true pour réunir les nœuds hors cadre dans une page de plus
+     ⚠️ AUCUNE MISE À L'ÉCHELLE N'EST PROPOSÉE, ET C'EST DÉLIBÉRÉ : agrandir ou réduire
+     une maquette pour la faire entrer dans une autre feuille change la taille réelle des
+     textes et des images — un import qui ment sur les dimensions est pire qu'une page
+     trop grande. Les trois stratégies gardent donc l'échelle 1. */
+  function versSP(json, nomFichier, bleedMm, opts) {
+    opts = opts || {};
     var racine = normaliserRacine(json);
     if (!racine) throw new Error('document Figma introuvable');
     var bleed = (typeof bleedMm === 'number' && isFinite(bleedMm) && bleedMm >= 0) ? bleedMm : BLEED_MM_DEFAUT;
     var bleedPx = (bleed * 72) / 25.4;
-    var cadres = cadresDe(json);
+
+    var inventaire = analyse(json);
+    var strategie = String(opts.strategie || 'auto');
+    if (strategie === 'auto') strategie = inventaire.multi ? 'enveloppe' : 'premier';
+
+    /* Format cible commun à toutes les pages, en points. `null` = chaque page prend la
+       taille de son propre cadre (comportement d'origine). */
+    var cible = null;
+    if (strategie === 'enveloppe') {
+      if (inventaire.enveloppe) cible = { w: inventaire.enveloppe.w, h: inventaire.enveloppe.h };
+    } else if (strategie === 'plus-grand') {
+      var plus = inventaire.formats[0] || null;
+      if (plus) cible = { w: plus.w, h: plus.h };
+    } else if (strategie === 'format') {
+      var fmm = opts.format || {};
+      var fw = Number(fmm.width), fh = Number(fmm.height);
+      if (!(fw > 0 && fh > 0)) throw new Error('format cible invalide');
+      /* ⚠️ mm → pt : c'est l'INVERSE de PT_MM (qui vaut 25,4/72). Écrit à l'envers,
+         un format cible de 210 mm valait 74 pt et ne correspondait à aucun cadre —
+         mesuré : « aucun cadre à ce format » sur un fichier de deux A4. */
+      cible = { w: fw * 72 / 25.4, h: fh * 72 / 25.4 };
+    }
+
+    var cadres = cadresDe(json, { inclureLibres: opts.inclureLibres === true });
+    /* Stratégie « format » : on ne garde que les cadres de ce format (à 0,5 pt près,
+       même tolérance que l'inventaire). Un fichier dont aucun cadre ne correspond
+       lève une erreur EXPLICITE plutôt que de rendre un document vide. */
+    if (strategie === 'format' && cible) {
+      var cleCible = cleFormat(cible.w, cible.h);
+      cadres = cadres.filter(function (c) {
+        var bb = boite(c.noeud);
+        return bb && cleFormat(bb.w, bb.h) === cleCible;
+      });
+      if (!cadres.length) throw new Error('aucun cadre à ce format dans le fichier');
+    }
     if (!cadres.length) throw new Error('aucun cadre exploitable dans ce fichier Figma');
 
     var pages = [];
@@ -440,9 +588,14 @@
         b = { x: u.x, y: u.y, w: u.r - u.x, h: u.bo - u.y };
       }
       if (!premiereBoite) premiereBoite = b;
-      /* dx/dy : origine du cadre → origine de la page, plus le fond perdu. */
-      var dx = -b.x + bleedPx;
-      var dy = -b.y + bleedPx;
+      /* dx/dy : origine du cadre → origine de la page, plus le fond perdu.
+         ⚠️ LE CENTRAGE EST UNE ADDITION, PAS UN CHANGEMENT DE FORMULE : quand la page
+         a exactement la taille du cadre (toutes les stratégies sauf 'plus-grand'), le
+         terme ajouté vaut 0 et les coordonnées sont IDENTIQUES à celles d'avant. */
+      var pageW = cible ? cible.w : b.w;
+      var pageH = cible ? cible.h : b.h;
+      var dx = -b.x + bleedPx + Math.max(0, (pageW - b.w) / 2);
+      var dy = -b.y + bleedPx + Math.max(0, (pageH - b.h) / 2);
       /* Le cadre lui-même n'est pas un objet (c'est la page) : on pose ses enfants. */
       if (Array.isArray(n.children)) {
         for (var k = 0; k < n.children.length; k++) {
@@ -459,12 +612,12 @@
     }
     if (!pages.length) throw new Error('aucun cadre exploitable dans ce fichier Figma');
 
-    var mm = function (pt) { return Math.round(pt * PT_MM * 100) / 100; };
+    var boiteDoc = cible ? { w: cible.w, h: cible.h } : premiereBoite;
     var format = {
-      width: mm(premiereBoite.w),
-      height: mm(premiereBoite.h),
+      width: mm(boiteDoc.w),
+      height: mm(boiteDoc.h),
       unit: 'mm',
-      orientation: premiereBoite.w > premiereBoite.h ? 'landscape' : 'portrait'
+      orientation: boiteDoc.w > boiteDoc.h ? 'landscape' : 'portrait'
     };
 
     return {
@@ -499,6 +652,8 @@
     version: VERSION,
     estFigma: estFigma,
     versSP: versSP,
-    cadres: function (json) { return cadresDe(json).length; }
+    /* 🆕 v1.7.668 — l'inventaire, pour la boîte d'options d'ouverture. */
+    analyser: analyse,
+    cadres: function (json, opts) { return cadresDe(json, opts).length; }
   };
 })();

@@ -849,6 +849,57 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.668 — À L'OUVERTURE, ON DEMANDE QUAND ÇA COMPTE.
+     Audit des trois entrées : IDML, Figma, .sp / .json. Chaque défaut est mesuré sur un
+     fichier de contrôle, avant puis après ; les bancs sont réutilisables.
+     (1) FIGMA MULTI-FORMATS — LE CONTENU ÉTAIT ROGNÉ. Un fichier Figma peut porter des
+     cadres de tailles différentes (affiche A4 portrait, A4 paysage, carré) ; SuperPrint
+     n'a qu'un format de page par document, et le lecteur prenait celui du PREMIER cadre
+     pour toutes les pages. Mesuré sur le gabarit « multi-format.json » : 235,11 pt de
+     contenu hors feuille sur le cadre paysage. Une boîte d'options s'ouvre désormais —
+     UNIQUEMENT s'il y a un choix réel — et propose quatre stratégies chiffrées avec le
+     fichier : enveloppe (défaut, rien n'est rogné, cadres centrés), plus grand cadre,
+     un seul format (un document exact par format), format du premier cadre (comportement
+     précédent, avec le nombre de cadres rognés annoncé). Un fichier d'un seul format
+     s'importe exactement comme avant, sans aucune question.
+     (2) FIGMA, NŒUDS HORS CADRE — ILS ÉTAIENT PERDUS SANS UN MOT. Un canevas qui porte
+     au moins un cadre voyait tous ses autres nœuds ignorés (mesuré : le rectangle libre
+     de « noeuds-libres.json » n'arrivait pas). Une case à cocher, proposée seulement
+     s'il y en a, les réunit dans une page de plus.
+     (3) IDML MULTI-FORMATS — MÊME DÉFAUT, MÊME REMÈDE. Un document InDesign peut avoir
+     des pages de tailles différentes. Mesuré sur le gabarit « multi-formats.idml » (page
+     A4 + page A3) : 2 objets sur 2 de la page A3 tombaient hors de la feuille A4.
+     Deux boutons dans la fenêtre d'import : enveloppe (défaut) ou première page. Après
+     correctif, zéro objet hors feuille en mode enveloppe, comportement d'origine
+     conservé en mode première page.
+     (4) .sp ET .json — ALLER-RETOUR AUDITÉ, AUCUNE PERTE. Un document de contrôle
+     (format 200 × 300, fond perdu 5, marges asymétriques 12/18/15/25, 2 pages, 6 objets,
+     un repère) est exporté, réimporté, réexporté, puis comparé champ par champ : format,
+     fond perdu, marges, mode d'affichage, mode colorimétrique, nombre de pages, repères
+     et objets (type, position, taille, texte, couleur) — identiques dans les deux sens,
+     pour les deux lecteurs, qui sont distincts dans le code.
+     NON-RÉGRESSION IDML : 25 objets sur 25 à moins de 2 pt sur le fichier InDesign réel
+     (écart maximal 0,71 pt), et les trois gabarits courts donnent les mêmes relevés
+     qu'avant. ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-668">
+ <h2>SUPER PRINT <span>v1.7.668</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 octobre 2026" data-i18n-en="Released October 18, 2026" data-i18n-jp="2026年10月18日公開">Released October 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="À l’ouverture d’un fichier InDesign ou Figma, SuperPrint demande ce qui compte : quand les pages n’ont pas toutes la même taille, il propose les formats au lieu de rogner en silence." data-i18n-en-html="When opening an InDesign or Figma file, SuperPrint asks what matters: when pages are not all the same size, it offers the formats instead of cropping silently." data-i18n-jp-html="InDesign や Figma のファイルを開くとき、SuperPrint は重要な点を尋ねます。ページの大きさが揃っていない場合、黙って切り取らずに形式を提案します。">When opening an InDesign or Figma file, SuperPrint asks what matters: it offers the formats instead of cropping silently.</p>
+
+ <h3 data-i18n-fr-html="🔍 Quatre points audités, quatre mesures" data-i18n-en-html="🔍 Four audited points, four measurements" data-i18n-jp-html="🔍 4つの監査項目と4つの測定">🔍 Four audited points, four measurements</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Figma multi-formats : le contenu était rogné.</strong> Le format du premier cadre servait pour toutes les pages. Mesuré : 235,11 pt hors feuille sur le cadre paysage. Une boîte d’options — ouverte seulement s’il y a un choix réel — propose l’enveloppe (défaut, rien n’est rogné), le plus grand cadre, un seul format (un document exact par format) ou l’ancien comportement, avec le nombre de cadres rognés annoncé. Un fichier d’un seul format s’importe comme avant." data-i18n-en-html="<strong>Figma multi-format: content was cropped.</strong> The first frame’s format applied to every page. Measured: 235.11 pt outside the sheet on the landscape frame. An options box — opened only when there is a real choice — offers the envelope (default, nothing cropped), the largest frame, one format only (one exact document per format), or the previous behaviour, with the number of cropped frames stated. A single-format file imports exactly as before." data-i18n-jp-html="<strong>Figma の複数形式：内容が切り取られていました。</strong>最初のフレームの形式が全ページに適用されていました。実測：横長フレームで 235.11 pt が用紙外。選択肢のダイアログ（本当に選択が必要なときだけ表示）は、外接形式（既定、切り取りなし）、最大フレーム、1形式のみ（形式ごとに正確な文書）、以前の動作を提示し、切り取られるフレーム数を明示します。単一形式のファイルは従来どおりに読み込まれます。">Figma multi-format: the first frame’s format applied to every page; 235.11 pt fell outside the sheet.</li>
+  <li data-i18n-fr-html="<strong>Figma : les nœuds hors cadre étaient perdus.</strong> Un canevas avec au moins un cadre ignorait tous les autres nœuds, sans un mot. Une case à cocher, proposée seulement s’il y en a, les réunit dans une page de plus." data-i18n-en-html="<strong>Figma: nodes outside frames were lost.</strong> A canvas with at least one frame ignored every other node, silently. A checkbox, offered only when there are some, gathers them into one extra page." data-i18n-jp-html="<strong>Figma：フレーム外のノードが失われていました。</strong>フレームが 1 つでもあるキャンバスでは他のノードが黙って無視されていました。存在する場合のみ表示されるチェックボックスで、追加ページにまとめられます。">Figma: nodes outside frames were lost silently; a checkbox gathers them.</li>
+  <li data-i18n-fr-html="<strong>IDML multi-formats : même défaut, même remède.</strong> Sur un document A4 + A3, 2 objets sur 2 de la page A3 tombaient hors de la feuille A4. Deux boutons dans la fenêtre d’import : enveloppe (défaut) ou première page. Après correctif : zéro objet hors feuille en enveloppe, comportement d’origine en première page." data-i18n-en-html="<strong>IDML multi-format: same defect, same remedy.</strong> On an A4 + A3 document, 2 of 2 objects on the A3 page fell outside the A4 sheet. Two buttons in the import window: envelope (default) or first page. After the fix: zero objects outside the sheet in envelope mode, original behaviour in first-page mode." data-i18n-jp-html="<strong>IDML の複数形式：同じ不具合、同じ対処。</strong>A4＋A3 の文書で、A3 ページの 2 個すべてのオブジェクトが A4 用紙外でした。読み込み画面に 2 つのボタン：外接形式（既定）または最初のページ。修正後、外接形式では用紙外ゼロ、最初のページでは従来の動作です。">IDML multi-format: 2 of 2 objects on an A3 page fell outside an A4 sheet; now a choice.</li>
+  <li data-i18n-fr-html="<strong>.sp et .json : aller-retour sans perte.</strong> Document de contrôle (200 × 300, fond perdu 5, marges 12/18/15/25, 2 pages, 6 objets, un repère) exporté, réimporté, réexporté, comparé champ par champ : tout est identique, dans les deux sens et pour les deux lecteurs, qui sont distincts dans le code." data-i18n-en-html="<strong>.sp and .json: lossless round trip.</strong> Control document (200 × 300, bleed 5, margins 12/18/15/25, 2 pages, 6 objects, one guide) exported, re-imported, re-exported, compared field by field: everything matches, both ways, for both readers, which are separate code paths." data-i18n-jp-html="<strong>.sp と .json：往復で損失なし。</strong>制御文書（200 × 300、塗り足し 5、余白 12/18/15/25、2 ページ、6 オブジェクト、ガイド 1 本）を書き出し、再読み込みし、再書き出しして項目ごとに比較：双方向・両リーダー（コード上は別経路）で完全一致。">.sp and .json: a lossless round trip on a control document, both ways, both readers.</li>
+  <li data-i18n-fr-html="<strong>Non-régression IDML.</strong> Le fichier InDesign réel reste à 25 objets sur 25 à moins de 2 pt (écart maximal 0,71 pt), et les trois gabarits courts donnent les mêmes relevés qu’avant." data-i18n-en-html="<strong>IDML non-regression.</strong> The real InDesign file stays at 25 of 25 objects within 2 pt (max offset 0.71 pt), and the three short fixtures read exactly as before." data-i18n-jp-html="<strong>IDML の非退行。</strong>実在の InDesign ファイルは 25/25 が 2 pt 以内（最大 0.71 pt）のまま、短い 3 つの見本も以前と同じ結果です。">IDML non-regression: 25/25 within 2 pt, and the three short fixtures unchanged.</li>
+ </ul>
+</article>
+
 <!-- ===== SUPER PRINT v1.7.667 — LE TRIO D'INSTALLEURS RETROUVE SA TAILLE.
      Retour utilisateur, après essai de la v1.7.666 : « finalement c'était mieux avant la
      taille, désolé ». La réduction est donc ANNULÉE, et les valeurs d'origine sont
