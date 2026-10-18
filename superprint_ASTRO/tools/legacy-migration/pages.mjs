@@ -85,7 +85,13 @@ export const PAGES = [
     featuresHref: 'index.html#features',
     brand: {
       ariaLabel: 'SuperPrint — Accueil',
-      version: '1.7.591',
+      /* ⚠️ v1.7.660 — PLUS DE VERSION EN DUR ICI. La valeur était figée à
+         « 1.7.591 » et le bump ne la voyait pas (il remplace la version
+         COURANTE, pas une version périmée) : la page ROCK affichait donc une
+         version vieille de 69 livraisons, quand `rock.html` — la source —
+         affichait la bonne. `BrandHeader` et `SiteFooter` retombent sur
+         `VERSION` (src/data/site.ts), que le bump met à jour : la valeur ne
+         peut plus diverger. */
       tag: { fr: 'Notre moteur', en: 'Our engine', ja: '私たちのエンジン' },
     },
     footer: {
@@ -93,7 +99,6 @@ export const PAGES = [
       featuresHref: 'index.html#features',
       authorsHref: null,
       heading: NAV_HEADING,
-      version: '1.7.591',
       pressKit: true,
       legal: 'anchors',
     },

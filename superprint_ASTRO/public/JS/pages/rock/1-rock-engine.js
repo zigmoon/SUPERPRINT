@@ -11,7 +11,7 @@
    • sobriété : le rendu s'arrête quand la scène n'est pas visible, pas de post-traitement,
      et une image vectorielle remplace la 3D si WebGL manque.
    ══════════════════════════════════════════════════════════════════════════════════ */
-import * as THREE from './JS/three.module.min.js';
+import * as THREE from '/JS/three.module.min.js';
 
 const canvas = document.getElementById('rkCanvas');
 const cadre = canvas && canvas.parentElement;

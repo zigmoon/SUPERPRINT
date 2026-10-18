@@ -418,11 +418,30 @@ function splitBody(body, page) {
 
 /* ─────────────────────── ASSEMBLAGE D'UN FICHIER ─────────────────────── */
 
-function renderMarkup(html, cssOut, routeSlug) {
+function renderMarkup(html, cssOut, routeSlug, pageSrc) {
   const guards = [...blocks(html, 'script'), ...blocks(html, 'style')].sort((a, b) => a.start - b.start);
   const parts = [];
   let cursor = 0;
   let scriptIndex = 0;
+
+  /* 🆕 v1.7.660 — LES IMPORTS RELATIFS D'UN SCRIPT DÉPLACÉ DOIVENT SUIVRE.
+     MESURÉ : `rock.html` porte un `<script type="module">` qui commence par
+     `import * as THREE from './JS/three.module.min.js'`. Extrait vers
+     `public/JS/pages/rock/1-rock-engine.js`, ce chemin relatif se résout depuis
+     le DOSSIER DU FICHIER, pas depuis la page : le navigateur demandait
+     `/JS/pages/rock/JS/three.module.min.js` et recevait un 404 — la pierre 3D
+     ne s'affichait plus, alors que `JS/three.module.min.js` était bien livré.
+     On ré-ancre donc chaque spécificateur relatif sur le dossier de la page
+     d'origine (`/` pour `rock.html`, `/supertypo` pour `supertypo/index.html`) et
+     on l'écrit en ABSOLU, seule forme insensible à la profondeur du fichier
+     extrait. Le contenu du script n'est pas touché par ailleurs. */
+  const dossierPage = '/' + pageSrc.split('/').slice(0, -1).join('/');
+  const base = dossierPage === '/' ? '' : dossierPage;
+  const reancrer = (code) =>
+    code.replace(/(\bfrom\s*|\bimport\s*\(\s*)(['"])\.\/([^'"]+)\2/g, (_m, avant, quote, chemin) => {
+      const cible = `${base}/${chemin}`.replace(/\/{2,}/g, '/');
+      return `${avant}${quote}${cible}${quote}`;
+    });
 
   for (const g of guards) {
     if (g.start < cursor) continue;
@@ -445,7 +464,7 @@ function renderMarkup(html, cssOut, routeSlug) {
         const file = shared
           ? `JS/marketing/${shared}.js`
           : `JS/pages/${routeSlug}/${scriptIndex}-${named || scriptSlug(g.content, scriptIndex)}.js`;
-        write(join(PUBLIC, file), g.content);
+        write(join(PUBLIC, file), reancrer(g.content));
         const attrs = g.attrs.trim();
         parts.push(`<script is:inline${attrs ? ` ${attrs}` : ''} src="/${file}?v=${VERSION}"></script>`);
         scriptIndex += 1;
@@ -473,9 +492,9 @@ function renderPage(page) {
   };
 
   const cssOut = [...css];
-  const bodyContent = protectTopLevelComments(renderMarkup(content, cssOut, routeSlug));
+  const bodyContent = protectTopLevelComments(renderMarkup(content, cssOut, routeSlug, page.src));
   const bodyAfter = after
-    ? protectTopLevelComments(renderMarkup(after, cssOut, routeSlug))
+    ? protectTopLevelComments(renderMarkup(after, cssOut, routeSlug, page.src))
     : '';
 
   if (cssOut.length) {

@@ -21,7 +21,7 @@
  * 1000 px, SEULS SES LIENS DE TEXTE disparaissent (`.nav-links > a`), pas
  * lui : le téléchargement reste atteignable au doigt.
  */
-import { DESKTOP_APPLICATIONS, DESKTOP_DOWNLOADS, DOWNLOAD_LABELS, MARKUP_LANG_ORDER, NAV_ITEMS, urlTelechargement } from '../data/site';
+import { DESKTOP_APPLICATIONS, DESKTOP_DOWNLOADS, DOWNLOAD_LABELS, MARKUP_LANG_ORDER, NAV_ITEMS, VERSION, urlTelechargement } from '../data/site';
 
 interface Props {
   /** `href` de l'entrée à marquer active, ou `null`. */
@@ -90,7 +90,11 @@ const ICONES: Record<string, string> = {
          fermer. Le `padding-top` du panneau est un PONT transparent — sans lui, le
          survol se coupe entre le bouton et la carte et le menu se referme au moment
          où l'on veut cliquer. La bascule est dans le script de la page
-         (`JS/marketing/lang-switcher.js`, ou son équivalent par page). -->
+         (`JS/pages/<page>/0-language-switcher.js`, extrait du `<script>` en ligne
+         par `tools/legacy-migration/convert.mjs`). ⚠️ Elle vivait auparavant dans
+         un fichier PARTAGÉ (`JS/marketing/lang-switcher.js`) ; le script de chaque
+         page a divergé depuis, donc elles sont désormais extraites page par page
+         et le fichier partagé n'existe plus. -->
     <div class="nav-dd" data-nav-dd>
       <button type="button" class="nav-dd-btn" id="navDlBtn" aria-expanded="false" aria-controls="navDlPanel">
         {MARKUP_LANG_ORDER.map((lang) => (
@@ -128,7 +132,19 @@ const ICONES: Record<string, string> = {
                   <span class="nav-dd-apps">
                     {DESKTOP_APPLICATIONS.map((app) => (
                       <span class="nav-dd-app">
-                        <span class="nav-dd-app-nom">{app.nom}</span>
+                        {/* 🆕 v1.7.660 — LE NOM ET LA VERSION SONT GROUPÉS. La barre
+                            du site affiche « SuperPrint v1.7.660 » dans le menu de
+                            téléchargement (`nav-dd-app-id` > `nav-dd-app-nom` +
+                            `nav-dd-app-ver`), pour que le visiteur sache QUELLE
+                            version il installe avant de cliquer. Ce composant ne
+                            produisait que le nom : `verify.mjs` comptait donc neuf
+                            `nav-dd-app-id` et neuf `nav-dd-app-ver` PERDUS sur
+                            chaque page. On reproduit la structure du balisage
+                            d'origine, wrapper compris. */}
+                        <span class="nav-dd-app-id">
+                          <span class="nav-dd-app-nom">{app.nom}</span>
+                          <span class="nav-dd-app-ver">v{VERSION}</span>
+                        </span>
                         <span class="nav-dd-app-fmt">
                           {item.paquets.map((paquet) => (
                             <a href={urlTelechargement(app, paquet)} rel="noopener">{paquet.label}</a>

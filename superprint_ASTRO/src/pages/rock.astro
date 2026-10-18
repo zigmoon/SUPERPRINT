@@ -51,7 +51,6 @@ const seo = {
 const headExtra = "<link rel=\"stylesheet\" href=\"CSS/fonts.css\">";
 const brand = {
   "ariaLabel": "SuperPrint — Accueil",
-  "version": "1.7.591",
   "tag": {
     "fr": "Notre moteur",
     "en": "Our engine",
@@ -67,7 +66,6 @@ const footer = {
     "en": "Navigation",
     "ja": "ナビゲーション"
   },
-  "version": "1.7.591",
   "pressKit": true,
   "legal": "anchors"
 } as const;
@@ -94,6 +92,9 @@ const navNotes = "<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->"
   <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
   <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+  <!-- (v1.7.660 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
+       la barre a été déplacé dans .nav-tools, qui reste visible sous 1000 px :
+       il n'y a donc plus rien à dupliquer ici.) -->
   <div class="mm-lang">
     <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
       <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>

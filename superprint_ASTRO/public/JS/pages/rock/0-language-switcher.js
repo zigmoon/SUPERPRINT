@@ -45,6 +45,32 @@ function setLang(lang) {
   setLang(lang === 'fr' || lang === 'ja' ? lang : 'en');
 })();
 
+/* ── Menu « Télécharger » de la barre ──
+   Même mécanisme que sur la présentation : un panneau de divulgation, refermé
+   par un clic ailleurs ou par Échap. */
+(function () {
+  var dd = document.querySelector('[data-nav-dd]');
+  if (!dd) return;
+  var btn = dd.querySelector('.nav-dd-btn');
+  var panel = dd.querySelector('.nav-dd-panel');
+  if (!btn || !panel) return;
+  function poser(ouvert) {
+    dd.setAttribute('data-ouvert', ouvert ? 'true' : 'false');
+    btn.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+  }
+  poser(false);
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    poser(dd.getAttribute('data-ouvert') !== 'true');
+  });
+  document.addEventListener('click', function (e) {
+    if (!dd.contains(e.target)) poser(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.keyCode === 27) poser(false);
+  });
+})();
+
 /* ── menu mobile (burger) ──
    Même mécanisme que la présentation : menu plein écran sous la barre collante, langues
    et bas de page dedans, fermeture par Échap ou par un lien. */
