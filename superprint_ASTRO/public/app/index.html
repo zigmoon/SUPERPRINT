@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.670 — Zigmoon
+         SuperPrint 1.7.671 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.670 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.671 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.670",
+          "softwareVersion": "1.7.671",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -387,7 +387,7 @@
          Grosse rotation créative (14 thèmes : mode, archi, art, nature morte,
          nature, ville, néon) — plus de variété, plus moderne. 900px q=45,
          ~20-85 Ko, chargement quasi instantané. En local rien n'est préchargé. -->
-    <!-- 🎨 v1.7.670 — NOUVEAU JEU DE 30 PHOTOS : ARCHITECTURE ET NATURE.
+    <!-- 🎨 v1.7.671 — NOUVEAU JEU DE 30 PHOTOS : ARCHITECTURE ET NATURE.
          Demande utilisateur : « je trouve les images du splash screen de
          superprint pas super créatives... mets un jeu d'images sur le splash,
          attention à la taille à la compression, cela doit être super léger ».
@@ -585,8 +585,8 @@
          déjà AVANT son propre Hypher (lignes 5201 et 11462). Si le noyau ne se
          charge pas, la césure continue avec Hypher : aucun changement visible.
          Retirer ces deux lignes remet l'application à l'identique. -->
-    <script src="JS/superprint-core.js?v=20261011-v670-rust-couleurs" defer></script>
-    <script src="JS/superprint-branchement.js?v=20261011-v670-rust-couleurs" defer></script>
+    <script src="JS/superprint-core.js?v=20261011-v671-rust-couleurs" defer></script>
+    <script src="JS/superprint-branchement.js?v=20261011-v671-rust-couleurs" defer></script>
     <!-- 🦀 Import PostScript/EPS branché sur son PROPRE noyau Rust.
          Deuxième module, et c'est délibéré : le noyau de césure/couleurs/montage
          (superprint_core.wasm, 406 Ko) est téléchargé par tout le monde, alors
@@ -597,7 +597,7 @@
          jusque-là, `main.js` charge `JS/sp-eps-import.js` comme avant. Si le
          noyau ne se charge pas, rien ne change pour l'utilisateur.
          Retirer cette ligne remet l'application à l'identique. -->
-    <script src="JS/superprint-eps.js?v=20261011-v670-rust-eps" defer></script>
+    <script src="JS/superprint-eps.js?v=20261011-v671-rust-eps" defer></script>
     <!-- 🦀 Export PDF IMPOSÉ branché sur le noyau Rust.
          Le bouton de la modale d'imposition fait déjà, dans `index.html` :
          `window._spGuardExport(this, window.exportImposedPDF || exportImposedPDF)`.
@@ -608,7 +608,7 @@
          appelle l'export vectoriel du produit, qui reste en place. Aucune ligne
          de main.js n'est touchée. Retirer cette ligne remet l'application à
          l'identique. -->
-    <script src="JS/superprint-montage.js?v=20261012-v670-rust-montage" defer></script>
+    <script src="JS/superprint-montage.js?v=20261012-v671-rust-montage" defer></script>
     <!-- 🦀 Import de DOCUMENTS branché sur son PROPRE noyau Rust (le troisième).
          406,5 Ko (césure, couleurs, montage) + 324,8 Ko (EPS) + 290,1 Ko
          (documents) : les trois modules sont séparés pour que personne ne paie
@@ -633,7 +633,7 @@
          croire que tout a été vu, et elle ne dit rien plutôt que de deviner
          quand un objet ne peut pas être décrit. Aucune ligne de main.js n'est
          touchée. Retirer cette ligne remet l'application à l'identique. -->
-    <script src="JS/superprint-prepresse.js?v=20261013-v670-rust-prepresse" defer></script>
+    <script src="JS/superprint-prepresse.js?v=20261013-v671-rust-prepresse" defer></script>
     <!-- ═══════════════════════════════════════════════════════════════════════
          PAPIERS — catalogue, dépôt, matière. Les entrées se rangent dans le
          SOUS-MENU DE L'ICÔNE IMAGE (après « SVG »), et le dépôt sur une page pose
@@ -652,7 +652,7 @@
          Open Sans, Montserrat, Roboto, Lato, Poppins, Playfair Display, Bebas Neue,
          IBM Plex Mono, IBM Plex Sans, Fira Code, Space Mono, Noto Sans JP.
          100% self-hosted — RGPD-friendly + offline-ready. Aucun appel CDN. -->
-    <link rel="stylesheet" href="CSS/fonts.css?v=20261015-v670-polices-allegees">
+    <link rel="stylesheet" href="CSS/fonts.css?v=20261015-v671-polices-allegees">
 
     <!-- 🛡️ Force-load Open Sans (used as default for new text blocks). Without this,
          Chrome Windows falls back to Times when fabric draws on canvas because
@@ -712,7 +712,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20261015-v670-regles-fond-clair">
+    <link rel="stylesheet" href="CSS/main.css?v=20261015-v671-regles-fond-clair">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1297,7 +1297,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.670</div>
+                <div class="splash-version">1.7.671</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1399,7 +1399,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.670</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.671</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1495,7 +1495,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.670 | 10 2026<br>
+                V 1.7.671 | 10 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -2056,7 +2056,7 @@
                             <path d="M17.7 13.2l1 2.3 2.3 1-2.3 1-1 2.3-1-2.3-2.3-1 2.3-1z"/>
                         </svg>
                     </button>
-                    <!-- 🆕 v1.7.670 — « GLOBAL REFACTOR » N'A PLUS DE BOUTON ICI.
+                    <!-- 🆕 v1.7.671 — « GLOBAL REFACTOR » N'A PLUS DE BOUTON ICI.
                          Demande utilisateur : « on va déplacer l'outil global refactor de
                          la top nav sous forme de plug-in par défaut de superprint (donc on
                          ne l'affiche plus dans la top nav mais dans plugins use ouvrira
@@ -2071,7 +2071,7 @@
                          ⚠️ CETTE TRAPPE RESTE DANS LE DOCUMENT, avec son identifiant et sa
                          structure : c'est le plug-in qui en prend la porte d'entrée, pas
                          le module qui change de place. -->
-                    <!-- 🆕 v1.7.670 — LES PLUG-INS ACTIFS ONT LEUR ICÔNE ICI.
+                    <!-- 🆕 v1.7.671 — LES PLUG-INS ACTIFS ONT LEUR ICÔNE ICI.
                          Demande utilisateur : « affiche une icône dans la top nav quand
                          c'est en on (global refactor on doit encore l'avoir, elle était
                          dans la top nav avant en permanence) ».
@@ -2297,12 +2297,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.670). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.671). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.670 — internal cache tag: JS v669 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.671 — internal cache tag: JS v671 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: calc(8px + var(--sp-regle-haut, 0px)); display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
                       data-sp-js="v669"
-                      data-sp-sw="v1.7.670">v1.7.670</span>
+                      data-sp-sw="v1.7.671">v1.7.671</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -2339,7 +2339,7 @@
                     <input type="file" id="importEpsInput" accept=".eps,.ai,.ps,application/postscript,application/illustrator,application/pdf" style="display:none" />
                     <!-- New: SP project import -->
                     <input type="file" id="importSPInput" accept=".sp" style="display:none" />
-                    <!-- 🆕 v1.7.670 — import Figma : le JSON du document (API REST ou greffon). -->
+                    <!-- 🆕 v1.7.671 — import Figma : le JSON du document (API REST ou greffon). -->
                     <input type="file" id="importFigmaInput" accept=".json,.fig,application/json" style="display:none" />
                     <!-- New: image import into selected shape -->
                     <input type="file" id="importImageIntoShapeInput" accept="image/*" style="display:none" />
@@ -2367,7 +2367,7 @@
                         <div id="importHint" style="margin-top:12px; font-size:13px; line-height:1.5; opacity:0.6;">SP : projet natif SuperPrint · JSON : restauration projet · PDF : 1 page par page · TXT/RTF : texte brut · DOC/DOCX : Word · Excel : XLSX/XLS · Open Office : ODT · IDML : mise en page complète · SLA : import basique textes+formes · FIGMA : un cadre = une page (API REST ou greffon).</div>
                     </div>
 
-                    <!-- 🆕 v1.7.670 — OPTIONS D'OUVERTURE FIGMA.
+                    <!-- 🆕 v1.7.671 — OPTIONS D'OUVERTURE FIGMA.
                          Un fichier Figma peut porter PLUSIEURS FORMATS DE CADRE, et
                          SuperPrint n'a qu'un format de page par document : sans choix,
                          les cadres d'un autre format étaient ROGNÉS (mesuré : 235,11 pt
@@ -2525,7 +2525,7 @@
                             <div style="font-size: 11px; color: #888; margin-top: 4px;">ou cliquez pour sélectionner</div>
                             <input type="file" id="idmlZipFileInput" accept=".zip,.idml" style="display: none;">
                         </div>
-                        <!-- 🆕 v1.7.670 — OPTION DE FORMAT, LUE AU MOMENT DE L'IMPORT.
+                        <!-- 🆕 v1.7.671 — OPTION DE FORMAT, LUE AU MOMENT DE L'IMPORT.
                              Un document InDesign peut avoir des pages de tailles différentes
                              (une A4, une A3) ; SuperPrint a UN format de page par document.
                              Mesuré sur le gabarit `multi-formats.idml` : 2 objets sur 2 de la
@@ -2726,7 +2726,7 @@
                            on le dit ici, et le lien mène aux Préférences, onglet IA.
                            La pastille du titre ne suffisait pas — un point ambre ne
                            dit ni ce qui manque ni où le régler. */
-                        /* v1.7.670 — RETOUR UTILISATEUR : « met un gris léger à la place
+                        /* v1.7.671 — RETOUR UTILISATEUR : « met un gris léger à la place
                            de ton jaune et pas d'émoji ». Le jaune ambre (#fff8e1) se
                            lisait comme un avertissement dans une interface neutre ; il
                            devient le gris de la maison, et la clé emoji disparaît. */
@@ -3416,7 +3416,7 @@
                     </div>
                 </div>
 
-                <!-- 🆕 v1.7.670 — LE FILET SÉPARATEUR ET L'ORDRE DES PARTIES.
+                <!-- 🆕 v1.7.671 — LE FILET SÉPARATEUR ET L'ORDRE DES PARTIES.
                      Demande utilisateur : « mettre un filet séparateur au-dessus des
                      parties suivantes : ALIGNEMENT DU TEXTE, OPTIONS DE BLOC DE TEXTE,
                      JUSTIFICATION, OPTIONS DE TEXTE, TONS DIRECTS, RETRAIT, FORMATS,
@@ -4240,7 +4240,7 @@
             </div>
 
             <!-- ══════════════════════════════════════════════════════════════
-                 v1.7.670 — PLUG-INS ET SERVEUR MCP
+                 v1.7.671 — PLUG-INS ET SERVEUR MCP
 
                  Les deux boutons sont ICI, en bas de la barre de droite, sous
                  « dev tool » : c'est la zone des fonctions qui étendent le
@@ -4275,7 +4275,7 @@
         </div>
 
         <!-- ══════════════════════════════════════════════════════════════════
-             v1.7.670 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
+             v1.7.671 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
 
              POURQUOI ICI, ET NULLE PART AILLEURS. Elle est le DERNIER ENFANT de
              `#mainApp`, qui est un conteneur FLEX (`display: flex`). Sa largeur
@@ -4312,7 +4312,7 @@
         </aside>
 
         <!-- ══════════════════════════════════════════════════════════════════
-             v1.7.670 — TRAPPE « PLUG-IN »
+             v1.7.671 — TRAPPE « PLUG-IN »
 
              Un plug-in ne s'exécute pas dans une pop-in : il ouvre CETTE trappe,
              exactement comme « Global Refactor » ouvre `#maquettePanel`. Demande
@@ -4702,6 +4702,7 @@
         <div class="modal" style="max-width:520px;">
             <div class="modal-header">
                 <div class="modal-title" data-translate="createStyleTitle">Créer un style typographique</div>
+                <button class="modal-close sp-modal-close" onclick="closeCreateStyleModal()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body">
                 <div class="modal-section">
@@ -4797,6 +4798,7 @@
     <div class="modal" style="max-width: 700px; margin: 60px auto; padding: 0; box-sizing: border-box; background: #fff; border-radius: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
             <div class="modal-header">
                 <div class="modal-title" data-translate="faqTitle">Guide utilisateur & FAQ</div>
+                <button class="modal-close sp-modal-close" onclick="closeFaqModal()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body">
                 <div id="faqAccordion">
@@ -4875,7 +4877,7 @@
         <div class="modal sp-modal-card" style="max-width: 700px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
             <div class="modal-header" style="flex-shrink: 0; position: relative;">
                 <div class="modal-title">Réglages</div>
-                <button class="modal-close sp-modal-close" onclick="closeSettings()" style="position: absolute; right: 12px; top: 8px;">×</button>
+                <button class="modal-close sp-modal-close" onclick="closeSettings()" aria-label="Fermer">✕</button>
             </div>
             
             <!-- Tabs -->
@@ -5003,7 +5005,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.670 — 18 octobre 2026
+                        SuperPrint v1.7.671 — 18 octobre 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -5336,6 +5338,7 @@
         <div class="modal" style="max-width: 900px;">
             <div class="modal-header">
                 <div class="modal-title"><span data-translate="cheminTitle">Chemin de fer - Réorganiser les pages</span></div>
+                <button class="modal-close sp-modal-close" onclick="closeCheminDeFerModal(true)" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body">
                 <div class="modal-section">
@@ -5367,7 +5370,7 @@
         <div class="modal" style="max-width: 800px;">
             <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;">
                 <div class="modal-title"><span>Édition gabarit</span></div>
-                <button type="button" onclick="closeMasterEditor()" title="Fermer et revenir au montage des pages" aria-label="Fermer" style="background:transparent;border:none;font-size:22px;line-height:1;cursor:pointer;color:#666;padding:4px 8px;border-radius:4px;" onmouseover="this.style.background='#f0f0f0';this.style.color='#000';" onmouseout="this.style.background='transparent';this.style.color='#666';">×</button>
+                <button type="button" onclick="closeMasterEditor()" class="modal-close sp-modal-close" title="Fermer et revenir au montage des pages" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body" style="padding:0;">
                 <div style="display:flex;gap:8px;padding:10px 16px;background:#f0f4ff;border-bottom:1px solid #e0e0e0;flex-wrap:wrap;">
@@ -5457,6 +5460,7 @@
         <div class="modal" style="max-width: 480px;">
             <div class="modal-header">
                 <div class="modal-title"><span>🔢 Numérotation des pages</span></div>
+                <button class="modal-close sp-modal-close" onclick="document.getElementById('pageNumberingModal').classList.remove('active')" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body">
                 <div class="modal-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -5548,7 +5552,7 @@
             <div class="modal-header" style="flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 16px;">
                 <div class="modal-title" data-translate="impModalTitle">Calcul d'Imposition</div>
                 <div style="flex:1;"></div>
-                <button class="modal-close sp-modal-close" onclick="(window.closeImpositionModal||closeImpositionModal)()" aria-label="Fermer" data-translate-aria="impBtnClose">×</button>
+                <button class="modal-close sp-modal-close" onclick="(window.closeImpositionModal||closeImpositionModal)()" aria-label="Fermer" data-translate-aria="impBtnClose">✕</button>
             </div>
             <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px;">
                 <div class="modal-section">
@@ -5703,7 +5707,7 @@
         <div class="modal sp-modal-card" style="max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
             <div class="modal-header" style="flex-shrink: 0; position: relative;">
                 <div class="modal-title"><span data-translate="glyphsModalTitle">Panneau des Glyphes</span></div>
-                <button class="modal-close sp-modal-close" onclick="closeGlyphsModal()" aria-label="Fermer" style="position: absolute; right: 12px; top: 8px;">×</button>
+                <button class="modal-close sp-modal-close" onclick="closeGlyphsModal()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px;">
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
@@ -5821,7 +5825,7 @@
                 <span id="dtTitle">dev tool</span>
             </div>
             <div id="dtSub" style="font: 10px/1.4 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; opacity: .6; margin-top: 4px;">console de script &amp; API SuperPrint</div>
-            <button class="modal-close sp-modal-close" onclick="closeDeveloperModal()" aria-label="Fermer" style="position: absolute; right: 12px; top: 8px;">&times;</button>
+            <button class="modal-close sp-modal-close" onclick="closeDeveloperModal()" aria-label="Fermer">✕</button>
         </div>
 
         <div id="dtTabs" role="tablist"></div>
@@ -5861,7 +5865,7 @@
         <div class="modal" style="max-width: 1000px; margin: 60px auto; padding: 48px 48px 32px 48px; box-sizing: border-box; background: #f7f7f7; border-radius: 12px;">
             <!-- Close link top right -->
             <div style="position: absolute; top: 32px; right: 48px;">
-                <a href="#" onclick="closeManualModal(); return false;" style="font-size: 1em; text-decoration: underline; color: #333;">Fermer</a>
+                <a href="#" onclick="closeManualModal(); return false;" class="modal-close sp-modal-close" aria-label="Fermer" style="text-decoration: none;">✕</a>
             </div>
             <!-- Intro: Two columns with subtle backgrounds -->
             <div style="display: flex; flex-wrap: wrap; gap: 48px; margin-bottom: 48px;">
@@ -5993,7 +5997,7 @@
                     <div class="crop-modal-title" id="cropModalTitle">Recadrage</div>
                     <div class="crop-modal-subtitle">Poignées pour redimensionner • Centre pour déplacer</div>
                 </div>
-                <button type="button" onclick="closeCropModal()" class="crop-modal-close" aria-label="Fermer">×</button>
+                <button type="button" onclick="closeCropModal()" class="modal-close sp-modal-close" aria-label="Fermer">✕</button>
             </div>
 
             <div class="crop-modal-content">
@@ -6074,7 +6078,7 @@
         <div class="modal" style="max-width: 700px; max-height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between;">
                 <div class="modal-title">📄 Importer un fichier PDF</div>
-                <button class="modal-close" onclick="closePDFImportModal()" style="position: absolute; right: 16px; top: 16px; background: #fff; border: 1px solid #ddd; width: 32px; height: 32px; border-radius: 6px; font-size: 20px; cursor: pointer; color: #333; display: flex; align-items: center; justify-content: center;">×</button>
+                <button class="modal-close sp-modal-close" onclick="closePDFImportModal()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body" style="flex: 1; overflow-y: auto;">
                 <div id="pdfLoadingMessage" style="text-align: center; padding: 40px;">
@@ -6236,7 +6240,7 @@
             <!-- Header fixe -->
             <div class="modal-header">
                 <div class="modal-title">Sauvegarde Web3 (IPFS)</div>
-                <button class="modal-close" onclick="closeWeb3Modal()" style="position: absolute; right: 12px; top: 8px; background: #fff; border: 1px solid #ddd; width: 32px; height: 32px; border-radius: 4px; font-size: 20px; cursor: pointer; color: #333; line-height: 1; display: flex; align-items: center; justify-content: center;">×</button>
+                <button class="modal-close sp-modal-close" onclick="closeWeb3Modal()" aria-label="Fermer">✕</button>
             </div>
 
             <!-- Contenu en 2 colonnes: 1/3 config + 2/3 fichiers -->
@@ -6323,7 +6327,7 @@
                     <line x1="9" y1="15" x2="15" y2="15"></line>
                 </svg>
                 <div class="modal-title" id="npModalTitle">Nouveau projet</div>
-                <button class="modal-close sp-modal-close" onclick="closeNewProjectModal()" style="position: absolute; right: 12px; top: 8px;">×</button>
+                <button class="modal-close sp-modal-close" onclick="closeNewProjectModal()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body" style="padding: 18px 20px 10px;">
                 <!-- Onglets de configuration : Basic · Advanced · Templates, puis
@@ -6550,7 +6554,7 @@
         <div class="modal" style="max-width: 480px;">
             <div class="modal-header">
                 <div class="modal-title">Sauvegarder le projet</div>
-                <button class="modal-close" onclick="closeSaveModal()" style="position: absolute; right: 12px; top: 8px; background: #fff; border: 1px solid #ddd; width: 32px; height: 32px; border-radius: 4px; font-size: 20px; cursor: pointer; color: #333; line-height: 1; display: flex; align-items: center; justify-content: center;">×</button>
+                <button class="modal-close sp-modal-close" onclick="closeSaveModal()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body" style="padding: 20px;">
                 <p style="font-size: 12px; color: #666; margin-bottom: 20px; text-align: center;">Choisissez où sauvegarder votre projet SuperPrint.</p>
@@ -6618,7 +6622,7 @@
                             </div>
                         </button>
                     </div>
-                    <!-- 🆕 v1.7.670 — EPS ET WORD (demande utilisateur : « on doit pouvoir
+                    <!-- 🆕 v1.7.671 — EPS ET WORD (demande utilisateur : « on doit pouvoir
                          enregistrer les .eps designer », « enregistrer sa maquette en Word »).
                          ⚠️ LES DEUX SONT DANS LE MÊME BLOC QUE HTML/EPUB, sous le même
                          intitulé « Exporter vers » : ce sont des formats de SORTIE, pas de
@@ -6664,7 +6668,7 @@
         <div class="modal" style="max-width: 440px;">
             <div class="modal-header">
                 <div class="modal-title" id="spNomTitre">Enregistrer sous</div>
-                <button class="modal-close" onclick="window.spFermerNom()" style="position: absolute; right: 12px; top: 8px; background: #fff; border: 1px solid #ddd; width: 32px; height: 32px; border-radius: 4px; font-size: 20px; cursor: pointer; color: #333; line-height: 1; display: flex; align-items: center; justify-content: center;">×</button>
+                <button class="modal-close sp-modal-close" onclick="window.spFermerNom()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body" style="padding: 20px;">
                 <p id="spNomAide" style="font-size: 12px; color: #666; margin: 0 0 12px; line-height: 1.5;">Donnez un nom à votre document : le fichier sera écrit avec ce nom.</p>
@@ -6695,7 +6699,7 @@
                     <path d="M14.8 14.2c2.9.2 6.7 1.6 6.7 5.8"></path>
                 </svg>
                 <div class="modal-title" data-i18n-fr="Collaboration" data-i18n-en="Collaboration">Collaboration</div>
-                <button class="modal-close sp-modal-close" onclick="window.SPCollab && window.SPCollab.close()" style="position:absolute; right:12px; top:8px;">×</button>
+                <button class="modal-close sp-modal-close" onclick="window.SPCollab && window.SPCollab.close()" aria-label="Fermer">✕</button>
             </div>
 
             <div class="modal-body" style="padding: 20px 24px;">
@@ -6942,9 +6946,9 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20261015-v670-version-telechargeable" defer></script>
-    <script src="JS/sp-export-designer.js?v=20261018-v670-eps-word" defer></script>
-<!-- ══ v1.7.670 — PLUG-INS ══
+    <script src="JS/main.js?v=20261015-v671-version-telechargeable" defer></script>
+    <script src="JS/sp-export-designer.js?v=20261018-v671-eps-word" defer></script>
+<!-- ══ v1.7.671 — PLUG-INS ══
      ⚠️ CES TROIS SCRIPTS REPRENNENT L'EMPREINTE DE CACHE DE `main.js`.
      MESURÉ deux fois sur ce dépôt : un fichier dont l'URL ne change pas continue
      d'être servi par le service worker après correction, et la correction devient
@@ -6974,12 +6978,12 @@
   });
 })();
 </script>
-    <!-- 🎯 v1.7.670 — _SP_RANGEMENT_655 : les soufflets des deux colonnes.
+    <!-- 🎯 v1.7.671 — _SP_RANGEMENT_655 : les soufflets des deux colonnes.
          Chargé APRÈS main.js (defer, donc dans l'ordre du document) : il ne fait
          que basculer une classe, mais il lit les [data-translate] que main.js a
          déjà traduits — et son `?v=` suit celui de main.js par le même mécanisme
          que les scripts de plug-ins, pour ne jamais servir un fichier périmé. -->
-    <script src="JS/sp-sidebar-clean.js?v=20261018-v670-version-telechargeable" defer></script>
+    <script src="JS/sp-sidebar-clean.js?v=20261018-v671-version-telechargeable" defer></script>
     <!-- 🎨 v1.7.525 — _SP_NUANCIERS_525 : nuanciers (accordéons) + import .ase.
          Chargé APRÈS main.js : il réutilise le gestionnaire `change` de
          #spotColorSelect au lieu de le réécrire. -->
@@ -6991,7 +6995,7 @@
     <!-- 🆕 Aperçu 3D (three.js) : module ES autonome, expose window.SP3DPreview.
          Si three.js n'est pas disponible (ex. ouverture via file://), le bouton
          PLAY reste inerte et n'impacte pas le reste de l'app. -->
-    <script type="module" src="JS/sp-3d-preview.js?v=20261015-v670-calque-encre"></script>
+    <script type="module" src="JS/sp-3d-preview.js?v=20261015-v671-calque-encre"></script>
 
     <!-- ── Startup session pop-in (Resume / Open / New) ───────────────────────── -->
     <div id="sp-startup-overlay" role="dialog" aria-modal="true" aria-labelledby="sp-startup-title" hidden>

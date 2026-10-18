@@ -424,7 +424,7 @@ function renderMarkup(html, cssOut, routeSlug, pageSrc) {
   let cursor = 0;
   let scriptIndex = 0;
 
-  /* 🆕 v1.7.670 — LES IMPORTS RELATIFS D'UN SCRIPT DÉPLACÉ DOIVENT SUIVRE.
+  /* 🆕 v1.7.671 — LES IMPORTS RELATIFS D'UN SCRIPT DÉPLACÉ DOIVENT SUIVRE.
      MESURÉ : `rock.html` porte un `<script type="module">` qui commence par
      `import * as THREE from './JS/three.module.min.js'`. Extrait vers
      `public/JS/pages/rock/1-rock-engine.js`, ce chemin relatif se résout depuis

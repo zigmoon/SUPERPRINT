@@ -849,6 +849,105 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.671 — LE TABLEAU DEVIENT UN SEUL ÉLÉMENT, ET LES FENÊTRES PARLENT D'UNE MÊME VOIX.
+     Quatre demandes.
+
+     (1) UN FILET ENTRE LES PLUG-INS DE LA BARRE DU HAUT.
+     Demande : « lorsque l'on ajoute un plugin, mettre un filet séparateur fin gris
+     vertical, au début et à la fin de l'ensemble des icônes ». La zone des plug-ins
+     est un conteneur VIDE tant qu'aucun plug-in n'est chargé : le filet ne doit donc
+     apparaître qu'avec le premier. MESURÉ avant : rien. Après : la zone passe de 730
+     à 816 px, un trait de 1 × 18 px à 737 et un à 808, les deux boutons entre 740 et
+     806. C'est exactement la hauteur des séparateurs de la barre latérale (18 px), pas
+     la hauteur de la barre — un trait pleine hauteur aurait coupé la rangée en deux.
+     Un trait de bordure sur le conteneur faisait 32 px : trop haut, d'où le pseudo-
+     élément. Masqué à l'impression.
+
+     (2) TOUTES LES FENÊTRES PARLENT D'UNE MÊME VOIX.
+     Demande : « uniformiser les croix de fermeture et le design de l'ensemble des
+     fenêtres popup, prendre la fenêtre Importer en référence ». L'audit des 22 fenêtres
+     donnait quatre familles de croix : onze à 28 × 28, quatre à 32 × 32 avec un rayon de
+     4, une à 34 × 34 avec un rayon de 10, et une qui n'était pas une croix du tout mais
+     un lien texte « Fermer ». QUATRE fenêtres n'en avaient AUCUNE (création de style,
+     FAQ, chemin de fer, numérotation de page) — on ne pouvait en sortir que par Échap.
+     Elles en ont une. Vérifié après : les 22 fenêtres affichent 28 × 28, rayon 0, glyphe
+     de 16 px, opacité 0,6. Et aucun geste de fermeture n'a été perdu : 16 avant, 22
+     après, zéro disparu, six ajouts purs.
+
+     (3) LE TABLEAU EST UN ÉLÉMENT, PAS UNE POIGNÉE DE BLOCS.
+     Demande : « les cellules doivent être groupées pour ne faire qu'un élément… clic sur
+     le bord = tout le tableau sélectionné, déplaçable et agrandissable ; clic dans une
+     cellule = édition ; Tab ou flèches + Entrée pour passer d'une cellule à l'autre ;
+     clic long sur le bord d'une colonne ou d'une ligne = largeur / hauteur ».
+     · POURQUOI PAS UN GROUPE FABRIC : un groupe rend ses membres non-éditables — on ne
+       pourrait plus cliquer dans une cellule pour écrire. Le tableau est donc tenu par
+       le CADRE, qui devient sélectionnable (il ne l'était pas : impossible de le tirer),
+       et cliquer à moins de 6 px du pourtour sélectionne le cadre, donc tout le tableau,
+       poignées comprises. Tolérance plus faible vers l'intérieur (2 px) pour qu'un clic
+       dans une cellule ne bascule pas sur le tableau.
+     · DEUX PIÈGES MESURÉS, ET CORRIGÉS. (a) Un premier montage ajoutait au cadre une
+       bande de préhension de 10 px : la boîte du groupe grandissait d'autant et le
+       tableau DÉRIVAIT de 5 × (facteur − 1) px à chaque agrandissement — 2,1 px à 1,43×.
+       La bande est supprimée, le bord est détecté à la distance ; la dérive mesurée
+       tombe à 0,2 px. (b) Saisir le tableau à 3 px à gauche de son bord tombait sur la
+       poignée milieu-gauche : Fabric agrandissait ET notre glissement déplaçait — le
+       tableau était déplacé et réduit de moitié. Les poignées sont maintenant laissées
+       à Fabric.
+     · TABULATION. La tabulation de l'application (v1.7.485) insère un \t dans le bloc en
+       édition ; elle ne voyait pas les tableaux. Le gestionnaire du tableau écoute
+       désormais en capture sur window, et la tabulation de l'application rend la main
+       sans consommer l'événement dès que la sélection est une cellule. Mesuré : UN, Tab,
+       DEUX → « UN » reste dans la première cellule, « DEUX » arrive dans la suivante ;
+       Maj+Tab revient. Hors tableau, Tab insère toujours une tabulation : vérifié.
+     · FLÈCHES ET ENTRÉE. Mesuré : après Échap l'application retirait l'objet de la
+       sélection, donc plus rien à déplacer au clavier ; la cellule est remise en
+       sélection. Flèche droite → cellule de droite, flèche bas → en dessous, Entrée →
+       édition. Pendant l'édition, les flèches déplacent le curseur DANS le texte,
+       comme partout ailleurs.
+     · CLIC LONG SUR UNE FRONTIÈRE (350 ms, sans bouger) : largeur de la colonne ou
+       hauteur de la ligne. Il fallait pour cela que la grille cesse d'être uniforme :
+       elle porte maintenant la largeur de chaque colonne et la hauteur de chaque ligne.
+       Mesuré : colonne 0 de 37,8 à 82,8 px (+45), largeur totale +45, les autres
+       colonnes inchangées ; ligne 0 de 85 à 120 px (+35). Un glissement sec, lui,
+       déplace toujours le texte.
+     · Un seul clic dans une cellule ouvre l'édition, comme demandé. Supprimer avec le
+       cadre sélectionné retire le tableau entier ; supprimer une cellule la vide et
+       garde la grille.
+
+     (4) LA PAGE API SANS BARRE FIXE.
+     Demande : « la page api.html ne doit pas comporter le footer fixe ». La barre est
+     retirée comme sur le manuel : mesuré, api.html et documentation.html à 0 px de haut
+     et sans remplissage bas, index.html et faq.html toujours à 73 px. ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-671">
+ <h2>SUPER PRINT <span>v1.7.671</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 octobre 2026" data-i18n-en="Released October 18, 2026" data-i18n-jp="2026年10月18日公開">Released October 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le tableau devient <strong>un seul élément</strong> : un clic sur son bord le sélectionne en entier, Tab et les flèches circulent de cellule en cellule, le clic long redimensionne une colonne ou une ligne. Et les <strong>22 fenêtres</strong> de l'application ferment enfin de la même façon." data-i18n-en-html="The table becomes <strong>a single element</strong>: one click on its border selects the whole thing, Tab and the arrow keys move from cell to cell, a long press resizes a column or a row. And the application's <strong>22 windows</strong> finally close the same way." data-i18n-jp-html="表が<strong>ひとつの要素</strong>になりました。枠をクリックすると表全体が選択され、Tab と矢印キーでセル間を移動でき、長押しで列幅・行高を変更できます。アプリの<strong>22 のウィンドウ</strong>も同じ閉じ方に揃いました。">The table becomes a single element: one click on its border selects the whole thing, Tab and arrows move from cell to cell, a long press resizes a column or row. And the application's 22 windows finally close the same way.</p>
+
+ <h3 data-i18n-fr-html="📊 Le tableau, d'un seul tenant" data-i18n-en-html="📊 The table, as one piece" data-i18n-jp-html="📊 表をひとつに">📊 The table, as one piece</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Un clic sur le bord sélectionne tout le tableau</strong>, poignées comprises : on le déplace et on l'agrandit d'un seul geste. Le cadre n'était jusqu'ici pas sélectionnable — le tableau ne pouvait donc pas être tiré. Mesuré : un clic à 3 px sous le bord bas sélectionne le cadre ; un glissement depuis ce point déplace le tableau de 60 × 40 px sans changer sa taille d'un pixel." data-i18n-en-html="<strong>One click on the border selects the whole table</strong>, handles included: you move and enlarge it in one gesture. The frame was not selectable until now — the table could not be dragged at all. Measured: a click 3 px below the bottom border selects the frame; a drag from that point moves the table 60 × 40 px without changing its size by a single pixel." data-i18n-jp-html="<strong>枠をクリックすると表全体が選択</strong>され、ハンドルも含めて一度に移動・拡大できます。これまで枠は選択できず、表をドラッグできませんでした。実測：下辺の 3 px 下をクリックすると枠が選択され、そこからドラッグすると 60 × 40 px 移動し、サイズは 1 px も変わりません。">One click on the border selects the whole table, handles included; dragging from there moves it 60 × 40 px with no change in size.</li>
+  <li data-i18n-fr-html="<strong>Un clic dans une cellule écrit dedans.</strong> Un premier montage ajoutait une bande de préhension de 10 px au cadre : la boîte du groupe grandissait d'autant et le tableau <em>dérivait</em> de 5 × (facteur − 1) px à chaque agrandissement, soit 2,1 px à 1,43×. La bande est supprimée, le bord est détecté à la distance — la dérive mesurée tombe à 0,2 px." data-i18n-en-html="<strong>A click inside a cell types in it.</strong> A first build added a 10 px grab band to the frame: the group box grew by as much and the table <em>drifted</em> by 5 × (factor − 1) px on every resize, i.e. 2.1 px at 1.43×. The band is gone, the border is detected by distance — measured drift drops to 0.2 px." data-i18n-jp-html="<strong>セル内をクリックするとそのまま入力</strong>できます。当初は枠に 10 px のつかみ帯を付けており、グループの箱がその分大きくなって、拡大のたびに表が 5 ×（倍率 − 1）px ずれました（1.43 倍で 2.1 px）。帯を廃して枠を距離で判定するようにし、ずれは実測 0.2 px になりました。">A click inside a cell types in it. The grab band that made the table drift 2.1 px at 1.43× is gone; drift is now 0.2 px.</li>
+  <li data-i18n-fr-html="<strong>Tab passe à la cellule suivante</strong>, Maj+Tab à la précédente, et l'édition s'enchaîne sans re-cliquer. Mesuré : « UN » reste dans la première cellule, « DEUX » arrive dans la suivante. Hors tableau, Tab insère toujours une tabulation : comportement inchangé, vérifié. <strong>Flèches</strong> pour changer de cellule, <strong>Entrée</strong> pour écrire ; dans le texte, les flèches déplacent le curseur." data-i18n-en-html="<strong>Tab moves to the next cell</strong>, Shift+Tab to the previous one, and editing continues without another click. Measured: “UN” stays in the first cell, “DEUX” lands in the next. Outside a table, Tab still inserts a tab: unchanged behaviour, verified. <strong>Arrows</strong> change cell, <strong>Enter</strong> starts typing; inside the text, arrows move the caret." data-i18n-jp-html="<strong>Tab で次のセル</strong>、Shift+Tab で前のセルへ移動し、そのまま入力できます。実測：「UN」は最初のセルに残り、「DEUX」は次のセルに入ります。表の外では Tab は従来どおりタブを挿入します（確認済み）。<strong>矢印</strong>でセル移動、<strong>Enter</strong> で入力開始。編集中は矢印はカーソル移動です。">Tab moves to the next cell, Shift+Tab to the previous, editing continues without a second click; outside a table Tab still inserts a tab.</li>
+  <li data-i18n-fr-html="<strong>Clic long sur la frontière d'une colonne ou d'une ligne</strong> (350 ms, sans bouger) : la grille n'est plus uniforme, chaque colonne et chaque ligne porte sa propre taille. Mesuré : colonne 0 de 37,8 à 82,8 px (+45) et largeur totale +45, les autres colonnes inchangées ; ligne 0 de 85 à 120 px (+35). Un glissement sec, lui, déplace toujours le texte." data-i18n-en-html="<strong>Long press on a column or row boundary</strong> (350 ms, without moving): the grid is no longer uniform, each column and row carries its own size. Measured: column 0 from 37.8 to 82.8 px (+45) and total width +45, other columns unchanged; row 0 from 85 to 120 px (+35). A plain drag still moves the text." data-i18n-jp-html="<strong>列や行の境界を長押し</strong>（350 ms、動かさずに）：グリッドは均等ではなくなり、各列・各行が個別のサイズを持ちます。実測：0 列目が 37.8 → 82.8 px（+45）、全体幅 +45、他の列は不変。0 行目が 85 → 120 px（+35）。通常のドラッグは従来どおりテキストを移動します。">Long press on a column or row boundary (350 ms) resizes it: column 0 goes 37.8 → 82.8 px, row 0 goes 85 → 120 px, other columns untouched.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🪟 22 fenêtres, une seule croix" data-i18n-en-html="🪟 22 windows, one close button" data-i18n-jp-html="🪟 22 のウィンドウ、閉じるボタンはひとつ">🪟 22 windows, one close button</h3>
+ <ul>
+  <li data-i18n-fr-html="L'audit des 22 fenêtres donnait quatre familles : onze croix à 28 × 28, quatre à 32 × 32 avec un rayon de 4, une à 34 × 34 avec un rayon de 10, et une qui n'était pas une croix mais un lien texte « Fermer ». Désormais : 28 × 28, rayon 0, glyphe de 16 px, opacité 0,6 — mesuré sur les 22." data-i18n-en-html="The audit of the 22 windows found four families: eleven crosses at 28 × 28, four at 32 × 32 with a 4 px radius, one at 34 × 34 with a 10 px radius, and one that was not a cross at all but a text link reading “Close”. Now: 28 × 28, radius 0, 16 px glyph, opacity 0.6 — measured on all 22." data-i18n-jp-html="22 のウィンドウを調査したところ 4 種類に分かれていました：28 × 28 が 11、半径 4 の 32 × 32 が 4、半径 10 の 34 × 34 が 1、そして「閉じる」というテキストリンクが 1。現在はすべて 28 × 28、半径 0、グリフ 16 px、不透明度 0.6（22 件すべて実測）。">The 22 windows had four different close buttons; they now all measure 28 × 28 with radius 0 and a 16 px glyph.</li>
+  <li data-i18n-fr-html="<strong>Quatre fenêtres n'avaient aucune croix</strong> — création de style, FAQ, chemin de fer, numérotation de page : on ne pouvait en sortir que par Échap. Elles en ont une. Et aucun geste de fermeture n'a été perdu : 16 avant, 22 après, zéro disparu, six ajouts purs." data-i18n-en-html="<strong>Four windows had no close button at all</strong> — create style, FAQ, assembly, page numbering: the only way out was Escape. They have one now. And no closing gesture was lost: 16 before, 22 after, none removed, six pure additions." data-i18n-jp-html="<strong>4 つのウィンドウには閉じるボタンがありませんでした</strong>（スタイル作成・FAQ・丁合い・ページ番号）。Escape でしか閉じられませんでしたが、現在は用意されています。閉じる手段は失われていません：以前 16、現在 22、消えたものはゼロ、純粋な追加が 6 件。">Four windows had no close button at all; they have one now, and no closing gesture was lost (16 before, 22 after).</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧩 La barre du haut et la page API" data-i18n-en-html="🧩 The top bar and the API page" data-i18n-jp-html="🧩 上部バーと API ページ">🧩 The top bar and the API page</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Un filet gris de chaque côté des plug-ins.</strong> La zone est vide tant qu'aucun plug-in n'est chargé, donc le filet n'apparaît qu'avec le premier. Mesuré : la zone passe de 730 à 816 px, deux traits de 1 × 18 px à 737 et 808, les boutons entre 740 et 806 — la hauteur des séparateurs de la barre latérale, pas celle de la barre : un trait pleine hauteur aurait coupé la rangée en deux." data-i18n-en-html="<strong>A grey rule on each side of the plug-ins.</strong> The area is empty until a plug-in loads, so the rule only appears with the first one. Measured: the area goes from 730 to 816 px, two 1 × 18 px rules at 737 and 808, the buttons between 740 and 806 — the height of the sidebar dividers, not of the bar: a full-height rule would have cut the row in two." data-i18n-jp-html="<strong>プラグインの左右にグレーの罫線。</strong>プラグインが読み込まれるまで領域は空なので、最初の 1 つで罫線が現れます。実測：領域は 730 → 816 px、1 × 18 px の罫線が 737 と 808、ボタンは 740〜806。バーの高さではなくサイドバー区切りの高さです（バー全高だと行が二分割されて見えます）。">A grey rule on each side of the plug-ins, 1 × 18 px, appearing only once a plug-in is loaded.</li>
+  <li data-i18n-fr-html="<strong>La page API n'a plus la barre fixe.</strong> Mesuré : api.html et documentation.html à 0 px de haut et sans remplissage bas ; index.html et faq.html toujours à 73 px." data-i18n-en-html="<strong>The API page no longer has the fixed bar.</strong> Measured: api.html and documentation.html at 0 px high with no bottom padding; index.html and faq.html still at 73 px." data-i18n-jp-html="<strong>API ページから固定フッターを削除。</strong>実測：api.html と documentation.html は高さ 0 px・下パディングなし、index.html と faq.html は従来どおり 73 px。">The API page no longer has the fixed bar: measured at 0 px, while index.html and faq.html stay at 73 px.</li>
+ </ul>
+</article>
+
 <!-- ===== SUPER PRINT v1.7.670 — L'IMPORT IDML PASSÉ AU CRIBLE, ET DEUX FORMATS DE SORTIE EN PLUS.
      Quatre demandes.
 
