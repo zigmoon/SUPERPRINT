@@ -6892,7 +6892,7 @@ function spRtfLayoutInfo(src) {
     } catch (_) { return null; }
   }
 
-  /* ⚠️ v1.7.671 — POURQUOI LE PASSAGE DIRECT NE SE DÉCLENCHAIT PAS : IL SE MESURE.
+  /* ⚠️ v1.7.672 — POURQUOI LE PASSAGE DIRECT NE SE DÉCLENCHAIT PAS : IL SE MESURE.
      `_SP_NATIF_637` promet qu'une page reçue de l'application et NON RETOUCHÉE par
      l'IA repart avec ses objets d'origine. MESURÉ sur le bouton ÉDITER : après un
      import d'un .sp de 7 objets, `_spNatif` valait `false` — donc le studio
@@ -20332,15 +20332,55 @@ function spRtfLayoutInfo(src) {
            directe (contrat « N photos en contenu = N placements VISIBLES »). */
         let _spPhotosManquantes = [];
         try { _spPhotosManquantes = spPhotosAbsentesDuDoc(doc, attachments); } catch (_) { _spPhotosManquantes = []; }
+        /* ══ 🆕 v1.7.672 — LA POSE DIRECTE PASSE AVANT, ET ELLE SUFFIT ══════════════
+           Retour utilisateur : « avec ma clé DeepSeek les logos joints n'apparaissent
+           pas dans la preview ; avec OpenRouter, oui ».
+
+           ⚠️ CE QUI SE PASSAIT, MESURÉ DANS LE CODE. Quand le modèle ne plaçait pas
+           l'image, la seule issue était `spVerifierPhotosJointes` : une SECONDE
+           requête au même modèle, puis la pose locale seulement si cette requête
+           échouait à son tour. Autrement dit, l'utilisateur attendait deux appels
+           complets avant de voir son logo — et si la seconde requête traînait
+           (DeepSeek réfléchit, la réponse est longue) ou si `state.doc` avait changé
+           entre-temps, la garde `if (state.doc !== doc) return ''` sortait sans rien
+           poser. Le logo n'apparaissait jamais, sans le moindre message.
+           Un modèle qui place les images (OpenRouter, souvent) masquait le défaut ;
+           un modèle qui ne les place pas (DeepSeek, selon les modèles) le révélait.
+
+           ⚠️ L'ORDRE EST DONC INVERSÉ : on GARANTIT d'abord, en local et sans réseau,
+           puis on demande au modèle de faire mieux. La photo est visible tout de
+           suite ; si la reprise ciblée du modèle aboutit, elle améliore la composition,
+           sinon la pose locale reste. Le contrat devient le même pour TOUS les
+           moteurs : « N images jointes en contenu = N images visibles ». */
         if (_spPhotosManquantes.length) {
-          try {
-            spVerifierPhotosJointes(_spPhotosManquantes, attachments, doc, userText).then(function (notePhotos) {
-              if (!notePhotos) return;
-              appendChat('assistant', notePhotos);
-              state.chat.push({ role: 'assistant', text: notePhotos });
-              persistChat();
-            }).catch(function () {});
-          } catch (_) {}
+          let _poseLocal = 0;
+          try { _poseLocal = spPlacerPhotosManquantes(doc, [], attachments, _spPhotosManquantes); } catch (_) { _poseLocal = 0; }
+          if (_poseLocal > 0) {
+            try { _spFitRowsToMargins(doc); } catch (_) {}
+            try { _spEnforceMargins(doc); } catch (_) {}
+            try { _spResolveCollisions(doc); } catch (_) {}
+            try { _spConstrainDocToPages(doc); } catch (_) {}
+            try { renderDocument(doc); } catch (_) {}
+            try { persistDoc(); } catch (_) {}
+            const _nomsP = _spPhotosManquantes.map(function (i) { return '« ' + String((attachments[i] || {}).name || '') + ' »'; }).join(', ');
+            const _msgPose = '📎 ' + (_spPhotosManquantes.length > 1 ? 'Photos jointes' : 'Photo jointe') + ' posée(s) dans la maquette (' + _nomsP + ') : le modèle ne les avait pas placées. Emplacement modifiable comme n\'importe quel objet.';
+            appendChat('assistant', _msgPose);
+            try { state.chat.push({ role: 'assistant', text: _msgPose }); persistChat(); } catch (_) {}
+            _spPhotosManquantes = spPhotosAbsentesDuDoc(doc, attachments);
+          }
+          /* Ce qui manque ENCORE (cas rare : plus d'images que de place) part en
+             reprise ciblée. Le message de `spVerifierPhotosJointes` ne parle plus
+             alors que d'un reliquat, jamais du cas courant. */
+          if (_spPhotosManquantes.length) {
+            try {
+              spVerifierPhotosJointes(_spPhotosManquantes, attachments, doc, userText).then(function (notePhotos) {
+                if (!notePhotos) return;
+                appendChat('assistant', notePhotos);
+                state.chat.push({ role: 'assistant', text: notePhotos });
+                persistChat();
+              }).catch(function () {});
+            } catch (_) {}
+          }
         }
         // 🆕 Charger les polices utilisées par la maquette (avec feedback typo)
         ensureMaquetteFonts(doc);
@@ -20407,11 +20447,38 @@ function spRtfLayoutInfo(src) {
   }
 
   // Convertit les userImage de l'IA en éléments image réels avec data URI
+  /* ══ 🆕 v1.7.672 — LE LOGO JOINT N'ARRIVE PLUS « SELON LE MODÈLE » ════════════
+     Retour utilisateur : « j'ai mis ma clé DeepSeek, j'ai placé les logos qui étaient
+     bien chargés mais ils n'apparaissent pas dans la preview de la maquette. Cela
+     fonctionne pourtant avec une clé OpenRouter. Contrôle tous les modèles. »
+
+     CAUSE MESURÉE (lecture du contrat, puis vérification dans le code) : la pose
+     d'une image jointe ne dépendait que d'UNE chose — que le modèle veuille bien
+     renvoyer `{"type":"image","imageIndex":N}`. Chaque modèle écrit ce JSON à sa
+     manière ; deux écarts suffisaient à perdre l'image en silence :
+       · `"imageIndex": "0"` (chaîne au lieu de nombre) → le test `typeof === 'number'`
+         échouait, la data URI n'était jamais réinjectée ;
+       · `"type": "Image"` ou `"IMAGE"` (casse) → le test `el.type === 'image'`,
+         sensible à la casse, échouait aussi.
+     Le fichier était pourtant bien chargé et bien envoyé : seule la RELECTURE de la
+     réponse le perdait. On lit donc maintenant le type sans tenir compte de la casse,
+     et l'index en acceptant la forme texte. Aucun contrat n'est relâché : un index
+     qui ne désigne aucune pièce jointe est toujours ignoré. */
+  function spIndexImage(el) {
+    if (!el || el.imageIndex === undefined || el.imageIndex === null) return null;
+    const n = (typeof el.imageIndex === 'number') ? el.imageIndex : parseInt(String(el.imageIndex).trim(), 10);
+    return isFinite(n) && n >= 0 ? n : null;
+  }
+  function spTypeImage(el) {
+    const t = String((el && el.type) || '').toLowerCase().replace(/[\s_-]/g, '');
+    return (t === 'image' || t === 'userimage' || t === 'img' || t === 'photo');
+  }
   function hydrateUserImages(elements, attachments) {
     if (!Array.isArray(elements)) return elements;
     return elements.map(el => {
-      if (el && (el.type === 'userImage' || el.type === 'image') && typeof el.imageIndex === 'number' && attachments[el.imageIndex]) {
-        const att = attachments[el.imageIndex];
+      const idx = spIndexImage(el);
+      if (el && spTypeImage(el) && idx !== null && attachments[idx]) {
+        const att = attachments[idx];
         let w = el.width, h = el.height;
         // Si le modèle n'a pas donné de dimensions, déduire du ratio de l'image
         if ((!w || !h) && att.width && att.height) {

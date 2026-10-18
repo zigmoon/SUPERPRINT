@@ -849,6 +849,113 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.672 — LE TABLEAU SURVIT À LA SAUVEGARDE, ET LES PLUG-INS PRENNENT LA MAIN.
+     Six demandes.
+
+     (1) LE TABLEAU PERDAIT SON GROUPEMENT À LA RÉOUVERTURE — C'EST CORRIGÉ.
+     Retour utilisateur : « un tableau perd son groupement après sauvegarde + réouverture,
+     c'est dommage non ? on peut faire quelque chose ? ». Oui, et c'était peu de chose : il
+     suffisait d'écrire la place de chaque cellule dans la grille. Chaque cellule emporte
+     maintenant cinq nombres ('_spTab' : identifiant, colonne, ligne, nombre de colonnes,
+     nombre de lignes) et le cadre est marqué ('_spTableauFilets'). Tout le reste se RELIT
+     dans la géométrie enregistrée — origine, largeurs de colonnes, hauteurs de lignes,
+     corps de référence — plutôt que d'être recopié : une seule vérité, rien à tenir à jour.
+     MESURÉ sur un vrai aller-retour par le chemin d'ouverture de l'application : tableau
+     3 × 2 enregistré puis rouvert → 6 cellules retrouvées avec leur place (0,0 à 1,2), UN
+     seul cadre (celui du fichier est retiré puis reconstruit, sinon deux grilles se
+     superposaient), grille cohérente (3 × 56,7 px et 2 × 56,7 px), textes intacts, et le
+     tableau reste manipulable d'un clic comme à la création. Un fichier écrit par une
+     version précédente ne porte aucune marque : il s'ouvre exactement comme avant.
+
+     (2) « PRINT VPS » SORT DE LA BARRE DU HAUT ET DEVIENT UN PLUG-IN ÉTEINT.
+     Demande : « on doit sortir printvps de la top navigation et cette partie doit devenir un
+     plug-in à part, disponible dans la boîte des plugins par défaut mais pas activé ».
+     Le studio de contrôle avant impression vit désormais dans
+     'app/plugins/print-studio.plugin.js' et déclare 'actifParDefaut: false' — une
+     nouveauté du registre : jusqu'ici tout plug-in livré s'allumait d'office. Il apparaît
+     donc dans la bibliothèque, s'y allume d'un clic, et prend alors sa place dans la barre.
+     MESURÉ après livraison : le bouton de la barre du haut a disparu, le plug-in est listé
+     avec « actif : non », et la barre n'affiche que les trois outils allumés.
+
+     (3) UN PLUG-IN « POLICES GOOGLE ».
+     Demande : « créer un plugin fonts qui affichera les plus grandes typo du moment de Google
+     Fonts avec preview, installable automatiquement dans SuperPrint ». Trente-deux familles
+     classées (sans empattement, avec, chasse fixe, titrage, manuscrite), CHACUNE DESSINÉE
+     DANS SA PROPRE POLICE — le nom seul ne dit rien, « Fraunces » ou « Sora » ne s'imaginent
+     pas. Un clic installe la famille : elle rejoint le sélecteur de police de l'application,
+     y reste au lancement suivant, et le document qui l'utilise l'embarque (mesuré : 20 Ko
+     dans le .sp pour Sora, qui ne pèse que 15 Ko en woff2 parce que Google sert des polices
+     VARIABLES — un seul fichier pour toute la plage de graisses).
+     ⚠️ Les aperçus se chargent À LA DEMANDE (IntersectionObserver). Un premier montage
+     chargeait les 32 familles d'un coup : le corps du panneau ne défilait pas (la panne
+     classique du 'min-height: auto' en flexbox), donc les 32 cartes étaient « visibles » et
+     32 fichiers de police partaient au premier affichage. Mesuré après correction : le
+     panneau défile, et seules les cartes à l'écran demandent leur police.
+
+     (4) LES DEUX FILETS DES PLUG-INS SONT ENFIN IDENTIQUES.
+     Demande : « les nouveaux traits séparateurs des plug-ins ne sont pas identiques entre le
+     premier et le dernier, prends le dernier trait fin en référence ». Ils étaient
+     géométriquement identiques (1 px × 18 px, même couleur, même marge) et pourtant PEINTS
+     différemment : 21 unités de large à gauche contre 11 à droite sur une capture agrandie,
+     parce qu'un élément de 1 px à une position fractionnaire n'occupe pas le même nombre de
+     pixels physiques selon le côté. Les deux filets sont désormais deux couches du MÊME fond,
+     peintes ensemble : mesuré 16 unités de chaque côté, strictement identiques.
+
+     (5) « SAUVEGARDER EN WORD » ET « EN EPS » PARLENT ENFIN FRANÇAIS.
+     Demande : « SaveWord Aide, ça veut dire quoi ??? fais un wording simple clair. Idem pour
+     EPS, ça ne veut rien dire, sois plus explicite ». Mesure : les deux textes d'aide
+     existaient dans le HTML mais dans AUCUNE des trois langues — l'écran affichait donc du
+     français de secours qui parlait de « polices PostScript » et de « DOCX », c'est-à-dire du
+     nom des techniques au lieu de ce que le fichier sert à faire. On nomme l'usage :
+     « Pour l'imprimeur, sans perte de qualité » et « À ouvrir dans Word, une image par page »,
+     avec l'explication complète en infobulle, traduite en français, anglais et japonais.
+
+     (6) LES LOGOS JOINT AU STUDIO ARRIVENT QUEL QUE SOIT LE MODÈLE.
+     Retour utilisateur : « dans Studio IA, j'ai mis ma clé DeepSeek, j'ai placé les logos qui
+     étaient bien chargés mais ils n'apparaissent pas dans la preview. Cela fonctionne
+     pourtant avec une clé OpenRouter. Contrôle tous les modèles. » La pose d'une image
+     jointe ne dépendait que d'une chose : que le modèle renvoie exactement
+     '{"type":"image","imageIndex":N}'. Deux écarts suffisaient à perdre le logo en silence —
+     un index en CHAÎNE ('"0"') ou un type avec une majuscule ('"Image"') — et le seul
+     rattrapage était une SECONDE requête au même modèle, dont le résultat pouvait encore
+     manquer. Un modèle qui place les images masquait le défaut ; un modèle qui ne les place
+     pas le révélait. Désormais : lecture tolérante de la réponse (casse et forme de l'index),
+     et surtout POSE LOCALE IMMÉDIATE, sans réseau, avant toute reprise par le modèle. Le
+     contrat est le même pour tous les moteurs : N images jointes en contenu = N images
+     visibles. Banc : 9 constats sur les formes réellement rencontrées, aucun écart. ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-672">
+ <h2>SUPER PRINT <span>v1.7.672</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 octobre 2026" data-i18n-en="Released October 18, 2026" data-i18n-jp="2026年10月18日公開">Released October 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les tableaux <strong>survivent à la sauvegarde</strong>, le contrôle avant impression devient un <strong>plug-in</strong>, une <strong>galerie de polices Google</strong> s'installe en un clic, et les logos joints au Studio IA arrivent <strong>quel que soit le modèle</strong>." data-i18n-en-html="Tables <strong>survive saving</strong>, the preflight studio becomes a <strong>plug-in</strong>, a <strong>Google Fonts gallery</strong> installs in one click, and images attached to Studio IA arrive <strong>whatever the model</strong>." data-i18n-jp-html="表が<strong>保存後も残り</strong>、プリフライトは<strong>プラグイン</strong>になり、<strong>Google フォントのギャラリー</strong>がワンクリックで入り、Studio IA に添付した画像は<strong>どのモデルでも</strong>配置されます。">Tables survive saving, the preflight studio becomes a plug-in, a Google Fonts gallery installs in one click, and images attached to Studio IA arrive whatever the model.</p>
+
+ <h3 data-i18n-fr-html="📊 Le tableau reste un tableau" data-i18n-en-html="📊 The table stays a table" data-i18n-jp-html="📊 表は表のまま">📊 The table stays a table</h3>
+ <ul>
+  <li data-i18n-fr-html="Chaque cellule emporte sa place dans la grille (identifiant, colonne, ligne, dimensions du tableau) et le cadre est marqué : à la réouverture, la grille, ses filets et ses gestes sont reconstruits. Tout le reste se relit dans la géométrie enregistrée, jamais recopié — une seule vérité. <strong>Mesuré</strong> sur un aller-retour réel : tableau 3 × 2 enregistré puis rouvert → 6 cellules à leur place, un seul cadre, grille cohérente, textes intacts, et le tableau se déplace et s'agrandit d'un clic comme à la création." data-i18n-en-html="Each cell carries its place in the grid (id, column, row, grid size) and the frame is marked: on reopening, the grid, its rules and its gestures are rebuilt. Everything else is read back from the saved geometry, never copied — a single source of truth. <strong>Measured</strong> on a real round trip: a 3 × 2 table saved then reopened → 6 cells in place, one single frame, coherent grid, texts intact, and the table still moves and scales on one click." data-i18n-jp-html="各セルがグリッド内の位置（ID・列・行・表の寸法）を持ち、枠に印が付きます。開き直すとグリッド・罫線・操作が再構築されます。その他は保存された形状から読み直すだけで、二重管理はありません。<strong>実測</strong>：3 × 2 の表を保存して開き直すと、6 セルが正しい位置に、枠は 1 つだけ、グリッドは整合、文字も無傷、そして作成時と同じようにワンクリックで移動・拡大できます。">Each cell carries its place in the grid and the frame is marked: on reopening, the grid, its rules and its gestures come back. Measured on a real round trip: a 3 × 2 table gives 6 cells in place, one single frame, coherent grid, texts intact.</li>
+  <li data-i18n-fr-html="Un fichier écrit par une version précédente ne porte aucune marque : il s'ouvre exactement comme avant, avec des blocs de texte indépendants. Rien n'est cassé pour les anciens documents." data-i18n-en-html="A file written by an earlier version carries no mark: it opens exactly as before, with independent text blocks. Nothing is broken for older documents." data-i18n-jp-html="以前のバージョンで保存したファイルには印がないため、従来どおり独立したテキストブロックとして開きます。古い文書は何も壊れません。">A file from an earlier version opens exactly as before, with independent text blocks.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧩 Trois plug-ins en plus" data-i18n-en-html="🧩 Three more plug-ins" data-i18n-jp-html="🧩 プラグインが 3 つ">🧩 Three more plug-ins</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Contrôle avant impression</strong> quitte la barre du haut et devient un plug-in <em>éteint par défaut</em> : il est dans la bibliothèque, s'y allume d'un clic, et reprend alors sa place dans la barre. C'est la première fois qu'un plug-in livré peut arriver éteint." data-i18n-en-html="<strong>Preflight studio</strong> leaves the top bar and becomes a plug-in that is <em>off by default</em>: it sits in the library, turns on with one click, and then takes its place back in the bar. It is the first time a bundled plug-in can ship switched off." data-i18n-jp-html="<strong>プリフライト</strong>が上部バーを離れ、<em>既定でオフ</em>のプラグインになりました。ライブラリにあり、ワンクリックで有効にするとバーに戻ります。同梱プラグインが既定でオフになるのは初めてです。">Preflight studio leaves the top bar and becomes a plug-in that is off by default: one click in the library brings it back.</li>
+  <li data-i18n-fr-html="<strong>Polices Google</strong> : 32 familles classées, chacune dessinée dans sa propre police. Un clic l'installe dans SuperPrint, où elle reste au lancement suivant, et le document qui l'utilise l'embarque (20 Ko pour Sora). Les aperçus se chargent à la demande — seules les cartes à l'écran demandent leur police." data-i18n-en-html="<strong>Google Fonts</strong>: 32 sorted families, each drawn in its own font. One click installs it in SuperPrint, where it stays on the next launch, and any document using it embeds it (20 KB for Sora). Previews load on demand — only the cards on screen fetch their font." data-i18n-jp-html="<strong>Google フォント</strong>：分類された 32 ファミリーを、それぞれの書体そのもので表示。ワンクリックで SuperPrint に入り、次回起動でも残ります。使用した文書にはフォントが埋め込まれます（Sora で 20 KB）。プレビューは必要時に読み込まれ、画面内のカードだけがフォントを取得します。">Google Fonts: 32 sorted families, each drawn in its own font; one click installs it for good, and documents using it embed it (20 KB for Sora).</li>
+  <li data-i18n-fr-html="<strong>Les deux filets qui encadrent les plug-ins sont enfin identiques.</strong> Ils l'étaient en géométrie, pas en peinture : un trait de 1 px à une position fractionnaire n'occupe pas le même nombre de pixels selon le côté (mesuré : 21 unités à gauche, 11 à droite). Peints comme deux couches d'un même fond, ils font 16 unités de chaque côté." data-i18n-en-html="<strong>The two rules around the plug-ins are finally identical.</strong> They were in geometry, not in painting: a 1 px rule at a fractional position does not cover the same number of physical pixels on each side (measured: 21 units left, 11 right). Painted as two layers of one background, they measure 16 units on both sides." data-i18n-jp-html="<strong>プラグインを挟む 2 本の罫線がようやく同じになりました。</strong>形状は同じでも描画は異なり、小数位置の 1 px は左右で物理ピクセル数が変わります（実測：左 21、右 11）。同じ背景の 2 レイヤーとして描くことで、左右とも 16 単位になりました。">The two rules around the plug-ins are now identical: 16 units on each side instead of 21 and 11.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🩺 Studio IA — les logos joints arrivent" data-i18n-en-html="🩺 Studio IA — attached logos arrive" data-i18n-jp-html="🩺 Studio IA — 添付ロゴが配置される">🩺 Studio IA — attached logos arrive</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>La pose d'une image jointe ne dépendait que du bon vouloir du modèle.</strong> Deux écarts suffisaient à perdre le logo en silence : un index renvoyé en chaîne (<code>&quot;0&quot;</code>) ou un type avec une majuscule (<code>&quot;Image&quot;</code>). Le seul rattrapage était une seconde requête au même modèle. La lecture est désormais tolérante, et la pose se fait <strong>localement et immédiatement</strong>, sans réseau, avant toute reprise. Même contrat pour tous les moteurs." data-i18n-en-html="<strong>Placing an attached image relied only on the model's goodwill.</strong> Two deviations were enough to lose the logo silently: an index returned as a string (<code>&quot;0&quot;</code>) or a capitalised type (<code>&quot;Image&quot;</code>). The only fallback was a second request to the same model. Reading is now tolerant, and placement happens <strong>locally and immediately</strong>, with no network, before any retry. Same contract for every engine." data-i18n-jp-html="<strong>添付画像の配置はモデルの善意だけに依存していました。</strong>インデックスが文字列（<code>&quot;0&quot;</code>）だったり、種類が大文字始まり（<code>&quot;Image&quot;</code>）だったりするだけで、ロゴは無言で失われました。唯一の救済は同じモデルへの 2 回目のリクエストでした。読み取りは寛容になり、配置はネットワークなしで<strong>ローカルかつ即座</strong>に行われます。すべてのエンジンで同じ約束です。">Placing an attached image relied only on the model: a string index or a capitalised type lost the logo silently. Reading is now tolerant and placement is local and immediate.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="💾 Deux formats de sortie mieux annoncés" data-i18n-en-html="💾 Two output formats, better explained" data-i18n-jp-html="💾 2 つの出力形式をわかりやすく">💾 Two output formats, better explained</h3>
+ <ul>
+  <li data-i18n-fr-html="Dans <em>Sauvegarder</em>, l'EPS et le Word ne parlent plus de « polices PostScript » ni de « DOCX » : ils disent à quoi ils servent — <strong>« Pour l'imprimeur, sans perte de qualité »</strong> et <strong>« À ouvrir dans Word, une image par page »</strong> — avec l'explication complète au survol, en trois langues." data-i18n-en-html="In <em>Save</em>, EPS and Word no longer mention “PostScript fonts” or “DOCX”: they say what they are for — <strong>“For your printer, no quality loss”</strong> and <strong>“Opens in Word, one image per page”</strong> — with the full explanation on hover, in three languages." data-i18n-jp-html="<em>保存</em>の EPS と Word は「PostScript フォント」「DOCX」ではなく、用途を書くようになりました — <strong>「印刷所へ、画質を落とさずに」</strong>と<strong>「Word で開ける、1 ページ 1 画像」</strong>。詳しい説明はホバーで 3 言語表示されます。">In Save, EPS and Word now say what they are for — “For your printer, no quality loss” and “Opens in Word, one image per page” — with full explanations on hover.</li>
+ </ul>
+</article>
+
 <!-- ===== SUPER PRINT v1.7.671 — LE TABLEAU DEVIENT UN SEUL ÉLÉMENT, ET LES FENÊTRES PARLENT D'UNE MÊME VOIX.
      Quatre demandes.
 
