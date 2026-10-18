@@ -849,6 +849,35 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.667 — LE TRIO D'INSTALLEURS RETROUVE SA TAILLE.
+     Retour utilisateur, après essai de la v1.7.666 : « finalement c'était mieux avant la
+     taille, désolé ». La réduction est donc ANNULÉE, et les valeurs d'origine sont
+     rétablies à l'identique : icônes 26 × 26, texte 13 px, écart interne 9 px,
+     rembourrage 4 px — soit un lien de 34 px de haut et un trio de 336 px sous son
+     libellé « INSTALLEUR » de 11 px. Sous 620 px : 22 × 22 et 12 px.
+     VÉRIFIÉ à 1440, 1024, 620 et 375 px : 26 px et 13 px à partir de 621, 22 px et 12 px
+     en dessous, trio toujours sur une seule ligne. Les attributs width/height du HTML
+     sont remis à 26 eux aussi : c'est le CSS qui décide de l'affichage, mais c'est
+     l'attribut qui réserve la bonne place avant le chargement de l'image.
+     ⚠️ LA TAILLE SE DÉCIDE À UN SEUL ENDROIT — la règle .hero-os-list a de la feuille
+     d'index.html. Aucune autre feuille ne la surcharge, et la réduction ne doit pas
+     revenir par une règle ajoutée ailleurs. ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-667">
+ <h2>SUPER PRINT <span>v1.7.667</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 octobre 2026" data-i18n-en="Released October 18, 2026" data-i18n-jp="2026年10月18日公開">Released October 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le trio Windows · macOS · Linux du hero reprend sa taille d’origine : la réduction de la version précédente est annulée." data-i18n-en-html="The hero’s Windows · macOS · Linux trio returns to its original size: the previous release’s reduction is reverted." data-i18n-jp-html="ヒーローの Windows · macOS · Linux は元の大きさに戻りました。前回の縮小は取り消されます。">The hero’s Windows · macOS · Linux trio returns to its original size: the previous release’s reduction is reverted.</p>
+
+ <h3 data-i18n-fr-html="↩️ Réduction annulée" data-i18n-en-html="↩️ Reduction reverted" data-i18n-jp-html="↩️ 縮小を取り消し">↩️ Reduction reverted</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Valeurs d’origine rétablies à l’identique</strong> : icônes 26 × 26, texte 13 px, écart interne 9 px, rembourrage 4 px — un lien de 34 px de haut, un trio de 336 px. Sous 620 px : 22 × 22 et 12 px. Les attributs <code>width</code>/<code>height</code> du balisage repassent à 26 : le CSS décide de l’affichage, l’attribut réserve la bonne place avant le chargement de l’image." data-i18n-en-html="<strong>Original values restored exactly</strong>: 26 × 26 icons, 13 px text, 9 px inner gap, 4 px padding — a 34 px tall link, a 336 px trio. Below 620 px: 22 × 22 and 12 px. The markup’s <code>width</code>/<code>height</code> attributes are back to 26: CSS decides the rendering, the attribute reserves the right space before the image loads." data-i18n-jp-html="<strong>元の値をそのまま復元</strong>：アイコン 26 × 26、文字 13 px、内側の間隔 9 px、余白 4 px——リンクの高さ 34 px、3つの幅 336 px。620 px 未満では 22 × 22 と 12 px。HTML の <code>width</code>／<code>height</code> 属性も 26 に戻します。表示は CSS が決めますが、画像読み込み前の場所を確保するのは属性です。">Original values restored exactly: 26 × 26 icons, 13 px text, 34 px tall links, 336 px trio.</li>
+  <li data-i18n-fr-html="<strong>La taille se décide à un seul endroit.</strong> La règle <code>.hero-os-list a</code> de la feuille d’<code>index.html</code> : aucune autre feuille ne la surcharge, et la réduction ne doit pas revenir par une règle ajoutée ailleurs. Vérifié à 1440, 1024, 620 et 375 px." data-i18n-en-html="<strong>The size is decided in one place only.</strong> The <code>.hero-os-list a</code> rule in <code>index.html</code>’s stylesheet: no other sheet overrides it, and the reduction must not come back through a rule added elsewhere. Checked at 1440, 1024, 620 and 375 px." data-i18n-jp-html="<strong>大きさは一か所で決まります。</strong><code>index.html</code> の <code>.hero-os-list a</code> 規則です。他のスタイルシートが上書きすることはなく、縮小が別の場所の規則で戻ってはいけません。1440／1024／620／375 px で検証。">The size is decided in one place only, and checked at four widths.</li>
+ </ul>
+</article>
+
 <!-- ===== SUPER PRINT v1.7.666 — LE TRIO D'INSTALLEURS RÉDUIT DANS LE HERO.
      Retour utilisateur : « un peu trop gros sur la page de présentation ».
      MESURÉ AVANT à 1440 px : icônes 26 × 26, texte 13 px, écart interne 9 px,
