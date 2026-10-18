@@ -1,6 +1,6 @@
 [package]
 name = "superprint-desktop"
-version = "1.7.673"
+version = "1.7.674"
 description = "SuperPrint — PAO dans le navigateur, en application de bureau"
 authors = ["Simon Dupont-Gellert (Zigmoon) <contact@superprint.cc>"]
 edition = "2021"

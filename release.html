@@ -849,7 +849,102 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
-<!-- ===== SUPER PRINT v1.7.673 — LE FILET DE LA BARRE GAUCHE, ET UNE GALERIE DE POLICES QUI SE LIT.
+<!-- ===== SUPER PRINT v1.7.674 — LE PDF RETROUVE SES POLICES, ET LA BARRE FIXE SE RESSERRE.
+     Deux corrections mesurées, une sortie assumée, et deux retouches de la présentation.
+
+     (1) UNE POLICE INSTALLÉE DEPUIS GOOGLE FONTS N'ARRIVAIT PAS DANS LE PDF.
+     Question posée : « comment sort en PDF une typo installée depuis Google Fonts ? ».
+     Réponse mesurée, avant : MAL. Le plug-in range la police en data URL WOFF2
+     ('wOF2…', 8 680 octets pour Anton). 'opentype.parse' refuse ce format — « WOFF2
+     require an external decompressor library » — donc le chargeur vectoriel rendait
+     'null' pour les SIX familles installées (Anton, Sora, Caveat, Fraunces, Outfit,
+     Roboto Condensed), et l'export les annonçait « à fournir » alors qu'elles sont
+     là. L'application savait déjà décompresser le WOFF2 pour SES propres fichiers ;
+     elle le fait maintenant aussi pour une police personnalisée, par UNE seule
+     fonction appelée des deux endroits. MESURÉ APRÈS : Anton rend 163 glyphes, Sora
+     208, et le texte sort en '/Type0' + '/CIDFontType2' + '/ToUnicode' dans le PDF —
+     vectoriel, sélectionnable, correctement nommé 'Anton-Regular-8450'.
+     ⚠️ Deux pièges trouvés en mesurant, et corrigés : le chargeur de bibliothèques
+     ('ensureExportLibs') vit dans une portée VOISINE, donc l'appel était sauté en
+     silence et TOUTES les polices ressortaient nulles ; et même chargé, le
+     décompresseur wasm répond « not available » pendant quelques centaines de
+     millisecondes. On attend donc l'existence de la fonction, puis son résultat.
+     Un échec n'est plus mémorisé comme définitif : l'entrée de cache est retirée
+     pour que l'essai suivant reparte.
+
+     (2) 'JS/fontkit.min.js' ÉTAIT CASSÉ EN LUI-MÊME — « Format fini » REMPLAÇAIT LA TYPO.
+     Le fichier livré levait à l'exécution : « Invalid backward reference… at t.init »,
+     pendant la décompression de son dictionnaire Brotli embarqué. Reproduit hors du
+     navigateur, en important le même fichier dans Node : même erreur. Conséquence en
+     cascade : 'window.fontkit' restait indéfini, 'registerFontkit' n'était jamais
+     appelé, donc TOUT 'embedFont' échouait. MESURÉ sur un document d'un bloc en Anton :
+     export « Format fini » → 993 octets, '/BaseFont /Helvetica', aucun '/Type0' — la
+     typo choisie était silencieusement remplacée par Helvetica. Même document, chemin
+     jsPDF → correct. Le fichier est remplacé par fontkit 2.0.4 empaqueté en global
+     autonome, plus un pont pour l'API qu'attend pdf-lib ('subset.encodeStream' a
+     disparu en 2.x). MESURÉ APRÈS, sur huit combinaisons d'options : le PDF porte
+     '/Type0', '/CIDFontType2' et '/ToUnicode' dans TOUS les cas — fonds perdus, traits
+     de coupe, CMJN, Noir & Blanc, ULTRA HD 600 dpi, planches imposées, jsPDF, et même
+     sans cocher « Typographie vectorielle ».
+
+     (3) LE MOTIF EST UNE IMAGE À L'EXPORT, ET LA DESCRIPTION LE DIT DÉSORMAIS.
+     Question posée : « et notre motif, comment va-t-il s'exporter en PDF ? ».
+     Le plug-in ne pose pas de tracés : il remplit un bloc avec un motif répété dont la
+     source est un CANEVAS. Les deux classificateurs d'export traitent un remplissage
+     de ce type comme raster. MESURÉ : un bloc de 380 × 200 px rempli de motif sort en
+     UNE IMAGE de 1 584 × 834 px en HD (300 dpi), et de 3 165 × 1 666 px en ULTRA HD —
+     soit exactement la résolution demandée. La description du plug-in le dit
+     maintenant, au lieu de laisser croire au vecteur. Une vraie sortie vectorielle
+     demanderait 26 × 37 cellules × 2 passes × 8 symétries = 15 392 sous-chemins pour
+     un seul A4 à 8 mm : c'est un chantier à part, pas une ligne de code.
+
+     (4) LA BARRE FIXE DE LA PRÉSENTATION, RESSERRÉE PUIS DÉCALÉE.
+     Demandes : « la petite ligne grise doit disparaître dès 1200 px », « la typo GitHub
+     / Discord n'est pas assez proche de la petite ligne sur les grands écrans », puis
+     « redescends les lignes de texte à droite des logos de 2 px » et « mets la petite
+     ligne grise un petit peu plus bas ».
+     · Le croisement au survol entre le nom et la phrase DISPARAÎT : la phrase est
+       visible en permanence dès 1200 px, absente en dessous. Sous 1200 px c'est donc
+       le nom qui reprend le soulignement d'affordance au survol.
+     · L'écart d'encre entre le nom et la phrase passe de 7,84 px à 2,84 px, puis à
+       4,84 px après le décalage demandé. Ce chiffre n'est pas une impression : il est
+       calculé au canevas avec les métriques réelles des deux polices, en partant de
+       leur ligne de base.
+     · Le bloc de texte descend de 2 px par un 'transform', PAS par une marge : une
+       marge aurait changé sa hauteur, donc son centrage dans la barre à hauteur FIXE
+       (72,67 px), et le décalage demandé se serait annulé à moitié. MESURÉ : le bloc
+       était centré EXACTEMENT sur le logo (864,00 / 864,00) et passe à 866,00, la barre
+       garde ses 72,67 px, et rien ne sort de son cadre en français, anglais et japonais.
+     · La bande des modèles passe à l'encre du projet, et son ancien fond descend sous
+       les auteurs — puis s'éclaircit au papier le plus clair de la palette. Les cartes
+       de modèles, elles, RESTENT du papier : une maquette sur fond noir serait un
+       aperçu faux. Les flèches s'inversent (papier sur encre), sans quoi elles
+       disparaîtraient : elles sont en fond encre depuis 1.7.634.
+
+     (5) LA GALERIE DE POLICES S'AGRANDIT VRAIMENT.
+     Demande : « je dois pouvoir avoir plus de polices (plus de choix, load more) ».
+     Le catalogue passe de 32 à 218 familles, avec un bouton « Charger plus de polices »
+     qui en ajoute 40 par clic et affiche le reste. Le nombre demandé est retenu d'une
+     ouverture à l'autre, et une recherche montre TOUS les résultats sans attendre un
+     clic. Les graisses réelles sont lues dans la feuille de Google au lieu d'être
+     supposées : une famille statique garde sa 400, une famille variable donne sa plage.
+     MESURÉ : 218 / 218 après deux clics, « Anton » installée et mémorisée, aperçus
+     rendus sans une seule erreur dans la console. 'Golos UI' est retirée du catalogue :
+     sur les 218 familles testées une à une, c'était la SEULE que l'API de Google refuse
+     (réponse 400), et « Onest » la remplace.
+
+     (6) LA BARRE LATÉRALE GAUCHE S'ALIGNE SUR CELLE DE DROITE.
+     Demande : « répartis parfaitement les icônes comme celles de droite ». MESURÉ : les
+     icônes de droite étaient espacées de 51,3 px et celles de gauche de 48,3 px — 1 px
+     d'écart au lieu de 4, parce qu'un huitième élément invisible (0 px de haut) occupait
+     encore une ligne de la grille. Après : les deux barres tombent sur 64, 115,3,
+     166,7, 218, 269,3, 320,7 et 372 px, et les filets des deux côtés à 439,3 px.
+
+     Audit PDF des sept autres chemins (fonds perdus, traits de coupe, CMJN, Noir &
+     Blanc, ULTRA HD, planches imposées, jsPDF) : deux constats à signaler, non corrigés
+     ici — le motif est rasterisé DEUX fois dans le même fichier (le retirer fait tomber
+     le PDF de 187 Ko à 4,9 Ko), et une entrée Helvetica résiduelle subsiste dans la
+     table des polices alors qu'aucun bloc de la page ne l'utilise. --><!-- ===== SUPER PRINT v1.7.673 — LE FILET DE LA BARRE GAUCHE, ET UNE GALERIE DE POLICES QUI SE LIT.
      Trois demandes.
 
      (1) LE FILET DE LA BARRE GAUCHE RÉTRACTÉE ÉTAIT INVISIBLE — DEPUIS TOUJOURS.

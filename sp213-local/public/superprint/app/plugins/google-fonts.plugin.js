@@ -1,16 +1,27 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN INTÉGRÉ « POLICES GOOGLE »  (v1.7.673)
+   SUPERPRINT — PLUG-IN INTÉGRÉ « POLICES GOOGLE »  (v1.7.674)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Demande utilisateur : « créer un plugin fonts qui affichera les plus grandes typo
    du moment de Google Fonts avec preview, installable automatiquement dans
-   SuperPrint ».
+   SuperPrint », puis « le plugin Polices Google n'est pas assez complet, je dois
+   pouvoir avoir plus de polices (plus de choix, load more ou je ne sais pas) ».
 
    ── CE QUE FAIT CE FICHIER ────────────────────────────────────────────────────
-   Un panneau qui présente une sélection de familles Google Fonts, CHACUNE DESSINÉE
-   DANS SA PROPRE POLICE, avec un bouton qui l'installe pour de bon : la famille
-   rejoint les sélecteurs de police de l'application (`#fontFamily`, les styles, la
-   numérotation de page) et reste disponible aux lancements suivants.
+   Un panneau qui présente un CATALOGUE de plus de 200 familles Google, CHACUNE
+   DESSINÉE DANS SA PROPRE POLICE — avec la phrase de l'utilisateur s'il en a écrit
+   une — et un bouton qui l'installe pour de bon : la famille rejoint les sélecteurs
+   de police de l'application et reste disponible aux lancements suivants.
+
+   ── POURQUOI LE CATALOGUE EST ÉCRIT ICI, ET PAS DEMANDÉ À GOOGLE ──────────────
+   MESURÉ, les deux routes dynamiques sont fermées depuis un navigateur :
+     · `fonts.google.com/metadata/fonts` (le catalogue complet) → refusé par CORS,
+       aucun en-tête `Access-Control-Allow-Origin` ;
+     · `googleapis.com/webfonts/v1/webfonts` → HTTP 403 « Method doesn't allow
+       unregistered callers » (il faut une clé).
+   Une galerie qui dépendrait de l'une ou de l'autre serait vide chez tout le monde,
+   sans explication. Le catalogue est donc une LISTE ÉCRITE, et c'est un choix : elle
+   ne casse pas le jour où Google change une réponse.
 
    ── POURQUOI IL PASSE PAR `_spRegisterCustomFontDataUrl` ──────────────────────
    L'application sait déjà accueillir une police depuis un fichier (« Charger
@@ -20,30 +31,33 @@
    une police qui s'affiche mais qu'on ne peut pas enregistrer. On réutilise donc
    l'existant, en lui donnant les octets d'un fichier Google.
 
-   ⚠️ POURQUOI UNE SEULE FICHE PAR FAMILLE, ET PAS UNE PAR GRAISSE.
-   `customFonts` range une police par NOM : deux graisses du même nom s'écraseraient.
-   Google sert justement des POLICES VARIABLES — un seul fichier qui contient toute
-   la plage de graisses. On demande donc la plage quand la famille est variable
-   (`wght@100..900`) : un fichier, toutes les graisses, embarqué une fois.
-   Pour les familles statiques, on demande 400 et 700 ; la 400 est celle qu'on
-   embarque, et `_spSetFontWeights` annonce les deux au sélecteur de graisse.
+   ⚠️ DEUX ADRESSES PAR FAMILLE, ET C'EST UNE MESURE QUI L'IMPOSE.
+   `css2?family=Nom:wght@100..900` ne répond QUE pour une police VARIABLE. Pour une
+   police statique (Lato, Anton…), Google renvoie une erreur SANS en-tête CORS : côté
+   navigateur, cela ressemble à une panne réseau, pas à un refus. Mesuré sur Lato et
+   Anton : « Failed to fetch ». `css2?family=Nom` (sans axe), lui, répond 200 pour
+   TOUTES les familles et déclare la graisse 400.
+   On demande donc la PLAGE pour les familles signalées variables, et on RETOMBE sur
+   l'adresse simple en cas d'échec — y compris si la veille s'est trompée. Aucune
+   famille ne peut donc rester muette à cause d'une mauvaise case cochée.
 
-   ⚠️ LE RÉSEAU EST UNE DÉPENDANCE ASSUMÉE, ET ON LE DIT.
-   Rien de tout cela ne fonctionne hors ligne. Chaque échec a son message : pas de
-   réseau, famille refusée par Google, ou fichier vide. Un bouton qui ne fait rien
-   en silence est le pire des trois.
+   ⚠️ LES GRAISSES SONT LUES DANS LA RÉPONSE, PAS DEVINÉES.
+   Le CSS renvoyé contient `font-weight: 100 900` (variable) ou `font-weight: 400`
+   (statique). On lit cette valeur et on annonce au sélecteur de graisse EXACTEMENT
+   ce que la police possède. Annoncer 800 pour une famille qui s'arrête à 700
+   donnerait un gras synthétique, c'est-à-dire un faux.
+
+   ⚠️ LES APERÇUS SE CHARGENT À LA DEMANDE (IntersectionObserver).
+   150 familles, c'est 150 fichiers de police. Tout charger à l'ouverture ferait
+   payer plusieurs mégaoctets pour des lignes que personne n'a regardées. Chaque ligne
+   demande SA police quand elle entre dans la zone visible — et la demande est
+   mémorisée, donc un aller-retour dans la liste ne relance rien.
 
    ⚠️ `trappe: 'spFontsOverlay'` — CE PLUG-IN A SON PANNEAU.
    La trappe générique ne connaît que des champs (texte, nombre, couleur, image…) :
-   une galerie de polices n'y entre pas. Déclarer un panneau fait que la
-   bibliothèque EXÉCUTE le plug-in au lieu de construire un formulaire vide avec un
-   bouton « Enregistrer » sans objet (cf. `ouvrirTrappePlugIn`).
-
-   ⚠️ LES APERÇUS SE CHARGENT À LA DEMANDE (IntersectionObserver).
-   Trente familles, c'est trente fichiers de police. Tout charger à l'ouverture
-   ferait payer plusieurs mégaoctets pour des cartes que personne n'a regardées.
-   Chaque carte demande SA police quand elle entre dans la zone visible — et la
-   demande est mémorisée, donc un aller-retour dans la liste ne relance rien.
+   une galerie de polices n'y entre pas. Déclarer un panneau fait que la bibliothèque
+   EXÉCUTE le plug-in au lieu de construire un formulaire vide avec un bouton
+   « Enregistrer » sans objet (cf. `ouvrirTrappePlugIn`).
    ─────────────────────────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
@@ -53,58 +67,253 @@
 
   /* La liste conservée des installations, pour les retrouver au lancement suivant. */
   var CLE = 'sp_google_fonts_v1';
+  var CLE_PLAGE = 'sp_google_fonts_plage_ko_v1';
   /* Marque de la session : évite de réinstaller deux fois la même famille. */
   var dejaChargees = Object.create(null);
 
-  /* ══ LA SÉLECTION ══════════════════════════════════════════════════════════════
-     « Les plus grandes typo du moment » : ce sont les familles qui occupent le
-     haut du classement d'usage de Google Fonts depuis des années, plus celles que
-     la vague graphique actuelle a mises partout (Inter, Space Grotesk, Sora,
-     Outfit…). La liste est FIGÉE dans le fichier et non interrogée en ligne : une
-     galerie qui dépend d'une API de classement tombe en panne le jour où l'API
-     change de forme, et personne ne comprend pourquoi la fenêtre est vide.
-     `axe` : la plage de graisses demandée. `var.` = police variable, un seul
-     fichier pour toute la plage. `poids` : ce qu'on annonce au sélecteur. */
+  /* ══ LE CATALOGUE ══════════════════════════════════════════════════════════════
+     `n` = nom exact chez Google (il sert à l'adresse ET au nom de la police dans
+     l'application). `c` = catégorie. `v` = 1 quand la famille est une police
+     VARIABLE : on demande alors la plage de graisses (un seul fichier pour toute la
+     plage). Sans `v`, on demande l'adresse simple, qui répond toujours.
+     ⚠️ CES TROIS CHAMPS SUFFISENT : aucune graisse n'est écrite à la main, elles sont
+     toutes lues dans la réponse de Google (voir `poidsDuCss`). Une famille cochée
+     `v` par erreur ne casse rien : l'échec de la plage déclenche le repli simple. */
   var FAMILLES = [
-    /* ── Sans-serif ── */
-    { n: 'Inter', c: 'sans', axe: '100..900', variable: true, poids: ['300', '400', '500', '600', '700', '800'], echant: 'Le texte courant, net à toutes les tailles' },
-    { n: 'Roboto', c: 'sans', axe: '100..900', variable: true, poids: ['300', '400', '500', '700', '900'], echant: 'La sans-serif la plus utilisée du web' },
-    { n: 'Open Sans', c: 'sans', axe: '300..800', variable: true, poids: ['300', '400', '600', '700', '800'], echant: 'Lisible, neutre, faite pour lire longtemps' },
-    { n: 'Montserrat', c: 'sans', axe: '100..900', variable: true, poids: ['300', '400', '500', '600', '700', '800', '900'], echant: 'Titres urbains, affiches, identités' },
-    { n: 'Poppins', c: 'sans', axe: '400;700', variable: false, poids: ['400', '700'], echant: 'Géométrique, ronde, très années 2020' },
-    { n: 'Lato', c: 'sans', axe: '400;700', variable: false, poids: ['400', '700'], echant: 'Chaleureuse et sobre à la fois' },
-    { n: 'Raleway', c: 'sans', axe: '100..900', variable: true, poids: ['300', '400', '600', '700', '800'], echant: 'Élégante, avec un W reconnaissable' },
-    { n: 'Nunito', c: 'sans', axe: '200..1000', variable: true, poids: ['300', '400', '600', '700', '800'], echant: 'Arrondie, douce, jamais enfantine' },
-    { n: 'Work Sans', c: 'sans', axe: '100..900', variable: true, poids: ['300', '400', '500', '600', '700'], echant: 'Une grotesque de travail, sans maniérisme' },
-    { n: 'DM Sans', c: 'sans', axe: '100..1000', variable: true, poids: ['400', '500', '700'], echant: 'Compacte, contemporaine, très lisible' },
-    { n: 'Manrope', c: 'sans', axe: '200..800', variable: true, poids: ['300', '400', '500', '600', '700', '800'], echant: 'Géométrique semi-condensée, nette' },
-    { n: 'Sora', c: 'sans', axe: '100..800', variable: true, poids: ['300', '400', '600', '700'], echant: 'Technique, dessinée pour les écrans' },
-    { n: 'Outfit', c: 'sans', axe: '100..900', variable: true, poids: ['300', '400', '500', '600', '700'], echant: 'Géométrique large, esprit start-up' },
-    { n: 'Plus Jakarta Sans', c: 'sans', axe: '200..800', variable: true, poids: ['300', '400', '500', '600', '700', '800'], echant: 'Moderne, un peu humaniste' },
-    { n: 'Figtree', c: 'sans', axe: '300..900', variable: true, poids: ['300', '400', '500', '600', '700', '900'], echant: 'Amicale, excellente en petit corps' },
-    { n: 'Space Grotesk', c: 'sans', axe: '300..700', variable: true, poids: ['300', '400', '500', '600', '700'], echant: 'Les accents décalés de la Space Mono' },
-    { n: 'Oswald', c: 'sans', axe: '200..700', variable: true, poids: ['300', '400', '500', '600', '700'], echant: 'Condensée, pour les titres qui prennent de la place' },
-    { n: 'Archivo', c: 'sans', axe: '100..900', variable: true, poids: ['300', '400', '500', '600', '700', '800'], echant: 'Grotesque solide, née pour la presse' },
-    /* ── Serif ── */
-    { n: 'Playfair Display', c: 'serif', axe: '400..900', variable: true, poids: ['400', '500', '600', '700', '800', '900'], echant: 'Le grand contraste des journaux de mode' },
-    { n: 'Merriweather', c: 'serif', axe: '400;700', variable: false, poids: ['400', '700'], echant: 'Faite pour le corps de texte à l\'écran' },
-    { n: 'Libre Baskerville', c: 'serif', axe: '400;700', variable: false, poids: ['400', '700'], echant: 'Le livre classique, généreux en hauteur' },
-    { n: 'Cormorant Garamond', c: 'serif', axe: '400;700', variable: false, poids: ['400', '700'], echant: 'Fine, précieuse, pour les grands corps' },
-    { n: 'Fraunces', c: 'serif', axe: '100..900', variable: true, poids: ['300', '400', '600', '700', '900'], echant: 'Serif expressive, un peu « old style »' },
-    { n: 'Newsreader', c: 'serif', axe: '200..800', variable: true, poids: ['300', '400', '600', '700', '800'], echant: 'Écrite pour la lecture d\'actualité' },
-    { n: 'Instrument Serif', c: 'serif', axe: '400', variable: false, poids: ['400'], echant: 'Haute et étroite, une seule graisse' },
-    /* ── Monospace ── */
-    { n: 'JetBrains Mono', c: 'mono', axe: '100..800', variable: true, poids: ['300', '400', '500', '600', '700', '800'], echant: 'Code, tableaux, chiffres alignés' },
-    { n: 'Fira Code', c: 'mono', axe: '300..700', variable: true, poids: ['300', '400', '500', '600', '700'], echant: 'La monospace des développeurs' },
-    { n: 'Source Code Pro', c: 'mono', axe: '200..900', variable: true, poids: ['300', '400', '500', '600', '700'], echant: 'Neutre, lisible en petit corps' },
-    { n: 'IBM Plex Mono', c: 'mono', axe: '400;700', variable: false, poids: ['400', '700'], echant: 'Le caractère technique d\'IBM' },
-    /* ── Display ── */
-    { n: 'Bebas Neue', c: 'display', axe: '400', variable: false, poids: ['400'], echant: 'LA capitale condensée des affiches' },
-    { n: 'Anton', c: 'display', axe: '400', variable: false, poids: ['400'], echant: 'Très grasse, faite pour un seul mot' },
-    { n: 'Archivo Black', c: 'display', axe: '400', variable: false, poids: ['400'], echant: 'Le block le plus épais de la famille Archivo' },
-    /* ── Manuscrite ── */
-    { n: 'Caveat', c: 'manuscrite', axe: '400..700', variable: true, poids: ['400', '500', '600', '700'], echant: 'Écriture au feutre, annotations' },
-    { n: 'Dancing Script', c: 'manuscrite', axe: '400..700', variable: true, poids: ['400', '500', '600', '700'], echant: 'Pleine de boucles, pour les invitations' }
+    /* ── Sans empattement ────────────────────────────────────────────────────── */
+    { n: 'Inter', c: 'sans', v: 1 },
+    { n: 'Roboto', c: 'sans', v: 1 },
+    { n: 'Open Sans', c: 'sans', v: 1 },
+    { n: 'Montserrat', c: 'sans', v: 1 },
+    { n: 'Poppins', c: 'sans' },
+    { n: 'Lato', c: 'sans' },
+    { n: 'Raleway', c: 'sans', v: 1 },
+    { n: 'Nunito', c: 'sans', v: 1 },
+    { n: 'Nunito Sans', c: 'sans', v: 1 },
+    { n: 'Work Sans', c: 'sans', v: 1 },
+    { n: 'DM Sans', c: 'sans', v: 1 },
+    { n: 'Manrope', c: 'sans', v: 1 },
+    { n: 'Sora', c: 'sans', v: 1 },
+    { n: 'Outfit', c: 'sans', v: 1 },
+    { n: 'Plus Jakarta Sans', c: 'sans', v: 1 },
+    { n: 'Figtree', c: 'sans', v: 1 },
+    { n: 'Space Grotesk', c: 'sans', v: 1 },
+    { n: 'Oswald', c: 'sans', v: 1 },
+    { n: 'Archivo', c: 'sans', v: 1 },
+    { n: 'Roboto Condensed', c: 'sans', v: 1 },
+    { n: 'Roboto Flex', c: 'sans', v: 1 },
+    { n: 'Source Sans 3', c: 'sans', v: 1 },
+    { n: 'Noto Sans', c: 'sans', v: 1 },
+    { n: 'Noto Sans Display', c: 'sans', v: 1 },
+    { n: 'Public Sans', c: 'sans', v: 1 },
+    { n: 'Karla', c: 'sans', v: 1 },
+    { n: 'Rubik', c: 'sans', v: 1 },
+    { n: 'Barlow', c: 'sans', v: 1 },
+    { n: 'Barlow Condensed', c: 'sans', v: 1 },
+    { n: 'Barlow Semi Condensed', c: 'sans', v: 1 },
+    { n: 'Mulish', c: 'sans', v: 1 },
+    { n: 'Quicksand', c: 'sans', v: 1 },
+    { n: 'Josefin Sans', c: 'sans', v: 1 },
+    { n: 'Cabin', c: 'sans', v: 1 },
+    { n: 'Heebo', c: 'sans', v: 1 },
+    { n: 'Asap', c: 'sans', v: 1 },
+    { n: 'Assistant', c: 'sans', v: 1 },
+    { n: 'Exo 2', c: 'sans', v: 1 },
+    { n: 'Titillium Web', c: 'sans' },
+    { n: 'Ubuntu', c: 'sans' },
+    { n: 'PT Sans', c: 'sans' },
+    { n: 'PT Sans Narrow', c: 'sans' },
+    { n: 'Fira Sans', c: 'sans' },
+    { n: 'Fira Sans Condensed', c: 'sans' },
+    { n: 'Signika', c: 'sans', v: 1 },
+    { n: 'Signika Negative', c: 'sans', v: 1 },
+    { n: 'Overpass', c: 'sans', v: 1 },
+    { n: 'Chivo', c: 'sans', v: 1 },
+    { n: 'Epilogue', c: 'sans', v: 1 },
+    { n: 'Familjen Grotesk', c: 'sans', v: 1 },
+    { n: 'Hanken Grotesk', c: 'sans', v: 1 },
+    { n: 'Schibsted Grotesk', c: 'sans', v: 1 },
+    { n: 'Bricolage Grotesque', c: 'sans', v: 1 },
+    { n: 'Instrument Sans', c: 'sans', v: 1 },
+    { n: 'Onest', c: 'sans', v: 1 },
+    { n: 'Wix Madefor Display', c: 'sans', v: 1 },
+    { n: 'Wix Madefor Text', c: 'sans', v: 1 },
+    { n: 'Be Vietnam Pro', c: 'sans' },
+    { n: 'Urbanist', c: 'sans', v: 1 },
+    { n: 'Red Hat Display', c: 'sans', v: 1 },
+    { n: 'Red Hat Text', c: 'sans', v: 1 },
+    { n: 'Albert Sans', c: 'sans', v: 1 },
+    { n: 'Gabarito', c: 'sans', v: 1 },
+    { n: 'Golos Text', c: 'sans', v: 1 },
+    /* ⚠️ « Golos UI » A ÉTÉ RETIRÉE APRÈS MESURE, PAS PAR GOUT.
+       Elle se présente comme une famille sœur de « Golos Text » sur le site de Google,
+       mais l'API css2 la refuse : `family=Golos+UI` rend 400 avec une page HTML — donc
+       même la demande la plus simple échoue, l'aperçu reste vide et le navigateur
+       bloque la réponse (ERR_BLOCKED_BY_ORB). Sur les 218 familles du catalogue,
+       testées une à une, c'était la SEULE en échec. « Onest » la remplace : même
+       registre, variable, et vérifiée en 200. */
+    { n: 'Onest', c: 'sans', v: 1 },
+    { n: 'Inter Tight', c: 'sans', v: 1 },
+    { n: 'Jost', c: 'sans', v: 1 },
+    { n: 'Comfortaa', c: 'sans', v: 1 },
+    { n: 'Varela Round', c: 'sans' },
+    { n: 'Hind', c: 'sans' },
+    { n: 'Catamaran', c: 'sans', v: 1 },
+    { n: 'Maven Pro', c: 'sans', v: 1 },
+    { n: 'Kanit', c: 'sans' },
+    { n: 'Prompt', c: 'sans' },
+    { n: 'Sarabun', c: 'sans' },
+    { n: 'Lexend', c: 'sans', v: 1 },
+    { n: 'Smooch Sans', c: 'sans', v: 1 },
+    { n: 'Darker Grotesque', c: 'sans', v: 1 },
+    { n: 'Anybody', c: 'sans', v: 1 },
+    { n: 'Anek Latin', c: 'sans', v: 1 },
+    { n: 'Bai Jamjuree', c: 'sans' },
+    { n: 'Commissioner', c: 'sans', v: 1 },
+    { n: 'Encode Sans', c: 'sans', v: 1 },
+    { n: 'Sofia Sans', c: 'sans', v: 1 },
+    { n: 'Unbounded', c: 'sans', v: 1 },
+    { n: 'Manuale', c: 'sans', v: 1 },
+
+    /* ── Avec empattement ────────────────────────────────────────────────────── */
+    { n: 'Playfair Display', c: 'serif', v: 1 },
+    { n: 'Merriweather', c: 'serif' },
+    { n: 'Libre Baskerville', c: 'serif' },
+    { n: 'Cormorant Garamond', c: 'serif' },
+    { n: 'Fraunces', c: 'serif', v: 1 },
+    { n: 'Newsreader', c: 'serif', v: 1 },
+    { n: 'Instrument Serif', c: 'serif' },
+    { n: 'Lora', c: 'serif', v: 1 },
+    { n: 'EB Garamond', c: 'serif', v: 1 },
+    { n: 'Crimson Text', c: 'serif' },
+    { n: 'Crimson Pro', c: 'serif', v: 1 },
+    { n: 'Source Serif 4', c: 'serif', v: 1 },
+    { n: 'Noto Serif', c: 'serif', v: 1 },
+    { n: 'Noto Serif Display', c: 'serif', v: 1 },
+    { n: 'Bitter', c: 'serif', v: 1 },
+    { n: 'Zilla Slab', c: 'serif' },
+    { n: 'Roboto Serif', c: 'serif', v: 1 },
+    { n: 'Spectral', c: 'serif' },
+    { n: 'Literata', c: 'serif', v: 1 },
+    { n: 'PT Serif', c: 'serif' },
+    { n: 'Domine', c: 'serif', v: 1 },
+    { n: 'Arvo', c: 'serif' },
+    { n: 'Bree Serif', c: 'serif' },
+    { n: 'Alegreya', c: 'serif', v: 1 },
+    { n: 'Cardo', c: 'serif' },
+    { n: 'Libre Caslon Text', c: 'serif' },
+    { n: 'Petrona', c: 'serif', v: 1 },
+    { n: 'Young Serif', c: 'serif' },
+    { n: 'DM Serif Display', c: 'serif' },
+    { n: 'DM Serif Text', c: 'serif' },
+    { n: 'Bodoni Moda', c: 'serif', v: 1 },
+    { n: 'Prata', c: 'serif' },
+    { n: 'Abril Fatface', c: 'serif' },
+    { n: 'Frank Ruhl Libre', c: 'serif' },
+    { n: 'Vollkorn', c: 'serif' },
+    { n: 'Gelasio', c: 'serif' },
+    { n: 'Tinos', c: 'serif' },
+    { n: 'Marcellus', c: 'serif' },
+    { n: 'Cinzel', c: 'serif', v: 1 },
+    { n: 'Yeseva One', c: 'serif' },
+    { n: 'Cormorant', c: 'serif' },
+    { n: 'Libre Franklin', c: 'serif', v: 1 },
+    { n: 'Eczar', c: 'serif' },
+    { n: 'Faustina', c: 'serif', v: 1 },
+    { n: 'Besley', c: 'serif', v: 1 },
+    { n: 'Italiana', c: 'serif' },
+    { n: 'Rufina', c: 'serif' },
+
+    /* ── Chasse fixe ─────────────────────────────────────────────────────────── */
+    { n: 'JetBrains Mono', c: 'mono', v: 1 },
+    { n: 'Fira Code', c: 'mono', v: 1 },
+    { n: 'Source Code Pro', c: 'mono', v: 1 },
+    { n: 'IBM Plex Mono', c: 'mono' },
+    { n: 'Space Mono', c: 'mono' },
+    { n: 'Roboto Mono', c: 'mono', v: 1 },
+    { n: 'Inconsolata', c: 'mono', v: 1 },
+    { n: 'Ubuntu Mono', c: 'mono' },
+    { n: 'Courier Prime', c: 'mono' },
+    { n: 'Anonymous Pro', c: 'mono' },
+    { n: 'Overpass Mono', c: 'mono', v: 1 },
+    { n: 'Red Hat Mono', c: 'mono', v: 1 },
+    { n: 'DM Mono', c: 'mono' },
+    { n: 'Noto Sans Mono', c: 'mono', v: 1 },
+    { n: 'Cutive Mono', c: 'mono' },
+    { n: 'Share Tech Mono', c: 'mono' },
+    { n: 'PT Mono', c: 'mono' },
+    { n: 'Martian Mono', c: 'mono', v: 1 },
+    { n: 'Spline Sans Mono', c: 'mono', v: 1 },
+    { n: 'Chivo Mono', c: 'mono', v: 1 },
+
+    /* ── Titrage ─────────────────────────────────────────────────────────────── */
+    { n: 'Bebas Neue', c: 'display' },
+    { n: 'Anton', c: 'display' },
+    { n: 'Archivo Black', c: 'display' },
+    { n: 'Righteous', c: 'display' },
+    { n: 'Lobster', c: 'display' },
+    { n: 'Alfa Slab One', c: 'display' },
+    { n: 'Bungee', c: 'display' },
+    { n: 'Monoton', c: 'display' },
+    { n: 'Press Start 2P', c: 'display' },
+    { n: 'Rubik Mono One', c: 'display' },
+    { n: 'Black Ops One', c: 'display' },
+    { n: 'Fugaz One', c: 'display' },
+    { n: 'Russo One', c: 'display' },
+    { n: 'Teko', c: 'display' },
+    { n: 'Orbitron', c: 'display', v: 1 },
+    { n: 'Audiowide', c: 'display' },
+    { n: 'Chakra Petch', c: 'display' },
+    { n: 'Silkscreen', c: 'display' },
+    { n: 'Pixelify Sans', c: 'display', v: 1 },
+    { n: 'Rowdies', c: 'display' },
+    { n: 'Titan One', c: 'display' },
+    { n: 'Shrikhand', c: 'display' },
+    { n: 'Cinzel Decorative', c: 'display' },
+    { n: 'Julius Sans One', c: 'display' },
+    { n: 'Syncopate', c: 'display' },
+    { n: 'Michroma', c: 'display' },
+    { n: 'Staatliches', c: 'display' },
+    { n: 'Big Shoulders Display', c: 'display', v: 1 },
+    { n: 'Sixtyfour', c: 'display', v: 1 },
+    { n: 'Rammetto One', c: 'display' },
+    { n: 'Passion One', c: 'display' },
+    { n: 'Bowlby One', c: 'display' },
+    { n: 'Climate Crisis', c: 'display', v: 1 },
+    { n: 'Calistoga', c: 'display' },
+    { n: 'Poiret One', c: 'display' },
+    { n: 'Unica One', c: 'display' },
+    { n: 'Bungee Shade', c: 'display' },
+    { n: 'Bungee Inline', c: 'display' },
+    { n: 'Krona One', c: 'display' },
+
+    /* ── Manuscrite ──────────────────────────────────────────────────────────── */
+    { n: 'Caveat', c: 'manuscrite', v: 1 },
+    { n: 'Dancing Script', c: 'manuscrite', v: 1 },
+    { n: 'Pacifico', c: 'manuscrite' },
+    { n: 'Satisfy', c: 'manuscrite' },
+    { n: 'Great Vibes', c: 'manuscrite' },
+    { n: 'Courgette', c: 'manuscrite' },
+    { n: 'Kaushan Script', c: 'manuscrite' },
+    { n: 'Shadows Into Light', c: 'manuscrite' },
+    { n: 'Indie Flower', c: 'manuscrite' },
+    { n: 'Patrick Hand', c: 'manuscrite' },
+    { n: 'Caveat Brush', c: 'manuscrite' },
+    { n: 'Amatic SC', c: 'manuscrite' },
+    { n: 'Permanent Marker', c: 'manuscrite' },
+    { n: 'Gochi Hand', c: 'manuscrite' },
+    { n: 'Sacramento', c: 'manuscrite' },
+    { n: 'Allura', c: 'manuscrite' },
+    { n: 'Parisienne', c: 'manuscrite' },
+    { n: 'Tangerine', c: 'manuscrite' },
+    { n: 'Alex Brush', c: 'manuscrite' },
+    { n: 'Homemade Apple', c: 'manuscrite' },
+    { n: 'Reenie Beanie', c: 'manuscrite' },
+    { n: 'Gloria Hallelujah', c: 'manuscrite' },
+    { n: 'Handlee', c: 'manuscrite' },
+    { n: 'Rock Salt', c: 'manuscrite' },
+    { n: 'Nothing You Could Do', c: 'manuscrite' },
+    { n: 'La Belle Aurore', c: 'manuscrite' }
   ];
 
   var CATEGORIES = [
@@ -115,6 +324,9 @@
     { id: 'display', fr: 'Titrage', en: 'Display', ja: 'ディスプレイ' },
     { id: 'manuscrite', fr: 'Manuscrite', en: 'Handwriting', ja: '手書き' }
   ];
+
+  /* Le nombre de familles ajoutées par clic sur « Charger plus ». */
+  var PAS = 40;
 
   /* ── Outils ─────────────────────────────────────────────────────────────────── */
   function t(v) { return api ? api.t(v) : (v && typeof v === 'object' ? (v.fr || '') : v); }
@@ -128,47 +340,52 @@
       if (a.indexOf(nom) < 0) { a.push(nom); localStorage.setItem(CLE, JSON.stringify(a)); }
     } catch (_) {}
   }
-  function oublier(nom) {
-    try {
-      var a = journal().filter(function (x) { return x !== nom; });
-      localStorage.setItem(CLE, JSON.stringify(a));
-    } catch (_) {}
-  }
 
   function famille(nom) {
     for (var i = 0; i < FAMILLES.length; i++) if (FAMILLES[i].n === nom) return FAMILLES[i];
     return null;
   }
 
-  /* L'adresse de la feuille Google qui décrit une famille. `display=swap` : le
-     texte s'affiche tout de suite dans la police de repli et se redessine quand la
-     police arrive — sans lui, un bloc resterait invisible pendant le téléchargement. */
-  function urlCss(f) {
+  /* L'adresse SANS AXE : elle répond 200 pour toutes les familles (mesuré). C'est
+     notre filet de sécurité, et c'est aussi ce qu'on utilise pour l'aperçu des
+     familles statiques. */
+  function urlSimple(f) {
+    return 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(f.n).replace(/%20/g, '+') + '&display=swap';
+  }
+  /* L'adresse AVEC PLAGE : ne répond que pour une police variable. */
+  function urlPlage(f) {
     return 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(f.n).replace(/%20/g, '+') +
-           ':wght@' + f.axe + '&display=swap';
+           ':wght@100..900&display=swap';
   }
 
   /* Pose (une seule fois) la feuille Google d'une famille, et rend une promesse
-     tenue quand la police est réellement utilisable. */
+     tenue quand la police est réellement utilisable.
+     ⚠️ POUR L'APERÇU, TOUJOURS L'ADRESSE SIMPLE — ET C'EST UNE MESURE.
+     Un premier montage tentait la PLAGE d'abord pour les familles variables. Or les
+     plages diffèrent d'une famille à l'autre (Sora s'arrête à 800, Inter va à 900) :
+     une plage trop large est refusée SANS en-tête CORS, donc le navigateur écrit une
+     erreur dans la console et l'aperçu doit retenter. Sur 150 lignes à l'écran, cela
+     faisait des dizaines d'erreurs rouges pour un résultat visuel identique — un
+     aperçu montre de toute façon la graisse 400. L'aperçu demande donc l'adresse
+     simple, qui répond 200 pour toutes les familles. La plage n'est demandée qu'à
+     l'INSTALLATION, où elle sert vraiment : c'est elle qui donne les vraies graisses. */
   function chargerFeuille(f) {
     var id = 'spgf-' + f.n.replace(/[^a-z0-9]/gi, '-').toLowerCase();
     if (dejaChargees[id]) return dejaChargees[id];
     dejaChargees[id] = new Promise(function (resolve, reject) {
       var lien = document.getElementById(id);
-      if (lien) {
-        /* Déjà dans la page : il ne reste qu'à attendre que le navigateur l'ait
-           appliquée. `document.fonts.load` rend une promesse qui ne se résout que
-           lorsque le dessin est disponible — c'est la seule mesure fiable. */
-        attendre(f).then(resolve, reject);
-        return;
-      }
-      lien = document.createElement('link');
-      lien.id = id;
-      lien.rel = 'stylesheet';
-      lien.href = urlCss(f);
-      lien.onload = function () { attendre(f).then(resolve, reject); };
-      lien.onerror = function () { delete dejaChargees[id]; reject(new Error(t(L('Google Fonts est injoignable.', 'Google Fonts is unreachable.', 'Google フォントに接続できません。')))); };
-      document.head.appendChild(lien);
+      if (lien) { attendre(f).then(resolve, reject); return; }
+      var l = document.createElement('link');
+      l.id = id;
+      l.rel = 'stylesheet';
+      l.href = urlSimple(f);
+      l.onload = function () { attendre(f).then(resolve, reject); };
+      l.onerror = function () {
+        if (l.parentNode) l.parentNode.removeChild(l);
+        delete dejaChargees[id];
+        reject(new Error(t(L('Google Fonts est injoignable.', 'Google Fonts is unreachable.', 'Google フォントに接続できません。'))));
+      };
+      document.head.appendChild(l);
     });
     return dejaChargees[id];
   }
@@ -180,60 +397,112 @@
       function () { return true; });
   }
 
+  /* ⚠️ LES GRAISSES SE LISENT DANS LA RÉPONSE, ELLES NE SE DEVINENT PAS.
+     Le CSS renvoyé par Google dit `font-weight: 100 900` pour une police variable et
+     `font-weight: 400` pour une statique. On en déduit la liste réelle : une plage se
+     lit en pas de 100, une valeur seule donne une seule graisse.
+     MESURÉ sur les deux formes : « Lato » → ['400'], « Inter » → 100 à 900. */
+  function poidsDuCss(css) {
+    var m = /font-weight:\s*([0-9][0-9. ]*)/g, vus = {}, out = [], r;
+    while ((r = m.exec(css))) {
+      var bouts = String(r[1]).trim().split(/\s+/);
+      if (bouts.length >= 2) {
+        var a = parseInt(bouts[0], 10), b = parseInt(bouts[1], 10);
+        if (isFinite(a) && isFinite(b) && b > a) {
+          for (var w = Math.ceil(a / 100) * 100; w <= b; w += 100) vus[w] = 1;
+          continue;
+        }
+      }
+      var seul = parseInt(bouts[0], 10);
+      if (isFinite(seul) && seul >= 100 && seul <= 900) vus[seul] = 1;
+    }
+    Object.keys(vus).map(Number).sort(function (x, y) { return x - y; })
+      .forEach(function (w) { out.push(String(w)); });
+    return out;
+  }
+
   /* ── Le fichier de police lui-même ────────────────────────────────────────────
      On relit la feuille Google pour y trouver l'adresse du fichier, puis on
      télécharge ce fichier. C'est ce qu'il faut pour que la police soit EMBARQUÉE
-     dans un .sp et pas seulement affichée par le navigateur. */
-  function fichierDeLaFamille(f) {
-    return fetch(urlCss(f), { mode: 'cors', credentials: 'omit' })
-      .then(function (r) {
+     dans un .sp et pas seulement affichée par le navigateur.
+     ⚠️ C'EST ICI, ET SEULEMENT ICI, QU'ON DEMANDE LA PLAGE DE GRAISSES.
+     Elle ne répond que pour une police variable ; une police statique la refuse, et
+     le repli prend l'adresse simple. Une requête refusée par installation, sans
+     conséquence : le navigateur la signale dans sa console, le repli l'absorbe.
+     ⚠️ ET ON RETIENT CELLES QUI LA REFUSENT (mesure, pas supposition).
+     La plage `wght@100..900` n'est valable que si la famille monte réellement à 900 :
+     pour Sora (100..800) Google rend une erreur SANS en-tête CORS, donc l'échec est
+     bruyant. Comme le journal réinstalle les familles mémorisées à chaque démarrage,
+     ces deux erreurs revenaient à CHAQUE lancement pour Sora et Caveat. Chaque famille
+     n'a désormais le droit qu'à UN essai : son nom rejoint une liste de refus, et les
+     démarrages suivants demandent directement l'adresse simple. */
+  function plageRefusee(nom) {
+    try { return (JSON.parse(localStorage.getItem(CLE_PLAGE) || '[]') || []).indexOf(nom) >= 0; }
+    catch (_) { return false; }
+  }
+  function noterPlageRefusee(nom) {
+    try {
+      var a = JSON.parse(localStorage.getItem(CLE_PLAGE) || '[]');
+      if (!Array.isArray(a)) a = [];
+      if (a.indexOf(nom) < 0) { a.push(nom); localStorage.setItem(CLE_PLAGE, JSON.stringify(a)); }
+    } catch (_) {}
+  }
+
+  function cssDeLaFamille(f) {
+    var lire = function (url) {
+      return fetch(url, { mode: 'cors', credentials: 'omit' }).then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.text();
-      })
-      .then(function (css) {
-        /* ⚠️ ON PREND LA PREMIÈRE DÉCLARATION QUI PORTE UNE ADRESSE.
-           Une famille variable n'en a qu'une, avec `font-weight: 100 900`. Une
-           famille statique en a une par graisse : la première est la 400, et c'est
-           elle qu'on embarque (les autres restent fournies par la feuille Google
-           pour l'affichage). */
-        var m = /src:\s*url\((https:\/\/[^)]+)\)/.exec(css);
-        if (!m) throw new Error(t(L('réponse inattendue de Google Fonts', 'unexpected answer from Google Fonts', 'Google フォントから予期しない応答'))); 
-        return m[1].replace(/^["']|["']$/g, '');
-      })
-      .then(function (url) {
-        return fetch(url, { mode: 'cors', credentials: 'omit' });
-      })
-      .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.arrayBuffer();
-      })
-      .then(function (buf) {
-        if (!buf || !buf.byteLength) throw new Error(t(L('fichier de police vide', 'empty font file', 'フォントファイルが空です')));
-        /* Conversion en data URL : `_spRegisterCustomFontDataUrl` attend une chaîne,
-           et c'est aussi la forme sous laquelle la police est rangée dans un .sp. */
-        var octets = new Uint8Array(buf), morceaux = [], taille = 0x8000, i;
-        for (i = 0; i < octets.length; i += taille) {
-          morceaux.push(String.fromCharCode.apply(null, octets.subarray(i, i + taille)));
-        }
-        return 'data:font/woff2;base64,' + btoa(morceaux.join(''));
       });
+    };
+    if (!f.v || plageRefusee(f.n)) return lire(urlSimple(f));
+    return lire(urlPlage(f)).catch(function () {
+      noterPlageRefusee(f.n);
+      return lire(urlSimple(f));
+    });
+  }
+
+  function fichierDeLaFamille(f) {
+    return cssDeLaFamille(f).then(function (css) {
+      /* ⚠️ ON PREND LA PREMIÈRE DÉCLARATION QUI PORTE UNE ADRESSE.
+         Une famille variable n'en a qu'une, avec sa plage de graisses. Une famille
+         statique en a une par graisse : la première est la 400, et c'est elle qu'on
+         embarque (les autres restent fournies par la feuille Google pour l'affichage). */
+      var m = /src:\s*url\((https:\/\/[^)]+)\)/.exec(css);
+      if (!m) throw new Error(t(L('réponse inattendue de Google Fonts', 'unexpected answer from Google Fonts', 'Google フォントから予期しない応答')));
+      return { url: m[1].replace(/^["']|["']$/g, ''), poids: poidsDuCss(css) };
+    }).then(function (info) {
+      return fetch(info.url, { mode: 'cors', credentials: 'omit' }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.arrayBuffer().then(function (buf) { return { buf: buf, poids: info.poids }; });
+      });
+    }).then(function (res) {
+      if (!res.buf || !res.buf.byteLength) throw new Error(t(L('fichier de police vide', 'empty font file', 'フォントファイルが空です')));
+      /* Conversion en data URL : `_spRegisterCustomFontDataUrl` attend une chaîne, et
+         c'est aussi la forme sous laquelle la police est rangée dans un .sp. */
+      var octets = new Uint8Array(res.buf), morceaux = [], taille = 0x8000, i;
+      for (i = 0; i < octets.length; i += taille) {
+        morceaux.push(String.fromCharCode.apply(null, octets.subarray(i, i + taille)));
+      }
+      return { dataUrl: 'data:font/woff2;base64,' + btoa(morceaux.join('')), poids: res.poids };
+    });
   }
 
   /* ── L'INSTALLATION ─────────────────────────────────────────────────────────── */
   function installer(f, silencieux) {
     if (!f) return Promise.reject(new Error('?'));
-    return chargerFeuille(f)
-      .then(function () { return fichierDeLaFamille(f); })
-      .then(function (dataUrl) {
+    return fichierDeLaFamille(f)
+      .then(function (r) {
         if (typeof window._spRegisterCustomFontDataUrl !== 'function') {
           throw new Error(t(L('cette version de SuperPrint ne sait pas accueillir de police externe.',
             'this build of SuperPrint cannot take an external font.',
             'このバージョンの SuperPrint は外部フォントを登録できません。')));
         }
-        return Promise.resolve(window._spRegisterCustomFontDataUrl(f.n, dataUrl));
+        f.poids = (r.poids && r.poids.length) ? r.poids : ['400'];
+        return Promise.resolve(window._spRegisterCustomFontDataUrl(f.n, r.dataUrl));
       })
       .then(function () {
-        /* La plage réelle, annoncée au sélecteur de graisse (cf. `_spSetFontWeights`). */
+        /* La plage RÉELLE, annoncée au sélecteur de graisse (cf. `_spSetFontWeights`). */
         try { if (typeof window._spSetFontWeights === 'function') window._spSetFontWeights(f.n, f.poids); } catch (_) {}
         memoriser(f.n);
         if (!silencieux) {
@@ -260,11 +529,12 @@
   var ID = 'spFontsOverlay';
   var CLE_TEXTE = 'sp_google_fonts_texte_v1';
   var CLE_MODE = 'sp_google_fonts_mode_v1';
+  var CLE_LIMITE = 'sp_google_fonts_limite_v1';
   /* Le texte d'aperçu par défaut : une phrase qui montre les lettres et les accents
      d'un seul coup d'œil, et qui tient sur une ligne dans la colonne. */
   var ECHANTILLON_DEFAUT = 'Portez ce vieux whisky au juge blond qui fume';
   var etat = { filtre: '', recherche: '', observer: null,
-               mode: 'liste', texte: ECHANTILLON_DEFAUT };
+               mode: 'liste', texte: ECHANTILLON_DEFAUT, limite: PAS };
 
   function lirePreference(cle, defaut) {
     try { var v = localStorage.getItem(cle); return v === null ? defaut : v; } catch (_) { return defaut; }
@@ -317,14 +587,9 @@
   }
 
   /* ── APERÇU : UNE LIGNE PAR FAMILLE, EN GROS ─────────────────────────────────
-     Demande utilisateur : « il faut en haut de la liste un filtre d'affichage pour
-     les afficher aussi en ligne avec une grosse preview de la part de la font, qui
-     sera sur une ligne ; une par ligne par défaut ».
-
-     C'est donc l'affichage PAR DÉFAUT. Il montre la phrase d'aperçu — la sienne si
-     on en a écrit une — dans le corps de chaque famille, sur UNE ligne, coupée
-     proprement si elle dépasse. Le nom reste petit à gauche : il sert à savoir ce
-     qu'on installe, pas à décorer. */
+     C'est l'affichage PAR DÉFAUT. Il montre la phrase d'aperçu — la sienne si on en a
+     écrit une — dans le corps de chaque famille, sur UNE ligne, coupée proprement si
+     elle dépasse. Le nom reste petit à gauche : il sert à savoir ce qu'on installe. */
   function ligne(f) {
     var c = el('div', 'display:flex;align-items:center;gap:14px;border-bottom:1px solid #ececec;padding:9px 2px;min-width:0;');
     c.setAttribute('data-famille', f.n);
@@ -333,7 +598,7 @@
     var nom = el('div', 'font-size:11px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', f.n);
     gauch.appendChild(nom);
     var meta = el('div', 'font-size:9px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;',
-                  categorieTexte(f.c) + ' · ' + f.poids.length + ' ' + t(L('graisses', 'weights', 'ウェイト')));
+                  categorieTexte(f.c));
     gauch.appendChild(meta);
     c.appendChild(gauch);
 
@@ -356,8 +621,8 @@
     c.setAttribute('data-famille', f.n);
 
     var haut = el('div', 'display:flex;align-items:baseline;gap:8px;');
-    /* ⚠️ LA CARTE EST ÉCRITE DANS SA PROPRE POLICE, dès qu'elle est chargée. Le
-       nom seul ne dit rien : « Fraunces » ou « Sora » ne s'imaginent pas. */
+    /* ⚠️ LA CARTE EST ÉCRITE DANS SA PROPRE POLICE, dès qu'elle est chargée. Le nom
+       seul ne dit rien : « Fraunces » ou « Sora » ne s'imaginent pas. */
     var nom = el('div', 'font-size:19px;line-height:1.15;color:#1a1a1a;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', f.n);
     nom.className = 'spgf-nom';
     nom.style.fontFamily = "'" + f.n + "', sans-serif";
@@ -366,19 +631,17 @@
     haut.appendChild(badge);
     c.appendChild(haut);
 
-    var ech = el('div', 'font-size:12px;line-height:1.35;color:#666;min-height:33px;overflow:hidden;', etat.texte || f.echant);
+    var ech = el('div', 'font-size:12px;line-height:1.35;color:#666;min-height:33px;overflow:hidden;', etat.texte || ECHANTILLON_DEFAUT);
     ech.className = 'spgf-ech';
     ech.style.fontFamily = "'" + f.n + "', serif";
     c.appendChild(ech);
 
     var pied = el('div', 'display:flex;align-items:center;gap:8px;margin-top:auto;');
-    var poids = el('span', 'font-size:9px;color:#aaa;flex:1;', f.variable ? t(L('variable', 'variable', 'バリアブル')) + ' · ' + f.poids.length + ' ' + t(L('graisses', 'weights', 'ウェイト'))
-                                                                          : f.poids.length + ' ' + t(L('graisses', 'weights', 'ウェイト')));
+    var poids = el('span', 'font-size:9px;color:#aaa;flex:1;', f.v ? t(L('variable', 'variable', 'バリアブル')) : '');
     pied.appendChild(poids);
     pied.appendChild(boutonInstaller(f));
     c.appendChild(pied);
 
-    /* L'aperçu se charge quand la carte devient visible (cf. en-tête). */
     if (etat.observer) ettiqueter(f, c, { nom: nom, ech: ech });
     return c;
   }
@@ -391,10 +654,11 @@
           refs.nom.style.fontFamily = "'" + f.n + "', sans-serif";
           refs.ech.style.fontFamily = "'" + f.n + "', serif";
         }, function () {
-          /* Injoignable : la carte garde sa police de repli et le dit une fois. */
+          /* Injoignable : la ligne garde sa police de repli et le dit une fois. */
           if (!c._spgfMuette) {
             c._spgfMuette = true;
-            refs.ech.textContent = f.echant + ' — ' + t(L('aperçu indisponible hors ligne', 'preview unavailable offline', 'オフラインではプレビューできません'));
+            refs.ech.textContent = (etat.texte || ECHANTILLON_DEFAUT) + ' — ' +
+              t(L('aperçu indisponible hors ligne', 'preview unavailable offline', 'オフラインではプレビューできません'));
           }
         });
       };
@@ -411,39 +675,62 @@
     return FAMILLES.filter(function (f) {
       if (etat.filtre && f.c !== etat.filtre) return false;
       if (!q) return true;
-      return f.n.toLowerCase().indexOf(q) >= 0 || f.echant.toLowerCase().indexOf(q) >= 0;
+      return f.n.toLowerCase().indexOf(q) >= 0;
     });
   }
 
-  function dessiner(grille, compteur) {
+  var vue = { grille: null, compteur: null, plus: null };
+
+  function dessiner() {
+    var grille = vue.grille, compteur = vue.compteur, plus = vue.plus;
+    if (!grille) return;
     grille.innerHTML = '';
     var l = listeFiltree();
-    if (compteur) compteur.textContent = l.length + ' ' + t(L('familles', 'families', 'ファミリー'));
+    /* ⚠️ UNE RECHERCHE MONTRE TOUS LES RÉSULTATS, PAS SEULEMENT LA PAGE EN COURS.
+       Chercher « mono » et ne rien voir parce que les familles correspondantes sont
+       au-delà de la quarantième ligne serait incompréhensible. Le découpage ne
+       s'applique donc qu'à la liste complète. */
+    var cherche = !!etat.recherche.trim();
+    var montrer = cherche ? l : l.slice(0, etat.limite);
+    if (compteur) {
+      compteur.textContent = montrer.length + ' / ' + l.length + ' ' + t(L('familles', 'families', 'ファミリー'));
+    }
     if (!l.length) {
       grille.appendChild(el('div', 'padding:26px 4px;color:#999;font-size:12px;text-align:center;',
         t(L('Aucune famille ne correspond à cette recherche.', 'No family matches this search.', 'この検索に一致するファミリーはありません。'))));
+      if (plus) plus.style.display = 'none';
       return;
     }
     if (etat.mode === 'liste') {
       grille.style.display = 'block';
-      l.forEach(function (f) { grille.appendChild(ligne(f)); });
+      montrer.forEach(function (f) { grille.appendChild(ligne(f)); });
     } else {
       grille.style.display = 'grid';
-      l.forEach(function (f) { grille.appendChild(carte(f)); });
+      montrer.forEach(function (f) { grille.appendChild(carte(f)); });
+    }
+    /* Le bouton « Charger plus » n'apparaît que s'il reste des familles à montrer. */
+    if (plus) {
+      var reste = cherche ? 0 : (l.length - montrer.length);
+      plus.style.display = reste > 0 ? 'block' : 'none';
+      if (reste > 0) {
+        plus.textContent = t(L('Charger plus de polices', 'Load more fonts', 'さらにフォントを読み込む')) +
+          '  (' + reste + ')';
+      }
     }
   }
 
   function ouvrir() {
     if (document.getElementById(ID)) return;
-    /* Les préférences d'affichage sont relues À CHAQUE OUVERTURE : le mode et la
-       phrase d'aperçu survivent à la fermeture du panneau et au rechargement. */
+    /* Les préférences d'affichage sont relues À CHAQUE OUVERTURE : le mode, la phrase
+       d'aperçu et le nombre de familles chargées survivent à la fermeture. */
     etat.mode = (lirePreference(CLE_MODE, 'liste') === 'grille') ? 'grille' : 'liste';
     var texteMemorise = lirePreference(CLE_TEXTE, ECHANTILLON_DEFAUT);
     etat.texte = texteMemorise || ECHANTILLON_DEFAUT;
+    var lim = parseInt(lirePreference(CLE_LIMITE, String(PAS)), 10);
+    etat.limite = (isFinite(lim) && lim >= PAS) ? lim : PAS;
 
     var ov = el('div', '');
     ov.id = ID;
-    /* Voile plein écran, comme les autres fenêtres de l'application. */
     ov.setAttribute('style', 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100020;display:flex;align-items:center;justify-content:center;padding:24px;');
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) fermer(); });
 
@@ -454,7 +741,7 @@
     /* En-tête : même facture que les 22 fenêtres (titre 13 px, croix 28×28). */
     var entete = el('div', 'display:flex;align-items:center;gap:8px;padding:16px;border-bottom:1px solid #e6e6e6;flex:0 0 auto;');
     entete.className = 'modal-header';
-    var titre = el('div', '', t(L('Polices Google', 'Google Fonts', 'Google フォント')));
+    var titre = el('div', '', t(L('Polices Google', 'Google Fonts', 'Google フォント')) + '  ·  ' + FAMILLES.length);
     titre.className = 'modal-title';
     titre.style.flex = '1';
     entete.appendChild(titre);
@@ -467,14 +754,6 @@
     carteCadre.appendChild(entete);
 
     var corps = el('div', 'padding:14px 16px 18px;overflow-y:auto;flex:1 1 auto;');
-    /* ⚠️ `min-height: 0` — LA PANNE CLASSIQUE DU FLEX, ET ELLE A ÉTÉ MESURÉE.
-       Sans cette ligne, un enfant flex refuse de descendre sous la hauteur de son
-       CONTENU : le corps du panneau ne défilait donc pas, il débordait simplement
-       de la carte (coupé par `overflow: hidden`), et l'IntersectionObserver voyait
-       les 34 familles à la fois. Résultat mesuré : 34 feuilles Google et 34
-       fichiers de police téléchargés à l'ouverture, pour une liste où 9 cartes
-       tiennent à l'écran. Avec `min-height: 0`, le corps défile et chaque aperçu
-       n'est demandé qu'en entrant dans la zone visible. */
     corps.style.minHeight = '0';
     carteCadre.appendChild(corps);
 
@@ -485,11 +764,7 @@
           'ファミリーを選んでインストールすると、SuperPrint のフォントとして残ります。')));
     corps.appendChild(intro);
 
-    /* ══ LE TEXTE D'APERÇU (demande utilisateur) ══════════════════════════════════
-       « un champ écrire mon texte serait possible simplement ? »
-       Oui : une phrase à soi, appliquée à TOUS les aperçus. Elle est enregistrée :
-       on la retrouve à l'ouverture suivante, ce qui évite de la retaper à chaque
-       essai — c'est justement l'usage (comparer deux familles sur son propre titre). */
+    /* ══ LE TEXTE D'APERÇU ══════════════════════════════════════════════════════ */
     var ligneTexte = el('div', 'display:flex;align-items:center;gap:8px;margin-bottom:10px;');
     var etiquette = el('label', 'flex:0 0 auto;font-size:10px;letter-spacing:.3px;text-transform:uppercase;color:#888;',
       t(L('Votre texte', 'Your text', 'テキスト')));
@@ -511,7 +786,7 @@
     var barre = el('div', 'display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;');
     var rech = el('input', 'flex:1 1 200px;min-width:140px;border:1px solid #d9d9d9;border-radius:0;padding:6px 9px;font-size:12px;');
     rech.type = 'search';
-    rech.placeholder = t(L('Rechercher une famille…', 'Search a family…', 'ファミリーを検索…'));
+    rech.placeholder = t(L('Rechercher parmi les ' + FAMILLES.length + ' familles…', 'Search the ' + FAMILLES.length + ' families…', FAMILLES.length + ' ファミリーから検索…'));
     barre.appendChild(rech);
 
     var onglets = el('div', 'display:flex;gap:4px;flex-wrap:wrap;');
@@ -528,7 +803,7 @@
           x.style.color = actif ? '#fff' : '#333';
           x.style.borderColor = actif ? '#1a1a1a' : '#d9d9d9';
         });
-        dessiner(grille, compteur);
+        dessiner();
       });
       bb._cat = cat.id;
       var actif0 = (cat.id === '');
@@ -564,6 +839,22 @@
     var grille = el('div', '');
     corps.appendChild(grille);
 
+    /* ══ « CHARGER PLUS DE POLICES » ════════════════════════════════════════════
+       Demande utilisateur : « je dois pouvoir avoir plus de polices (plus de choix,
+       load more ou je ne sais pas) ». Le catalogue en contient plus de 200 ; on en
+       présente 40 à la fois, et ce bouton en ajoute 40. Le compte des familles
+       chargées est mémorisé : rouvrir le panneau ne ramène pas la liste à 40. */
+    var plus = el('button', 'display:block;width:100%;margin:14px 0 2px;border:1px solid #d9d9d9;background:#fafafa;color:#333;font-size:11px;padding:10px;border-radius:0;cursor:pointer;', '');
+    plus.type = 'button';
+    plus.addEventListener('click', function () {
+      etat.limite += PAS;
+      ecrirePreference(CLE_LIMITE, String(etat.limite));
+      dessiner();
+    });
+    corps.appendChild(plus);
+
+    vue = { grille: grille, compteur: compteur, plus: plus };
+
     function poserMode(m) {
       etat.mode = m;
       ecrirePreference(CLE_MODE, m);
@@ -575,13 +866,13 @@
       });
       grille.style.gridTemplateColumns = (m === 'grille') ? 'repeat(auto-fill,minmax(232px,1fr))' : '';
       grille.style.gap = (m === 'grille') ? '10px' : '';
-      dessiner(grille, compteur);
+      dessiner();
     }
     bListe.addEventListener('click', function () { poserMode('liste'); });
     bGrille.addEventListener('click', function () { poserMode('grille'); });
 
-    /* Le texte d'aperçu se réécrit SANS reconstruire la liste : on change le
-       contenu des nœuds visibles, ce qui évite de relancer les polices. */
+    /* Le texte d'aperçu se réécrit SANS reconstruire la liste : on change le contenu
+       des nœuds visibles, ce qui évite de relancer les polices. */
     function appliquerTexte(v) {
       etat.texte = v;
       ecrirePreference(CLE_TEXTE, v);
@@ -597,6 +888,7 @@
       try { champTexte.focus(); champTexte.select(); } catch (_) {}
     });
 
+    /* Pied d'information : la licence, en une phrase. */
     var piedInfo = el('div', 'margin-top:14px;padding-top:11px;border-top:1px solid #eee;font-size:10px;color:#999;line-height:1.5;',
       t(L('Les polices viennent de Google Fonts et sont libres d\'usage, y compris commercial. Une police installée est enregistrée avec le document qui l\'utilise : il s\'ouvre à l\'identique sur une autre machine.',
           'The fonts come from Google Fonts and are free to use, including commercially. An installed font is saved with the document that uses it: it opens the same way on another machine.',
@@ -606,7 +898,7 @@
     document.body.appendChild(ov);
     ov.appendChild(carteCadre);
 
-    /* IntersectionObserver : la carte demande sa police en devenant visible. */
+    /* IntersectionObserver : la ligne demande sa police en devenant visible. */
     try {
       etat.observer = new IntersectionObserver(function (entrees) {
         entrees.forEach(function (e) {
@@ -617,12 +909,12 @@
       }, { root: corps, rootMargin: '160px' });
     } catch (_) { etat.observer = null; }
 
-    dessiner(grille, compteur);
+    poserMode(etat.mode);
     /* Sans IntersectionObserver (navigateur ancien), on charge tout : mieux vaut
-       des mégaoctets que des cartes muettes. */
+       des mégaoctets que des lignes muettes. */
     if (!etat.observer) FAMILLES.forEach(function (f) { chargerFeuille(f).catch(function () {}); });
 
-    rech.addEventListener('input', function () { etat.recherche = rech.value || ''; dessiner(grille, compteur); });
+    rech.addEventListener('input', function () { etat.recherche = rech.value || ''; dessiner(); });
     document.addEventListener('keydown', surEchap, true);
     try { rech.focus(); } catch (_) {}
   }
@@ -634,16 +926,15 @@
 
      ⚠️ ON ATTEND QUE L'APPLICATION SOIT PRÊTE, ET C'EST UNE MESURE.
      Un premier montage restaurait à +1,2 s après `DOMContentLoaded`. MESURÉ : le
-     `<link>` Google était bien posé, la police était bien disponible à l'écran…
-     et le `<select>` restait sans elle. La raison : `_spRegisterCustomFontDataUrl`
-     — le point d'entrée qui range la police dans le produit — est défini au milieu
-     de `main.js`, un fichier de 6 Mo dont l'exécution dépasse ce délai. L'appel
-     partait donc avant que la fonction existe, et l'échec était avalé.
-     On sonde maintenant son apparition (400 ms, jusqu'à 40 s) avant de restaurer.
+     `<link>` Google était bien posé, la police était bien disponible à l'écran… et
+     le `<select>` restait sans elle. La raison : `_spRegisterCustomFontDataUrl` —
+     le point d'entrée qui range la police dans le produit — est défini au milieu de
+     `main.js`, un fichier de 6 Mo dont l'exécution dépasse ce délai. On sonde donc
+     son apparition (400 ms, jusqu'à 40 s) avant de restaurer.
 
-     ⚠️ ON N'INSTALLE QUE CELLES DE NOTRE LISTE. Une famille mémorisée puis retirée
-     du catalogue laisse simplement son nom dans la liste : on l'ignore au lieu de
-     lancer une requête pour une fiche devenue inconnue. */
+     ⚠️ ON N'INSTALLE QUE CELLES DE NOTRE CATALOGUE. Une famille mémorisée puis
+     retirée du catalogue laisse simplement son nom dans la liste : on l'ignore au
+     lieu de lancer une requête pour une fiche devenue inconnue. */
   function pret(n) {
     n = n || 0;
     if (typeof window._spRegisterCustomFontDataUrl === 'function') return true;
@@ -655,22 +946,22 @@
   function restaurer() {
     var noms = journal();
     if (!pret()) return;
-    /* ══ 🆕 v1.7.673 — UNE POLICE GOOGLE ARRIVÉE PAR UN DOCUMENT EST RETENUE ══════
+    /* ══ 🆕 v1.7.674 — UNE POLICE GOOGLE ARRIVÉE PAR UN DOCUMENT EST RETENUE ══════
        Question de l'utilisateur : « comment on va avec le .sp et le .json pour les
        typo Google, il va les retrouver, les recharger ? ».
 
        MESURÉ : oui. Le .sp embarque la police dans `resources.customFonts` (20 Ko
-       pour Sora, et SEULEMENT si un bloc l'utilise) et le .json dans `customFonts`
-       à la racine ; à l'ouverture, l'application l'enregistre elle-même — vérifié en
+       pour Sora, et SEULEMENT si un bloc l'utilise) et le .json dans `customFonts` à
+       la racine ; à l'ouverture, l'application l'enregistre elle-même — vérifié en
        effaçant Sora du sélecteur et du registre : le réenregistrement la ramène et
        `document.fonts.check` repasse à vrai.
        ⚠️ MAIS ELLE NE SURVIVAIT PAS AU LANCEMENT SUIVANT, et c'est ce que ce bloc
        corrige : le journal du plug-in ne connaissait que les polices installées
        DEPUIS LE PANNEAU. Un document reçu d'un collègue s'ouvrait donc correctement
-       une fois… puis le lendemain, sans ce document, la famille avait disparu du
-       sélecteur. On écoute le point d'entrée que l'application utilise pour TOUTES
-       ses restaurations (ouverture de .sp, de .json, autosave) : si la famille est
-       dans notre catalogue, elle rejoint le journal et sera réinstallée au prochain
+       une fois… puis le lendemain, sans ce document, la famille avait disparu.
+       On écoute le point d'entrée que l'application utilise pour TOUTES ses
+       restaurations (ouverture de .sp, de .json, autosave) : si la famille est dans
+       notre catalogue, elle rejoint le journal et sera réinstallée au prochain
        démarrage comme si on l'avait choisie soi-même.
        ⚠️ ON NE FAIT QUE MÉMORISER, on n'appelle rien : la police est déjà chargée
        par l'application à cet instant. Aucun risque de double chargement. */
@@ -685,32 +976,49 @@
         window._spRegisterCustomFontDataUrl = enveloppe;
       }
     } catch (_) {}
-    noms.forEach(function (nom) {
-      var f = famille(nom);
-      if (!f || estInstallee(nom)) return;
-      installer(f, true).catch(function () {});
-    });
+    /* ⚠️ ON ATTEND QUE L'APPLICATION AIT FINI SA PROPRE RESTAURATION.
+       MESURÉ : `restaurer()` se déclenchait trop tôt. L'application relit ses polices
+       personnelles depuis IndexedDB après le démarrage ; à cet instant la liste
+       déroulante ne les contient pas encore, donc `estInstallee` répondait non et le
+       plug-in RETÉLÉCHARGEait Sora et Caveat À CHAQUE LANCEMENT — deux requêtes CSS
+       inutiles, deux erreurs CORS dans la console (la plage de Sora est refusée), et
+       un démarrage alourdi pour un résultat identique.
+       On laisse donc passer le temps de cette restauration (sondage court) et on
+       n'installe que ce qui manque VRAIMENT à la fin. */
+    var restants = noms.filter(function (nom) { return !!famille(nom); });
+    var essais = 0;
+    var veille = setInterval(function () {
+      essais++;
+      restants = restants.filter(function (nom) { return !estInstallee(nom); });
+      if (!restants.length || essais >= 20) {
+        clearInterval(veille);
+        restants.forEach(function (nom) {
+          var f = famille(nom);
+          if (!f || estInstallee(nom)) return;
+          installer(f, true).catch(function () {});
+        });
+      }
+    }, 400);
   }
 
   SPPluginAPI({
     id: 'google-fonts',
     name: L('Polices Google', 'Google Fonts', 'Google フォント'),
-    version: '1.0.0',
+    version: '1.1.0',
     author: 'SuperPrint',
     icon: 'Aa',
-    description: L('Les grandes familles typographiques du moment, dessinées dans leur propre police. Un clic les installe dans SuperPrint, pour de bon.',
-      'The big type families of the moment, drawn in their own font. One click installs them in SuperPrint for good.',
-      '今を代表する書体を、その書体そのもので見比べられます。ワンクリックで SuperPrint にインストール。'),
+    description: L(FAMILLES.length + ' familles typographiques, dessinées dans leur propre police. Un clic les installe dans SuperPrint, pour de bon.',
+      FAMILLES.length + ' type families, drawn in their own font. One click installs them in SuperPrint for good.',
+      FAMILLES.length + ' の書体を、その書体そのもので見比べられます。ワンクリックで SuperPrint にインストール。'),
     icone: '<path d="M4 19h5.5"/><path d="M6.75 19V6.2L11 15.4 15.25 6.2V19"/><path d="M17.5 19h4"/><circle cx="19.5" cy="13.5" r="2.1"/>',
     /* Le panneau que ce plug-in possède. */
     trappe: ID,
     options: [],
-    run: function (a) { api = a; return new Promise(function (resolve) { restaurer(); ouvrir(); resolve(true); }); }
+    run: function (a) { api = a; return new Promise(function (resolve) { try { restaurer(); } catch (_) {} ouvrir(); resolve(true); }); }
   });
 
-  /* Le panneau est déjà monté par `run`. `restaurer` a besoin que `main.js` ait
-     fini (cf. `pret`) : il sonde son propre prérequis, donc l'instant exact du
-     lancement n'a plus d'importance. */
+  /* Le panneau est monté par `run`. `restaurer` sonde son propre prérequis, donc
+     l'instant exact du lancement n'a pas d'importance. */
   try {
     if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(restaurer, 600);
     else document.addEventListener('DOMContentLoaded', function () { setTimeout(restaurer, 600); });
