@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.664 — Zigmoon
+         SuperPrint 1.7.665 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.664 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.665 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.664",
+          "softwareVersion": "1.7.665",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -387,7 +387,7 @@
          Grosse rotation créative (14 thèmes : mode, archi, art, nature morte,
          nature, ville, néon) — plus de variété, plus moderne. 900px q=45,
          ~20-85 Ko, chargement quasi instantané. En local rien n'est préchargé. -->
-    <!-- 🎨 v1.7.664 — NOUVEAU JEU DE 30 PHOTOS : ARCHITECTURE ET NATURE.
+    <!-- 🎨 v1.7.665 — NOUVEAU JEU DE 30 PHOTOS : ARCHITECTURE ET NATURE.
          Demande utilisateur : « je trouve les images du splash screen de
          superprint pas super créatives... mets un jeu d'images sur le splash,
          attention à la taille à la compression, cela doit être super léger ».
@@ -585,8 +585,8 @@
          déjà AVANT son propre Hypher (lignes 5201 et 11462). Si le noyau ne se
          charge pas, la césure continue avec Hypher : aucun changement visible.
          Retirer ces deux lignes remet l'application à l'identique. -->
-    <script src="JS/superprint-core.js?v=20261011-v664-rust-couleurs" defer></script>
-    <script src="JS/superprint-branchement.js?v=20261011-v664-rust-couleurs" defer></script>
+    <script src="JS/superprint-core.js?v=20261011-v665-rust-couleurs" defer></script>
+    <script src="JS/superprint-branchement.js?v=20261011-v665-rust-couleurs" defer></script>
     <!-- 🦀 Import PostScript/EPS branché sur son PROPRE noyau Rust.
          Deuxième module, et c'est délibéré : le noyau de césure/couleurs/montage
          (superprint_core.wasm, 406 Ko) est téléchargé par tout le monde, alors
@@ -597,7 +597,7 @@
          jusque-là, `main.js` charge `JS/sp-eps-import.js` comme avant. Si le
          noyau ne se charge pas, rien ne change pour l'utilisateur.
          Retirer cette ligne remet l'application à l'identique. -->
-    <script src="JS/superprint-eps.js?v=20261011-v664-rust-eps" defer></script>
+    <script src="JS/superprint-eps.js?v=20261011-v665-rust-eps" defer></script>
     <!-- 🦀 Export PDF IMPOSÉ branché sur le noyau Rust.
          Le bouton de la modale d'imposition fait déjà, dans `index.html` :
          `window._spGuardExport(this, window.exportImposedPDF || exportImposedPDF)`.
@@ -608,7 +608,7 @@
          appelle l'export vectoriel du produit, qui reste en place. Aucune ligne
          de main.js n'est touchée. Retirer cette ligne remet l'application à
          l'identique. -->
-    <script src="JS/superprint-montage.js?v=20261012-v664-rust-montage" defer></script>
+    <script src="JS/superprint-montage.js?v=20261012-v665-rust-montage" defer></script>
     <!-- 🦀 Import de DOCUMENTS branché sur son PROPRE noyau Rust (le troisième).
          406,5 Ko (césure, couleurs, montage) + 324,8 Ko (EPS) + 290,1 Ko
          (documents) : les trois modules sont séparés pour que personne ne paie
@@ -633,7 +633,7 @@
          croire que tout a été vu, et elle ne dit rien plutôt que de deviner
          quand un objet ne peut pas être décrit. Aucune ligne de main.js n'est
          touchée. Retirer cette ligne remet l'application à l'identique. -->
-    <script src="JS/superprint-prepresse.js?v=20261013-v664-rust-prepresse" defer></script>
+    <script src="JS/superprint-prepresse.js?v=20261013-v665-rust-prepresse" defer></script>
     <!-- ═══════════════════════════════════════════════════════════════════════
          PAPIERS — catalogue, dépôt, matière. Les entrées se rangent dans le
          SOUS-MENU DE L'ICÔNE IMAGE (après « SVG »), et le dépôt sur une page pose
@@ -652,7 +652,7 @@
          Open Sans, Montserrat, Roboto, Lato, Poppins, Playfair Display, Bebas Neue,
          IBM Plex Mono, IBM Plex Sans, Fira Code, Space Mono, Noto Sans JP.
          100% self-hosted — RGPD-friendly + offline-ready. Aucun appel CDN. -->
-    <link rel="stylesheet" href="CSS/fonts.css?v=20261015-v664-polices-allegees">
+    <link rel="stylesheet" href="CSS/fonts.css?v=20261015-v665-polices-allegees">
 
     <!-- 🛡️ Force-load Open Sans (used as default for new text blocks). Without this,
          Chrome Windows falls back to Times when fabric draws on canvas because
@@ -712,7 +712,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20261015-v664-regles-fond-clair">
+    <link rel="stylesheet" href="CSS/main.css?v=20261015-v665-regles-fond-clair">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1297,7 +1297,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.664</div>
+                <div class="splash-version">1.7.665</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1399,7 +1399,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.664</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.665</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1495,7 +1495,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.664 | 10 2026<br>
+                V 1.7.665 | 10 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -2056,7 +2056,7 @@
                             <path d="M17.7 13.2l1 2.3 2.3 1-2.3 1-1 2.3-1-2.3-2.3-1 2.3-1z"/>
                         </svg>
                     </button>
-                    <!-- 🆕 v1.7.664 — « GLOBAL REFACTOR » N'A PLUS DE BOUTON ICI.
+                    <!-- 🆕 v1.7.665 — « GLOBAL REFACTOR » N'A PLUS DE BOUTON ICI.
                          Demande utilisateur : « on va déplacer l'outil global refactor de
                          la top nav sous forme de plug-in par défaut de superprint (donc on
                          ne l'affiche plus dans la top nav mais dans plugins use ouvrira
@@ -2071,7 +2071,7 @@
                          ⚠️ CETTE TRAPPE RESTE DANS LE DOCUMENT, avec son identifiant et sa
                          structure : c'est le plug-in qui en prend la porte d'entrée, pas
                          le module qui change de place. -->
-                    <!-- 🆕 v1.7.664 — LES PLUG-INS ACTIFS ONT LEUR ICÔNE ICI.
+                    <!-- 🆕 v1.7.665 — LES PLUG-INS ACTIFS ONT LEUR ICÔNE ICI.
                          Demande utilisateur : « affiche une icône dans la top nav quand
                          c'est en on (global refactor on doit encore l'avoir, elle était
                          dans la top nav avant en permanence) ».
@@ -2297,12 +2297,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.664). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.665). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.664 — internal cache tag: JS v664 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.665 — internal cache tag: JS v665 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: calc(8px + var(--sp-regle-haut, 0px)); display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v664"
-                      data-sp-sw="v1.7.664">v1.7.664</span>
+                      data-sp-js="v665"
+                      data-sp-sw="v1.7.665">v1.7.665</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -2339,7 +2339,7 @@
                     <input type="file" id="importEpsInput" accept=".eps,.ai,.ps,application/postscript,application/illustrator,application/pdf" style="display:none" />
                     <!-- New: SP project import -->
                     <input type="file" id="importSPInput" accept=".sp" style="display:none" />
-                    <!-- 🆕 v1.7.664 — import Figma : le JSON du document (API REST ou greffon). -->
+                    <!-- 🆕 v1.7.665 — import Figma : le JSON du document (API REST ou greffon). -->
                     <input type="file" id="importFigmaInput" accept=".json,.fig,application/json" style="display:none" />
                     <!-- New: image import into selected shape -->
                     <input type="file" id="importImageIntoShapeInput" accept="image/*" style="display:none" />
@@ -2653,7 +2653,7 @@
                            on le dit ici, et le lien mène aux Préférences, onglet IA.
                            La pastille du titre ne suffisait pas — un point ambre ne
                            dit ni ce qui manque ni où le régler. */
-                        /* v1.7.664 — RETOUR UTILISATEUR : « met un gris léger à la place
+                        /* v1.7.665 — RETOUR UTILISATEUR : « met un gris léger à la place
                            de ton jaune et pas d'émoji ». Le jaune ambre (#fff8e1) se
                            lisait comme un avertissement dans une interface neutre ; il
                            devient le gris de la maison, et la clé emoji disparaît. */
@@ -3343,7 +3343,7 @@
                     </div>
                 </div>
 
-                <!-- 🆕 v1.7.664 — LE FILET SÉPARATEUR ET L'ORDRE DES PARTIES.
+                <!-- 🆕 v1.7.665 — LE FILET SÉPARATEUR ET L'ORDRE DES PARTIES.
                      Demande utilisateur : « mettre un filet séparateur au-dessus des
                      parties suivantes : ALIGNEMENT DU TEXTE, OPTIONS DE BLOC DE TEXTE,
                      JUSTIFICATION, OPTIONS DE TEXTE, TONS DIRECTS, RETRAIT, FORMATS,
@@ -4167,7 +4167,7 @@
             </div>
 
             <!-- ══════════════════════════════════════════════════════════════
-                 v1.7.664 — PLUG-INS ET SERVEUR MCP
+                 v1.7.665 — PLUG-INS ET SERVEUR MCP
 
                  Les deux boutons sont ICI, en bas de la barre de droite, sous
                  « dev tool » : c'est la zone des fonctions qui étendent le
@@ -4202,7 +4202,7 @@
         </div>
 
         <!-- ══════════════════════════════════════════════════════════════════
-             v1.7.664 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
+             v1.7.665 — TRAPPE « RÉGLAGES DE LA MAQUETTE » (refonte en direct)
 
              POURQUOI ICI, ET NULLE PART AILLEURS. Elle est le DERNIER ENFANT de
              `#mainApp`, qui est un conteneur FLEX (`display: flex`). Sa largeur
@@ -4239,7 +4239,7 @@
         </aside>
 
         <!-- ══════════════════════════════════════════════════════════════════
-             v1.7.664 — TRAPPE « PLUG-IN »
+             v1.7.665 — TRAPPE « PLUG-IN »
 
              Un plug-in ne s'exécute pas dans une pop-in : il ouvre CETTE trappe,
              exactement comme « Global Refactor » ouvre `#maquettePanel`. Demande
@@ -4930,7 +4930,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.664 — 18 octobre 2026
+                        SuperPrint v1.7.665 — 18 octobre 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -6837,8 +6837,8 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20261015-v664-version-telechargeable" defer></script>
-<!-- ══ v1.7.664 — PLUG-INS ══
+    <script src="JS/main.js?v=20261015-v665-version-telechargeable" defer></script>
+<!-- ══ v1.7.665 — PLUG-INS ══
      ⚠️ CES TROIS SCRIPTS REPRENNENT L'EMPREINTE DE CACHE DE `main.js`.
      MESURÉ deux fois sur ce dépôt : un fichier dont l'URL ne change pas continue
      d'être servi par le service worker après correction, et la correction devient
@@ -6868,12 +6868,12 @@
   });
 })();
 </script>
-    <!-- 🎯 v1.7.664 — _SP_RANGEMENT_655 : les soufflets des deux colonnes.
+    <!-- 🎯 v1.7.665 — _SP_RANGEMENT_655 : les soufflets des deux colonnes.
          Chargé APRÈS main.js (defer, donc dans l'ordre du document) : il ne fait
          que basculer une classe, mais il lit les [data-translate] que main.js a
          déjà traduits — et son `?v=` suit celui de main.js par le même mécanisme
          que les scripts de plug-ins, pour ne jamais servir un fichier périmé. -->
-    <script src="JS/sp-sidebar-clean.js?v=20261018-v664-version-telechargeable" defer></script>
+    <script src="JS/sp-sidebar-clean.js?v=20261018-v665-version-telechargeable" defer></script>
     <!-- 🎨 v1.7.525 — _SP_NUANCIERS_525 : nuanciers (accordéons) + import .ase.
          Chargé APRÈS main.js : il réutilise le gestionnaire `change` de
          #spotColorSelect au lieu de le réécrire. -->
@@ -6885,7 +6885,7 @@
     <!-- 🆕 Aperçu 3D (three.js) : module ES autonome, expose window.SP3DPreview.
          Si three.js n'est pas disponible (ex. ouverture via file://), le bouton
          PLAY reste inerte et n'impacte pas le reste de l'app. -->
-    <script type="module" src="JS/sp-3d-preview.js?v=20261015-v664-calque-encre"></script>
+    <script type="module" src="JS/sp-3d-preview.js?v=20261015-v665-calque-encre"></script>
 
     <!-- ── Startup session pop-in (Resume / Open / New) ───────────────────────── -->
     <div id="sp-startup-overlay" role="dialog" aria-modal="true" aria-labelledby="sp-startup-title" hidden>

@@ -849,6 +849,44 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.665 — L'INSTALLATEUR PERD SON PIED DE PAGE FIXE, ET LA BARRE SE RESSERRE.
+     Trois retours utilisateur, trois mesures.
+     (1) « install.html CETTE PAGE ne doit pas avoir le footer fixed. » Le défaut était plus
+     grave qu'un choix de mise en page : à 1440 × 900 la barre occupait les 73 derniers pixels
+     de l'écran ET les mentions légales, elles aussi fixes, se posaient sur ses 34 derniers
+     pixels. Surtout, la page ne défilait pas (scrollHeight = 900 = hauteur de fenêtre) : à
+     800 px de haut la barre recouvrait 49 px de contenu, à 700 px 99 px, à 620 px 139 px —
+     du contenu définitivement inatteignable. La page devient une colonne : #welcome prend la
+     place disponible, la barre puis les mentions légales se posent dans le fil. Mesuré après,
+     à 480, 768, 1024 et 1440 px : zéro recouvrement, zéro élément fixe, et la page défile
+     quand la fenêtre est trop courte.
+     (2) « GitHub, Discord, npm, Rust : rapproche-les en typo de la petite phrase du dessous
+     dans la grande résolution. » Mesuré avant : nom 19 px (Bebas Neue) contre description
+     11,5 px, soit un rapport de 1,65 — deux niveaux séparés plutôt qu'un bloc. Après : nom
+     15,5→17 px et description 11,5→13 px selon la largeur, soit 1,35 à 901 px et 1,31 à partir
+     de 1280 : le rapport se resserre AVEC la largeur, et l'écart d'interligne passe de 3 à 2 px.
+     Hauteur de barre inchangée, 73 px, vérifiée de 1024 à 1920 px en FR, EN et JA.
+     (3) La balise <div class="spf-in"> non fermée du bloc #comparison : vérifiée close, et
+     vérifiée pour de bon — les sept pages du site, dans les quatre arbres (source, miroir
+     sp213-local, _legacy Astro, dist compilé), rendent une profondeur de balises de 0, et le
+     DOM vivant donne à #comparison exactement deux enfants, <summary> et <div.spf-in>. ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-665">
+ <h2>SUPER PRINT <span>v1.7.665</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 octobre 2026" data-i18n-en="Released October 18, 2026" data-i18n-jp="2026年10月18日公開">Released October 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le pied de page de l’installateur ne recouvre plus rien, et la barre du bas se lit d’un seul bloc." data-i18n-en-html="The installer page’s footer no longer covers anything, and the bottom bar now reads as one block." data-i18n-jp-html="インストーラーのフッターは何も覆わなくなり、下部バーはひとまとまりに読めます。">The installer page’s footer no longer covers anything, and the bottom bar now reads as one block.</p>
+
+ <h3 data-i18n-fr-html="🔧 Trois corrections mesurées" data-i18n-en-html="🔧 Three measured fixes" data-i18n-jp-html="🔧 測定済みの3つの修正">🔧 Three measured fixes</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>install.html n’a plus de pied de page fixe.</strong> La barre ne faisait pas que passer devant le contenu : la page ne défilant pas, elle le <em>coupait</em> — 49 px de contenu recouverts à 800 px de haut, 99 px à 700, 139 px à 620. Et les mentions légales, elles aussi fixes, se posaient sur les 34 derniers pixels de la barre. La page est devenue une colonne : le contenu prend la place disponible, la barre et les mentions légales se posent à la fin, dans le fil. Mesuré après à 480, 768, 1024 et 1440 px : zéro recouvrement, zéro élément fixe." data-i18n-en-html="<strong>install.html no longer has a fixed footer.</strong> The bar was not merely passing over content: since the page does not scroll, it <em>cut</em> it — 49 px of content covered at 800 px tall, 99 px at 700, 139 px at 620. And the legal links, also fixed, sat on the bar’s last 34 pixels. The page is now a column: content takes the available space, the bar and the legal links sit at the end, in the flow. Measured afterwards at 480, 768, 1024 and 1440 px: zero overlap, zero fixed elements." data-i18n-jp-html="<strong>install.html に固定フッターはありません。</strong>バーは内容の上を通るだけでなく、ページがスクロールしないため内容を<em>切り取って</em>いました——高さ 800 px で 49 px、700 px で 99 px、620 px で 139 px。法的表示も固定で、バーの下 34 px に重なっていました。ページは縦積みになり、内容が余白を取り、バーと法的表示は文書の流れの最後に置かれます。480／768／1024／1440 px で測定：重なりゼロ、固定要素ゼロ。">install.html no longer has a fixed footer; the bar was cutting content the page could not scroll past.</li>
+  <li data-i18n-fr-html="<strong>La barre se resserre en grande résolution.</strong> Le nom était à 19 px et la description à 11,5 px — un rapport de 1,65, donc deux niveaux plutôt qu’un bloc. Le nom passe à 15,5 → 17 px et la description à 11,5 → 13 px selon la largeur : 1,35 à 901 px, 1,31 à partir de 1280. L’écart d’interligne tombe de 3 à 2 px, et les chiffres npm suivent la description au lieu d’être figés. La hauteur de barre ne bouge pas : 73 px de 1024 à 1920, en français, anglais et japonais." data-i18n-en-html="<strong>The bar tightens at large resolutions.</strong> The name was 19 px and the description 11.5 px — a 1.65 ratio, i.e. two levels rather than one block. The name is now 15.5 → 17 px and the description 11.5 → 13 px by width: 1.35 at 901 px, 1.31 from 1280 up. The gap drops from 3 to 2 px, and the npm figures follow the description instead of being fixed. The bar height is unchanged: 73 px from 1024 to 1920, in French, English and Japanese." data-i18n-jp-html="<strong>大きな解像度でバーが引き締まります。</strong>名前は 19 px、説明は 11.5 px——比率 1.65 で、ひとまとまりではなく二段階に見えていました。名前は 15.5 → 17 px、説明は 11.5 → 13 px（幅に応じて）：901 px で 1.35、1280 px 以上で 1.31。行間は 3 → 2 px になり、npm の数字も固定値ではなく説明に追従します。バーの高さは変わりません：1024〜1920 px、仏・英・日すべてで 73 px。">The bar tightens at large resolutions: 17 px name against 13 px description instead of 19 against 11.5.</li>
+  <li data-i18n-fr-html="<strong>La balise non fermée du bloc <code>#comparison</code> est vérifiée close</strong>, et vérifiée pour de bon : les sept pages du site rendent une profondeur de balises de 0 dans les quatre arbres (source, miroir, source de conversion Astro, site compilé), et le DOM vivant donne à <code>#comparison</code> exactement deux enfants, <code>&lt;summary&gt;</code> et <code>&lt;div class=\"spf-in\"&gt;</code>." data-i18n-en-html="<strong>The unclosed tag in the <code>#comparison</code> block is verified closed</strong>, and properly verified: all seven site pages render a tag depth of 0 across the four trees (source, mirror, Astro conversion source, compiled site), and the live DOM gives <code>#comparison</code> exactly two children, <code>&lt;summary&gt;</code> and <code>&lt;div class=\"spf-in\"&gt;</code>." data-i18n-jp-html="<strong><code>#comparison</code> ブロックの閉じ忘れタグは閉じられていることを検証済み</strong>です。4 つのツリー（ソース、ミラー、Astro 変換元、ビルド済みサイト）で 7 ページすべてのタグ深さが 0、実 DOM では <code>#comparison</code> の子は <code>&lt;summary&gt;</code> と <code>&lt;div class=\"spf-in\"&gt;</code> の 2 つだけです。">The unclosed tag in <code>#comparison</code> is verified closed in all four trees and in the live DOM.</li>
+ </ul>
+</article>
+
 <hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.664 — IMPORT INDESIGN : OBJETS TOURNÉS, GROUPES, DÉBORDEMENTS.

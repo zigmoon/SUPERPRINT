@@ -24,7 +24,7 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 export const SOURCE_ROOT = resolve(ROOT, '_legacy');
 
 /** Version publiée, reprise de `version.txt`. */
-export const VERSION = '1.7.664';
+export const VERSION = '1.7.665';
 
 const NAV_HEADING = { fr: 'Navigation', en: 'Navigation', ja: 'ナビゲーション' };
 const DESK_HEADING = { fr: 'Bureau SuperPrint', en: 'The SuperPrint desk', ja: 'SuperPrint デスク' };
@@ -85,7 +85,7 @@ export const PAGES = [
     featuresHref: 'index.html#features',
     brand: {
       ariaLabel: 'SuperPrint — Accueil',
-      /* ⚠️ v1.7.664 — PLUS DE VERSION EN DUR ICI. La valeur était figée à
+      /* ⚠️ v1.7.665 — PLUS DE VERSION EN DUR ICI. La valeur était figée à
          « 1.7.591 » et le bump ne la voyait pas (il remplace la version
          COURANTE, pas une version périmée) : la page ROCK affichait donc une
          version vieille de 69 livraisons, quand `rock.html` — la source —

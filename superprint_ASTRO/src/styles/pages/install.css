@@ -78,11 +78,32 @@
     border: 1px solid var(--input-border); font-family: inherit; font-size: 12px; cursor: pointer;
   }
 
+  /* ⚠️ v1.7.665 — CETTE PAGE N'A PLUS DE PIED DE PAGE FIXE.
+     Demande utilisateur : « install.html CETTE PAGE ne doit pas avoir le footer fixed ».
+     MESURÉ AVANT, et c'était pire qu'un simple choix esthétique :
+       · à 1440 × 900 la barre occupait les 73 derniers pixels de l'écran, et les
+         mentions légales — elles aussi `fixed` — se posaient sur ses 34 derniers
+         pixels : deux pieds de page dans le même fond;
+       · la page ne défile pas (`scrollHeight` = 900 = hauteur de fenêtre), donc la
+         barre ne faisait pas que passer devant : elle COUPAIT. Relevé à 800 px de
+         haut : 49 px de contenu recouverts ; à 700 px : 99 px ; à 620 px : 139 px.
+         Ce contenu était définitivement inatteignable, puisqu'il n'y a rien à faire
+         défiler.
+     LE REMÈDE N'EST PAS DE DÉCALER LA BARRE, mais de la SORTIR DU FLUX FIXE : la page
+     devient une colonne, `#welcome` prend la place disponible, puis la barre et les
+     mentions légales se posent à la fin, DANS LE FIL du document. Rien n'est recouvert,
+     rien n'est rogné, et si la fenêtre est trop courte c'est la page qui défile.
+     `html { height: 100% }` reste : c'est `body` qui passe en `min-height` pour pouvoir
+     grandir au-delà de la fenêtre. */
+  body { height: auto; min-height: 100%; display: flex; flex-direction: column; }
   #welcome {
-    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-    background: var(--bg); padding: 24px; overflow-y: auto;
+    position: static; inset: auto; flex: 1 1 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg); padding: 24px; overflow: visible;
   }
-  .welcome-inner { width: min(760px, 100%); margin: 0 auto; padding-bottom: 54px; }
+  /* Le `padding-bottom: 54px` compensait la barre fixe. Elle n'est plus fixe : le
+     rembourrage n'a plus d'objet et laisserait un vide sous le contenu. */
+  .welcome-inner { width: min(760px, 100%); margin: 0 auto; padding-bottom: 0; }
   .welcome-brand { text-align: center; margin-bottom: 40px; }
   .welcome-brand .logo { display: flex; flex-direction: column; align-items: center; gap: 18px; margin-bottom: 18px; }
 
@@ -362,11 +383,14 @@
   }
 
   /* ─── Footer très léger (typo seule) ─── */
+  /* ⚠️ v1.7.665 — DANS LE FIL, ET NON `fixed` : voir l'en-tête de `#welcome`.
+     `fixed` le posait exactement là où arrive la barre des fondations, donc sur
+     elle. Il ferme désormais la page, sous la barre. */
   .home-footer {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    position: static; left: auto; right: auto; bottom: auto; z-index: auto;
     display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
     padding: 10px 16px 12px; font-size: 10px; letter-spacing: .6px; text-transform: uppercase;
-    color: var(--muted2); background: linear-gradient(to top, var(--bg) 75%, transparent);
+    color: var(--muted2); background: var(--bg);
   }
   .home-footer a { color: var(--muted2); text-decoration: none; transition: color .15s; }
   .home-footer a:hover { color: var(--text); text-decoration: underline; }
@@ -409,7 +433,7 @@
   #welcome::-webkit-scrollbar-thumb:hover { background: #999; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   BARRE FIXE DE BAS DE PAGE — recopiée depuis index.html en v1.7.664.
+   BARRE FIXE DE BAS DE PAGE — recopiée depuis index.html en v1.7.665.
    Demande utilisateur : « applique bien le même footer fixe sur toutes les pages
    de présentation ». Le CSS et le balisage sont EXTRAITS de la page d'accueil,
    jamais retapés : une correction là-bas se reporte ici par le même script.
@@ -420,7 +444,7 @@
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.664 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.665 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -428,14 +452,14 @@
    correspondante. */
 .fondations-grid {
   display: grid;
-  /* 🆕 v1.7.664 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+  /* 🆕 v1.7.665 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
      Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
      bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
      363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
      quatre cases d'information se partagent le reste à parts égales. */
   grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.664 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+  /* 🆕 v1.7.665 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
      353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
      la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
@@ -456,20 +480,20 @@
 .fondation-logo img { display: block; width: 32px; height: 32px; }
 .fondation-txt { min-width: 0; text-align: left; }
 .fondation-nom {
-  display: block; font-family: var(--f-caps, 'Bebas Neue', 'Arial Narrow', sans-serif); font-size: clamp(16px,1.6vw,19px);
+  display: block; font-family: var(--f-caps, 'Bebas Neue', 'Arial Narrow', sans-serif); font-size: clamp(15.5px,1.5vw,17px);
   letter-spacing: .02em; line-height: 1.05; color: var(--ink, #17130D);
 }
-.fondation-desc { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.45; color: var(--muted, #756A5B); }
+.fondation-desc { display: block; margin-top: 2px; font-size: clamp(11.5px,1.05vw,13px); line-height: 1.45; color: var(--muted, #756A5B); }
 /* Le chiffre (téléchargements npm) ressort : c'est la seule PREUVE chiffrée du
    bloc. Il est daté dans le commentaire HTML qui l'entoure — à rafraîchir. */
-.fondation-chiffre { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 12px; color: var(--ink, #17130D); font-weight: 600; }
-.fondation-date { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 10px; color: var(--muted, #756A5B); }
+.fondation-chiffre { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 1.02em; color: var(--ink, #17130D); font-weight: 600; }
+.fondation-date { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 0.85em; color: var(--muted, #756A5B); }
 /* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
 .fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
 .fondation:focus-visible { outline: 2px solid var(--ink, #17130D); outline-offset: 6px; }
-/* 🆕 v1.7.664 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+/* 🆕 v1.7.665 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
    Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
    ICON MÊME NOIR QUE RUST ».
    ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
@@ -540,7 +564,7 @@
    entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
    toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
    elles se lisent sans qu'on aille les chercher.
-   🆕 v1.7.664 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   🆕 v1.7.665 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
    cette même barre.
 
    LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
@@ -572,7 +596,7 @@
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     🆕 v1.7.664 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     🆕 v1.7.665 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
      À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
      des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
      DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
@@ -590,7 +614,10 @@
      descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
      réservée devient exacte par construction. */
   .fondations {
-    position: fixed; left: 0; right: 0; bottom: 0;
+    /* ⚠️ v1.7.665 — PLUS `fixed` SUR CETTE PAGE (voir `#welcome`). La hauteur reste
+       celle de la barre : elle est en bas du fil, donc sa hauteur n'écrase plus rien
+       et l'alignement des quatre cases ne bouge pas d'un pixel. */
+    position: static; left: auto; right: auto; bottom: auto;
     height: var(--barre-h);
     /* `content-box` : la hauteur NE COMPREND NI le filet ni le dégagement de zone
        sûre, qui s'y ajoutent. C'est ce qui rend le calcul du dégagement exact. */
@@ -606,7 +633,7 @@
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    /* 🆕 v1.7.664 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+    /* 🆕 v1.7.665 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
        Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
        desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
        d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
@@ -626,16 +653,20 @@
      séparent ne couvriraient que la hauteur du texte. Le contenu, lui, se centre. */
   .fondation { align-items: center; padding-top: 0; padding-bottom: 0; }
 
-  /* Le dégagement vaut exactement l'emprise de la barre : sa hauteur, son filet
-     d'un pixel, et le dégagement de zone sûre qui s'y ajoute sur iPad. */
-  body { padding-bottom: calc(var(--barre-h) + env(safe-area-inset-bottom, 0px) + 1px); }
+  /* ⚠️ v1.7.665 — LE DÉGAGEMENT DU BAS DE PAGE DISPARAÎT SUR CETTE PAGE.
+     Il compensait une barre `fixed`. La barre est maintenant dans le fil : réserver
+     sa hauteur en plus laisserait justement le vide qu'on voulait éviter — et la page
+     mesurait 900 px pour 900 px de fenêtre, donc rien ne pouvait défiler pour le voir. */
+  body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  /* Pas de bulle WhatsApp sur cette page (le numéro est DANS la barre, en carré) :
+     la règle est conservée pour les autres pages, sans effet ici. */
   body:has(.fondations) .sp-wa { bottom: calc(var(--barre-h) + env(safe-area-inset-bottom, 0px) + 19px); }
 }
 /* Une barre fixe s'imprimerait sur la première page de tout document : à l'écran
    elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
 @media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
 
-/* ═══ NOMS SEULS SOUS 1024 px (v1.7.664) ═══
+/* ═══ NOMS SEULS SOUS 1024 px (v1.7.665) ═══
    Demande utilisateur : « quand le footer fixe passe en dessous de 1024 px, mets
    que GitHub, Discord, npm et Rust ; ne mets pas les petites phrases en gris en
    dessous à cette résolution ». La règle est bornée des DEUX côtés : sous 901 px
@@ -647,7 +678,7 @@
   .fondation-desc { display: none; }
 }
 
-/* ═══ RÈGLES DE LANGUE DE LA BARRE (v1.7.664) ═══
+/* ═══ RÈGLES DE LANGUE DE LA BARRE (v1.7.665) ═══
    Cette page ne charge pas la feuille du site : sans ces quatre règles, chaque
    case de la barre fixe affichait ses trois langues à la suite. Elles ne portent
    que sur les `.inline-fr/…` de la barre — la page n'emploie pas cette
