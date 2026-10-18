@@ -849,6 +849,37 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.666 — LE TRIO D'INSTALLEURS RÉDUIT DANS LE HERO.
+     Retour utilisateur : « un peu trop gros sur la page de présentation ».
+     MESURÉ AVANT à 1440 px : icônes 26 × 26, texte 13 px, écart interne 9 px,
+     rembourrage 4 px — chaque lien faisait 34 px de haut et 107 px de large, et le trio
+     s'étalait sur 336 px sous un libellé « INSTALLEUR » de 11 px. Les rapports valaient
+     donc 2,36 pour l'icône et 1,18 pour le texte : trois marques plus grosses que le
+     titre qui les annonce, alors qu'elles sont une ligne de service, pas une entrée de
+     navigation.
+     APRÈS : icônes 20 × 20 (rapport 1,82), texte 11,5 px (rapport 1,05, au niveau du
+     libellé), écart 7 px, rembourrage 3 px. Un lien passe de 34 à 26 px de haut, le trio
+     de 336 à 288 px. Sous 620 px : 17 × 17 et 11 px.
+     VÉRIFIÉ à 1440, 900, 700, 620, 480 et 375 px : le trio reste sur une seule ligne et
+     ne dépasse jamais son libellé. Rien d'autre ne bouge — aucune hauteur fixe dans le
+     hero, donc il se referme seul ; le menu Download garde ses icônes de 26 px, où le
+     libellé est bien plus grand. ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-666">
+ <h2>SUPER PRINT <span>v1.7.666</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 octobre 2026" data-i18n-en="Released October 18, 2026" data-i18n-jp="2026年10月18日公開">Released October 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le trio Windows · macOS · Linux du hero passe à l’échelle de son libellé : il annonce une ligne de service, il ne crie plus plus fort que son titre." data-i18n-en-html="The hero’s Windows · macOS · Linux trio now matches the scale of its label: it announces a service line, it no longer shouts louder than its own title." data-i18n-jp-html="ヒーローの Windows · macOS · Linux の3つは見出しと同じ大きさになりました。サービス行を告げるもので、見出しより大きく主張することはありません。">The hero’s Windows · macOS · Linux trio now matches the scale of its label.</p>
+
+ <h3 data-i18n-fr-html="📐 Mesuré, puis réduit" data-i18n-en-html="📐 Measured, then reduced" data-i18n-jp-html="📐 測定してから縮小">📐 Measured, then reduced</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Trois marques plus grosses que leur titre.</strong> À 1440 px, les icônes mesuraient 26 × 26 et le texte 13 px pour un libellé « INSTALLEUR » de 11 px : rapports de 2,36 et 1,18. Après réduction, 20 × 20 et 11,5 px — rapports de 1,82 et 1,05. Un lien passe de 34 à 26 px de haut, le trio de 336 à 288 px." data-i18n-en-html="<strong>Three marks larger than their own title.</strong> At 1440 px the icons measured 26 × 26 and the text 13 px, against an “INSTALLERS” label of 11 px: ratios of 2.36 and 1.18. Now 20 × 20 and 11.5 px — ratios of 1.82 and 1.05. A link drops from 34 to 26 px tall, the trio from 336 to 288 px." data-i18n-jp-html="<strong>見出しより大きい3つのマーク。</strong>1440 px でアイコンは 26 × 26、文字は 13 px、見出し「インストーラー」は 11 px——比率は 2.36 と 1.18 でした。現在は 20 × 20 と 11.5 px——比率は 1.82 と 1.05。リンクの高さは 34 → 26 px、3つの幅は 336 → 288 px。">Three marks larger than their own title: 2.36 and 1.18 ratios, now 1.82 and 1.05.</li>
+  <li data-i18n-fr-html="<strong>Vérifié à six largeurs.</strong> 1440, 900, 700, 620, 480 et 375 px : le trio reste sur une seule ligne et ne dépasse jamais son libellé. Sous 620 px il passe à 17 × 17 et 11 px. Le hero n’a aucune hauteur fixe, il se referme donc tout seul ; le menu Download garde ses icônes de 26 px, où le libellé est bien plus grand." data-i18n-en-html="<strong>Checked at six widths.</strong> 1440, 900, 700, 620, 480 and 375 px: the trio stays on one line and never outgrows its label. Below 620 px it becomes 17 × 17 and 11 px. The hero has no fixed height, so it closes up on its own; the Download menu keeps its 26 px icons, where the label is much larger." data-i18n-jp-html="<strong>6つの幅で検証。</strong>1440、900、700、620、480、375 px：3つは常に1行に収まり、見出しを超えません。620 px 未満では 17 × 17 と 11 px になります。ヒーローに固定高はないため自動で詰まります。Download メニューは 26 px のまま——あちらは見出しがずっと大きいからです。">Checked at six widths; the trio always stays on one line and the hero has no fixed height.</li>
+ </ul>
+</article>
+
 <!-- ===== SUPER PRINT v1.7.665 — L'INSTALLATEUR PERD SON PIED DE PAGE FIXE, ET LA BARRE SE RESSERRE.
      Trois retours utilisateur, trois mesures.
      (1) « install.html CETTE PAGE ne doit pas avoir le footer fixed. » Le défaut était plus
