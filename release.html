@@ -849,6 +849,99 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.673 — LE FILET DE LA BARRE GAUCHE, ET UNE GALERIE DE POLICES QUI SE LIT.
+     Trois demandes.
+
+     (1) LE FILET DE LA BARRE GAUCHE RÉTRACTÉE ÉTAIT INVISIBLE — DEPUIS TOUJOURS.
+     Retour utilisateur : « il manque un filet horizontal gris léger sur la barre de gauche,
+     après l'outil Règles & grilles, comme sur la barre repliée d'en face ».
+     Il n'était pas absent : il était LÀ, 'display: block', 55,33 px de large — et 0 px de
+     haut. MESURÉ : bordure calculée « 0px solid rgb(224,224,224) ». Une liste de règles
+     '!important' destinée aux boutons des compteurs enfermait '.sidebar-divider' et lui
+     imposait 'border-top-width: 0' ; les règles de 1.7.461 qui le rétablissaient ne
+     touchaient que 'display' et les marges, jamais la bordure. Le filet était donc
+     invisible tout en occupant sa place — l'utilisateur ne voyait rien après Règles &
+     grilles, et il avait raison. Il est sorti de cette liste : mesuré après, 0,67 px de
+     haut, 55,33 px de large, bordure 0,666667 px #e0e0e0, marges 12 px — IDENTIQUE au
+     filet de la barre de droite, qui sert de référence.
+
+     (2) LA GALERIE DE POLICES SE LIT ENFIN COMME UNE GALERIE.
+     Demandes : « un champ écrire mon texte serait possible simplement ? » et « il faut en
+     haut de la liste un filtre d'affichage pour les afficher aussi en ligne avec une grosse
+     preview, une par ligne par défaut ».
+     · UN CHAMP « Votre texte » applique SA phrase à tous les aperçus, et la retient d'une
+       ouverture à l'autre — c'est justement l'usage : comparer deux familles sur son propre
+       titre. Un bouton « Exemple » ramène la phrase de référence (celle qui montre accents,
+       jambages et chiffres d'un coup).
+     · DEUX AFFICHAGES : « En ligne » (une famille par ligne, aperçu à 30 px, coupé
+       proprement s'il dépasse) et « Grille » (les cartes compactes existantes). MESURÉ :
+       « En ligne » est le mode PAR DÉFAUT, 34 familles, aperçu à 30 px dans la police de la
+       famille, panneau qui défile (575 px visibles pour 2013 px de contenu).
+     · Le mode et la phrase sont enregistrés, donc retrouvés à la réouverture.
+
+     (3) LES POLICES GOOGLE ET LES FICHIERS — LA QUESTION POSÉE, ET LA RÉPONSE MESURÉE.
+     Question : « comment on va avec le .sp et le .json pour les typo Google, il va les
+     retrouver, les recharger ? elles sont embarquées comment ? »
+     · EMBARQUÉES, ET SEULEMENT SI ELLES SERVENT : le .sp les range dans
+       'resources.customFonts', le .json dans 'customFonts' à la racine. MESURÉ sur un
+       document à deux familles : Fraunces 15 Ko et Caveat 56 Ko dans le fichier, et Open
+       Sans — pourtant utilisée — n'y est pas, puisqu'elle est livrée avec l'application.
+     · RELUES À L'OUVERTURE : vérifié en effaçant Sora du sélecteur ET du registre, puis en
+       rejouant exactement l'appel du lecteur .json : l'option revient, la police est
+       chargée. Les deux formats passent par le même point d'entrée.
+     · ⚠️ CE QUI MANQUAIT : la famille arrivée PAR UN DOCUMENT n'était pas retenue pour
+       autant. Le journal du plug-in ne connaissait que les polices installées depuis son
+       panneau : un fichier reçu d'un collègue s'ouvrait correctement une fois, puis le
+       lendemain, sans ce fichier, la famille avait disparu du sélecteur. Le plug-in écoute
+       désormais ce point d'entrée et retient toute famille de son catalogue. Mesuré :
+       journal vidé de Fraunces, enregistrement déclenché comme à l'ouverture d'un .sp →
+       Fraunces revient dans le journal et sera réinstallée au démarrage suivant.
+
+     (4) DEEPSEEK, TESTÉ POUR DE VRAI — ET UN FAUX DÉFAUT ÉCARTÉ.
+     Une clé de test a permis de faire l'appel réel que la version précédente n'avait pas
+     pu faire. Résultats mesurés : la clé répond (HTTP 200), son préflight CORS autorise
+     l'appel depuis le navigateur, et 'deepseek-flash' renvoie bien l'image jointe sous la
+     forme attendue. Une affiche A4 a été composée de bout en bout : 1 page, 12 textes,
+     5 rectangles, 1 filet, et LE LOGO à sa place — data URI réelle, 40 × 30 mm en 15,15,
+     et 880 pixels du disque jaune retrouvés dans la capture de la prévisualisation.
+     ⚠️ PENDANT CES ESSAIS, le POST vers 'ai-proxy.php' a paru ne jamais rendre la main
+     (120 s d'attente, « Délai dépassé »), et un délai de repli a été écrit pour ça.
+     MESURE PLUS TARD, SUR UNE PAGE NEUVE : le fichier répond en 3 ms. L'attente venait
+     d'une interception réseau laissée active par le banc d'essai, pas du produit. Le
+     correctif a donc été RETIRÉ, et la raison est écrite dans le code pour que personne
+     ne le réécrive : on ne livre pas un correctif pour un défaut qui n'existe pas. ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-673">
+ <h2>SUPER PRINT <span>v1.7.673</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 octobre 2026" data-i18n-en="Released October 18, 2026" data-i18n-jp="2026年10月18日公開">Released October 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le filet de la barre de gauche rétractée <strong>existe enfin</strong> (il était là, mais 0 px de haut), la galerie de polices se lit <strong>en lignes avec votre texte</strong>, et les polices Google arrivent avec le fichier — <strong>et y restent</strong>." data-i18n-en-html="The collapsed left bar's rule <strong>finally exists</strong> (it was there, but 0 px tall), the font gallery now reads <strong>line by line with your own text</strong>, and Google fonts travel with the file — <strong>and stay</strong>." data-i18n-jp-html="折りたたんだ左バーの罫線が<strong>ようやく表示</strong>されます（存在はしていましたが高さ 0 px）。フォント一覧は<strong>1 行ずつ、自分のテキストで</strong>読め、Google フォントはファイルと一緒に移動し、<strong>そのまま残ります</strong>。">The collapsed left bar's rule finally shows, the font gallery reads line by line with your own text, and Google fonts travel with the file — and stay.</p>
+
+ <h3 data-i18n-fr-html="📐 Le filet de la barre de gauche" data-i18n-en-html="📐 The left bar rule" data-i18n-jp-html="📐 左バーの罫線">📐 The left bar rule</h3>
+ <ul>
+  <li data-i18n-fr-html="Il n'était pas absent : il était <strong>0 px de haut</strong>. Une liste de règles <code>!important</code> prévue pour les boutons des compteurs enfermait le filet et lui imposait <code>border-top-width: 0</code> ; les règles qui le rétablissaient ne touchaient que <code>display</code> et les marges. Mesuré après : <strong>0,67 px de haut, 55,33 px de large, #e0e0e0, marges 12 px</strong> — identique au filet de la barre de droite, qui sert de référence." data-i18n-en-html="It was not missing: it was <strong>0 px tall</strong>. A list of <code>!important</code> rules meant for spinner buttons locked the rule inside and forced <code>border-top-width: 0</code>; the rules restoring it only touched <code>display</code> and margins. Measured after: <strong>0.67 px tall, 55.33 px wide, #e0e0e0, 12 px margins</strong> — identical to the right bar's rule, which is the reference." data-i18n-jp-html="無かったのではなく、<strong>高さ 0 px</strong> でした。数値入力ボタン用の <code>!important</code> ルール群が罫線を巻き込み、<code>border-top-width: 0</code> を強制していました。復元側のルールは <code>display</code> と余白しか触れていませんでした。修正後の実測：<strong>高さ 0.67 px、幅 55.33 px、#e0e0e0、余白 12 px</strong>——基準である右バーの罫線と同一です。">It was not missing: it was 0 px tall. A rule meant for spinner buttons forced its border to zero. Measured after: 0.67 px tall, 55.33 px wide, #e0e0e0 — identical to the right bar's rule.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🔤 La galerie de polices, en lignes" data-i18n-en-html="🔤 The font gallery, line by line" data-i18n-jp-html="🔤 フォント一覧を 1 行ずつ">🔤 The font gallery, line by line</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Un champ « Votre texte »</strong> applique votre phrase à tous les aperçus, et la retient d'une ouverture à l'autre. Un bouton « Exemple » ramène la phrase de référence." data-i18n-en-html="<strong>A “Your text” field</strong> applies your own sentence to every preview, and remembers it between sessions. A “Sample” button restores the reference sentence." data-i18n-jp-html="<strong>「テキスト」欄</strong>に入力した文がすべてのプレビューに反映され、次回起動時も保持されます。「例」ボタンで基準の例文に戻ります。">A “Your text” field applies your sentence to every preview and remembers it; a “Sample” button restores the reference sentence.</li>
+  <li data-i18n-fr-html="<strong>« En ligne » est l'affichage par défaut</strong> : une famille par ligne, aperçu à 30 px dans sa propre police, coupé proprement s'il dépasse. « Grille » garde les cartes compactes. Mesuré : 34 familles, panneau qui défile (575 px visibles pour 2013 px de contenu), et les deux modes sont mémorisés." data-i18n-en-html="<strong>“One line” is the default view</strong>: one family per line, a 30 px preview in its own font, cleanly truncated if too long. “Grid” keeps the compact cards. Measured: 34 families, a scrolling panel (575 px visible for 2013 px of content), and both modes are remembered." data-i18n-jp-html="<strong>既定は「1 行」表示</strong>：1 行に 1 ファミリー、その書体で 30 px のプレビュー、長ければ省略表示。「グリッド」は従来のカード表示です。実測：34 ファミリー、パネルはスクロール（表示 575 px／内容 2013 px）、どちらのモードも記憶されます。">“One line” is the default: one family per line with a 30 px preview in its own font; “Grid” keeps the compact cards.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="💾 Polices Google et fichiers — la réponse mesurée" data-i18n-en-html="💾 Google fonts and files — the measured answer" data-i18n-jp-html="💾 Google フォントとファイル——実測の答え">💾 Google fonts and files — the measured answer</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Embarquées, et seulement si elles servent</strong> : le <code>.sp</code> les range dans <code>resources.customFonts</code>, le <code>.json</code> dans <code>customFonts</code> à la racine. Mesuré sur un document à deux familles : Fraunces 15 Ko et Caveat 56 Ko dans le fichier — et Open Sans, pourtant utilisée, n'y est pas puisqu'elle est livrée avec l'application." data-i18n-en-html="<strong>Embedded, and only when used</strong>: the <code>.sp</code> puts them in <code>resources.customFonts</code>, the <code>.json</code> in <code>customFonts</code> at the root. Measured on a two-family document: Fraunces 15 KB and Caveat 56 KB inside the file — while Open Sans, although used, is not, since it ships with the application." data-i18n-jp-html="<strong>使用時のみ埋め込み</strong>：<code>.sp</code> は <code>resources.customFonts</code>、<code>.json</code> はルートの <code>customFonts</code> に保存します。2 ファミリーの文書で実測：Fraunces 15 KB、Caveat 56 KB がファイル内に。Open Sans は使用していても同梱のため入りません。">Embedded only when used: the .sp keeps them in <code>resources.customFonts</code>, the .json in <code>customFonts</code>. Measured: Fraunces 15 KB and Caveat 56 KB inside the file.</li>
+  <li data-i18n-fr-html="<strong>Relues à l'ouverture :</strong> vérifié en effaçant Sora du sélecteur et du registre, puis en rejouant l'appel du lecteur — l'option revient et la police est chargée. <strong>Et désormais retenues :</strong> une famille arrivée par un document est mémorisée par le plug-in, donc réinstallée au démarrage suivant même sans ce document. Avant, elle disparaissait le lendemain." data-i18n-en-html="<strong>Read back on opening:</strong> verified by wiping Sora from the picker and the registry, then replaying the reader's call — the option returns and the font is loaded. <strong>And now remembered:</strong> a family arriving through a document is memorised by the plug-in, so it is reinstalled on the next launch even without that document. Before, it was gone the next day." data-i18n-jp-html="<strong>開くときに読み戻します：</strong>Sora を選択肢とレジストリから消し、リーダーの呼び出しを再実行して確認——選択肢が戻り、フォントが読み込まれます。<strong>さらに記憶されます：</strong>文書経由で届いたファミリーはプラグインが記憶し、その文書がなくても次回起動時に再インストールされます。以前は翌日には消えていました。">Read back on opening (verified), and now remembered: a family arriving through a document is reinstalled on the next launch even without it.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🩺 DeepSeek testé pour de vrai" data-i18n-en-html="🩺 DeepSeek tested for real" data-i18n-jp-html="🩺 DeepSeek を実際に検証">🩺 DeepSeek tested for real</h3>
+ <ul>
+  <li data-i18n-fr-html="Une clé de test a permis l'appel réel : la clé répond, son préflight CORS autorise le navigateur, et <code>deepseek-flash</code> renvoie bien l'image jointe. Une affiche A4 a été composée de bout en bout — 1 page, 12 textes, 5 rectangles, 1 filet, et <strong>le logo à sa place</strong> (40 × 30 mm en 15,15), <strong>880 pixels du disque jaune retrouvés dans la capture de la prévisualisation</strong>." data-i18n-en-html="A test key allowed the real call: it answers, its CORS preflight allows the browser, and <code>deepseek-flash</code> returns the attached image properly. An A4 poster was composed end to end — 1 page, 12 texts, 5 rectangles, 1 rule, and <strong>the logo in place</strong> (40 × 30 mm at 15,15), with <strong>880 pixels of the yellow disc found in the preview capture</strong>." data-i18n-jp-html="テスト用キーで実呼び出しを実施：キーは応答し、CORS プリフライトはブラウザからのアクセスを許可し、<code>deepseek-flash</code> は添付画像を正しく返しました。A4 ポスターを最後まで生成——1 ページ、テキスト 12、矩形 5、罫線 1、そして<strong>ロゴが所定位置に</strong>（15,15 に 40 × 30 mm）、<strong>プレビュー画像に黄色い円の 880 ピクセルを確認</strong>。">A test key allowed the real call: the key answers, CORS allows the browser, and an A4 poster was composed end to end with the logo in place — 880 pixels of it found in the preview capture.</li>
+ </ul>
+</article>
+
 <!-- ===== SUPER PRINT v1.7.672 — LE TABLEAU SURVIT À LA SAUVEGARDE, ET LES PLUG-INS PRENNENT LA MAIN.
      Six demandes.
 

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN INTÉGRÉ « POLICES GOOGLE »  (v1.7.672)
+   SUPERPRINT — PLUG-IN INTÉGRÉ « POLICES GOOGLE »  (v1.7.673)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Demande utilisateur : « créer un plugin fonts qui affichera les plus grandes typo
@@ -258,7 +258,20 @@
 
   /* ── LE PANNEAU ─────────────────────────────────────────────────────────────── */
   var ID = 'spFontsOverlay';
-  var etat = { filtre: '', recherche: '', observer: null };
+  var CLE_TEXTE = 'sp_google_fonts_texte_v1';
+  var CLE_MODE = 'sp_google_fonts_mode_v1';
+  /* Le texte d'aperçu par défaut : une phrase qui montre les lettres et les accents
+     d'un seul coup d'œil, et qui tient sur une ligne dans la colonne. */
+  var ECHANTILLON_DEFAUT = 'Portez ce vieux whisky au juge blond qui fume';
+  var etat = { filtre: '', recherche: '', observer: null,
+               mode: 'liste', texte: ECHANTILLON_DEFAUT };
+
+  function lirePreference(cle, defaut) {
+    try { var v = localStorage.getItem(cle); return v === null ? defaut : v; } catch (_) { return defaut; }
+  }
+  function ecrirePreference(cle, valeur) {
+    try { localStorage.setItem(cle, valeur); } catch (_) {}
+  }
 
   function fermer() {
     var ov = document.getElementById(ID);
@@ -275,49 +288,20 @@
     return e;
   }
 
-  function carte(f) {
-    var c = el('div', 'border:1px solid #e2e2e2;border-radius:0;padding:11px 12px 10px;background:#fff;display:flex;flex-direction:column;gap:7px;min-height:112px;');
-    c.setAttribute('data-famille', f.n);
-
-    var haut = el('div', 'display:flex;align-items:baseline;gap:8px;');
-    /* ⚠️ LA CARTE EST ÉCRITE DANS SA PROPRE POLICE, dès qu'elle est chargée. Le
-       nom seul ne dit rien : « Fraunces » ou « Sora » ne s'imaginent pas. Le nom
-       EST l'aperçu, dans le corps où on le lit. */
-    var nom = el('div', 'font-size:19px;line-height:1.15;color:#1a1a1a;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', f.n);
-    nom.className = 'spgf-nom';
-    nom.style.fontFamily = "'" + f.n + "', sans-serif";
-    haut.appendChild(nom);
-    var badge = el('span', 'flex:0 0 auto;font-size:9px;letter-spacing:.4px;text-transform:uppercase;color:#999;border:1px solid #e6e6e6;padding:1px 5px;', categorieTexte(f.c));
-    haut.appendChild(badge);
-    c.appendChild(haut);
-
-    var ech = el('div', 'font-size:12px;line-height:1.35;color:#666;min-height:33px;', f.echant);
-    ech.className = 'spgf-ech';
-    ech.style.fontFamily = "'" + f.n + "', serif";
-    c.appendChild(ech);
-
-    var pied = el('div', 'display:flex;align-items:center;gap:8px;margin-top:auto;');
-    var poids = el('span', 'font-size:9px;color:#aaa;flex:1;', f.variable ? t(L('variable', 'variable', 'バリアブル')) + ' · ' + f.poids.length + ' ' + t(L('graisses', 'weights', 'ウェイト'))
-                                                                          : f.poids.length + ' ' + t(L('graisses', 'weights', 'ウェイト')));
-    pied.appendChild(poids);
+  /* ── LE BOUTON D'INSTALLATION, PARTAGÉ PAR LES DEUX AFFICHAGES ──────────────── */
+  function boutonInstaller(f) {
     var b = el('button', 'border:1px solid #1a1a1a;background:#1a1a1a;color:#fff;font-size:10px;letter-spacing:.3px;padding:5px 11px;border-radius:0;cursor:pointer;white-space:nowrap;');
     b.type = 'button';
     b.className = 'spgf-btn';
-    pied.appendChild(b);
-    c.appendChild(pied);
-
-    var installee = estInstallee(f.n);
     var poser = function (txt, desactive, fond) {
       b.textContent = txt;
       b.disabled = !!desactive;
       b.style.cursor = desactive ? 'default' : 'pointer';
       b.style.background = fond || '#1a1a1a';
       b.style.borderColor = fond || '#1a1a1a';
-      b.style.color = fond ? '#fff' : '#1a1a1a';
     };
-    if (installee) poser(t(L('Installée', 'Installed', 'インストール済み')), true, '#8a8a8a');
+    if (estInstallee(f.n)) poser(t(L('Installée', 'Installed', 'インストール済み')), true, '#8a8a8a');
     else poser(t(L('Installer', 'Install', 'インストール')), false);
-
     b.addEventListener('click', function () {
       if (b.disabled) return;
       poser(t(L('Installation…', 'Installing…', 'インストール中…')), true, '#8a8a8a');
@@ -329,6 +313,70 @@
         try { if (typeof window.spAlert === 'function') window.spAlert(msg, { title: f.n }); else alert(msg); } catch (_) {}
       });
     });
+    return b;
+  }
+
+  /* ── APERÇU : UNE LIGNE PAR FAMILLE, EN GROS ─────────────────────────────────
+     Demande utilisateur : « il faut en haut de la liste un filtre d'affichage pour
+     les afficher aussi en ligne avec une grosse preview de la part de la font, qui
+     sera sur une ligne ; une par ligne par défaut ».
+
+     C'est donc l'affichage PAR DÉFAUT. Il montre la phrase d'aperçu — la sienne si
+     on en a écrit une — dans le corps de chaque famille, sur UNE ligne, coupée
+     proprement si elle dépasse. Le nom reste petit à gauche : il sert à savoir ce
+     qu'on installe, pas à décorer. */
+  function ligne(f) {
+    var c = el('div', 'display:flex;align-items:center;gap:14px;border-bottom:1px solid #ececec;padding:9px 2px;min-width:0;');
+    c.setAttribute('data-famille', f.n);
+
+    var gauch = el('div', 'flex:0 0 152px;min-width:0;overflow:hidden;');
+    var nom = el('div', 'font-size:11px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;', f.n);
+    gauch.appendChild(nom);
+    var meta = el('div', 'font-size:9px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;',
+                  categorieTexte(f.c) + ' · ' + f.poids.length + ' ' + t(L('graisses', 'weights', 'ウェイト')));
+    gauch.appendChild(meta);
+    c.appendChild(gauch);
+
+    var apercu = el('div', 'flex:1 1 auto;min-width:0;font-size:30px;line-height:1.18;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;');
+    apercu.className = 'spgf-apercu';
+    apercu.textContent = etat.texte || ECHANTILLON_DEFAUT;
+    apercu.style.fontFamily = "'" + f.n + "', sans-serif";
+    c.appendChild(apercu);
+
+    var droite = el('div', 'flex:0 0 auto;');
+    droite.appendChild(boutonInstaller(f));
+    c.appendChild(droite);
+
+    if (etat.observer) ettiqueter(f, c, { nom: nom, ech: apercu });
+    return c;
+  }
+
+  function carte(f) {
+    var c = el('div', 'border:1px solid #e2e2e2;border-radius:0;padding:11px 12px 10px;background:#fff;display:flex;flex-direction:column;gap:7px;min-height:112px;');
+    c.setAttribute('data-famille', f.n);
+
+    var haut = el('div', 'display:flex;align-items:baseline;gap:8px;');
+    /* ⚠️ LA CARTE EST ÉCRITE DANS SA PROPRE POLICE, dès qu'elle est chargée. Le
+       nom seul ne dit rien : « Fraunces » ou « Sora » ne s'imaginent pas. */
+    var nom = el('div', 'font-size:19px;line-height:1.15;color:#1a1a1a;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', f.n);
+    nom.className = 'spgf-nom';
+    nom.style.fontFamily = "'" + f.n + "', sans-serif";
+    haut.appendChild(nom);
+    var badge = el('span', 'flex:0 0 auto;font-size:9px;letter-spacing:.4px;text-transform:uppercase;color:#999;border:1px solid #e6e6e6;padding:1px 5px;', categorieTexte(f.c));
+    haut.appendChild(badge);
+    c.appendChild(haut);
+
+    var ech = el('div', 'font-size:12px;line-height:1.35;color:#666;min-height:33px;overflow:hidden;', etat.texte || f.echant);
+    ech.className = 'spgf-ech';
+    ech.style.fontFamily = "'" + f.n + "', serif";
+    c.appendChild(ech);
+
+    var pied = el('div', 'display:flex;align-items:center;gap:8px;margin-top:auto;');
+    var poids = el('span', 'font-size:9px;color:#aaa;flex:1;', f.variable ? t(L('variable', 'variable', 'バリアブル')) + ' · ' + f.poids.length + ' ' + t(L('graisses', 'weights', 'ウェイト'))
+                                                                          : f.poids.length + ' ' + t(L('graisses', 'weights', 'ウェイト')));
+    pied.appendChild(poids);
+    pied.appendChild(boutonInstaller(f));
+    c.appendChild(pied);
 
     /* L'aperçu se charge quand la carte devient visible (cf. en-tête). */
     if (etat.observer) ettiqueter(f, c, { nom: nom, ech: ech });
@@ -367,20 +415,31 @@
     });
   }
 
-  function dessinerGrille(grille, compteur) {
+  function dessiner(grille, compteur) {
     grille.innerHTML = '';
     var l = listeFiltree();
     if (compteur) compteur.textContent = l.length + ' ' + t(L('familles', 'families', 'ファミリー'));
     if (!l.length) {
-      grille.appendChild(el('div', 'padding:26px 4px;color:#999;font-size:12px;grid-column:1/-1;text-align:center;',
+      grille.appendChild(el('div', 'padding:26px 4px;color:#999;font-size:12px;text-align:center;',
         t(L('Aucune famille ne correspond à cette recherche.', 'No family matches this search.', 'この検索に一致するファミリーはありません。'))));
       return;
     }
-    l.forEach(function (f) { grille.appendChild(carte(f)); });
+    if (etat.mode === 'liste') {
+      grille.style.display = 'block';
+      l.forEach(function (f) { grille.appendChild(ligne(f)); });
+    } else {
+      grille.style.display = 'grid';
+      l.forEach(function (f) { grille.appendChild(carte(f)); });
+    }
   }
 
   function ouvrir() {
     if (document.getElementById(ID)) return;
+    /* Les préférences d'affichage sont relues À CHAQUE OUVERTURE : le mode et la
+       phrase d'aperçu survivent à la fermeture du panneau et au rechargement. */
+    etat.mode = (lirePreference(CLE_MODE, 'liste') === 'grille') ? 'grille' : 'liste';
+    var texteMemorise = lirePreference(CLE_TEXTE, ECHANTILLON_DEFAUT);
+    etat.texte = texteMemorise || ECHANTILLON_DEFAUT;
 
     var ov = el('div', '');
     ov.id = ID;
@@ -420,15 +479,37 @@
     carteCadre.appendChild(corps);
 
     /* Ligne de conduite : une phrase, pas un paragraphe. */
-    var intro = el('div', 'font-size:11px;color:#777;line-height:1.45;margin-bottom:12px;',
+    var intro = el('div', 'font-size:11px;color:#777;line-height:1.45;margin-bottom:10px;',
       t(L('Choisissez une famille, installez-la : elle rejoint les polices de SuperPrint et y reste.',
           'Pick a family, install it: it joins SuperPrint\'s fonts and stays there.',
           'ファミリーを選んでインストールすると、SuperPrint のフォントとして残ります。')));
     corps.appendChild(intro);
 
-    /* Recherche + filtres */
+    /* ══ LE TEXTE D'APERÇU (demande utilisateur) ══════════════════════════════════
+       « un champ écrire mon texte serait possible simplement ? »
+       Oui : une phrase à soi, appliquée à TOUS les aperçus. Elle est enregistrée :
+       on la retrouve à l'ouverture suivante, ce qui évite de la retaper à chaque
+       essai — c'est justement l'usage (comparer deux familles sur son propre titre). */
+    var ligneTexte = el('div', 'display:flex;align-items:center;gap:8px;margin-bottom:10px;');
+    var etiquette = el('label', 'flex:0 0 auto;font-size:10px;letter-spacing:.3px;text-transform:uppercase;color:#888;',
+      t(L('Votre texte', 'Your text', 'テキスト')));
+    var champTexte = el('input', 'flex:1 1 auto;min-width:0;border:1px solid #d9d9d9;border-radius:0;padding:6px 9px;font-size:12px;');
+    champTexte.type = 'text';
+    champTexte.id = 'spgfTexte';
+    champTexte.value = etat.texte || ECHANTILLON_DEFAUT;
+    champTexte.placeholder = ECHANTILLON_DEFAUT;
+    var reinit = el('button', 'flex:0 0 auto;border:1px solid #d9d9d9;background:#fff;color:#666;font-size:10px;padding:5px 9px;border-radius:0;cursor:pointer;',
+      t(L('Exemple', 'Sample', '例')));
+    reinit.type = 'button';
+    reinit.title = t(L('Revenir à la phrase d\'exemple', 'Back to the sample sentence', '例文に戻す'));
+    ligneTexte.appendChild(etiquette);
+    ligneTexte.appendChild(champTexte);
+    ligneTexte.appendChild(reinit);
+    corps.appendChild(ligneTexte);
+
+    /* Recherche + filtres + AFFICHAGE */
     var barre = el('div', 'display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;');
-    var rech = el('input', 'flex:1 1 220px;min-width:150px;border:1px solid #d9d9d9;border-radius:0;padding:6px 9px;font-size:12px;');
+    var rech = el('input', 'flex:1 1 200px;min-width:140px;border:1px solid #d9d9d9;border-radius:0;padding:6px 9px;font-size:12px;');
     rech.type = 'search';
     rech.placeholder = t(L('Rechercher une famille…', 'Search a family…', 'ファミリーを検索…'));
     barre.appendChild(rech);
@@ -447,7 +528,7 @@
           x.style.color = actif ? '#fff' : '#333';
           x.style.borderColor = actif ? '#1a1a1a' : '#d9d9d9';
         });
-        dessinerGrille(grille, compteur);
+        dessiner(grille, compteur);
       });
       bb._cat = cat.id;
       var actif0 = (cat.id === '');
@@ -458,12 +539,63 @@
       onglets.appendChild(bb);
     });
     barre.appendChild(onglets);
+
+    /* ══ LE FILTRE D'AFFICHAGE (« en ligne » / grille) ══════════════════════════
+       Deux boutons, séparés du reste par un filet : c'est un choix de LECTURE, pas
+       un filtre de contenu, et les confondre ferait croire qu'on restreint la liste. */
+    var filetMode = el('div', '', null);
+    filetMode.style.cssText = 'width:1px;height:18px;background:#e0e0e0;flex:0 0 auto;';
+    barre.appendChild(filetMode);
+    var modes = el('div', 'display:flex;gap:4px;flex:0 0 auto;');
+    var bListe = el('button', 'font-size:10px;padding:5px 10px;border-radius:0;border:1px solid #d9d9d9;background:#fff;color:#333;cursor:pointer;',
+      t(L('En ligne', 'One line', '1 行')));
+    var bGrille = el('button', 'font-size:10px;padding:5px 10px;border-radius:0;border:1px solid #d9d9d9;background:#fff;color:#333;cursor:pointer;',
+      t(L('Grille', 'Grid', 'グリッド')));
+    bListe.type = 'button'; bGrille.type = 'button';
+    bListe.title = t(L('Une famille par ligne, en gros — l\'aperçu par défaut', 'One family per line, large — the default preview', '1 行に 1 ファミリー、大きく表示（既定）'));
+    bGrille.title = t(L('Cartes compactes, plusieurs par ligne', 'Compact cards, several per row', 'コンパクトなカードを並べて表示'));
+    modes.appendChild(bListe); modes.appendChild(bGrille);
+    barre.appendChild(modes);
+
     var compteur = el('div', 'font-size:10px;color:#aaa;flex:0 0 auto;');
     barre.appendChild(compteur);
     corps.appendChild(barre);
 
-    var grille = el('div', 'display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:10px;');
+    var grille = el('div', '');
     corps.appendChild(grille);
+
+    function poserMode(m) {
+      etat.mode = m;
+      ecrirePreference(CLE_MODE, m);
+      [[bListe, 'liste'], [bGrille, 'grille']].forEach(function (p) {
+        var actif = p[1] === m;
+        p[0].style.background = actif ? '#1a1a1a' : '#fff';
+        p[0].style.color = actif ? '#fff' : '#333';
+        p[0].style.borderColor = actif ? '#1a1a1a' : '#d9d9d9';
+      });
+      grille.style.gridTemplateColumns = (m === 'grille') ? 'repeat(auto-fill,minmax(232px,1fr))' : '';
+      grille.style.gap = (m === 'grille') ? '10px' : '';
+      dessiner(grille, compteur);
+    }
+    bListe.addEventListener('click', function () { poserMode('liste'); });
+    bGrille.addEventListener('click', function () { poserMode('grille'); });
+
+    /* Le texte d'aperçu se réécrit SANS reconstruire la liste : on change le
+       contenu des nœuds visibles, ce qui évite de relancer les polices. */
+    function appliquerTexte(v) {
+      etat.texte = v;
+      ecrirePreference(CLE_TEXTE, v);
+      var tete = v || ECHANTILLON_DEFAUT;
+      Array.prototype.forEach.call(grille.querySelectorAll('.spgf-apercu, .spgf-ech'), function (n) {
+        n.textContent = tete;
+      });
+    }
+    champTexte.addEventListener('input', function () { appliquerTexte(champTexte.value); });
+    reinit.addEventListener('click', function () {
+      champTexte.value = ECHANTILLON_DEFAUT;
+      appliquerTexte(ECHANTILLON_DEFAUT);
+      try { champTexte.focus(); champTexte.select(); } catch (_) {}
+    });
 
     var piedInfo = el('div', 'margin-top:14px;padding-top:11px;border-top:1px solid #eee;font-size:10px;color:#999;line-height:1.5;',
       t(L('Les polices viennent de Google Fonts et sont libres d\'usage, y compris commercial. Une police installée est enregistrée avec le document qui l\'utilise : il s\'ouvre à l\'identique sur une autre machine.',
@@ -485,12 +617,12 @@
       }, { root: corps, rootMargin: '160px' });
     } catch (_) { etat.observer = null; }
 
-    dessinerGrille(grille, compteur);
+    dessiner(grille, compteur);
     /* Sans IntersectionObserver (navigateur ancien), on charge tout : mieux vaut
        des mégaoctets que des cartes muettes. */
     if (!etat.observer) FAMILLES.forEach(function (f) { chargerFeuille(f).catch(function () {}); });
 
-    rech.addEventListener('input', function () { etat.recherche = rech.value || ''; dessinerGrille(grille, compteur); });
+    rech.addEventListener('input', function () { etat.recherche = rech.value || ''; dessiner(grille, compteur); });
     document.addEventListener('keydown', surEchap, true);
     try { rech.focus(); } catch (_) {}
   }
@@ -522,8 +654,37 @@
 
   function restaurer() {
     var noms = journal();
-    if (!noms.length) return;
     if (!pret()) return;
+    /* ══ 🆕 v1.7.673 — UNE POLICE GOOGLE ARRIVÉE PAR UN DOCUMENT EST RETENUE ══════
+       Question de l'utilisateur : « comment on va avec le .sp et le .json pour les
+       typo Google, il va les retrouver, les recharger ? ».
+
+       MESURÉ : oui. Le .sp embarque la police dans `resources.customFonts` (20 Ko
+       pour Sora, et SEULEMENT si un bloc l'utilise) et le .json dans `customFonts`
+       à la racine ; à l'ouverture, l'application l'enregistre elle-même — vérifié en
+       effaçant Sora du sélecteur et du registre : le réenregistrement la ramène et
+       `document.fonts.check` repasse à vrai.
+       ⚠️ MAIS ELLE NE SURVIVAIT PAS AU LANCEMENT SUIVANT, et c'est ce que ce bloc
+       corrige : le journal du plug-in ne connaissait que les polices installées
+       DEPUIS LE PANNEAU. Un document reçu d'un collègue s'ouvrait donc correctement
+       une fois… puis le lendemain, sans ce document, la famille avait disparu du
+       sélecteur. On écoute le point d'entrée que l'application utilise pour TOUTES
+       ses restaurations (ouverture de .sp, de .json, autosave) : si la famille est
+       dans notre catalogue, elle rejoint le journal et sera réinstallée au prochain
+       démarrage comme si on l'avait choisie soi-même.
+       ⚠️ ON NE FAIT QUE MÉMORISER, on n'appelle rien : la police est déjà chargée
+       par l'application à cet instant. Aucun risque de double chargement. */
+    try {
+      if (!window._spRegisterCustomFontDataUrl.__spgf) {
+        var origine = window._spRegisterCustomFontDataUrl;
+        var enveloppe = function (nom, data) {
+          try { if (famille(nom)) memoriser(nom); } catch (_) {}
+          return origine.apply(this, arguments);
+        };
+        enveloppe.__spgf = true;
+        window._spRegisterCustomFontDataUrl = enveloppe;
+      }
+    } catch (_) {}
     noms.forEach(function (nom) {
       var f = famille(nom);
       if (!f || estInstallee(nom)) return;
