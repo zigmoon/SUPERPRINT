@@ -126,11 +126,23 @@
   .sidebar-section.active { display: block; }
 
   /* ═══ SIDEBAR TOC ═══ */
+  /* ⚠️ v1.7.669 — LE SOMMAIRE S'ARRÊTE AU-DESSUS DE LA BARRE DU BAS.
+     MESURÉ : la barre latérale allait jusqu'à `bottom: 0` avec `z-index: 50`, donc elle
+     recouvrait les 280 premiers pixels de la barre fixe (`z-index: 40`) sur ses 73 px de
+     haut — les deux premières cases (GitHub, Discord) étaient inatteignables : ni
+     cliquables, ni survolables. `elementFromPoint` en pleine case GitHub rendait
+     `a.sub < div.sidebar-section < nav.sidebar`.
+     Elle s'arrête désormais exactement sur le haut de la barre, et garde son propre
+     défilement pour le reste de son contenu : aucune entrée du sommaire n'est perdue.
+     Sous 901 px la barre n'est plus fixe (grille empilée) : elle reprend `bottom: 0`. */
   .sidebar {
-    position: fixed; top: 52px; left: 0; bottom: 0; width: 280px;
+    position: fixed; top: 52px; left: 0;
+    bottom: calc(var(--barre-h, 72px) + env(safe-area-inset-bottom, 0px));
+    width: 280px;
     background: var(--sidebar-bg); border-right: 1px solid var(--border);
     overflow-y: auto; padding: 16px 0 40px; z-index: 50;
   }
+  @media (max-width: 900px) { .sidebar { bottom: 0; } }
   .sidebar-search { padding: 0 14px 10px; border-bottom: 1px solid var(--border); margin-bottom: 8px; position: sticky; top: 0; background: var(--sidebar-bg); z-index: 2; }
   .sidebar-search .ss-wrap { position: relative; display: flex; align-items: center; }
   .sidebar-search .ss-ic { position: absolute; left: 10px; width: 14px; height: 14px; stroke: var(--text2); fill: none; stroke-width: 2; stroke-linecap: round; pointer-events: none; }
@@ -390,7 +402,7 @@
   .interface-card p { font-size: 12px; color: var(--text2); line-height: 1.5; margin: 0; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   BARRE FIXE DE BAS DE PAGE — recopiée depuis index.html en v1.7.668.
+   BARRE FIXE DE BAS DE PAGE — recopiée depuis index.html en v1.7.669.
    Demande utilisateur : « applique bien le même footer fixe sur toutes les pages
    de présentation ». Le CSS et le balisage sont EXTRAITS de la page d'accueil,
    jamais retapés : une correction là-bas se reporte ici par le même script.
@@ -401,7 +413,7 @@
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.668 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.669 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -409,14 +421,14 @@
    correspondante. */
 .fondations-grid {
   display: grid;
-  /* 🆕 v1.7.668 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+  /* 🆕 v1.7.669 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
      Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
      bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
      363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
      quatre cases d'information se partagent le reste à parts égales. */
   grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.668 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+  /* 🆕 v1.7.669 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
      353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
      la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
@@ -435,22 +447,50 @@
 .fondation:last-child { padding-right: 0; }
 .fondation-logo { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
 .fondation-logo img { display: block; width: 32px; height: 32px; }
-.fondation-txt { min-width: 0; text-align: left; }
+.fondation-txt { min-width: 0; text-align: left; display: grid; align-items: center; }
 .fondation-nom {
   display: block; font-family: var(--f-caps, 'Bebas Neue', 'Arial Narrow', sans-serif); font-size: clamp(15.5px,1.5vw,17px);
   letter-spacing: .02em; line-height: 1.05; color: var(--ink, #17130D);
 }
-.fondation-desc { display: block; margin-top: 2px; font-size: clamp(11.5px,1.05vw,13px); line-height: 1.45; color: var(--muted, #756A5B); }
+.fondation-desc { display: block; font-size: clamp(11.5px,1.05vw,13px); line-height: 1.45; color: var(--muted, #756A5B); }
 /* Le chiffre (téléchargements npm) ressort : c'est la seule PREUVE chiffrée du
    bloc. Il est daté dans le commentaire HTML qui l'entoure — à rafraîchir. */
 .fondation-chiffre { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 1.02em; color: var(--ink, #17130D); font-weight: 600; }
 .fondation-date { font-family: var(--f-mono, 'IBM Plex Mono', 'Fira Code', monospace); font-size: 0.85em; color: var(--muted, #756A5B); }
 /* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
-.fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
+/* 🆕 v1.7.669 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
+   Demande : « on met juste les marques au premier abord ; au survol la marque disparaît
+   et affiche la phrase ».
+   ⚠️ LES DEUX SONT DANS LA MÊME CELLULE DE GRILLE (grid-area 1/1) : la hauteur du bloc
+   vaut donc le MAXIMUM des deux, et la barre ne saute pas quand la phrase apparaît.
+   Mesuré : la phrase npm passe à 2 lignes en japonais à 1280 px (38 px) quand le nom en
+   fait 18 — une mise en page en flux aurait fait grandir la case de 20 px au survol.
+   ⚠️ LE CROISEMENT COMMENCE À 1024 px, ET PAS AVANT : sous cette largeur la phrase est
+   déjà `display: none` ; sans cette borne le nom s'effacerait en laissant la case vide. */
+.fondation-nom { grid-area: 1 / 1; }
+.fondation-desc { grid-area: 1 / 1; }
+@media (min-width: 1024px) {
+  .fondation-nom, .fondation-desc {
+    transition: opacity .16s ease;
+  }
+  .fondation-desc { opacity: 0; }
+  .fondation:hover .fondation-nom,
+  .fondation:focus-visible .fondation-nom { opacity: 0; }
+  .fondation:hover .fondation-desc,
+  .fondation:focus-visible .fondation-desc { opacity: 1; }
+}
+/* Le nom garde son soulignement d'affordance — mais seulement là où la phrase ne prend
+   pas sa place, sinon le trait resterait sous un texte invisible. */
+@media (max-width: 1023.9px) {
+  .fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fondation-nom, .fondation-desc { transition: none; }
+}
 .fondation:focus-visible { outline: 2px solid var(--ink, #17130D); outline-offset: 6px; }
-/* 🆕 v1.7.668 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+/* 🆕 v1.7.669 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
    Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
    ICON MÊME NOIR QUE RUST ».
    ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
@@ -521,7 +561,7 @@
    entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
    toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
    elles se lisent sans qu'on aille les chercher.
-   🆕 v1.7.668 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   🆕 v1.7.669 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
    cette même barre.
 
    LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
@@ -553,7 +593,7 @@
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     🆕 v1.7.668 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     🆕 v1.7.669 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
      À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
      des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
      DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
@@ -571,6 +611,14 @@
      descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
      réservée devient exacte par construction. */
   .fondations {
+    /* ⚠️ v1.7.669 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
+       Mesuré sur rock.html : en pleine case GitHub, elementFromPoint rendait
+       « li.rk-fn < div.container » — le contenu passait devant la barre, qui restait en
+       z-index auto. La règle d'index.html (.container:has(.fondations) { z-index: 40 })
+       n'y peut rien : la barre n'y est pas dans un .container.
+       40 = devant le contenu (2 et 3), sous la bulle WhatsApp (100), le menu mobile
+       (118), la navigation (120) et les fenêtres légales (300). */
+    z-index: 40;
     position: fixed; left: 0; right: 0; bottom: 0;
     height: var(--barre-h);
     /* `content-box` : la hauteur NE COMPREND NI le filet ni le dégagement de zone
@@ -587,7 +635,7 @@
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    /* 🆕 v1.7.668 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+    /* 🆕 v1.7.669 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
        Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
        desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
        d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
@@ -616,7 +664,7 @@
    elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
 @media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
 
-/* ═══ NOMS SEULS SOUS 1024 px (v1.7.668) ═══
+/* ═══ NOMS SEULS SOUS 1024 px (v1.7.669) ═══
    Demande utilisateur : « quand le footer fixe passe en dessous de 1024 px, mets
    que GitHub, Discord, npm et Rust ; ne mets pas les petites phrases en gris en
    dessous à cette résolution ». La règle est bornée des DEUX côtés : sous 901 px
@@ -628,7 +676,7 @@
   .fondation-desc { display: none; }
 }
 
-/* ═══ RÈGLES DE LANGUE DE LA BARRE (v1.7.668) ═══
+/* ═══ RÈGLES DE LANGUE DE LA BARRE (v1.7.669) ═══
    Cette page ne charge pas la feuille du site : sans ces quatre règles, chaque
    case de la barre fixe affichait ses trois langues à la suite. Elles ne portent
    que sur les `.inline-fr/…` de la barre — la page n'emploie pas cette
@@ -649,7 +697,7 @@ html[lang="ja"] .inline-ja { display: inline; }
     <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
   </button>
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.668</span>
+  <span class="version">v1.7.669</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -1748,7 +1796,7 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.668</span>
+  <span data-lang="fr">Documentation générée le 4 octobre 2026 — v1.7.669</span>
   <span data-lang="en">Documentation generated September 16, 2026 — v1.7.456</span>
 </div>
 
@@ -2750,7 +2798,7 @@ log('Filet posé sur ' + Math.round(largeur) + ' mm de large');</pre>
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.668</span>
+  <span data-lang="fr">Manuel mis à jour le 4 octobre 2026 — v1.7.669</span>
   <span data-lang="en">Manual updated September 16, 2026 — v1.7.456</span>
 </div>
 
@@ -2959,7 +3007,7 @@ window.addEventListener('scroll', updateSidebarActive, { passive: true });
           </span>
         </a>
 
-        <!-- 🆕 v1.7.668 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
+        <!-- 🆕 v1.7.669 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
              Demande utilisateur, après avoir vu la première tentative reléguée au
              colophon : « Footer de superprint.cc LA BARRE QUI EST FIXE SUR LA PAGE
              et pas le footer de la page, à droite de github on va ajouter notre
@@ -3000,7 +3048,7 @@ window.addEventListener('scroll', updateSidebarActive, { passive: true });
           </span>
         </a>
 
-            <!-- 🆕 v1.7.668 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
+            <!-- 🆕 v1.7.669 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
                  Demande utilisateur : « à la fin du footer fixe en carré mets le bouton
                  WhatsApp directement, cela sera plus simple directement dans la barre
                  plutôt que flottant ; cependant garde-le bien en mobile (cette bulle

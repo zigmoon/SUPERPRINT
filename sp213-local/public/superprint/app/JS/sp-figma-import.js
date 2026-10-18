@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — IMPORT FIGMA  (v1.7.668)
+   SUPERPRINT — IMPORT FIGMA  (v1.7.669)
    ═══════════════════════════════════════════════════════════════════════════════
 
    CE QUE CE MODULE LIT : le JSON d'un fichier Figma, tel que le rendent
@@ -40,7 +40,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.668';
+  var VERSION = '1.7.669';
   var PT_MM = 25.4 / 72;          /* 1 pt (unité Figma) = 0,3528 mm */
   var BLEED_MM_DEFAUT = 3;
 
@@ -365,7 +365,7 @@
   }
 
   /* ── Cadres de premier niveau → pages ───────────────────────────────────────── */
-  /* 🆕 v1.7.668 — LES NŒUDS HORS CADRE NE SONT PLUS PERDUS.
+  /* 🆕 v1.7.669 — LES NŒUDS HORS CADRE NE SONT PLUS PERDUS.
      MESURÉ (banc d'audit, `noeuds-libres.json`) : un canevas qui porte AU MOINS un
      cadre voyait tous ses autres nœuds ignorés, sans un mot. Un rectangle posé à côté
      du cadre disparaissait donc à l'import — un export de designer contient souvent
@@ -413,7 +413,7 @@
   }
 
   /* ── Ce qu'un fichier contient, avant toute conversion ──────────────────────── */
-  /* 🆕 v1.7.668 — L'INVENTAIRE, POUR PROPOSER DES OPTIONS À L'OUVERTURE.
+  /* 🆕 v1.7.669 — L'INVENTAIRE, POUR PROPOSER DES OPTIONS À L'OUVERTURE.
      Un fichier Figma peut porter PLUSIEURS FORMATS DE CADRE (affiche A4 portrait,
      A4 paysage, carré). SuperPrint n'a qu'un format de page par document : convertir
      un tel fichier sans rien dire produit des pages trop petites, donc du contenu
@@ -455,7 +455,7 @@
     /* Du plus grand au plus petit : c'est l'ordre dans lequel on veut les proposer,
        et le premier est le format retenu par défaut. */
     formats.sort(function (a, b) { return (b.aire - a.aire) || (b.w - a.w); });
-    /* 🆕 v1.7.668 — COMBIEN DE CADRES CHAQUE FORMAT ROGNERAIT.
+    /* 🆕 v1.7.669 — COMBIEN DE CADRES CHAQUE FORMAT ROGNERAIT.
        C'est la seule information qui permette de choisir en connaissance de cause :
        un format qui rogne deux cadres sur trois n'est pas un bon candidat, même s'il
        a la plus grande surface. On compte les cadres qui DÉPASSENT (tolérance 0,5 pt). */
@@ -503,12 +503,16 @@
   }
 
   /* ── Conversion complète vers un document SuperPrint ────────────────────────── */
-  /* 🆕 v1.7.668 — LES OPTIONS D'OUVERTURE.
+  /* 🆕 v1.7.669 — LES OPTIONS D'OUVERTURE.
      Signature compatible : `versSP(json, nom, bleedMm)` se comporte EXACTEMENT comme
      avant. Un quatrième argument facultatif ajoute le choix laissé à l'utilisateur :
-       opts.strategie  'auto' (défaut) | 'enveloppe' | 'plus-grand' | 'premier' | 'format'
+       opts.strategie  'auto' (défaut) | 'multi' | 'enveloppe' | 'plus-grand' | 'premier' | 'format'
          'auto'       : un seul format → comportement d'origine ; plusieurs formats →
-                        l'ENVELOPPE (largeur max × hauteur max : rien n'est rogné)
+                        'multi' (un document, chaque page à son format)
+         'multi'      : CHAQUE PAGE PREND LE FORMAT DE SON CADRE. C'est le seul mode qui
+                        écrit `pages[i].format` ; l'application dessine alors des canvas
+                        de tailles différentes. Rien d'autre ne change, et aucun document
+                        existant ne porte cette propriété.
          'enveloppe'  : toutes les pages au format enveloppe, cadres CENTRÉS, échelle 1
          'plus-grand' : toutes les pages au format du plus GRAND cadre (vraie feuille,
                         mais les cadres plus hauts ou plus larges sont rognés)
@@ -531,12 +535,20 @@
 
     var inventaire = analyse(json);
     var strategie = String(opts.strategie || 'auto');
-    if (strategie === 'auto') strategie = inventaire.multi ? 'enveloppe' : 'premier';
+    /* 🆕 v1.7.669 — le défaut d'un fichier multi-formats devient 'multi' : chaque page
+       garde son format. 'enveloppe' reste disponible pour qui veut une feuille unique. */
+    if (strategie === 'auto') strategie = inventaire.multi ? 'multi' : 'premier';
 
     /* Format cible commun à toutes les pages, en points. `null` = chaque page prend la
-       taille de son propre cadre (comportement d'origine). */
+       taille de son propre cadre.
+       🆕 v1.7.669 — 'multi' : c'est exactement cela, et c'est désormais un choix explicite.
+       Chaque page reçoit `format` (en mm), que l'application lit pour dessiner une page
+       à SA taille. Aucun autre document n'est concerné : la propriété n'existe que si
+       l'utilisateur a choisi cette option à l'import d'un fichier Figma. */
     var cible = null;
-    if (strategie === 'enveloppe') {
+    if (strategie === 'multi') {
+      cible = null;
+    } else if (strategie === 'enveloppe') {
       if (inventaire.enveloppe) cible = { w: inventaire.enveloppe.w, h: inventaire.enveloppe.h };
     } else if (strategie === 'plus-grand') {
       var plus = inventaire.formats[0] || null;
@@ -591,7 +603,8 @@
       /* dx/dy : origine du cadre → origine de la page, plus le fond perdu.
          ⚠️ LE CENTRAGE EST UNE ADDITION, PAS UN CHANGEMENT DE FORMULE : quand la page
          a exactement la taille du cadre (toutes les stratégies sauf 'plus-grand'), le
-         terme ajouté vaut 0 et les coordonnées sont IDENTIQUES à celles d'avant. */
+         terme ajouté vaut 0 et les coordonnées sont IDENTIQUES à celles d'avant.
+         En 'multi', chaque page prend SON format : le terme est donc toujours nul. */
       var pageW = cible ? cible.w : b.w;
       var pageH = cible ? cible.h : b.h;
       var dx = -b.x + bleedPx + Math.max(0, (pageW - b.w) / 2);
@@ -605,10 +618,17 @@
         /* Cadre sans enfants : on le pose comme un rectangle plein. */
         try { objetDepuisNoeud(n, dx, dy, produits); } catch (_) {}
       }
-      pages.push({
+      var _page = {
         objects: produits,
         label: String(n.name || ('Page ' + (i + 1)))
-      });
+      };
+      /* 🆕 v1.7.669 — CHAQUE PAGE GARDE SON FORMAT (stratégie 'multi').
+         Le format est en MILLIMÈTRES, borné aux mêmes arrondis que le format du
+         document (0,01 mm) pour éviter les 210,00000001. */
+      if (strategie === 'multi') {
+        _page.format = { width: mm(pageW), height: mm(pageH) };
+      }
+      pages.push(_page);
     }
     if (!pages.length) throw new Error('aucun cadre exploitable dans ce fichier Figma');
 
@@ -652,7 +672,7 @@
     version: VERSION,
     estFigma: estFigma,
     versSP: versSP,
-    /* 🆕 v1.7.668 — l'inventaire, pour la boîte d'options d'ouverture. */
+    /* 🆕 v1.7.669 — l'inventaire, pour la boîte d'options d'ouverture. */
     analyser: analyse,
     cadres: function (json, opts) { return cadresDe(json, opts).length; }
   };

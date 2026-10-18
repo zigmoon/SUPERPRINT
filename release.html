@@ -849,6 +849,64 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.669 — LA PHRASE AU SURVOL, ET UN FIGMA À SON FORMAT.
+     Deux demandes, deux mesures.
+     (1) BARRE DU BAS — LES MARQUES D'ABORD, LA PHRASE AU SURVOL.
+     Demande : « sur le footer fixe on affichera les petites phrases au survol uniquement ;
+     on met juste les marques au premier abord ; au survol la marque disparaît et affiche la
+     phrase ». MESURÉ AVANT : chaque case montrait le nom PUIS la phrase en dessous, soit
+     39 px de contenu toujours visibles. Le nom et la phrase occupent maintenant la MÊME
+     cellule de grille (grid-area 1/1) : la hauteur vaut le maximum des deux, donc la barre
+     ne saute pas quand la phrase apparaît — vérifié sur le pire cas, la phrase npm sur DEUX
+     lignes en japonais (38 px contre 18 px pour le nom), à 1440, 1280 et 1024 px : barre
+     73 px et cases 72 px AVANT comme APRÈS le survol. Le croisement ne s'active qu'à
+     partir de 1024 px, largeur en dessous de laquelle la phrase est déjà masquée — sans
+     cette borne le nom s'effacerait en laissant la case vide. `:focus-visible` fait la
+     même chose que `:hover`, pour le clavier.
+     (2) LA BARRE PASSAIT DERRIÈRE LE CONTENU SUR TROIS PAGES.
+     Mesuré sur rock.html : en pleine case GitHub, `elementFromPoint` rendait
+     « li.rk-fn < div.container » — le contenu de page était DEVANT la barre. Cause :
+     `.container` porte `z-index: 2`, et la règle qui corrige cela sur index.html ne peut
+     pas s'appliquer là où la barre n'est pas dans un `.container`. Conséquence réelle :
+     les quatre liens n'étaient ni cliquables ni survolables. La barre porte désormais
+     `z-index: 40` — devant le contenu (2 et 3), sous la bulle WhatsApp (100), le menu
+     mobile (118), la navigation (120) et les fenêtres légales (300). Sur documentation.html
+     c'est la barre latérale du sommaire (`z-index: 50`, `bottom: 0`) qui recouvrait les deux
+     premières cases : elle s'arrête maintenant sur le haut de la barre. VÉRIFIÉ sur les six
+     pages : barre devant, survol 0/1, hauteur 73 px.
+     (3) LE VRAI MULTI-FORMAT FIGMA — ET SEULEMENT LÀ.
+     Demande : « si plusieurs formats de boards dans le figma, proposer des canvas différents
+     pour respecter le figma ; uniquement si la personne importe un figma ; ne touche à rien
+     de ce qui est placé ». Le modèle gagne une propriété OPTIONNELLE `pages[i].format` (en
+     millimètres). Un document qui ne la porte pas — .sp, .json, IDML, document neuf — prend
+     EXACTEMENT les mêmes chemins de code qu'avant : mesuré, un document neuf et un .sp
+     réimporté n'ont toujours QUE les clés index, label, masterId, objects, et leurs canvas
+     restent 612×858 pour une A4. Seul l'import Figma, sur la stratégie « Un seul document,
+     chaque page à son format » (proposée en tête et cochée par défaut), écrit cette
+     propriété. MESURÉ : un fichier à trois cadres (A4 portrait, A4 paysage, carré 400) donne
+     trois pages de 210×297, 297×210 et 141×141 mm, et trois canvas de 612×858, 858×612 et
+     417×417 px. Le mode double page est refusé pour ces documents (deux pages de tailles
+     différentes ne forment pas un chemin de fer), et l'aller-retour .sp conserve les trois
+     formats. L'export PDF suit : le chemin pdf-lib demandait une taille de page par page —
+     mesuré, il produit 210×297, 297×210 et 141,1×141,1 mm ; sur un document ordinaire, il
+     produit toujours deux pages A4 identiques. ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-669">
+ <h2>SUPER PRINT <span>v1.7.669</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 octobre 2026" data-i18n-en="Released October 18, 2026" data-i18n-jp="2026年10月18日公開">Released October 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="La barre du bas montre les marques, et la phrase au survol. Et un fichier Figma à plusieurs formats donne désormais <strong>un seul document, chaque page à son format</strong>." data-i18n-en-html="The bottom bar shows the brands, and the sentence on hover. And a Figma file with several formats now gives <strong>one document, each page at its own size</strong>." data-i18n-jp-html="下部バーはブランドを表示し、ホバーで説明文を出します。複数形式の Figma ファイルは<strong>1 つの文書、ページごとの寸法</strong>になります。">The bottom bar shows the brands, the sentence on hover. And a Figma file with several formats now gives one document, each page at its own size.</p>
+
+ <h3 data-i18n-fr-html="📐 Trois corrections, mesurées" data-i18n-en-html="📐 Three measured fixes" data-i18n-jp-html="📐 測定済みの3つの修正">📐 Three measured fixes</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>La phrase remplace la marque au survol.</strong> Le nom et la phrase partagent une seule cellule de grille : la hauteur vaut le maximum des deux, donc la barre ne saute pas. Le pire cas mesuré — la phrase npm sur deux lignes en japonais, 38 px contre 18 px — laisse la barre à 73 px et les cases à 72 px, avant comme après le survol, à 1440, 1280 et 1024 px. Le croisement commence à 1024 px, là où la phrase existe encore." data-i18n-en-html="<strong>The sentence replaces the brand on hover.</strong> Name and sentence share one grid cell: the height is the larger of the two, so the bar never jumps. The worst measured case — the npm sentence on two lines in Japanese, 38 px against 18 px — leaves the bar at 73 px and cells at 72 px, before and after hovering, at 1440, 1280 and 1024 px. The crossfade starts at 1024 px, where the sentence still exists." data-i18n-jp-html="<strong>ホバーで説明文がブランドに代わります。</strong>名前と説明文は同じグリッドセルを共有するため、高さは両者の最大値になり、バーは跳ねません。最悪の実測例——日本語で npm の説明文が 2 行、18 px に対し 38 px——でも、バーは 73 px、セルは 72 px のまま（1440／1280／1024 px、ホバー前後とも）。切り替えは説明文が存在する 1024 px から始まります。">The sentence replaces the brand on hover, with no layout jump — measured on the worst case, a two-line npm sentence in Japanese.</li>
+  <li data-i18n-fr-html="<strong>La barre passait derrière le contenu sur rock, documentation et api.</strong> En pleine case GitHub, <code>elementFromPoint</code> rendait le contenu de page : les quatre liens n'étaient ni cliquables ni survolables. La barre porte désormais <code>z-index: 40</code> — devant le contenu, sous la bulle WhatsApp, le menu mobile et les fenêtres légales. Sur documentation, le sommaire latéral qui la recouvrait s'arrête maintenant sur son haut. Vérifié sur les six pages." data-i18n-en-html="<strong>The bar sat behind content on rock, documentation and api.</strong> Right on the GitHub cell, <code>elementFromPoint</code> returned page content: the four links were neither clickable nor hoverable. The bar now carries <code>z-index: 40</code> — above content, below the WhatsApp bubble, the mobile menu and the legal dialogs. On documentation, the sidebar that covered it now stops at its top edge. Checked on all six pages." data-i18n-jp-html="<strong>rock・documentation・api ではバーが内容の後ろにありました。</strong>GitHub のセル上で <code>elementFromPoint</code> がページ内容を返し、4 つのリンクはクリックもホバーもできませんでした。バーは <code>z-index: 40</code> を持ち、内容より前、WhatsApp バブル・モバイルメニュー・法的ダイアログより後ろになります。documentation では上に重なっていたサイドバーがバーの上端で止まります。6 ページすべてで検証済み。">The bar sat behind content on three pages; it now carries z-index 40 and the documentation sidebar stops above it.</li>
+  <li data-i18n-fr-html="<strong>Un seul document, chaque page à son format.</strong> Un fichier Figma à trois cadres (A4 portrait, A4 paysage, carré 400) donne trois pages de 210×297, 297×210 et 141×141 mm — et trois canvas de 612×858, 858×612 et 417×417 px. La propriété est <em>optionnelle</em> : un document neuf ou un .sp réimporté n'a toujours que les clés index, label, masterId, objects, et ses canvas restent ceux du document. L'aller-retour .sp conserve les trois formats, et l'export PDF demande une taille de page par page (210×297, 297×210, 141,1×141,1 mm) au lieu d'une seule." data-i18n-en-html="<strong>One document, each page at its own size.</strong> A Figma file with three frames (A4 portrait, A4 landscape, 400 square) gives three pages of 210×297, 297×210 and 141×141 mm — and three canvases of 612×858, 858×612 and 417×417 px. The property is <em>optional</em>: a new document or a re-imported .sp still has only the keys index, label, masterId, objects, and its canvases stay those of the document. The .sp round trip keeps all three formats, and the PDF export asks for one page size per page (210×297, 297×210, 141.1×141.1 mm) instead of one for all." data-i18n-jp-html="<strong>1 つの文書、ページごとの寸法。</strong>3 つのフレーム（A4 縦・A4 横・400 の正方形）を持つ Figma ファイルは、210×297、297×210、141×141 mm の 3 ページになり、キャンバスも 612×858、858×612、417×417 px になります。このプロパティは<em>任意</em>です：新規文書や再読み込みした .sp は依然として index、label、masterId、objects のみを持ち、キャンバスは文書の寸法のままです。.sp の往復で 3 つの形式が保たれ、PDF 出力も 1 ページごとに寸法を要求します（210×297、297×210、141.1×141.1 mm）。">One document with three page sizes, three canvases, formats kept through .sp, and a PDF that asks for one page size per page.</li>
+ </ul>
+</article>
+
 <!-- ===== SUPER PRINT v1.7.668 — À L'OUVERTURE, ON DEMANDE QUAND ÇA COMPTE.
      Audit des trois entrées : IDML, Figma, .sp / .json. Chaque défaut est mesuré sur un
      fichier de contrôle, avant puis après ; les bancs sont réutilisables.
