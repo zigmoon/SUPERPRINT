@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   v1.7.663 — _SP_RANGEMENT_655 : LES SOUFFLETS DES DEUX COLONNES
+   v1.7.664 — _SP_RANGEMENT_655 : LES SOUFFLETS DES DEUX COLONNES
    Demande utilisateur : « ajouter un soufflet aux titres suivants et ranger
    leur partie dedans » — Justification, Tons directs, Éléments de texte dans la
    colonne de droite, Calques dans la colonne de gauche.
@@ -19,12 +19,12 @@
 (function () {
   'use strict';
 
-  /* ⚠️ v1.7.663 — LA CLÉ CHANGE DE NUMÉRO, ET C'EST VOULU. La colonne de droite
+  /* ⚠️ v1.7.664 — LA CLÉ CHANGE DE NUMÉRO, ET C'EST VOULU. La colonne de droite
      a été réorganisée (onze filets, Césure entrée dans Justification, Retrait
      remonté sous Alignement du texte) : un état mémorisé sur l'ancienne
      disposition rouvrirait des soufflets qui n'existent plus sous cette forme et
      laisserait les nouveaux fermés sans raison. */
-  var CLEF = 'sp.soufflets.v663';
+  var CLEF = 'sp.soufflets.v664';
   var etats = {};
   try { etats = JSON.parse(localStorage.getItem(CLEF) || '{}') || {}; } catch (_) { etats = {}; }
 
