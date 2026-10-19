@@ -1249,6 +1249,101 @@ footer, footer a { color: var(--after-text-color); }
      MESURÉ : le trio passe de 336 × 34 px à 303 × 28 px. Les filets et le
      libellé « Installeur » ne bougent pas. -->
 
+<!-- ===== SUPER PRINT v1.7.680 — TROIS COLONNES, CHEVRONS JAUNES, SOUS-MENU NETTOYÉ.
+     Demande utilisateur : « (1) je n'aime pas cette accroche, fais plus court, ne
+     parle pas du temps qui passe, sois moderne ; je veux trois colonnes pour les
+     nouveaux blocs des features avec images, et ne mets pas en grand une première
+     feature ; le shot 05 est raté, refais-le ; affiche 3 autres features qui sont
+     top sur SuperPrint. (2) Les chevrons pour le swipe des templates ne marchent
+     pas du tout ; mets les fonds jaunes, on ne les voit pas — fond jaune et
+     chevrons en noir. (3) Dans le sous-menu Télécharger : pour Apple mets juste
+     « ARM » et pas Apple silicon, pour Linux n'affiche pas .rpm ; les traits
+     verticaux doivent aller jusqu'en bas de la boîte ouverte, et recentre bien les
+     informations dans la hauteur des trois colonnes. »
+
+     (1) L'ACCROCHE, LA GRILLE ET LES NOUVELLES CAPTURES.
+     L'accroche « Cinq choses que l'on voit tout de suite — et qui n'existaient pas
+     ici il y a un an » comptait les images ET parlait du temps qui passe : elle
+     devient « Huit écrans, rien de retouché. » (EN : « Eight screens, nothing
+     staged. », JA : 「8つの画面、すべて実際の表示。」).
+     La carte d'appel pleine largeur disparaît : huit cartes de même poids, trois
+     par ligne. La grille est en SIX pistes et chaque carte en occupe deux ; les
+     deux dernières passent à trois, ce qui remplit la troisième ligne sans trou.
+     MESURÉ à 1600 px : trois lignes de cartes (392 px, puis 589 px pour les deux
+     dernières), 1425 px de grille, aucun débordement ; à 1180 px et moins, deux
+     colonnes ; à 720 px et moins, une.
+     Trois features s'ajoutent, celles qui font le plus d'effet à l'ouverture :
+       · le rapport de pré-vol du plug-in Contrôle avant impression (format, pages,
+         fond perdu, marges, résolution des images, polices, couverture d'encre,
+         espace colorimétrique) ;
+       · la galerie Polices Google — 218 familles, chacune dessinée dans le texte
+         du visiteur, installation en un clic ;
+       · le feuilletage 3D (couverture seule, intérieur en double page, dernière
+         page seule).
+     ⚠️ LE SHOT 05 EST REFILMÉ, ET LA MESURE DIT POURQUOI IL ÉTAIT RATÉ. Sur
+     l'ancien fichier, la zone libre à gauche de la fenêtre « Sauvegarder » donnait
+     une luminance moyenne de 93,3 pour un écart-type de 1,6 : un aplat parfait,
+     c'est-à-dire AUCUN document derrière la fenêtre, seulement le voile de
+     l'overlay sur un canevas vide. La nouvelle prise a un document réel derrière
+     (moyenne 197,3, écart-type 74,3).
+
+     (2) LES CHEVRONS DES MAQUETTES : JAUNES, ET JAMAIS MORTS.
+     « Ne marchent pas du tout » avait une cause mesurable : en butée, le bouton
+     portait l'attribut « disabled » — un clic ne produisait donc STRICTEMENT RIEN —
+     et au chargement le rail étant à zéro, c'était « précédent » qui l'était : le
+     premier clic, celui qu'on fait, ne répondait pas. Le rail BOUCLE désormais aux
+     deux extrémités, et aucun bouton n'est plus désactivé. MESURÉ : depuis la première
+     carte, « précédent » amène à la fin (1946 px, « 12 / 12 ») ; depuis la fin,
+     « suivant » revient au début ; chaque cran vaut 262 px.
+     Les chevrons passent en JAUNE de la quadri (#F2B90B) avec un chevron à l'encre
+     et une ombre de 8 px : c'est le seul couple qui se lise à la fois sur la bande
+     des modèles, devenue noire en 1.7.679, et sur le papier des cartes.
+
+     (3) LE SOUS-MENU « TÉLÉCHARGER ».
+     · « Apple silicon » devient « ARM » : c'est le nom de l'architecture, et c'était
+       le libellé le plus long du panneau (331 px) ;
+     · les trois gélules « .rpm » disparaissent — la CI ne produit jamais ce fichier,
+       le lien était mort ; la mention quitte aussi les données structurées ;
+     · les filets verticaux descendent jusqu'au bord inférieur de la boîte : la liste
+       s'arrêtait à 294 px quand la boîte finissait à 311 px, soit 17 px de filet
+       manquant (le rembourrage bas de la boîte plus son filet). Le rembourrage est
+       retiré au profit des cases ;
+     · les trois colonnes sont centrées verticalement, elles qui s'alignaient en haut
+       en laissant un vide sous les deux plus courtes ;
+     · le panneau passe de 940 à 820 px : le contenu mesuré tombe à 195 / 195 / 228 px
+       de besoin réel, et il restait 290 px de vide à répartir. -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-680">
+ <h2>SUPER PRINT <span>v1.7.680</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 octobre 2026" data-i18n-en="Released October 19, 2026" data-i18n-jp="2026年10月19日公開">Released October 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="La partie Fonctions s'ouvre désormais sur <strong>huit captures</strong>, en trois colonnes, sans image d'appel : le motif, les plug-ins, Global Refactor, Word qui entre, Word et EPS qui sortent, le rapport de pré-vol, la galerie Polices Google et le feuilletage 3D. Les chevrons du carrousel des maquettes passent en jaune et ne sont plus jamais inertes, et le sous-menu de téléchargement est nettoyé." data-i18n-en-html="The Features part now opens on <strong>eight screenshots</strong>, in three columns, with no lead image: the pattern, the plug-ins, Global Refactor, Word coming in, Word and EPS going out, the preflight report, the Google Fonts gallery and the 3D leafing. The template carousel arrows turn yellow and are never inert again, and the download submenu is cleaned up." data-i18n-jp-html="機能セクションは<strong>8枚の画面写真</strong>で始まります。3カラム、メイン画像なし。パターン、プラグイン、Global Refactor、Word の読み込み、Word と EPS の書き出し、プリフライトのレポート、Google Fonts ギャラリー、3D のページめくり。テンプレートの矢印は黄色になり、無反応になることはありません。ダウンロードのサブメニューも整理しました。">The Features part now opens on eight screenshots in three columns, and the template arrows are yellow and always respond.</p>
+
+ <h3 data-i18n-fr-html="🖼️ Huit écrans, rien de retouché" data-i18n-en-html="🖼️ Eight screens, nothing staged" data-i18n-jp-html="🖼️ 8つの画面、すべて実際の表示">🖼️ Eight screens, nothing staged</h3>
+ <ul>
+  <li data-i18n-fr-html="L'accroche « Cinq choses que l'on voit tout de suite — et qui n'existaient pas ici il y a un an » comptait les images et parlait du temps qui passe. Elle devient <strong>« Huit écrans, rien de retouché. »</strong> — courte, au présent, et vraie : ce sont des captures de l'application." data-i18n-en-html="The headline “Five things you see at once — none of which existed here a year ago” counted the images and talked about time passing. It becomes <strong>“Eight screens, nothing staged.”</strong> — short, in the present tense, and true: these are captures from the application." data-i18n-jp-html="「すぐ目に入る5つ。どれも一年前にはここに無かったものです」は枚数を数え、時間の話をしていました。<strong>「8つの画面、すべて実際の表示。」</strong>に変わります。短く、現在形で、事実です。">The headline becomes <strong>“Eight screens, nothing staged.”</strong> — short, in the present tense, and true.</li>
+  <li data-i18n-fr-html="La carte d'appel pleine largeur disparaît : huit cartes de même poids, <strong>trois par ligne</strong>. La grille est en six pistes, chaque carte en occupe deux, et les deux dernières passent à trois pour remplir la troisième ligne sans trou. MESURÉ à 1600 px : trois lignes (392 px, puis 589 px pour les deux dernières), 1425 px de grille, aucun débordement ; deux colonnes à 1180 px et moins, une à 720 px et moins." data-i18n-en-html="The full-width lead card is gone: eight cards of equal weight, <strong>three per line</strong>. The grid has six tracks, each card spans two, and the last two span three so the third line is full with no hole. Measured at 1600 px: three lines (392 px, then 589 px for the last two), a 1425 px grid, no overflow; two columns at 1180 px and below, one at 720 px and below." data-i18n-jp-html="全幅のメインカードを廃止し、同じ重さのカード8枚を<strong>1行3枚</strong>で並べます。グリッドは6トラック、各カードは2つ分。最後の2枚は3つ分にして3行目を埋めます。1600 px での実測：3行（392 px、最後の2枚は589 px）、グリッド高 1425 px、はみ出しなし。1180 px 以下で2列、720 px 以下で1列。">The lead card is gone: eight equal cards, <strong>three per line</strong>. Measured at 1600 px: three lines, a 1425 px grid, no overflow.</li>
+  <li data-i18n-fr-html="Trois features s'ajoutent, celles qui font le plus d'effet à l'ouverture : le <strong>rapport de pré-vol</strong> du plug-in Contrôle avant impression (format, fond perdu, résolution des images, polices, couverture d'encre, espace colorimétrique), la galerie <strong>Polices Google</strong> — 218 familles dessinées dans le texte du visiteur — et le <strong>feuilletage 3D</strong>." data-i18n-en-html="Three features are added, the ones that impress most on arrival: the <strong>preflight report</strong> from the Preflight plug-in (format, bleed, image resolution, fonts, ink coverage, colour space), the <strong>Google Fonts</strong> gallery — 218 families drawn in the visitor's own text — and the <strong>3D leafing</strong>." data-i18n-jp-html="冒頭で最も効く3つを追加：プリフライト・プラグインの<strong>レポート</strong>（判型・塗り足し・画像解像度・フォント・インク量・色空間）、<strong>Google Fonts</strong> ギャラリー（218ファミリーを訪問者のテキストで描画）、そして<strong>3D のページめくり</strong>。">Three features are added: the <strong>preflight report</strong>, the <strong>Google Fonts</strong> gallery (218 families) and the <strong>3D leafing</strong>.</li>
+  <li data-i18n-fr-html="⚠️ Le shot 05 est refilmé, et la mesure dit pourquoi il était raté : sur l'ancien fichier, la zone libre à gauche de la fenêtre « Sauvegarder » donnait une luminance moyenne de <strong>93,3 pour un écart-type de 1,6</strong> — un aplat parfait, donc aucun document derrière la fenêtre, seulement le voile de l'overlay sur un canevas vide. La nouvelle prise a un document réel derrière (moyenne 197,3, écart-type 74,3)." data-i18n-en-html="⚠️ Shot 05 is re-filmed, and the measurement says why it was wrong: in the old file, the free area to the left of the Save window had a mean luminance of <strong>93.3 with a standard deviation of 1.6</strong> — a perfect flat, meaning no document behind the window, only the overlay veil over an empty canvas. The new take has a real document behind (mean 197.3, standard deviation 74.3)." data-i18n-jp-html="⚠️ 5枚目を撮り直しました。理由は測定にあります。旧ファイルでは「保存」ウィンドウの左側の余白が<strong>平均輝度 93,3、標準偏差 1,6</strong> の完全な平坦部でした。つまりウィンドウの後ろに文書がなく、空のカンバスにオーバーレイのヴェールだけがかかっていたのです。新しい撮影は実在の文書が後ろにあります（平均 197,3、標準偏差 74,3）。">⚠️ Shot 05 is re-filmed: the old one measured a flat 93.3 with a 1.6 deviation — an empty canvas behind the window.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🎠 Les chevrons des maquettes : jaunes, et jamais morts" data-i18n-en-html="🎠 The template arrows: yellow, and never inert" data-i18n-jp-html="🎠 テンプレートの矢印：黄色に、そして必ず反応">🎠 The template arrows: yellow, and never inert</h3>
+ <ul>
+  <li data-i18n-fr-html="« Ne marchent pas du tout » avait une cause mesurable : en butée, le bouton portait <code>disabled</code> — un clic ne produisait donc <strong>strictement rien</strong> — et au chargement, le rail étant à zéro, c'était « précédent » qui l'était : le premier clic, celui qu'on fait, ne répondait pas." data-i18n-en-html="“They don't work at all” had a measurable cause: at either end the button carried <code>disabled</code>, so a click produced <strong>strictly nothing</strong> — and on load, with the rail at zero, it was “previous” that was disabled: the first click, the one people make, did not answer." data-i18n-jp-html="「まったく動かない」には測定できる原因がありました。端ではボタンが <code>disabled</code> で、クリックしても<strong>何も起きません</strong>。しかも読み込み時はレールが先頭なので「前へ」が無効。最初に押すボタンが答えなかったのです。">“They don't work at all” had a measurable cause: at either end the button was <code>disabled</code>, so a click did nothing.</li>
+  <li data-i18n-fr-html="Le rail <strong>boucle</strong> désormais aux deux extrémités et aucun bouton n'est plus désactivé. MESURÉ : depuis la première carte, « précédent » amène à la fin (1946 px, « 12 / 12 ») ; depuis la fin, « suivant » revient au début ; chaque cran vaut 262 px." data-i18n-en-html="The rail now <strong>loops</strong> at both ends and no button is disabled any more. Measured: from the first card, “previous” goes to the end (1946 px, “12 / 12”); from the end, “next” returns to the start; each step is 262 px." data-i18n-jp-html="レールは両端で<strong>ループ</strong>し、無効なボタンはもうありません。実測：最初のカードから「前へ」で末尾（1946 px、「12 / 12」）、末尾から「次へ」で先頭へ。1クリックは 262 px。">The rail now <strong>loops</strong> at both ends: 1946 px to the end, 262 px per step.</li>
+  <li data-i18n-fr-html="Les chevrons passent en <strong>jaune de la quadri</strong> (#F2B90B) avec un chevron à l'encre et une ombre de 8 px : c'est le seul couple qui se lise à la fois sur la bande des modèles, devenue noire en 1.7.679, et sur le papier des cartes." data-i18n-en-html="The arrows turn <strong>quadri yellow</strong> (#F2B90B) with an ink chevron and an 8 px shadow: the only pairing that reads both on the templates band, now black since 1.7.679, and on the paper of the cards." data-i18n-jp-html="矢印は<strong>4色のイエロー</strong>（#F2B90B）に。シェブロンはインク色、影は 8 px。1.7.679 で黒くなったテンプレート帯と、カードの紙の両方で読める唯一の組み合わせです。">The arrows turn <strong>quadri yellow</strong> with an ink chevron and an 8 px shadow.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="💾 Le sous-menu « Télécharger »" data-i18n-en-html="💾 The “Download” submenu" data-i18n-jp-html="💾 「ダウンロード」サブメニュー">💾 The “Download” submenu</h3>
+ <ul>
+  <li data-i18n-fr-html="« Apple silicon » devient <strong>« ARM »</strong> : c'est le nom de l'architecture, et c'était le libellé le plus long du panneau (331 px). Les trois gélules <strong>« .rpm »</strong> disparaissent — la CI ne produit jamais ce fichier, le lien était mort ; la mention quitte aussi les données structurées." data-i18n-en-html="“Apple silicon” becomes <strong>“ARM”</strong>: it is the name of the architecture, and it was the longest label in the panel (331 px). The three <strong>“.rpm”</strong> pills are gone — CI never produces that file, the link was dead; the mention also leaves the structured data." data-i18n-jp-html="「Apple silicon」は<strong>「ARM」</strong>に。アーキテクチャ名であり、パネルで最も長いラベル（331 px）でした。<strong>「.rpm」</strong>の3つのピルは削除 — CI はこのファイルを作らないためリンクは切れていました。構造化データからも外します。">“Apple silicon” becomes <strong>“ARM”</strong>, and the three <strong>“.rpm”</strong> pills are gone — that file is never produced.</li>
+  <li data-i18n-fr-html="Les filets verticaux descendent jusqu'au bord inférieur de la boîte : la liste s'arrêtait à 294 px quand la boîte finissait à 311 px, soit <strong>17 px de filet manquant</strong> (le rembourrage bas de la boîte plus son filet). Le rembourrage est retiré au profit des cases." data-i18n-en-html="The vertical rules now run to the bottom edge of the box: the list ended at 294 px while the box ended at 311 px — <strong>17 px of missing rule</strong> (the box's bottom padding plus its border). The padding is removed in favour of the cells." data-i18n-jp-html="縦罫線がボックスの下端まで届きます。リストは 294 px で終わり、ボックスは 311 px で終わっていました — <strong>17 px の欠け</strong>（ボックスの下余白と罫線）。余白をセル側に移しました。">The vertical rules run to the bottom edge: <strong>17 px were missing</strong> (bottom padding plus border).</li>
+  <li data-i18n-fr-html="Les trois colonnes sont <strong>centrées verticalement</strong>, elles qui s'alignaient en haut en laissant un vide sous les deux plus courtes. Le panneau passe de 940 à <strong>820 px</strong> : le contenu mesuré tombe à 195 / 195 / 228 px de besoin réel, et il restait 290 px de vide à répartir." data-i18n-en-html="The three columns are <strong>vertically centred</strong>, where they used to align to the top and leave a gap under the two shorter ones. The panel goes from 940 to <strong>820 px</strong>: measured content needs 195 / 195 / 228 px, and 290 px of empty space were left over." data-i18n-jp-html="3つの列を<strong>垂直方向に中央揃え</strong>に。以前は上揃えで、短い2列の下に余白が残っていました。パネルは 940 から <strong>820 px</strong> に。実測の必要幅は 195 / 195 / 228 px で、290 px が余っていました。">The three columns are <strong>vertically centred</strong>, and the panel goes from 940 to <strong>820 px</strong>.</li>
+ </ul>
+</article>
+
 <article class="release-block" data-app="superprint" id="superprint-v1-7-679">
  <h2>SUPER PRINT <span>v1.7.679</span></h2>
  <div class="release-meta">
