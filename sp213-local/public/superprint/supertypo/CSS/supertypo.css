@@ -85,6 +85,9 @@
   --guide-magenta: #c832c8;
   --shadow: rgba(0,0,0,.12);
   --topbar-h: 50px;
+  /* Largeur de la trappe « Global Refactor » (même principe que .mq-trappe
+     du studio SuperPrint : une colonne ajoutée à droite, pas un voile). */
+  --ref-w: clamp(280px, 34vw, 420px);
 }
 body.theme-dark {
   --bg: #121212;            /* sp-dark-base */
@@ -482,6 +485,107 @@ body.theme-dark .pref-opt.active .pref-sub { color: rgba(0,0,0,.6); }
 .pref-hint { margin-top: 7px; font-size: 10px; color: var(--muted2); }
 /* Croix de fermeture des pop-in : angle droit comme le studio. */
 .prefs-head .icon-btn, .help-head .icon-btn { border-radius: 0; }
+
+/* ═══════════ GLOBAL REFACTOR ═══════════
+   Trappe de droite (11 réglages + aperçu), sur le modèle de .mq-trappe du
+   studio SuperPrint : fermée sa largeur vaut 0 et elle ne prend aucune place ;
+   ouverte elle pousse la grille ou l'éditeur vers la gauche. L'aperçu ne touche
+   JAMAIS aux glyphes : il dessine une copie transformée. */
+#btnGlobalRefactor.active { background: var(--accent-soft); border-color: var(--border-strong); }
+#refactorOverlay {
+  /* Elle prend place SOUS la barre du haut, comme la trappe du studio
+     SuperPrint : les commandes de la topbar restent toutes accessibles. */
+  position: fixed; top: var(--topbar-h); right: 0; bottom: 0;
+  z-index: 55;
+  width: 0; max-width: var(--ref-w);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--panel);
+  border-left: 0 solid var(--border);
+  transition: width .26s cubic-bezier(.2,.7,.2,1),
+              border-left-width .26s cubic-bezier(.2,.7,.2,1);
+}
+#refactorOverlay:not(.open) { pointer-events: none; }
+#refactorOverlay.open { width: var(--ref-w); border-left-width: 1px; }
+/* L'interface cède la largeur de la trappe au lieu d'être recouverte. */
+#fontView, #editorOverlay { transition: right .26s cubic-bezier(.2,.7,.2,1); }
+body.ref-open #dropArea,
+body.ref-open #fontView { right: var(--ref-w); }
+body.ref-open #editorOverlay { right: var(--ref-w); }
+body.ref-open #autosaveBar { right: var(--ref-w); }
+.ref-card {
+  width: var(--ref-w); max-width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  background: var(--panel);
+}
+.ref-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+.ref-title { display: block; font-weight: 700; font-size: 14px; letter-spacing: .3px; }
+.ref-sub { display: block; margin-top: 4px; font-size: 10px; line-height: 1.55; color: var(--muted); }
+.ref-head .icon-btn { border-radius: 0; flex: 0 0 auto; }
+/* Une seule colonne : la trappe est étroite, comme celle de SuperPrint. */
+.ref-body {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 14px 16px; overflow-y: auto;
+}
+.ref-controls { min-width: 0; }
+.ref-row {
+  display: grid; grid-template-columns: 92px minmax(0, 1fr) 78px;
+  align-items: center; gap: 8px; margin-bottom: 7px;
+}
+.ref-label { font-size: 11px; color: var(--text); }
+.ref-row input[type="range"] { width: 100%; height: 18px; accent-color: var(--accent); cursor: pointer; }
+.ref-num-wrap { display: flex; align-items: center; gap: 4px; }
+.ref-num {
+  width: 64px; height: 26px; padding: 0 6px;
+  background: var(--panel2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  font-family: inherit; font-size: 11px; font-variant-numeric: tabular-nums; outline: none;
+}
+.ref-num:focus { border-color: var(--border-strong); }
+.ref-unit { font-size: 10px; color: var(--muted2); }
+.ref-hint { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 10px; line-height: 1.6; color: var(--muted2); }
+/* Colonne aperçu */
+.ref-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ref-preview-head { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+#refPreviewCanvas {
+  display: block; width: 100%; height: 112px;
+  background: var(--bg-workspace); border: 1px solid var(--border); border-radius: 4px;
+}
+.ref-preview-text {
+  height: 28px; padding: 0 9px;
+  background: var(--panel2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  font-family: inherit; font-size: 12px; outline: none;
+}
+.ref-preview-text:focus { border-color: var(--border-strong); }
+.ref-side .chk { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text); cursor: pointer; }
+.ref-side .chk input { accent-color: var(--accent); }
+.ref-targets { font-size: 10px; color: var(--muted2); }
+.ref-foot { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); flex-wrap: wrap; flex: 0 0 auto; }
+.ref-spacer { flex: 1; }
+.ref-btn {
+  height: 30px; padding: 0 14px;
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--btn-border); border-radius: 4px;
+  font-family: inherit; font-size: 11px; cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.ref-btn:hover { background: var(--panel3); border-color: var(--border-strong); }
+.ref-btn:disabled { opacity: .4; cursor: default; background: transparent; }
+.ref-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.ref-btn.primary:hover { background: var(--accent-hover); }
+body.theme-dark .ref-btn.primary { color: #121212; }
+@media (max-width: 760px) {
+  .ref-row { grid-template-columns: 84px minmax(0, 1fr) 74px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #refactorOverlay { transition: none; }
+}
 
 
 /* Toast */

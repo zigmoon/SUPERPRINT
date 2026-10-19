@@ -41,6 +41,16 @@ Zéro dépendance externe : `opentype.min.js` (parser/générateur de polices) e
   Rotation 90°** — sur le contour sélectionné, sinon tout le glyphe.
 - **Métriques avancées** (panneau Métriques) : renommage du glyphe, débordements
   gauche/droite (LSB/RSB), boîte englobante (BBox), nombre de points/contours.
+- **Global Refactor** (bouton de la topbar, entre *Changer de police* et
+  *Enregistrer*, ou touche `G`) : une trappe s'ouvre à droite et pousse
+  l'interface, comme dans le studio SuperPrint. Onze réglages — **Largeur,
+  Hauteur, Italique, Graisse, Corps, Empattement, Interlettrage, Talus de tête,
+  Talus de pied, Hampe, Jambage** — avec aperçu en direct, **Appliquer à toute
+  la police**, **Appliquer** et **Réinitialiser**. Rien n'est écrit dans les
+  glyphes avant *Appliquer*, et un **Annuler le dernier Global Refactor** permet
+  de revenir en arrière. Quand un glyphe est ouvert, les panneaux
+  **Transformations / Contours / Métriques / Repères** restent visibles à gauche
+  de la trappe.
 
 ## Workflow
 
@@ -72,6 +82,7 @@ Zéro dépendance externe : `opentype.min.js` (parser/générateur de polices) e
 | `Ctrl+Z` / `Ctrl+Y` | Annuler / Rétablir |
 | `Ctrl+0` | Zoom 100 % éditeur |
 | `Ctrl+molette` | Zoom éditeur |
+| `G` | Ouvrir / fermer Global Refactor (grille ou éditeur) |
 | `Ctrl+F` | Recherche glyphe |
 | `Ctrl+E` | Exporter la typo (TTF) |
 | `Ctrl+S` | Enregistrer `.sf` |

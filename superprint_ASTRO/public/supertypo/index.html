@@ -9,7 +9,7 @@
 <!-- 🎨 Logotype SuperTyPo en favicon (dossier « superprint/icons »). -->
 <link rel="icon" type="image/svg+xml" href="../icons/sper_typo.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="../icons/sper_typo.png">
-<link rel="stylesheet" href="CSS/supertypo.css?v=6">
+<link rel="stylesheet" href="CSS/supertypo.css?v=8">
 </head>
 <body>
 <!-- ═══════════════ TOPBAR (style SuperPrint) ═══════════════ -->
@@ -40,6 +40,12 @@
     </button>
     <button class="tb-btn" id="btnDropzone" style="display:none">
       <span data-i18n="btnChangeFont">Changer de police</span>
+    </button>
+    <!-- 🆕 Global Refactor — même dessin (deux réglettes à curseur) que le
+         bouton historique de SuperPrint : « on règle des valeurs ». -->
+    <button class="tb-btn" id="btnGlobalRefactor" title="Global Refactor" disabled>
+      <svg class="ic" viewBox="0 0 24 24"><line x1="4.5" y1="8.5" x2="19.5" y2="8.5"/><circle cx="9.5" cy="8.5" r="2.1"/><line x1="4.5" y1="15.5" x2="19.5" y2="15.5"/><circle cx="15.5" cy="15.5" r="2.1"/></svg>
+      <span data-i18n="btnGlobalRefactor">Global Refactor</span>
     </button>
     <button class="tb-btn" id="btnSaveSf" title="Enregistrer le projet SuperFont (.sf)" disabled>
       <svg class="ic" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -317,6 +323,101 @@
   </div>
 </div>
 
+<!-- ═══════════════ GLOBAL REFACTOR ═══════════════
+     Trappe de droite, comme le Global Refactor du studio SuperPrint : elle
+     s'ouvre en poussant l'interface (grille ou éditeur) au lieu de la
+     recouvrir. Quand un glyphe est ouvert, le panneau TRANSFORMATIONS /
+     CONTOURS / MÉTRIQUES / REPÈRES reste donc visible à sa gauche.
+     L'aperçu est calculé en direct ; RIEN n'est écrit dans les glyphes avant
+     « Appliquer ». « Appliquer à toute la police » (coché par défaut) traite
+     tous les glyphes ; décoché, seuls les caractères affichés dans la grille
+     sont traités. -->
+<div id="refactorOverlay" class="ref-dock" aria-hidden="true" inert>
+  <div class="ref-card">
+    <div class="ref-head">
+      <div class="ref-head-txt">
+        <span class="ref-title" data-i18n="refTitle">Global Refactor</span>
+        <span class="ref-sub" data-i18n="refSub">Réglez la géométrie de la police en une passe. L'aperçu est en direct ; rien n'est appliqué avant « Appliquer ».</span>
+      </div>
+      <button class="icon-btn" id="btnCloseRefactor">✕</button>
+    </div>
+    <div class="ref-body">
+      <div class="ref-controls">
+        <div class="ref-row">
+          <label class="ref-label" for="ref-largeur" data-i18n="refWidth">Largeur</label>
+          <input type="range" id="ref-largeur" min="50" max="200" step="1" value="100">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-largeur-num" min="50" max="200" step="1" value="100"><span class="ref-unit">%</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-hauteur" data-i18n="refHeight">Hauteur</label>
+          <input type="range" id="ref-hauteur" min="50" max="200" step="1" value="100">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-hauteur-num" min="50" max="200" step="1" value="100"><span class="ref-unit">%</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-italique" data-i18n="refItalic">Italique</label>
+          <input type="range" id="ref-italique" min="-30" max="30" step="0.5" value="0">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-italique-num" min="-30" max="30" step="0.5" value="0"><span class="ref-unit">°</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-graisse" data-i18n="refWeight">Graisse</label>
+          <input type="range" id="ref-graisse" min="-150" max="150" step="1" value="0">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-graisse-num" min="-150" max="150" step="1" value="0"><span class="ref-unit">u</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-corps" data-i18n="refSize">Corps</label>
+          <input type="range" id="ref-corps" min="50" max="200" step="1" value="100">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-corps-num" min="50" max="200" step="1" value="100"><span class="ref-unit">%</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-empattement" data-i18n="refSerif">Empattement</label>
+          <input type="range" id="ref-empattement" min="0" max="100" step="1" value="0">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-empattement-num" min="0" max="100" step="1" value="0"><span class="ref-unit">%</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-interlettrage" data-i18n="refTracking">Interlettrage</label>
+          <input type="range" id="ref-interlettrage" min="-300" max="500" step="5" value="0">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-interlettrage-num" min="-300" max="500" step="5" value="0"><span class="ref-unit">‰</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-talusTete" data-i18n="refTopSlope">Talus de tête</label>
+          <input type="range" id="ref-talusTete" min="-30" max="30" step="0.5" value="0">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-talusTete-num" min="-30" max="30" step="0.5" value="0"><span class="ref-unit">°</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-talusPied" data-i18n="refFootSlope">Talus de pied</label>
+          <input type="range" id="ref-talusPied" min="-30" max="30" step="0.5" value="0">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-talusPied-num" min="-30" max="30" step="0.5" value="0"><span class="ref-unit">°</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-hampe" data-i18n="refAscender">Hampe</label>
+          <input type="range" id="ref-hampe" min="50" max="200" step="1" value="100">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-hampe-num" min="50" max="200" step="1" value="100"><span class="ref-unit">%</span></div>
+        </div>
+        <div class="ref-row">
+          <label class="ref-label" for="ref-jambage" data-i18n="refDescender">Jambage</label>
+          <input type="range" id="ref-jambage" min="50" max="200" step="1" value="100">
+          <div class="ref-num-wrap"><input type="number" class="ref-num" id="ref-jambage-num" min="50" max="200" step="1" value="100"><span class="ref-unit">%</span></div>
+        </div>
+        <div class="ref-hint" data-i18n="refHint">Valeurs neutres : 100 % et 0. % = échelle, ° = angle, u = unités de police, ‰ = millièmes de cadratin. Hampe agit au-dessus de la hauteur de capitale, Jambage sous la ligne de base.</div>
+      </div>
+      <div class="ref-side">
+        <div class="ref-preview-head" data-i18n="refPreview">Aperçu</div>
+        <canvas id="refPreviewCanvas"></canvas>
+        <input type="text" id="refPreviewText" class="ref-preview-text" value="Hamburgefonstiv" placeholder="Texte de l'aperçu" data-i18n-ph="refPreviewPh" spellcheck="false">
+        <label class="chk"><input type="checkbox" id="refAllFont" checked><span data-i18n="refAllFont">Appliquer à toute la police</span></label>
+        <div class="ref-targets" id="refTargets"></div>
+      </div>
+    </div>
+    <div class="ref-foot">
+      <button class="ref-btn" id="refUndo" disabled data-i18n="refUndo">Annuler le dernier Global Refactor</button>
+      <span class="ref-spacer"></span>
+      <button class="ref-btn" id="refReset" data-i18n="refReset">Réinitialiser</button>
+      <button class="ref-btn" id="refCancel" data-i18n="refCancel">Fermer</button>
+      <button class="ref-btn primary" id="refApply" data-i18n="refApply">Appliquer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ AIDE / RACCOURCIS ═══════════════ -->
 <div id="helpOverlay" style="display:none">
   <div class="help-card">
@@ -340,6 +441,7 @@
       </div>
       <div class="help-col">
         <h3 data-i18n="helpGrid">Grille / globale</h3>
+        <div class="k"><kbd>G</kbd><span data-i18n="hRefactor">Global Refactor</span></div>
         <div class="k"><kbd>Ctrl+F</kbd><span data-i18n="hFind">Chercher un glyphe</span></div>
         <div class="k"><kbd>Ctrl+E</kbd><span data-i18n="hExp">Exporter</span></div>
         <div class="k"><kbd>Ctrl+S</kbd><span data-i18n="hSave">Enregistrer</span></div>
@@ -351,6 +453,6 @@
 
 <!-- Chargement -->
 <script src="JS/opentype.min.js"></script>
-<script src="JS/supertypo.js?v=36"></script>
+<script src="JS/supertypo.js?v=38"></script>
 </body>
 </html>

@@ -24,6 +24,8 @@
 !/superprint_ASTRO/
 !/superprint_rust/
 !/superprint_asm/
+# SuperPhoto — studio de retouche photo Astro + Rust (Tauri).
+!/superphoto/
 # L'application de bureau (coquille Tauri). Elle ne contient PAS de copie du
 # front-end : `src-tauri/tauri.conf.json` pointe sur `superprint/app`. Les
 # binaires et installeurs produits (`src-tauri/target/`) restent dehors — ils

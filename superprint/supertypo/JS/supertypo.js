@@ -42,6 +42,9 @@
     dirty: false,
     // Undo
     undoStack: [], redoStack: [],
+    // 🆕 Global Refactor — instantané des glyphes touchés par la dernière passe
+    //   (un seul niveau : « Annuler le dernier Global Refactor »).
+    refactorUndo: null,
     theme: 'light',
     // i18n minimal
     lang: 'en',              // ✅ Anglais par défaut (clé persistée 'st_lang_v2')
@@ -176,7 +179,36 @@
       hFind: 'Chercher un glyphe',
       hExp: 'Exporter',
       hSave: 'Enregistrer',
-      hGridZoom: 'Zoom de la grille'
+      hGridZoom: 'Zoom de la grille',
+      hRefactor: 'Global Refactor',
+      // ── Global Refactor ──
+      btnGlobalRefactor: 'Global Refactor',
+      refTitle: 'Global Refactor',
+      refSub: 'Réglez la géométrie de la police en une passe. L\'aperçu est en direct ; rien n\'est appliqué avant « Appliquer ».',
+      refWidth: 'Largeur',
+      refHeight: 'Hauteur',
+      refItalic: 'Italique',
+      refWeight: 'Graisse',
+      refSize: 'Corps',
+      refSerif: 'Empattement',
+      refTracking: 'Interlettrage',
+      refTopSlope: 'Talus de tête',
+      refFootSlope: 'Talus de pied',
+      refAscender: 'Hampe',
+      refDescender: 'Jambage',
+      refHint: 'Valeurs neutres : 100 % et 0. % = échelle, ° = angle, u = unités de police, ‰ = millièmes de cadratin. Hampe agit au-dessus de la hauteur de capitale, Jambage sous la ligne de base.',
+      refPreview: 'Aperçu',
+      refPreviewPh: 'Texte de l\'aperçu',
+      refAllFont: 'Appliquer à toute la police',
+      refTargets: '{n} glyphe(s) concerné(s)',
+      refApply: 'Appliquer',
+      refReset: 'Réinitialiser',
+      refCancel: 'Fermer',
+      refUndo: 'Annuler le dernier Global Refactor',
+      refApplied: 'Global Refactor appliqué — {n} glyphe(s).',
+      refNothing: 'Rien à appliquer : les réglages sont neutres.',
+      refNoGlyph: 'Aucun glyphe à transformer.',
+      refUndone: 'Global Refactor annulé.'
     },
 
     en: {
@@ -280,7 +312,36 @@
       hFind: 'Find a glyph',
       hExp: 'Export',
       hSave: 'Save',
-      hGridZoom: 'Grid zoom'
+      hGridZoom: 'Grid zoom',
+      hRefactor: 'Global Refactor',
+      // ── Global Refactor ──
+      btnGlobalRefactor: 'Global Refactor',
+      refTitle: 'Global Refactor',
+      refSub: 'Rule the geometry of the typeface in one pass. The preview is live; nothing is applied until you press “Apply”.',
+      refWidth: 'Width',
+      refHeight: 'Height',
+      refItalic: 'Italic',
+      refWeight: 'Weight',
+      refSize: 'Size',
+      refSerif: 'Serifs',
+      refTracking: 'Tracking',
+      refTopSlope: 'Top slope',
+      refFootSlope: 'Foot slope',
+      refAscender: 'Ascender',
+      refDescender: 'Descender',
+      refHint: 'Neutral values: 100% and 0. % = scale, ° = angle, u = font units, ‰ = thousandths of an em. Ascender acts above cap height, Descender below the baseline.',
+      refPreview: 'Preview',
+      refPreviewPh: 'Preview text',
+      refAllFont: 'Apply to the whole font',
+      refTargets: '{n} glyph(s) affected',
+      refApply: 'Apply',
+      refReset: 'Reset',
+      refCancel: 'Close',
+      refUndo: 'Undo the last Global Refactor',
+      refApplied: 'Global Refactor applied — {n} glyph(s).',
+      refNothing: 'Nothing to apply: every setting is neutral.',
+      refNoGlyph: 'No glyph to transform.',
+      refUndone: 'Global Refactor undone.'
     },
 
     ja: {
@@ -384,7 +445,36 @@
       hFind: 'グリフを検索',
       hExp: '書き出し',
       hSave: '保存',
-      hGridZoom: 'グリッドのズーム'
+      hGridZoom: 'グリッドのズーム',
+      hRefactor: 'グローバルリファクター',
+      // ── グローバルリファクター ──
+      btnGlobalRefactor: 'グローバルリファクター',
+      refTitle: 'グローバルリファクター',
+      refSub: '書体の形状を一度に整えます。プレビューはライブで、適用を押すまで何も変更されません。',
+      refWidth: '幅',
+      refHeight: '高さ',
+      refItalic: 'イタリック',
+      refWeight: 'ウェイト',
+      refSize: 'サイズ',
+      refSerif: 'セリフ',
+      refTracking: '字間',
+      refTopSlope: '上部テーパー',
+      refFootSlope: '下部テーパー',
+      refAscender: 'アセンダー',
+      refDescender: 'ディセンダー',
+      refHint: '中立値：100% と 0。% = 倍率、° = 角度、u = フォント単位、‰ = 全角の1000分率。アセンダーはキャップハイトより上、ディセンダーはベースラインより下に作用します。',
+      refPreview: 'プレビュー',
+      refPreviewPh: 'プレビュー用テキスト',
+      refAllFont: 'フォント全体に適用',
+      refTargets: '対象グリフ：{n}',
+      refApply: '適用',
+      refReset: 'リセット',
+      refCancel: '閉じる',
+      refUndo: '直前のグローバルリファクターを元に戻す',
+      refApplied: 'グローバルリファクターを適用しました — {n} グリフ。',
+      refNothing: '適用する変更がありません（すべて中立値です）。',
+      refNoGlyph: '変換するグリフがありません。',
+      refUndone: 'グローバルリファクターを元に戻しました。'
     }
   };
 
@@ -436,7 +526,8 @@
         btnZoomIn: 'Zoom avant', btnHelp: 'Aide / raccourcis',
         btnTheme: 'Basculer thème clair / sombre', btnPrefs: 'Préférences',
         btnCloseEditor: "Fermer l'éditeur (Échap)", btnGridView: 'Vue grille (rendu)',
-        btnOutlineView: 'Vue contours', btnRefresh: "Re-synchroniser depuis la fonte d'origine"
+        btnOutlineView: 'Vue contours', btnRefresh: "Re-synchroniser depuis la fonte d'origine",
+        btnGlobalRefactor: 'Global Refactor — régler toute la police'
       },
       en: {
         btnLoadFont: 'Load a font (.ttf, .otf, .woff, .woff2)',
@@ -448,7 +539,8 @@
         btnZoomIn: 'Zoom in', btnHelp: 'Help / shortcuts',
         btnTheme: 'Toggle light / dark theme', btnPrefs: 'Preferences',
         btnCloseEditor: 'Close the editor (Esc)', btnGridView: 'Grid view (rendered)',
-        btnOutlineView: 'Outline view', btnRefresh: 'Re-sync from the source font'
+        btnOutlineView: 'Outline view', btnRefresh: 'Re-sync from the source font',
+        btnGlobalRefactor: 'Global Refactor — rule the whole typeface'
       },
       ja: {
         btnLoadFont: 'フォントを読み込む（.ttf / .otf / .woff / .woff2）',
@@ -460,7 +552,8 @@
         btnZoomIn: 'ズームイン', btnHelp: 'ヘルプ / ショートカット',
         btnTheme: 'ライト / ダークテーマ切替', btnPrefs: '環境設定',
         btnCloseEditor: 'エディターを閉じる（Esc）', btnGridView: 'グリッド表示',
-        btnOutlineView: 'アウトライン表示', btnRefresh: '元のフォントから再同期'
+        btnOutlineView: 'アウトライン表示', btnRefresh: '元のフォントから再同期',
+        btnGlobalRefactor: 'グローバルリファクター — 書体全体を整える'
       }
     };
     const dTit = TITRES[lang] || TITRES.en;
@@ -941,7 +1034,7 @@
         window.opener.postMessage({ type: 'sp213-ready' }, window.location.origin);
       }
     } catch (_) {}
-      /* 🆕 v1.7.676 — ET PAR LE PONT, sur le bureau.
+      /* 🆕 v1.7.677 — ET PAR LE PONT, sur le bureau.
          L'éditeur y ouvre cette page dans une FENÊTRE de la coquille : il n'y a donc
          ni `window.opener`, ni `postMessage` possible. Les deux fenêtres partagent en
          revanche leur origine, donc leur stockage local. On y dépose « ready » ; la
@@ -1022,7 +1115,7 @@
     } catch (e) { try { console.error(e); } catch (e2) {} }
   }
   window.addEventListener('message', spRecoitPolice);
-  spPontSurveiller();   // 🆕 v1.7.676 — le pont local, sur le bureau (voir plus haut)
+  spPontSurveiller();   // 🆕 v1.7.677 — le pont local, sur le bureau (voir plus haut)
   // Handshake : on signale notre disponibilité jusqu'à recevoir la fonte (max ~15 s).
   var _spPretTic = 0;
   const _spPretSein = setInterval(function () {
@@ -1055,10 +1148,11 @@
     } catch (e1) {}
   }, 9000);
 
-  function buildGlyphGrid() {
-    const grid = $('glyphGrid');
-    grid.innerHTML = '';
-    // Déterminer les caractères à montrer
+  /* Caractères affichés par la grille (échantillon, ou tous les glyphes,
+     filtrés par la recherche). Extrait de buildGlyphGrid pour que le
+     Global Refactor cible exactement les mêmes glyphes quand l'option
+     « Appliquer à toute la police » est décochée. */
+  function gridDisplayChars() {
     let chars = [];
     if (ST.showEmpty) {
       chars = ST.glyphs.filter(g => g.hasUnicode).map(g => g.char);
@@ -1073,6 +1167,14 @@
         return ch.toLowerCase().includes(q) || (g && g.name && g.name.toLowerCase().includes(q));
       });
     }
+    return chars;
+  }
+
+  function buildGlyphGrid() {
+    const grid = $('glyphGrid');
+    grid.innerHTML = '';
+    // Déterminer les caractères à montrer
+    const chars = gridDisplayChars();
     let count = 0;
     for (const ch of chars) {
       const g = ST.glyphs.find(x => x.char === ch);
@@ -2437,6 +2539,20 @@
   function onKey(e) {
     const tag = (e.target.tagName || '').toLowerCase();
     const editing = ST.editing;
+    // Global Refactor : Échap ferme la trappe (y compris par-dessus l'éditeur),
+    // et « G » l'ouvre depuis la grille COMME depuis l'éditeur : le détail du
+    // glyphe reste alors visible à gauche de la trappe, comme demandé.
+    if (e.key === 'Escape' && isRefactorOpen()) {
+      e.preventDefault();
+      closeRefactor();
+      return;
+    }
+    if ((e.key === 'g' || e.key === 'G') && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey &&
+        tag !== 'input' && tag !== 'textarea' && tag !== 'select' && ST.glyphs.length) {
+      e.preventDefault();
+      if (isRefactorOpen()) closeRefactor(); else openRefactor();
+      return;
+    }
     // Ctrl+S export sf / Ctrl+E export
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && String.fromCharCode(e.keyCode).toLowerCase() === 's') {
       e.preventDefault();
@@ -2596,6 +2712,9 @@
     // Options guides
     ['optGuides', 'optGrid', 'optSnap'].forEach(id => { $(id).addEventListener('change', editorRender); });
 
+    // Global Refactor
+    bindRefactor();
+
     // keydown global
     document.addEventListener('keydown', onKey);
   }
@@ -2666,6 +2785,7 @@
     $('btnDropzone').style.display = 'inline-flex';
     $('btnSaveSf').disabled = false;
     $('btnExportFont').disabled = false;
+    $('btnGlobalRefactor').disabled = false;
     $('dropArea').style.display = 'none';
     $('fontView').style.display = 'flex';
     $('sampleInput').value = ST.sampleChars || defaultSample();
@@ -2714,6 +2834,442 @@
     ST.lang = lg;
     try { localStorage.setItem('st_lang_v2', lg); } catch (e) {}
     applyLang();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     GLOBAL REFACTOR — déformation paramétrique des contours de la police
+     ───────────────────────────────────────────────────────────────────────
+     Onze réglages, tous calculés en unités de police (cadratin, Y↑) :
+
+       Largeur          %   échelle X (avances comprises)
+       Hauteur          %   échelle Y
+       Italique         °   inclinaison autour de la ligne de base (x += y·tanθ)
+       Graisse          u   dilatation/érosion du contour : chaque nœud glisse
+                            le long de la normale, dans le sens du winding →
+                            les compteurs se resserrent quand le trait épaissit
+       Corps            %   échelle uniforme du dessin dans le cadratin
+       Empattement      %   évasement des extrémités hautes et basses
+       Interlettrage    ‰   avance += valeur · cadratin / 1000
+       Talus de tête    °   cisaillement de la moitié haute (pivot : x-height/2)
+       Talus de pied    °   cisaillement de la moitié basse (même pivot)
+       Hampe            %   étirement de ce qui dépasse la hauteur de capitale
+       Jambage          %   étirement de ce qui passe sous la ligne de base
+
+     ⚠️ L'aperçu travaille sur une COPIE : rien n'est écrit dans ST avant
+     « Appliquer ». L'application garde en plus un instantané complet des
+     glyphes touchés, ce qui donne « Annuler le dernier Global Refactor ».
+     ═══════════════════════════════════════════════════════════════════════ */
+  const REF_KEYS = ['largeur', 'hauteur', 'italique', 'graisse', 'corps', 'empattement',
+                    'interlettrage', 'talusTete', 'talusPied', 'hampe', 'jambage'];
+  const REF_DEFAULTS = {
+    largeur: 100, hauteur: 100, italique: 0, graisse: 0, corps: 100, empattement: 0,
+    interlettrage: 0, talusTete: 0, talusPied: 0, hampe: 100, jambage: 100
+  };
+  const REF_PREVIEW_TEXT = 'Hamburgefonstiv';
+  const REF_DEG = Math.PI / 180;
+
+  function refReadParams() {
+    const p = {};
+    REF_KEYS.forEach(k => {
+      const sl = $('ref-' + k);
+      let v = sl ? parseFloat(sl.value) : REF_DEFAULTS[k];
+      if (!isFinite(v)) v = REF_DEFAULTS[k];
+      p[k] = v;
+    });
+    return p;
+  }
+
+  function refIsNeutral(p) {
+    return REF_KEYS.every(k => Math.abs(p[k] - REF_DEFAULTS[k]) < 1e-9);
+  }
+
+  function refSetParams(p) {
+    REF_KEYS.forEach(k => {
+      const sl = $('ref-' + k), nm = $('ref-' + k + '-num');
+      if (sl) sl.value = String(p[k]);
+      if (nm) nm.value = String(p[k]);
+    });
+    refSchedulePreview();
+  }
+  function refResetParams() { refSetParams(REF_DEFAULTS); }
+
+  /* Constantes de la passe : on les fige pour que TOUS les glyphes soient
+     transformés avec les mêmes repères (et non avec un état intermédiaire). */
+  function refKernel(p) {
+    const upem = ST.upem > 0 ? ST.upem : 1000;
+    const xH = (ST.xHeight > 0) ? ST.xHeight : upem * 0.5;
+    const capH = (ST.capHeight > 0) ? ST.capHeight : upem * 0.7;
+    const sx = (p.largeur / 100) * (p.corps / 100);
+    const sy = (p.hauteur / 100) * (p.corps / 100);
+    return {
+      upem,
+      capH,
+      sx: sx,
+      sy: sy,
+      asc: p.hampe / 100,
+      desc: p.jambage / 100,
+      pivot: xH * sy / 2,
+      slant: Math.tan(p.italique * REF_DEG),
+      top: Math.tan(p.talusTete * REF_DEG),
+      foot: Math.tan(p.talusPied * REF_DEG),
+      serif: p.empattement / 100,
+      bold: p.graisse,
+      boldLimit: upem * 0.15,
+      tracking: (p.interlettrage / 1000) * upem
+    };
+  }
+
+  function refMapPoint(x, y, k) {
+    // 1) Hampe / Jambage : dans l'espace d'origine, pour comparer aux repères
+    //    typographiques de la police (cap-height, ligne de base).
+    if (y > k.capH) y = k.capH + (y - k.capH) * k.asc;
+    else if (y < 0) y = y * k.desc;
+    // 2) Largeur / Hauteur / Corps.
+    x *= k.sx;
+    y *= k.sy;
+    // 3) Talus de tête / de pied : cisaillement de part et d'autre du pivot.
+    if (k.top && y > k.pivot) x += (y - k.pivot) * k.top;
+    if (k.foot && y < k.pivot) x += (y - k.pivot) * k.foot;
+    // 4) Italique : inclinaison de toute la lettre autour de la ligne de base.
+    if (k.slant) x += y * k.slant;
+    return { x: x, y: y };
+  }
+
+  function refBounds(contours) {
+    let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity, any = false;
+    for (const c of contours) {
+      for (const n of c.nodes) {
+        for (const pt of [n, n.in, n.out]) {
+          if (!pt) continue;
+          any = true;
+          if (pt.x < xMin) xMin = pt.x;
+          if (pt.x > xMax) xMax = pt.x;
+          if (pt.y < yMin) yMin = pt.y;
+          if (pt.y > yMax) yMax = pt.y;
+        }
+      }
+    }
+    return any ? { xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax } : null;
+  }
+
+  /* Empattement : élargit les bandes haute et basse du glyphe autour de son
+     axe médian. Fondu linéaire sur 18 % de la hauteur pour éviter une marche. */
+  function refFlareSerifs(contours, amount) {
+    if (!amount) return;
+    const b = refBounds(contours);
+    if (!b) return;
+    const h = b.yMax - b.yMin;
+    if (h < 1) return;
+    const band = 0.18;
+    const cx = (b.xMin + b.xMax) / 2;
+    const extra = amount;
+    for (const c of contours) {
+      for (const n of c.nodes) {
+        for (const pt of [n, n.in, n.out]) {
+          if (!pt) continue;
+          const t = (pt.y - b.yMin) / h;
+          const wBottom = Math.max(0, 1 - t / band);
+          const wTop = Math.max(0, 1 - (1 - t) / band);
+          const w = Math.max(wBottom, wTop);
+          if (w <= 0) continue;
+          pt.x = cx + (pt.x - cx) * (1 + extra * w);
+        }
+      }
+    }
+  }
+
+  /* Graisse : décalage des nœuds le long de la normale extérieure. Le signe
+     vient de l'aire signée du contour : les contours de trou (sens inverse)
+     voient leur normale pointer vers l'encre, donc ils se resserrent quand le
+     trait s'épaissit — c'est exactement le comportement attendu. */
+  function refEmbolden(contours, delta, limit) {
+    if (!delta) return;
+    const d = Math.max(-limit, Math.min(limit, delta));
+    for (const c of contours) {
+      const n = c.nodes.length;
+      if (n < 2) continue;
+      let area2 = 0;
+      for (let i = 0; i < n; i++) {
+        const a = c.nodes[i], b = c.nodes[(i + 1) % n];
+        area2 += a.x * b.y - b.x * a.y;
+      }
+      const sign = area2 >= 0 ? 1 : -1;
+      const normals = [];
+      for (let i = 0; i < n; i++) {
+        const node = c.nodes[i];
+        const prev = c.closed ? c.nodes[(i - 1 + n) % n] : c.nodes[Math.max(0, i - 1)];
+        const next = c.closed ? c.nodes[(i + 1) % n] : c.nodes[Math.min(n - 1, i + 1)];
+        const inPt = node.in || prev;
+        const outPt = node.out || next;
+        const tx = outPt.x - inPt.x, ty = outPt.y - inPt.y;
+        const len = Math.hypot(tx, ty);
+        if (len < 1e-6) { normals.push({ x: 0, y: 0 }); continue; }
+        normals.push({ x: sign * (ty / len), y: sign * (-tx / len) });
+      }
+      for (let i = 0; i < n; i++) {
+        const nm = normals[i];
+        if (!nm.x && !nm.y) continue;
+        const node = c.nodes[i];
+        node.x += nm.x * d; node.y += nm.y * d;
+        if (node.in) { node.in.x += nm.x * d; node.in.y += nm.y * d; }
+        if (node.out) { node.out.x += nm.x * d; node.out.y += nm.y * d; }
+      }
+    }
+  }
+
+  function refMapContours(contours, k) {
+    const out = (contours || []).map(c => ({
+      closed: !!c.closed,
+      nodes: (c.nodes || []).map(n => {
+        const pt = refMapPoint(n.x, n.y, k);
+        const node = { x: pt.x, y: pt.y, type: n.type || 'corner', in: null, out: null };
+        if (n.in) { const q = refMapPoint(n.in.x, n.in.y, k); node.in = { x: q.x, y: q.y }; }
+        if (n.out) { const q = refMapPoint(n.out.x, n.out.y, k); node.out = { x: q.x, y: q.y }; }
+        return node;
+      })
+    }));
+    if (k.serif) refFlareSerifs(out, k.serif);
+    if (k.bold) refEmbolden(out, k.bold, k.boldLimit);
+    return out;
+  }
+
+  function refMapAdvance(adv, k) {
+    return Math.max(0, (adv || 0) * k.sx + k.tracking);
+  }
+
+  function refTargetIndices() {
+    if (!ST.glyphs.length) return [];
+    const all = $('refAllFont');
+    if (all && all.checked) return ST.glyphs.map((g, i) => i);
+    const keep = new Set(gridDisplayChars());
+    const out = [];
+    ST.glyphs.forEach((g, i) => { if (keep.has(g.char)) out.push(i); });
+    return out;
+  }
+
+  function refUpdateTargets() {
+    const el = $('refTargets');
+    if (!el) return;
+    el.textContent = tf('refTargets', { n: refTargetIndices().length });
+  }
+
+  /* ── Aperçu (non destructif) ── */
+  let _refPreviewRaf = 0;
+  function refSchedulePreview() {
+    if (_refPreviewRaf) return;
+    _refPreviewRaf = requestAnimationFrame(() => {
+      _refPreviewRaf = 0;
+      refRenderPreview();
+    });
+  }
+
+  function refGlyphForChar(ch) {
+    let g = ST.glyphs.find(x => x.char === ch);
+    if (!g && ch === ' ') g = ST.glyphs.find(x => x.name === 'space');
+    return g || null;
+  }
+
+  function refRenderPreview() {
+    const cv = $('refPreviewCanvas');
+    if (!cv) return;
+    const p = refReadParams();
+    const k = refKernel(p);
+    const txtEl = $('refPreviewText');
+    const text = (txtEl && txtEl.value) || REF_PREVIEW_TEXT;
+    const items = [];
+    for (const ch of text) {
+      const g = refGlyphForChar(ch);
+      if (!g) {
+        items.push({ contours: [], adv: k.upem * 0.32 * k.sx + k.tracking });
+        continue;
+      }
+      items.push({ contours: refMapContours(g.contours || [], k), adv: refMapAdvance(g.advanceWidth, k) });
+    }
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth || 320;
+    const h = cv.clientHeight || 132;
+    cv.width = Math.max(1, Math.round(w * dpr));
+    cv.height = Math.max(1, Math.round(h * dpr));
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    // Boîte englobante du texte transformé (positions d'avance comprises).
+    let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity, pen = 0, any = false;
+    for (const it of items) {
+      for (const c of it.contours) {
+        for (const n of c.nodes) {
+          for (const pt of [n, n.in, n.out]) {
+            if (!pt) continue;
+            any = true;
+            const X = pen + pt.x;
+            if (X < xMin) xMin = X;
+            if (X > xMax) xMax = X;
+            if (pt.y < yMin) yMin = pt.y;
+            if (pt.y > yMax) yMax = pt.y;
+          }
+        }
+      }
+      pen += it.adv;
+    }
+    if (!any) return;
+
+    const spanX = Math.max(1, xMax - xMin);
+    const spanY = Math.max(1, yMax - yMin);
+    const pad = 10;
+    const s = Math.min((w - pad * 2) / spanX, (h - pad * 2) / spanY, 40);
+    const ox = (w - spanX * s) / 2 - xMin * s;
+    const oy = (h - spanY * s) / 2 + yMax * s;
+
+    // Ligne de base (repère de lecture).
+    ctx.save();
+    ctx.strokeStyle = 'rgba(128,128,128,.3)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.moveTo(0, oy);
+    ctx.lineTo(w, oy);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.scale(s, -s);
+    pen = 0;
+    for (const it of items) {
+      if (it.contours.length) {
+        ctx.save();
+        ctx.translate(pen, 0);
+        drawContoursFill(ctx, it.contours);
+        ctx.restore();
+      }
+      pen += it.adv;
+    }
+    ctx.restore();
+  }
+
+  /* ── Appliquer / annuler ── */
+  function refApply() {
+    if (!ST.glyphs.length) return;
+    const p = refReadParams();
+    if (refIsNeutral(p)) { toast(t('refNothing'), true); return; }
+    const idx = refTargetIndices();
+    if (!idx.length) { toast(t('refNoGlyph'), true); return; }
+    const k = refKernel(p);
+    const items = [];
+    idx.forEach(i => {
+      const g = ST.glyphs[i];
+      items.push({ i: i, contours: g.contours, advanceWidth: g.advanceWidth, dirty: !!g.dirty });
+      g.contours = refMapContours(g.contours, k);
+      g.advanceWidth = refMapAdvance(g.advanceWidth, k);
+      g.dirty = true;
+    });
+    ST.refactorUndo = { items: items, wasDirty: ST.dirty };
+    ST.dirty = true;
+    // L'historique de l'éditeur ne décrit plus l'état courant : on repart de zéro.
+    ST.undoStack = [];
+    ST.redoStack = [];
+    $('modifiedChip').style.display = 'inline-flex';
+    $('refUndo').disabled = false;
+    scheduleAutoSave();
+    buildGlyphGrid();
+    if (ST.editing) { updateSidePanel(); editorRender(); }
+    refResetParams();
+    refUpdateTargets();
+    toast(tf('refApplied', { n: idx.length }));
+  }
+
+  function refUndoLast() {
+    const u = ST.refactorUndo;
+    if (!u) return;
+    u.items.forEach(it => {
+      const g = ST.glyphs[it.i];
+      if (!g) return;
+      g.contours = it.contours;
+      g.advanceWidth = it.advanceWidth;
+      g.dirty = !!it.dirty;
+    });
+    ST.refactorUndo = null;
+    ST.dirty = !!u.wasDirty;
+    ST.undoStack = [];
+    ST.redoStack = [];
+    $('modifiedChip').style.display = ST.dirty ? 'inline-flex' : 'none';
+    $('refUndo').disabled = true;
+    scheduleAutoSave();
+    buildGlyphGrid();
+    if (ST.editing) { updateSidePanel(); editorRender(); }
+    refResetParams();
+    refUpdateTargets();
+    toast(t('refUndone'));
+  }
+
+  /* ── Ouverture / fermeture / bindings ── */
+  function isRefactorOpen() {
+    const p = $('refactorOverlay');
+    return !!(p && p.classList.contains('open'));
+  }
+
+  function openRefactor() {
+    if (!ST.glyphs.length) return;
+    const txt = $('refPreviewText');
+    if (txt && !txt.value) txt.value = REF_PREVIEW_TEXT;
+    refResetParams();
+    // La trappe pousse l'interface : la classe sur <body> réserve sa largeur
+    // à la grille comme à l'éditeur, si bien que le panneau TRANSFORMATIONS /
+    // CONTOURS / MÉTRIQUES / REPÈRES reste collé à sa gauche.
+    $('refactorOverlay').classList.add('open');
+    $('refactorOverlay').setAttribute('aria-hidden', 'false');
+    $('refactorOverlay').removeAttribute('inert');
+    document.body.classList.add('ref-open');
+    $('btnGlobalRefactor').classList.add('active');
+    $('refUndo').disabled = !ST.refactorUndo;
+    refUpdateTargets();
+    // Le canvas n'a ses dimensions qu'une fois la trappe déployée.
+    requestAnimationFrame(refRenderPreview);
+    setTimeout(refRenderPreview, 300);
+  }
+
+  function closeRefactor() {
+    $('refactorOverlay').classList.remove('open');
+    $('refactorOverlay').setAttribute('aria-hidden', 'true');
+    $('refactorOverlay').setAttribute('inert', '');
+    document.body.classList.remove('ref-open');
+    $('btnGlobalRefactor').classList.remove('active');
+  }
+
+  function bindRefactor() {
+    const btn = $('btnGlobalRefactor');
+    if (!btn) return;
+    btn.addEventListener('click', () => { if (isRefactorOpen()) closeRefactor(); else openRefactor(); });
+    $('btnCloseRefactor').addEventListener('click', closeRefactor);
+    $('refCancel').addEventListener('click', closeRefactor);
+    // Le redimensionnement de la trappe (ouverture animée, fenêtre) redessine
+    // l'aperçu à la bonne largeur.
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => refSchedulePreview());
+      ro.observe($('refactorOverlay'));
+    }
+    $('refApply').addEventListener('click', refApply);
+    $('refReset').addEventListener('click', refResetParams);
+    $('refUndo').addEventListener('click', refUndoLast);
+    $('refAllFont').addEventListener('change', refUpdateTargets);
+    const txt = $('refPreviewText');
+    if (txt) txt.addEventListener('input', refSchedulePreview);
+    REF_KEYS.forEach(k => {
+      const sl = $('ref-' + k), nm = $('ref-' + k + '-num');
+      if (!sl || !nm) return;
+      sl.addEventListener('input', () => { nm.value = sl.value; refSchedulePreview(); });
+      nm.addEventListener('input', () => {
+        if (nm.value === '' || nm.value === '-' || nm.value === '.') return;
+        const v = parseFloat(nm.value);
+        if (!isFinite(v)) return;
+        sl.value = String(v);
+        refSchedulePreview();
+      });
+      // Le curseur borne la valeur : on réaligne le champ sur ce qui est retenu.
+      nm.addEventListener('change', () => { nm.value = sl.value; refSchedulePreview(); });
+    });
   }
 
   /* ── Init ── */
@@ -2782,6 +3338,8 @@
     openEditor, buildGlyphGrid, editorSetTool, editorSetSel,
     editorZoom, editorFit, editorZoomPct, snapshotGlyph,
     markDirty, runAutoSave, scheduleAutoSave, applySfObject,
-    exportSfObject: buildSfObject
+    exportSfObject: buildSfObject,
+    openRefactor: openRefactor, closeRefactor: closeRefactor, applyRefactor: refApply,
+    undoRefactor: refUndoLast
   };
 })();

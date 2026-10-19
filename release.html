@@ -849,6 +849,53 @@ footer, footer a { color: var(--after-text-color); }
 
 </article>
 
+<!-- ===== SUPER PRINT v1.7.677 — LA POLICE VARIABLE SE RÈGLE AU CRAN PRÈS, ET LE PDF
+     SUIT ENFIN LA GRAISSE CHOISIE. Audit demandé sur l'import d'une police variable : deux
+     défauts réels, tous deux mesurés, plus l'interlettrage dans le panneau.
+
+     (1) LE SÉLECTEUR DE GRAISSE N'OFFRAIT QU'UN CRAN.
+     MESURÉ après import d'une police variable (table fvar « wght 400–900 ») : le panneau
+     « Police variable » proposait bien un curseur de 400 à 900 au pas de 1, mais le
+     sélecteur « Graisse » de la colonne typographique n'affichait qu'UNE option, « 400 ».
+     Cause : `fontWeights` n'était alimenté que par le plug-in Google Fonts, et
+     `_spSetFontWeights` — le seul point d'entrée — filtrait sur `/^[1-9]00$/`, donc
+     rejetait 450, 550, 650… c'est-à-dire exactement les crans qu'une police variable sait
+     dessiner. Pire : `applyFontFamily` ramène toute graisse absente de la liste à
+     `availableWeights[0]`, donc toucher à la famille REMETTAIT le bloc à 400.
+     Corrigé : l'import publie la plage réelle de l'axe lue dans le fichier, au pas de 10
+     (51 crans pour 400–900, contre 6 pour le plug-in Google), et le filtre accepte tout
+     entier de 1 à 1000. Vérifié sur le code livré : 51 crans, doublons supprimés, liste
+     triée, valeurs hors bornes écartées.
+
+     (2) LE PDF EMBARQUAIT TOUJOURS LA GRAISSE PAR DÉFAUT.
+     C'est le défaut le plus grave, et il ne se voyait pas à l'écran. `coordsDepuisCle`
+     — la fonction qui dit à fontkit quelle INSTANCE dessiner — exigeait un suffixe de
+     LARGEUR (« |d87.5 ») et rendait `null` sinon. Or ce suffixe n'est écrit que pour
+     l'axe `wdth` : une police variable qui n'a QUE la graisse (Bodoni Moda, Playfair,
+     Roboto, Montserrat, Inter…) n'en avait jamais. Résultat : l'aperçu montrait 550, le
+     PDF embarquait 400. Mesuré avec le fontkit livré sur trois polices réelles —
+     Playfair : largeur du « H » 673 px à 400, 703 px à 550, 773 px à 900 ; Roboto et
+     Montserrat varient de la même façon, y compris aux crans intermédiaires. La fonction
+     rend maintenant les coordonnées dès qu'une graisse est demandée, mais SEULEMENT si la
+     famille est connue comme variable (présence de son fvar dans le registre) : une
+     police statique garde exactement son ancien comportement — vérifié sur 8 clés, dont
+     « anton|700|normal » et « outfit|400|normal », qui rendent toujours null.
+
+     (3) L'INTERLETTRAGE ENTRE DANS LE PANNEAU DE LA POLICE VARIABLE.
+     Demande utilisateur. Le panneau juxtapose désormais une piste « Interlettrage
+     (tracking) » de −200 à 1000, qui pilote `charSpacing` — la propriété que Fabric
+     persiste déjà et que l'export PDF applique au caractère près
+     (`charSpacing / 1000 × corps`). Ce n'est pas un axe OpenType et la piste ne
+     prétend pas l'être : la valeur ne part donc pas dans `spVarFont`, elle reste là où
+     le document la range déjà, et le champ « Esp. lettres » existant reste synchronisé.
+
+     (4) SUPER TYPO — GLOBAL REFACTOR.
+     Le changement livré côté SuperTyPo : une trappe « Global Refactor » (topbar, ou
+     touche G) avec onze réglages — largeur, hauteur, italique, graisse, corps,
+     empattement, interlettrage, talus de tête, talus de pied, hampe, jambage — aperçu en
+     direct, application à toute la police, réinitialisation et annulation du dernier
+     passage. Rien n'est écrit dans les glyphes avant « Appliquer ». -->
+
 <!-- ===== SUPER PRINT v1.7.676 — L'APERÇU DU MOTIF SE CENTRE, ET LE PDF CESSE D'EMBARQUER
      SOIXANTE-DOUZE POLICES POUR RIEN. Trois corrections, toutes mesurées avant et après.
 
