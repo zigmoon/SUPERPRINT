@@ -76,17 +76,26 @@
       "url": "https://superprint.cc/",
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
-      "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.678",
+      "operatingSystem": "Windows 10/11, macOS (Intel et Apple silicon), Linux x86_64 — et tout navigateur moderne (Chrome 90+, Firefox 90+, Safari 14+, Edge 90+)",
+      "softwareVersion": "1.7.679",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
         "Mise en page multi-pages professionnelle",
         "Export PDF CMYK imprimable",
         "Export PDF, PNG, JPG, JSON, .sp",
+        "Export EPS vectoriel pour l'imprimeur",
+        "Export Word (.docx) — une image par page",
+        "Export EPUB et HTML (texte vectoriel sélectionnable)",
         "Import PDF, DOCX, images",
         "Import Word / OpenDocument / PDF",
         "Import IDML (InDesign) — blocs texte, stories et mise en page",
+        "Bibliothèque de plug-ins — Contrôle avant impression, Global Refactor, Motif, Polices Google",
+        "Motif : quinze formes, sept symétries, aperçu en direct sur bloc ou page entière",
+        "Global Refactor : format, marges, colonnes, styles et palette en un seul passage",
+        "Polices Google installables depuis l'application, embarquées dans le fichier",
+        "Polices variables — graisse au cran près et interlettrage",
+        "Applications de bureau Windows, macOS et Linux",
         "Tons directs Pantone avec nom court à l'affichage",
         "Séparation des couches : une couche PDF nommée par Pantone (espace /Separation, ISO 32000-2)",
         "Profils ICC (.icc / .icm) pour cadrer la conversion",
@@ -106,6 +115,7 @@
         "PWA — installable comme application de bureau",
         "Mode hors-ligne",
         "Sans installation — fonctionne dans tout navigateur moderne",
+        "Installateurs natifs .exe / .msi, .dmg (Intel et Apple silicon), .AppImage / .deb / .rpm",
         "Sans abonnement ni compte"
       ],
       "offers": {
@@ -548,7 +558,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
-/* 🆕 v1.7.678 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+/* 🆕 v1.7.679 — LE MENU NE SE REFERME PLUS EN CHEMIN.
    Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
    du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
    couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
@@ -665,7 +675,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    concurrencer le nom de l'application — 8 px, sans approche forcée, et un peu
    effacé pour qu'il se lise comme une précision et non comme un titre. */
 .nav-dd-app-ver { font-family: var(--f-mono); font-size: 8px; letter-spacing: .02em; color: var(--muted); opacity: .85; }
-/* 🆕 v1.7.678 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+/* 🆕 v1.7.679 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
    peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
@@ -707,7 +717,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
   color: var(--paper); background: var(--ink);
 }
-/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.678) ══════════════
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.679) ══════════════
    Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
    plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
    systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
@@ -876,7 +886,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-kicker::before { content:''; display: none; }
 /* #hero h1 SEULE, PAS h1 EN GÉNÉRAL : les pages tarif, rock, doc, api et
    install ont leur propre h1, et leur taille ne doit pas bouger avec l'accueil.
-   🆕 v1.7.678 — LE TITRE RÉTRÉCIT ENCORE. Demande utilisateur : « l'édition
+   🆕 v1.7.679 — LE TITRE RÉTRÉCIT ENCORE. Demande utilisateur : « l'édition
    créative nouvelle génération, typo un peu plus petite ». MESURÉ AVANT :
    #hero h1 { clamp(38px, 6.6vw, 88px) } → 88 px à 1600 px de large, deux lignes
    sur 180 px de haut.
@@ -908,14 +918,14 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   margin: 0 -.14em;
 }
 /* ══════════════ COMPATIBILITÉ SYSTÈMES — TROIS LOGOS, TROIS LIENS ══════════════
-   🆕 v1.7.678 — DEMANDE UTILISATEUR : « met les 3 logos mac pc linux et info
+   🆕 v1.7.679 — DEMANDE UTILISATEUR : « met les 3 logos mac pc linux et info
    Windows macOS Linux un peu plus grand (ceux en dessous les 3 boîtes (app) ils
    sont tout petit) et met un lien qui pointe vers les installeurs sur github ».
    ⚠️ MESURÉ AVANT : 10 px de corps, pictogrammes de 14 × 14, ligne haute de 17 px,
    et AUCUN lien. C'était la plus petite écriture du hero, alors que c'est elle qui
    dit sur quoi le logiciel tourne.
 
-   🆕 v1.7.678 — DEUXIÈME RETOUR, ET IL RACCOURCIT PLUS QU'IL N'ALLONGE :
+   🆕 v1.7.679 — DEUXIÈME RETOUR, ET IL RACCOURCIT PLUS QU'IL N'ALLONGE :
    « supprimer Installateurs et COMPATIBLE, mettre que les logos avec le lien
    GitHub ». Le mot d'introduction (« Compatible » / « Runs on » / 対応OS) et la
    gélule « Installateurs » DISPARAISSENT donc du visible. Il ne reste que les
@@ -932,7 +942,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    cliquable est plus grande que le dessin (padding 4px), pour qu'on ne vise pas
    un carré de 26 px à la souris.
 
-   🆕 v1.7.678 — UN FILET DE TÊTE, AVEC « INSTALLEUR » AU MILIEU.
+   🆕 v1.7.679 — UN FILET DE TÊTE, AVEC « INSTALLEUR » AU MILIEU.
    Demande utilisateur : « avant les 3 icônes Windows macOS Linux j'aimerais un
    séparateur fin centré avec au centre la typo Installeur (même typo que Le n°1 de
    la PAO gratuite) ».
@@ -973,23 +983,29 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   justify-content: center;
 }
 .hero-os-list a {
-  display: inline-flex; align-items: center; gap: 9px;
-  padding: 4px; text-decoration: none; color: var(--muted);
-  font-family: var(--f-mono); font-size: 13px; letter-spacing: .1em;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 3px; text-decoration: none; color: var(--muted);
+  font-family: var(--f-mono); font-size: 12px; letter-spacing: .1em;
   /* ⚠️ LA CASSE RÉELLE DES MARQUES, PAS DES CAPITALES. `text-transform` n'est PAS
      hérité d'un parent ici (plus de `uppercase` sur `.hero-os`), mais on le pose
      explicitement : la règle du site met les libellés en capitales à plusieurs
      endroits, et « MACOS » est une faute de marque. */
   text-transform: none;
 }
-/* ⚠️ v1.7.678 — TAILLE D'ORIGINE RÉTABLIE. La v1.7.678 avait réduit ce trio
-   (icônes 26 → 20, texte 13 → 11,5 px) sur la demande « un peu trop gros ».
-   Retour utilisateur après essai : « finalement c'était mieux avant la taille ».
-   On revient donc EXACTEMENT aux valeurs d'avant — 26 × 26, 13 px, écart 9 px,
-   rembourrage 4 px — et la réduction ne doit pas revenir par une autre feuille :
-   c'est ici, et nulle part ailleurs, que la taille du trio se décide.
-   Mesuré à 1440 px : lien 34 px de haut, trio 336 px, sous un libellé de 11 px. */
-.hero-os-list a img { display: block; width: 26px; height: 26px; flex: 0 0 auto; }
+/* ⚠️ v1.7.679 — LE TRIO EST RÉDUIT D'UN CRAN, PAS DE DEUX.
+   Historique mesuré de ce bloc, pour que personne ne refasse l'aller-retour :
+     · 26 px / 13 px  → demande « un peu trop gros » ;
+     · 20 px / 11,5 px → retour « finalement c'était mieux avant » ;
+     · 26 px / 13 px  → retour à la taille d'origine ;
+     · 22 px / 12 px  → DEMANDE ACTUELLE : « finalement Windows Mac Linux sont un
+       peu trop grand les logos et la typo ». C'est donc le cran intermédiaire
+       qui est retenu : assez pour que le trio cesse de dominer le hero, assez
+       peu pour ne pas redevenir illisible sous un libellé de 11 px.
+   MESURÉ à 1600 px de large, langue FR : icône 22 × 22, libellé 12 px, écart
+   8 px, rembourrage 3 px — le trio passe de 336 × 34 px à 303 × 28 px. Rien
+   d'autre ne bouge : les filets, le libellé « Installeur » et sa typographie
+   restent ceux du kicker. */
+.hero-os-list a img { display: block; width: 22px; height: 22px; flex: 0 0 auto; }
 /* ⚠️ AUCUN GROSSISSEMENT AU SURVOL — DEMANDE EXPLICITE : « ne grossis rien au
    survol please ». Le retour visuel passe donc par le TEXTE, qui s'encadre d'un
    filet d'encre : on voit que c'est cliquable sans que rien ne bouge sous la
@@ -1003,9 +1019,9 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-os-list a:focus-visible .hero-os-nom { border-bottom-color: var(--ink); color: var(--ink); }
 .hero-os-list a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 @media (max-width: 620px) {
-  .hero-os-list { gap: 4px 18px; }
-  .hero-os-list a { font-size: 12px; gap: 7px; }
-  .hero-os-list a img { width: 22px; height: 22px; }
+  .hero-os-list { gap: 4px 16px; }
+  .hero-os-list a { font-size: 11.5px; gap: 7px; }
+  .hero-os-list a img { width: 20px; height: 20px; }
 }
 
 .hero-dots {
@@ -1017,7 +1033,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-dots .dot.m { background: var(--magenta); }
 .hero-dots .dot.y { background: var(--yellow); }
 .hero-dots .dot.k { background: var(--ink); }
-/* 🆕 v1.7.678 — L'INTERLIGNE DU HERO PASSE DE 1,75 À 1,45.
+/* 🆕 v1.7.679 — L'INTERLIGNE DU HERO PASSE DE 1,75 À 1,45.
    Demande utilisateur : « Ici l'interlignage est trop fort, réduis-le ! » — la
    phrase de l'accroche, celle qui commence par « SuperPrint rend la PAO
    accessible… ». MESURÉ AVANT : corps de 19 px, interligne de 33,25 px, soit un
@@ -1438,7 +1454,7 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 .cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
 .cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
 
-/* ══════════════ 🆕 v1.7.678 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
+/* ══════════════ 🆕 v1.7.679 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
    DERNIÈRE ZONE AVANT LE PIED DE PAGE. Elle ne double pas les trois entrées du
    haut de page, elle les prolonge : les entrées ouvrent l'application en ligne et
    ne disent rien des versions ; ici on donne le numéro de version, les trois
@@ -1652,7 +1668,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 }
 .foot-note { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .06em; color: rgba(139,129,114,.8); }
 /* ══════════════ RÉSEAUX — DANS LE COLOPHON ══════════════
-/* 🆕 v1.7.678 — LA RANGÉE SOCIALE DU COLOPHON A ÉTÉ RETIRÉE.
+/* 🆕 v1.7.679 — LA RANGÉE SOCIALE DU COLOPHON A ÉTÉ RETIRÉE.
    ⚠️ ELLE ÉTAIT AU MAUVAIS ENDROIT, ET L'UTILISATEUR L'A DIT APRÈS L'AVOIR VUE :
    « Footer de superprint.cc la barre qui est fixe sur la page et pas le footer de
    la page a droite de github on va ajouter notre discord ». Le mot « footer »
@@ -1735,6 +1751,103 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
   font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--muted);
   margin-top: 14px; text-transform: uppercase;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   🆕 v1.7.679 — LES CINQ CAPTURES, AVANT LA LISTE.
+   Demande utilisateur : « ajoute des shoots dans la partie features avant la
+   liste, montre les plug-ins, montre le motif, montre le refactor, dis qu'on
+   ouvre Word et plein d'autres formats ; la partie doit donner plus envie, et
+   après garde la liste ».
+
+   ⚠️ ELLES SONT HORS DE TOUT SOUFFLET, ET C'EST LE POINT. Les douze captures du
+   bloc « Les outils, un par un » sont déjà dans la page, mais elles demandent un
+   clic pour exister : personne ne les voit en arrivant. Ces cinq-là se montrent,
+   puis la liste vient dessous.
+
+   ⚠️ CE SONT DE VRAIES CAPTURES, PRISES DANS L'APPLICATION, pas des maquettes :
+   1600 × 1000, même cadrage et même poids que les planches existantes
+   (`img/landing/`). Chacune porte un texte alternatif qui décrit ce qu'elle
+   montre, et aucune ne promet autre chose que ce que l'écran affiche — le
+   bouton Word dit bien « une image par page », l'EPS qu'il vise l'imprimeur.
+
+   ⚠️ LA GRILLE EST EN 4 COLONNES AVEC UNE PREMIÈRE CARTE QUI LES PREND TOUTES :
+   sur grand écran, une image d'appel pleine largeur puis quatre cartes deux par
+   deux. En dessous de 980 px chaque carte passe sur toute la largeur — les
+   libellés en trois langues ne tiennent pas dans une demi-colonne de tablette.
+   ════════════════════════════════════════════════════════════════════════════ */
+.spv { margin: clamp(18px,2.4vw,30px) 0 clamp(22px,2.8vw,34px); }
+.spv-tete { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 22px; margin-bottom: 12px; }
+.spv-k {
+  flex: 0 0 auto; font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .24em; text-transform: uppercase; color: var(--magenta);
+}
+.spv-t {
+  font-family: var(--f-display); font-size: clamp(17px,2vw,24px); font-weight: 700;
+  line-height: 1.22; letter-spacing: -.01em; color: var(--ink); margin: 0;
+}
+.spv-t em { font-style: italic; color: var(--magenta); }
+.spv-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 1px; background: var(--line); border: 1px solid var(--line);
+}
+.spv-card {
+  grid-column: span 2; margin: 0; display: flex; flex-direction: column;
+  background: var(--paper-3); position: relative;
+  transition: background .3s var(--ease);
+}
+.spv-card:hover { background: var(--white); }
+.spv-hero { grid-column: span 4; }
+.spv-img { overflow: hidden; border-bottom: 1px solid var(--line); background: var(--paper-2); }
+.spv-img img { display: block; width: 100%; height: auto; }
+.spv-body { padding: clamp(13px,1.5vw,19px) clamp(14px,1.7vw,22px) clamp(15px,1.7vw,21px); }
+.spv-num {
+  display: block; font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .2em; color: var(--cyan); margin-bottom: 7px;
+}
+.spv-body h3 {
+  font-family: var(--f-caps); font-size: clamp(16px,1.7vw,20px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.08; color: var(--ink); margin: 0 0 7px;
+}
+.spv-hero .spv-body h3 { font-size: clamp(19px,2.1vw,26px); }
+.spv-body p { font-size: 13px; line-height: 1.68; color: var(--ink-soft); margin: 0; }
+.spv-body p strong { color: var(--ink); font-weight: 600; }
+.spv-body code {
+  font-family: var(--f-mono); font-size: .86em; padding: 1px 5px;
+  background: var(--paper); border: 1px solid var(--line); color: var(--ink);
+}
+/* la bande de clôture : ce qui entre, ce qui sort, et où ça tourne */
+.spv-bande {
+  margin-top: clamp(16px,2vw,24px); padding: clamp(15px,1.9vw,22px) clamp(16px,2.2vw,26px);
+  border: 1px solid var(--ink); border-left-width: 4px; background: var(--paper-3);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 26px;
+}
+.spv-bande-txt {
+  font-family: var(--f-display); font-style: italic; font-size: clamp(14px,1.7vw,18px);
+  line-height: 1.5; color: var(--ink); max-width: 640px; margin: 0;
+}
+.spv-bande-txt .spv-mono {
+  font-family: var(--f-mono); font-style: normal; font-size: .84em; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--magenta);
+}
+.spv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.spv-chip {
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em;
+  padding: 7px 11px; border: 1px solid var(--line-strong); color: var(--ink-soft);
+  background: transparent;
+}
+.spv-chip.out { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.spv-chip.out::before { content: '↗ '; color: var(--yellow); font-weight: 700; }
+.spv-chip.in::before { content: '↙ '; color: var(--cyan); font-weight: 700; }
+@media (max-width: 980px) {
+  .spv-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .spv-card, .spv-hero { grid-column: span 2; }
+}
+@media (max-width: 620px) {
+  .spv-grid { grid-template-columns: minmax(0,1fr); }
+  .spv-card, .spv-hero { grid-column: span 1; }
+  .spv-bande { flex-direction: column; align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) { .spv-card { transition: none; } }
 
 /* ——— la barre : le geste unique ——— */
 details.spf-fold { border-top: 2px solid var(--ink); margin-top: clamp(26px,3.4vw,44px); }
@@ -2097,7 +2210,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
-  /* 🎯 v1.7.678 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+  /* 🎯 v1.7.679 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
      Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
      ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
      texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
@@ -2347,7 +2460,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.678 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.679 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -2355,14 +2468,14 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    correspondante. */
 .fondations-grid {
   display: grid;
-  /* 🆕 v1.7.678 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+  /* 🆕 v1.7.679 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
      Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
      bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
      363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
      quatre cases d'information se partagent le reste à parts égales. */
   grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.678 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+  /* 🆕 v1.7.679 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
      353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
      la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
@@ -2392,14 +2505,14 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .fondation-chiffre { font-family: var(--f-mono); font-size: 1.02em; color: var(--ink); font-weight: 600; }
 .fondation-date { font-family: var(--f-mono); font-size: 0.85em; color: var(--muted); }
 /* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
-/* 🆕 v1.7.678 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
+/* 🆕 v1.7.679 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
    Demande : « on met juste les marques au premier abord ; au survol la marque disparaît
    et affiche la phrase ».
    ⚠️ LES DEUX SONT DANS LA MÊME CELLULE DE GRILLE (grid-area 1/1) : la hauteur du bloc
    vaut donc le MAXIMUM des deux, et la barre ne saute pas quand la phrase apparaît.
    Mesuré : la phrase npm passe à 2 lignes en japonais à 1280 px (38 px) quand le nom en
    fait 18 — une mise en page en flux aurait fait grandir la case de 20 px au survol.
-   🆕 v1.7.678 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
+   🆕 v1.7.679 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
    Retour utilisateur : « sur les grands écrans on pouvait garder finalement la petite
    phrase qui était en dessous grise, désolé… garde le comportement actuellement pour
    les écrans moyens (les petits laptops, les tablettes) ».
@@ -2408,7 +2521,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    ⚠️ SOUS 1024 px LA PHRASE RESTE MASQUÉE : à cette largeur les quatre cases tiennent
    à peine le nom, et une deuxième ligne ferait passer la barre de 73 à 254 px
    (mesuré sur `index.html`, mise en page mobile). */
-/* 🆕 v1.7.678 — LE CROISEMENT AU SURVOL DISPARAÎT, ET LA PHRASE SE RESSERRE.
+/* 🆕 v1.7.679 — LE CROISEMENT AU SURVOL DISPARAÎT, ET LA PHRASE SE RESSERRE.
    Demande : « la petite ligne de texte engrisée qui sert de description sous GitHub,
    npm, Discord, etc. doit disparaître dès 1200 px aussi » — et, sur les grands
    écrans où elle reste, « la typo GitHub/Discord n'est pas assez proche de la petite
@@ -2436,7 +2549,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   .fondation-desc { margin-top: -5px; }
 }
 
-/* ═══ v1.7.678 — LES LIGNES DE TEXTE DESCENDENT DE 2 px, LA PHRASE DE 2 DE PLUS ═══
+/* ═══ v1.7.679 — LES LIGNES DE TEXTE DESCENDENT DE 2 px, LA PHRASE DE 2 DE PLUS ═══
    Demandes : « mets la petite ligne grise en dessous les marques un petit peu plus
    bas » et « globalement dans le footer fixe, on devrait redescendre les lignes de
    texte à droite des logos de quelques pixels (2 px) ».
@@ -2462,7 +2575,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .fondation-txt { transform: translateY(2px); }
 .fondation-desc { transform: translateY(2px); }
 /* Le nom garde son soulignement d'affordance : c'est la seule marque de lien là où
-   la phrase est absente. ⚠️ LA BORNE SUIT CELLE DE LA PHRASE (1200 px, v1.7.678) : à
+   la phrase est absente. ⚠️ LA BORNE SUIT CELLE DE LA PHRASE (1200 px, v1.7.679) : à
    1024–1199 px la phrase n'existe plus, mais le nom doit rester cliquable à l'œil. */
 @media (max-width: 1199.9px) {
   .fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
@@ -2473,7 +2586,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   .fondation-nom, .fondation-desc { transition: none; }
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-/* 🆕 v1.7.678 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+/* 🆕 v1.7.679 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
    Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
    ICON MÊME NOIR QUE RUST ».
    ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
@@ -2544,7 +2657,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
    toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
    elles se lisent sans qu'on aille les chercher.
-   🆕 v1.7.678 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   🆕 v1.7.679 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
    cette même barre.
 
    LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
@@ -2576,7 +2689,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     🆕 v1.7.678 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     🆕 v1.7.679 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
      À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
      des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
      DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
@@ -2594,7 +2707,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
      réservée devient exacte par construction. */
   .fondations {
-    /* ⚠️ v1.7.678 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
+    /* ⚠️ v1.7.679 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
        Mesuré sur rock.html : en pleine case GitHub, elementFromPoint rendait
        « li.rk-fn < div.container » — le contenu passait devant la barre, qui restait en
        z-index auto. La règle d'index.html (.container:has(.fondations) { z-index: 40 })
@@ -2618,7 +2731,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    /* 🆕 v1.7.678 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+    /* 🆕 v1.7.679 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
        Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
        desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
        d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
@@ -2647,13 +2760,13 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
 @media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
 
-/* ═══ NOMS SEULS SOUS 1200 px (v1.7.678) ═══
+/* ═══ NOMS SEULS SOUS 1200 px (v1.7.679) ═══
    Demande utilisateur : « quand le footer fixe passe en dessous de 1024 px, mets
    que GitHub, Discord, npm et Rust ; ne mets pas les petites phrases en gris en
    dessous à cette résolution ». La règle est bornée des DEUX côtés : sous 901 px
    la barre n'est plus fixe (liste empilée du fil du document), et les
    descriptions y ont la place — cette mise en page n'est pas touchée.
-   ⚠️ v1.7.678 — LA BORNE PASSE DE 1024 À 1200 px. Demande : « la petite ligne de
+   ⚠️ v1.7.679 — LA BORNE PASSE DE 1024 À 1200 px. Demande : « la petite ligne de
    texte engrisée doit disparaître dès 1200 px aussi ».
    Le texte est MASQUÉ par `display: none`, et il faut le dire exactement : il
    disparaît donc AUSSI pour un lecteur d'écran. C'est assumé : la marque seule
@@ -2935,7 +3048,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 @media (prefers-reduced-motion: reduce) { .sp-wa { transition: none; } }
 @media print { .sp-wa { display: none; } }
 
-/* 🆕 v1.7.678 — LA BULLE FLOTTANTE N'EXISTE PLUS QU'EN MOBILE.
+/* 🆕 v1.7.679 — LA BULLE FLOTTANTE N'EXISTE PLUS QU'EN MOBILE.
    Demande utilisateur : « mets le bouton WhatsApp directement dans la barre plutôt
    que flottant, cependant garde-le bien en mobile (cette bulle WhatsApp est à
    conserver en mobile) ». Sous 901 px la barre n'est plus fixe — elle défile avec
@@ -2951,7 +3064,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 /* _PAGE_ROCK_588 — la page ROCK v1 vit désormais dans rock.html. */
 
-/* ═══ VERSION TÉLÉCHARGEABLE — MASQUÉE TANT QU'ELLE N'EST PAS CONFIRMÉE (v1.7.678) ═══
+/* ═══ VERSION TÉLÉCHARGEABLE — MASQUÉE TANT QU'ELLE N'EST PAS CONFIRMÉE (v1.7.679) ═══
    Le numéro affiché doit être celui qu'on TÉLÉCHARGE. Il vient de GitHub
    (JS/versions-github.js) et de nulle part ailleurs. Tant qu'il n'a pas été lu,
    il reste invisible : un numéro faux est pire qu'aucun numéro.
@@ -2963,7 +3076,7 @@ html[data-sp-version="ok"] .brand-ver,
 html[data-sp-version="ok"] .nav-dd-app-ver,
 html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 
-/* ═══ v1.7.678 — ESSAI : LA BANDE DES MODÈLES PASSE À L'ENCRE ═══
+/* ═══ v1.7.679 — ESSAI : LA BANDE DES MODÈLES PASSE À L'ENCRE ═══
    Demande utilisateur : « fais un essai où le fond des templates sur la page de
    présentation est noir (le noir du projet) et le fond des templates actuel passe
    sous les deux auteurs dans la page ».
@@ -2993,7 +3106,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 }
 #templates .tpl-arrow:hover { background: var(--paper-3); border-color: var(--paper-3); }
 /* L'ancien fond de la bande des modèles passe sous les deux auteurs.
-   ⚠️ v1.7.678 — DEMANDE : « mets le fond de la boîte des auteurs plus clair ».
+   ⚠️ v1.7.679 — DEMANDE : « mets le fond de la boîte des auteurs plus clair ».
    C'était « --paper-2 » (#EFEAE0), un cran plus soutenu que le papier de la page.
    On prend « --paper-3 » (#FFFDF8), le papier le plus clair de la palette — un cran
    AU-DESSUS de « --paper » (#F7F3EC) qui habille la section précédente, pour que les
@@ -3018,7 +3131,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.678</span>
+  <span class="brand-ver">v1.7.679</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -3078,15 +3191,15 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
               <span class="nav-dd-os">PC — Windows</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.678</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.679</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.678</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.679</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.678</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.679</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
               </span>
@@ -3099,15 +3212,15 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
               <span class="nav-dd-os">MAC — macOS</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.678</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.679</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.678</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.679</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.678</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.679</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">Apple silicon</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
               </span>
@@ -3120,15 +3233,15 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
               <span class="nav-dd-os">LINUX</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.678</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.679</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.678</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.679</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.678</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.679</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.rpm" rel="noopener">.rpm</a></span>
             </span>
               </span>
@@ -3173,7 +3286,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
        que setLang() continue de marquer la langue choisie. -->
-  <!-- (v1.7.678 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
+  <!-- (v1.7.679 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
        la barre a été déplacé dans .nav-tools, qui reste visible sous 1000 px :
        il n'y a donc plus rien à dupliquer ici.) -->
   <div class="mm-lang">
@@ -3187,7 +3300,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.678</span>
+    <span>SuperPrint v1.7.679</span>
   </div>
 </div>
 
@@ -3205,7 +3318,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 <section id="hero">
   <div class="ghost" aria-hidden="true">PRINT</div>
   <div class="container">
-    <!-- 🆕 v1.7.678 — « 100% ONLINE » DEVIENT « GRATUITE ».
+    <!-- 🆕 v1.7.679 — « 100% ONLINE » DEVIENT « GRATUITE ».
          Demande utilisateur : « Le n°1 de la PAO 100% online (remplace par
          gratuit) ». Accord au féminin : le sujet est LA PAO (publication assistée
          par ordinateur). L'anglais et le japonais suivent le même déplacement —
@@ -3228,7 +3341,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 
       <a class="entry" href="app/index.html" style="--entry-accent:#00A7C7">
         <span class="entry-name">SuperPrint</span>
-        <!-- 🆕 v1.7.678 — « Le bureau de PAO complet : mise en page, prépresse,
+        <!-- 🆕 v1.7.679 — « Le bureau de PAO complet : mise en page, prépresse,
              export. » devient « Bureau de PAO de dernière génération. » Demande
              utilisateur, mot pour mot. La version anglaise et la japonaise suivent
              le même déplacement : elles décrivaient une LISTE DE FONCTIONS, elles
@@ -3261,7 +3374,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
     </div>
 
     <!-- L'ACCROCHE PASSE AVANT LE BLOC DES SYSTÈMES.
-         🆕 v1.7.678 — DEMANDE UTILISATEUR : « je pense que le texte [l'accroche] va
+         🆕 v1.7.679 — DEMANDE UTILISATEUR : « je pense que le texte [l'accroche] va
          au-dessus INSTALLEUR du coup ». Elle était après la barre des fondations,
          donc tout en bas du hero ; elle présente le produit AVANT qu'on propose de
          le télécharger, et c'est l'ordre qui se lit.
@@ -3270,7 +3383,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
     <p class="lead hero-lead" data-lang="en"><strong>SuperPrint</strong> makes professional layout accessible: not a clone, not a fork — written from scratch, today's most solid creation studio.</p>
     <p class="lead hero-lead" data-lang="ja"><strong>SuperPrint</strong> はプロの組版を身近にします。クローンでもフォークでもなく、ゼロから書かれた、今もっとも堅牢な制作スタジオです。</p>
     <!-- COMPATIBILITÉ SYSTÈMES — juste après les trois entrées.
-         🆕 v1.7.678 — TROIS LOGOS, RIEN D'AUTRE. Demande utilisateur : « supprimer
+         🆕 v1.7.679 — TROIS LOGOS, RIEN D'AUTRE. Demande utilisateur : « supprimer
          Installateurs et COMPATIBLE, mettre que les logos avec le lien GitHub ».
          Le mot d'introduction et la gélule ont donc disparu ; il ne reste que les
          trois pictogrammes, et CHACUN EST LE LIEN vers les installeurs. Un logo de
@@ -3283,7 +3396,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
          aux vingt et un fichiers (sept par application), exactement comme le
          sous-menu « Télécharger » du haut de page. -->
     <div class="hero-os">
-      <!-- 🆕 v1.7.678 — LE FILET DE TÊTE, « INSTALLEUR » AU MILIEU.
+      <!-- 🆕 v1.7.679 — LE FILET DE TÊTE, « INSTALLEUR » AU MILIEU.
            Demande utilisateur : « avant les 3 icônes Windows macOS Linux j'aimerais
            un séparateur fin centré avec au centre la typo Installeur (même typo que
            Le n°1 de la PAO gratuite) ». Le libellé est traduit : EN « Installers »,
@@ -3305,7 +3418,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
     <!-- ══════════════ FONDATIONS OPEN SOURCE — GitHub, npm, Rust ══════════════
          Placées SOUS les trois entrées, et volontairement plus discrètes : ce sont
          les briques techniques, pas des applications à ouvrir. QUATRE colonnes depuis la
-         v1.7.678 (Discord à droite de GitHub), et AUCUN panneau : les trois colonnes tombent dans le
+         v1.7.679 (Discord à droite de GitHub), et AUCUN panneau : les trois colonnes tombent dans le
          fond de page, séparées par des filets. -->
     <div class="fondations">
       <div class="fondations-grid">
@@ -3318,7 +3431,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
           </span>
         </a>
 
-        <!-- 🆕 v1.7.678 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
+        <!-- 🆕 v1.7.679 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
              Demande utilisateur, après avoir vu la première tentative reléguée au
              colophon : « Footer de superprint.cc LA BARRE QUI EST FIXE SUR LA PAGE
              et pas le footer de la page, à droite de github on va ajouter notre
@@ -3359,7 +3472,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
           </span>
         </a>
 
-            <!-- 🆕 v1.7.678 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
+            <!-- 🆕 v1.7.679 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
                  Demande utilisateur : « à la fin du footer fixe en carré mets le bouton
                  WhatsApp directement, cela sera plus simple directement dans la barre
                  plutôt que flottant ; cependant garde-le bien en mobile (cette bulle
@@ -3543,7 +3656,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
           </span>
           <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
         </a>
-        <!-- 🆕 v1.7.678 — « Theatre Play — 12p » N'EST PLUS PROPOSÉ ICI.
+        <!-- 🆕 v1.7.679 — « Theatre Play — 12p » N'EST PLUS PROPOSÉ ICI.
              Demande utilisateur : « sur la page de présentation n'affiche pas le template
              THEATRE PLAY - 12P ».
              ⚠️ LA CARTE EST COMMENTÉE, PAS SUPPRIMÉE : le modèle existe toujours et
@@ -3810,15 +3923,130 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
       <div class="section-label" data-lang="fr">L'inventaire de SuperPrint</div>
       <div class="section-label" data-lang="en">The SuperPrint inventory</div>
       <div class="section-label" data-lang="ja">SuperPrintの目録</div>
-<h2 data-lang="fr">La PAO, entièrement réinventée dans votre navigateur.</h2>
-      <h2 data-lang="en">DTP, entirely reinvented in your browser.</h2>
-      <h2 data-lang="ja">DTPを、ブラウザでまるごと作り直す。</h2>
-<p class="lead" data-lang="fr">Le bureau de PAO, le studio d'IA et le bureau typographique : trois applications, un seul projet, rien à installer. Chacune s'ouvre d'un clic, chacune travaille dans votre navigateur — et les maquettes passent de l'une à l'autre.</p>
-      <p class="lead" data-lang="en">The DTP desk, the AI studio and the type desk: three applications, one project, nothing to install. Each opens in one click, each works in your browser — and layouts travel from one to the next.</p>
-      <p class="lead" data-lang="ja">DTPデスク、AIスタジオ、書体デスク。3つのアプリ、ひとつのプロジェクト、インストール不要。どれもワンクリックで開き、ブラウザで動きます。レイアウトは行き来します。</p>
+<h2 data-lang="fr">La PAO, entièrement réinventée dans votre navigateur. Et sur votre bureau.</h2>
+      <h2 data-lang="en">DTP, entirely reinvented in your browser. And on your desktop.</h2>
+      <h2 data-lang="ja">DTPを、ブラウザでまるごと作り直す。デスクトップでも。</h2>
+<p class="lead" data-lang="fr">Le bureau de PAO, le studio d'IA et le bureau typographique : trois applications, un seul projet. Dans le navigateur d'un clic — ou installées sur Windows, macOS et Linux —, et les maquettes passent de l'une à l'autre.</p>
+      <p class="lead" data-lang="en">The DTP desk, the AI studio and the type desk: three applications, one project. One click in the browser — or installed on Windows, macOS and Linux — and layouts travel from one to the next.</p>
+      <p class="lead" data-lang="ja">DTPデスク、AIスタジオ、書体デスク。3つのアプリ、ひとつのプロジェクト。ブラウザならワンクリック、Windows・macOS・Linux ならインストールして使えます。レイアウトは行き来します。</p>
       <p class="spf-note" data-lang="fr">Tout est là, rangé dans l'ordre où l'on s'en sert : ouvrez le bloc qui vous intéresse, refermez-le ensuite.</p>
       <p class="spf-note" data-lang="en">Everything is here, in the order you use it: open the block you need, close it again afterwards.</p>
       <p class="spf-note" data-lang="ja">使う順に並んでいます。必要なブロックだけを開いて、また閉じてください。</p>
+    </div>
+
+    <!-- ═══ 🆕 v1.7.679 — LES CINQ CAPTURES, AVANT LA LISTE ═══════════════════
+         Demande utilisateur : « ajoute des shoots dans la partie features avant
+         la liste, montre les plug-ins, montre le motif, montre le refactor, dis
+         qu'on ouvre Word, et plein d'autres formats — la partie doit donner plus
+         envie, et après garde la liste ».
+
+         ⚠️ RIEN N'EST DÉPLACÉ : la liste des quinze outils et les sept autres
+         soufflets restent exactement là où ils étaient, sous ce bloc. On ajoute
+         une entrée en matière visuelle, on ne réorganise pas.
+
+         ⚠️ LES CINQ IMAGES SONT DE VRAIES CAPTURES DE L'APPLICATION, prises au
+         même cadrage que les planches existantes (1600 × 1000, `img/landing/`),
+         et légendées sur ce que l'écran montre réellement : « le motif »
+         (une page entière tissée en direct), « la bibliothèque » (les quatre
+         plug-ins intégrés et leur interrupteur), « Global Refactor » (le panneau
+         complet), « Word entre » (les douze portes d'entrée), « il ressort »
+         (les sept destinations, dont Word et EPS). Aucune ne promet un format
+         que l'application n'écrit pas.
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="spv">
+      <div class="spv-tete">
+        <span class="spv-k" data-lang="fr">À l'écran</span>
+        <span class="spv-k" data-lang="en">On screen</span>
+        <span class="spv-k" data-lang="ja">画面で見る</span>
+        <p class="spv-t" data-lang="fr">Cinq choses que l'on voit tout de suite — et qui n'existaient pas ici il y a un an.</p>
+        <p class="spv-t" data-lang="en">Five things you see at once — none of which existed here a year ago.</p>
+        <p class="spv-t" data-lang="ja">すぐ目に入る5つ。どれも一年前にはここに無かったものです。</p>
+      </div>
+
+      <div class="spv-grid">
+
+        <figure class="spv-card spv-hero">
+          <div class="spv-img"><img src="img/landing/motif.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le plug-in Motif : une page entière remplie d'un kaléidoscope de fleurs, panneau de réglages ouvert à droite"></div>
+          <figcaption class="spv-body">
+            <span class="spv-num">01</span>
+            <h3 data-lang="fr">Le motif, posé en direct</h3>
+            <h3 data-lang="en">The pattern, laid down live</h3>
+            <h3 data-lang="ja">パターンをその場で敷く</h3>
+            <p data-lang="fr">Quinze formes, sept symétries, puis le pas, la taille, l'écart au centre, la vrille, l'onde, la folie et la graine : la page se remplit <strong>sous vos yeux</strong>, et ce que vous voyez est ce qui sortira. Le motif s'arrête sur un bloc sélectionné ou prend la page entière.</p>
+            <p data-lang="en">Fifteen shapes, seven symmetries, then step, size, distance from centre, twist, wave, jitter and seed: the page fills <strong>before your eyes</strong>, and what you see is what comes out. The pattern stops at a selected block or takes the whole page.</p>
+            <p data-lang="ja">15の図形、7つの対称、そしてピッチ・サイズ・中心からの距離・ねじれ・波・揺らぎ・シード。ページは<strong>目の前で</strong>埋まり、見えているものがそのまま出力されます。選択ブロックに収めることも、ページ全体に敷くこともできます。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="spv-card">
+          <div class="spv-img"><img src="img/landing/plugins.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="La bibliothèque de plug-ins de SuperPrint : contrôle avant impression, Global Refactor, Motif, Polices Google"></div>
+          <figcaption class="spv-body">
+            <span class="spv-num">02</span>
+            <h3 data-lang="fr">La bibliothèque de plug-ins</h3>
+            <h3 data-lang="en">The plug-in library</h3>
+            <h3 data-lang="ja">プラグイン一覧</h3>
+            <p data-lang="fr">Quatre outils intégrés — Contrôle avant impression, Global Refactor, Motif, Polices Google — chacun avec son interrupteur. Un fichier <code>.plugin.js</code> déposé dans la zone suffit à en ajouter un cinquième.</p>
+            <p data-lang="en">Four built-in tools — Preflight, Global Refactor, Pattern, Google Fonts — each with its own switch. Dropping a <code>.plugin.js</code> file in the zone is enough to add a fifth.</p>
+            <p data-lang="ja">内蔵ツールは4つ（プリフライト、Global Refactor、パターン、Google Fonts）。それぞれにスイッチがあります。<code>.plugin.js</code> をドロップすれば5つ目を追加できます。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="spv-card">
+          <div class="spv-img"><img src="img/landing/refactor.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le panneau Global Refactor ouvert sur une maquette de magazine"></div>
+          <figcaption class="spv-body">
+            <span class="spv-num">03</span>
+            <h3 data-lang="fr">Tout le document, d'un seul réglage</h3>
+            <h3 data-lang="en">The whole document, in one pass</h3>
+            <h3 data-lang="ja">文書全体を一度に</h3>
+            <p data-lang="fr">Format, unité, fond perdu, marges intérieure et extérieure, colonnes, gouttière, pagination, styles de texte, encre et palette : un seul passage, un aperçu en direct, et <strong>un seul « Annuler »</strong> pour revenir à l'état d'avant.</p>
+            <p data-lang="en">Format, units, bleed, inner and outer margins, columns, gutter, folios, text styles, ink and palette: one pass, a live preview, and <strong>a single “Undo”</strong> to get back to the state you had.</p>
+            <p data-lang="ja">判型・単位・塗り足し・内余白と外余白・段組み・段間・ノンブル・テキストスタイル・インキ・パレット。1回の操作、ライブプレビュー、そして元に戻すのは<strong>「元に戻す」1回</strong>だけです。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="spv-card">
+          <div class="spv-img"><img src="img/landing/importer-word-formats.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="La fenêtre Importer : image, JSON, PDF, TXT/RTF, DOC/DOCX, Excel, Open Office, IDML, .sla, EPS/Illustrator, .sp, Figma"></div>
+          <figcaption class="spv-body">
+            <span class="spv-num">04</span>
+            <h3 data-lang="fr">Word entre sans conversion</h3>
+            <h3 data-lang="en">Word comes in, unconverted</h3>
+            <h3 data-lang="ja">Word をそのまま読み込む</h3>
+            <p data-lang="fr">DOC, DOCX, ODT, RTF, TXT, Excel, PDF, IDML, <code>.sla</code>, EPS / Illustrator, <code>.sp</code>, Figma : <strong>douze portes d'entrée</strong>, et le texte reste du texte — il se recompose, il se césure, il se sélectionne.</p>
+            <p data-lang="en">DOC, DOCX, ODT, RTF, TXT, Excel, PDF, IDML, <code>.sla</code>, EPS / Illustrator, <code>.sp</code>, Figma: <strong>twelve ways in</strong>, and the text stays text — it reflows, it hyphenates, it can be selected.</p>
+            <p data-lang="ja">DOC・DOCX・ODT・RTF・TXT・Excel・PDF・IDML・<code>.sla</code>・EPS / Illustrator・<code>.sp</code>・Figma。<strong>12の入口</strong>があり、テキストはテキストのまま。流し込みもハイフネーションも選択もできます。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="spv-card">
+          <div class="spv-img"><img src="img/landing/exporter-word-eps.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="La fenêtre Sauvegarder : .sp, JSON, IPFS, puis HTML, EPUB, EPS et Word"></div>
+          <figcaption class="spv-body">
+            <span class="spv-num">05</span>
+            <h3 data-lang="fr">Et il ressort en Word, en EPS</h3>
+            <h3 data-lang="en">And it leaves as Word, as EPS</h3>
+            <h3 data-lang="ja">Word でも EPS でも出せる</h3>
+            <p data-lang="fr">Le <code>.sp</code> pour reprendre, le PDF CMJN pour l'imprimeur, l'<strong>EPS vectoriel</strong>, le <strong>Word</strong> — une image par page, c'est écrit sur le bouton —, l'EPUB pour la liseuse, l'HTML pour le web, le JSON pour la machine.</p>
+            <p data-lang="en">The <code>.sp</code> to pick up again, CMYK PDF for the printer, vector <strong>EPS</strong>, <strong>Word</strong> — one image per page, and the button says so —, EPUB for e-readers, HTML for the web, JSON for machines.</p>
+            <p data-lang="ja">続きから作業する <code>.sp</code>、印刷所向けの CMYK PDF、ベクター<strong>EPS</strong>、<strong>Word</strong>（1ページ1画像、ボタンにも明記）、電子書籍向け EPUB、Web 向け HTML、機械向け JSON。</p>
+          </figcaption>
+        </figure>
+
+      </div>
+
+      <div class="spv-bande">
+        <p class="spv-bande-txt" data-lang="fr">Le même document, dans le navigateur <em>ou</em> installé sur Windows, macOS et Linux — <span class="spv-mono">sans compte, sans serveur</span>.</p>
+        <p class="spv-bande-txt" data-lang="en">The same document, in the browser <em>or</em> installed on Windows, macOS and Linux — <span class="spv-mono">no account, no server</span>.</p>
+        <p class="spv-bande-txt" data-lang="ja">同じ文書を、ブラウザでも、Windows・macOS・Linux にインストールしても — <span class="spv-mono">アカウント不要、サーバー不要</span>。</p>
+        <div class="spv-chips" aria-hidden="true">
+          <span class="spv-chip in">DOCX</span>
+          <span class="spv-chip in">IDML</span>
+          <span class="spv-chip in">PDF</span>
+          <span class="spv-chip in">SVG</span>
+          <span class="spv-chip out">PDF CMJN</span>
+          <span class="spv-chip out">EPS</span>
+          <span class="spv-chip out">Word</span>
+          <span class="spv-chip out">EPUB</span>
+        </div>
+      </div>
     </div>
 
     <!-- 2 · LES QUINZE OUTILS — ouverts : c'est la liste des fonctions, elle se balaye -->
@@ -3991,9 +4219,9 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 
     </div>
 <div class="pp-band">
-      <p class="pp-band-txt" data-lang="fr">Les <span class="pp-mono">quinze outils</span> tiennent dans une seule page ouverte — rien à installer, rien à mettre à jour.</p>
-      <p class="pp-band-txt" data-lang="en">All <span class="pp-mono">fifteen tools</span> live in a single open page — nothing to install, nothing to update.</p>
-      <p class="pp-band-txt" data-lang="ja">15の道具は開いた<span class="pp-mono">ひとつのページ</span>の中に。インストールも更新も不要です。</p>
+      <p class="pp-band-txt" data-lang="fr">Les <span class="pp-mono">quinze outils</span> tiennent dans une seule page ouverte — dans le navigateur comme dans l'application installée.</p>
+      <p class="pp-band-txt" data-lang="en">All <span class="pp-mono">fifteen tools</span> live in a single open page — in the browser and in the installed application alike.</p>
+      <p class="pp-band-txt" data-lang="ja">15の道具は開いた<span class="pp-mono">ひとつのページ</span>の中に。ブラウザでも、インストール版でも同じです。</p>
       <a href="app/index.html" class="btn btn-paper" data-lang="fr">Ouvrir le Bureau SuperPrint</a>
       <a href="app/index.html" class="btn btn-paper" data-lang="en">Open the SuperPrint desk</a>
       <a href="app/index.html" class="btn btn-paper" data-lang="ja">SuperPrint デスクを開く</a>
@@ -4894,7 +5122,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         <p class="lg-desc" data-lang="ja">DTPデスクのすべて — 組版、プリプレス、PDF書き出し。</p>
         <div class="lg-ver">
           <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
-          <b>v1.7.678</b>
+          <b>v1.7.679</b>
         </div>
         <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
         <div class="lg-actions">
@@ -4920,7 +5148,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         <p class="lg-desc" data-lang="ja">レイアウトを言葉に。AIが組み、あなたが直し、書き出す。</p>
         <div class="lg-ver">
           <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
-          <b>v1.7.678</b>
+          <b>v1.7.679</b>
         </div>
         <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
         <div class="lg-actions">
@@ -4946,7 +5174,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         <p class="lg-desc" data-lang="ja">書体を読み込み、1文字ずつ曲線で描き直し、書き出す。</p>
         <div class="lg-ver">
           <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
-          <b>v1.7.678</b>
+          <b>v1.7.679</b>
         </div>
         <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
         <div class="lg-actions">
@@ -5075,8 +5303,8 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.678</span>
-      <!-- 🆕 v1.7.678 — LA RANGÉE SOCIALE N'EST PAS ICI.
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.679</span>
+      <!-- 🆕 v1.7.679 — LA RANGÉE SOCIALE N'EST PAS ICI.
            Elle avait d'abord été posée dans le colophon ; l'utilisateur l'a vue et a
            corrigé le 17 octobre : « Footer de superprint.cc la barre qui est
            fixe sur la page et pas le footer de la page » — c'est la BARRE FIXE
@@ -5237,7 +5465,7 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 
 // ── Zone « Nos logiciels · Nos versions » : le bouton ouvre le menu de la barre ──
-/* 🆕 v1.7.678 — Le bouton de la zone du bas ne recopie pas les sept adresses de
+/* 🆕 v1.7.679 — Le bouton de la zone du bas ne recopie pas les sept adresses de
    fichiers : il ouvre le menu de la barre, qui reste la seule liste du site.
    Deux pièges, tous les deux traités ici :
    1. Le menu se referme au moindre clic hors de lui (écouteur sur `document`).
@@ -6166,6 +6394,6 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 </script>
 
-<script src="JS/versions-github.js?v=1.7.678" defer></script>
+<script src="JS/versions-github.js?v=1.7.679" defer></script>
 </body>
 </html>

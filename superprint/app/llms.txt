@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.678 (October 2026)
+- **Version**: 1.7.679 (October 2026)
 
 ## Core documentation
 
@@ -29,7 +29,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 
 ## Extending SuperPrint
 
-- **Plug-ins** — SuperPrint has a plug-in system, opened from the **Plug-ins** button at the bottom of the right-hand bar. A plug-in is a single `.plugin.js` file that receives a host API (`api.fabric`, `api.mm`, `api.document`, `api.selection`, `api.add`, `api.imageDataUrl`, `api.store`), declares its settings declaratively, and adds objects to the document. The panel builds the form from the declaration, so a plug-in never touches the application DOM and inherits both light and dark themes. Two plug-ins ship with the app: **Global Refactor**, which sets the styles, sizes, margins and colours of the whole document in one pass (since 1.7.678 it is launched from the library, not from a top-bar button), and **Vector Pattern**, which fills a page or a block with a repeated pattern built from a geometric shape or an imported image; it uses a `fabric.Pattern` (a single object) rather than thousands of shapes, so a full A4 page is filled in about 9 ms. A built-in plug-in may declare `trappe` to open a panel it already owns instead of a generated form. Every plug-in can be switched off without being uninstalled.
+- **Plug-ins** — SuperPrint has a plug-in system, opened from the **Plug-ins** button at the bottom of the right-hand bar. A plug-in is a single `.plugin.js` file that receives a host API (`api.fabric`, `api.mm`, `api.document`, `api.selection`, `api.add`, `api.imageDataUrl`, `api.store`), declares its settings declaratively, and adds objects to the document. The panel builds the form from the declaration, so a plug-in never touches the application DOM and inherits both light and dark themes. Two plug-ins ship with the app: **Global Refactor**, which sets the styles, sizes, margins and colours of the whole document in one pass (since 1.7.679 it is launched from the library, not from a top-bar button), and **Vector Pattern**, which fills a page or a block with a repeated pattern built from a geometric shape or an imported image; it uses a `fabric.Pattern` (a single object) rather than thousands of shapes, so a full A4 page is filled in about 9 ms. A built-in plug-in may declare `trappe` to open a panel it already owns instead of a generated form. Every plug-in can be switched off without being uninstalled.
 - **MCP server** — `superprint/mcp-server/` contains a Model Context Protocol server (stdio, JSON-RPC 2.0, **no dependencies**, Node ≥ 18). It exposes five tools to Claude Desktop, Claude Code, Cursor or any MCP client: `superprint_formats`, `superprint_inspect`, `superprint_convert`, `superprint_create`, `superprint_pattern`. It operates on files, never on the running application, so it is usable from a terminal, a server or CI. There is no PDF export tool: the rendering engine lives in the browser.
 
 ## Key differentiators (why SuperPrint is rare)

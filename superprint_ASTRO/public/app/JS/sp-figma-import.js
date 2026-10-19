@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — IMPORT FIGMA  (v1.7.678)
+   SUPERPRINT — IMPORT FIGMA  (v1.7.679)
    ═══════════════════════════════════════════════════════════════════════════════
 
    CE QUE CE MODULE LIT : le JSON d'un fichier Figma, tel que le rendent
@@ -40,7 +40,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.7.678';
+  var VERSION = '1.7.679';
   var PT_MM = 25.4 / 72;          /* 1 pt (unité Figma) = 0,3528 mm */
   var BLEED_MM_DEFAUT = 3;
 
@@ -365,7 +365,7 @@
   }
 
   /* ── Cadres de premier niveau → pages ───────────────────────────────────────── */
-  /* 🆕 v1.7.678 — LES NŒUDS HORS CADRE NE SONT PLUS PERDUS.
+  /* 🆕 v1.7.679 — LES NŒUDS HORS CADRE NE SONT PLUS PERDUS.
      MESURÉ (banc d'audit, `noeuds-libres.json`) : un canevas qui porte AU MOINS un
      cadre voyait tous ses autres nœuds ignorés, sans un mot. Un rectangle posé à côté
      du cadre disparaissait donc à l'import — un export de designer contient souvent
@@ -413,7 +413,7 @@
   }
 
   /* ── Ce qu'un fichier contient, avant toute conversion ──────────────────────── */
-  /* 🆕 v1.7.678 — L'INVENTAIRE, POUR PROPOSER DES OPTIONS À L'OUVERTURE.
+  /* 🆕 v1.7.679 — L'INVENTAIRE, POUR PROPOSER DES OPTIONS À L'OUVERTURE.
      Un fichier Figma peut porter PLUSIEURS FORMATS DE CADRE (affiche A4 portrait,
      A4 paysage, carré). SuperPrint n'a qu'un format de page par document : convertir
      un tel fichier sans rien dire produit des pages trop petites, donc du contenu
@@ -455,7 +455,7 @@
     /* Du plus grand au plus petit : c'est l'ordre dans lequel on veut les proposer,
        et le premier est le format retenu par défaut. */
     formats.sort(function (a, b) { return (b.aire - a.aire) || (b.w - a.w); });
-    /* 🆕 v1.7.678 — COMBIEN DE CADRES CHAQUE FORMAT ROGNERAIT.
+    /* 🆕 v1.7.679 — COMBIEN DE CADRES CHAQUE FORMAT ROGNERAIT.
        C'est la seule information qui permette de choisir en connaissance de cause :
        un format qui rogne deux cadres sur trois n'est pas un bon candidat, même s'il
        a la plus grande surface. On compte les cadres qui DÉPASSENT (tolérance 0,5 pt). */
@@ -503,7 +503,7 @@
   }
 
   /* ── Conversion complète vers un document SuperPrint ────────────────────────── */
-  /* 🆕 v1.7.678 — LES OPTIONS D'OUVERTURE.
+  /* 🆕 v1.7.679 — LES OPTIONS D'OUVERTURE.
      Signature compatible : `versSP(json, nom, bleedMm)` se comporte EXACTEMENT comme
      avant. Un quatrième argument facultatif ajoute le choix laissé à l'utilisateur :
        opts.strategie  'auto' (défaut) | 'multi' | 'enveloppe' | 'plus-grand' | 'premier' | 'format'
@@ -535,13 +535,13 @@
 
     var inventaire = analyse(json);
     var strategie = String(opts.strategie || 'auto');
-    /* 🆕 v1.7.678 — le défaut d'un fichier multi-formats devient 'multi' : chaque page
+    /* 🆕 v1.7.679 — le défaut d'un fichier multi-formats devient 'multi' : chaque page
        garde son format. 'enveloppe' reste disponible pour qui veut une feuille unique. */
     if (strategie === 'auto') strategie = inventaire.multi ? 'multi' : 'premier';
 
     /* Format cible commun à toutes les pages, en points. `null` = chaque page prend la
        taille de son propre cadre.
-       🆕 v1.7.678 — 'multi' : c'est exactement cela, et c'est désormais un choix explicite.
+       🆕 v1.7.679 — 'multi' : c'est exactement cela, et c'est désormais un choix explicite.
        Chaque page reçoit `format` (en mm), que l'application lit pour dessiner une page
        à SA taille. Aucun autre document n'est concerné : la propriété n'existe que si
        l'utilisateur a choisi cette option à l'import d'un fichier Figma. */
@@ -622,7 +622,7 @@
         objects: produits,
         label: String(n.name || ('Page ' + (i + 1)))
       };
-      /* 🆕 v1.7.678 — CHAQUE PAGE GARDE SON FORMAT (stratégie 'multi').
+      /* 🆕 v1.7.679 — CHAQUE PAGE GARDE SON FORMAT (stratégie 'multi').
          Le format est en MILLIMÈTRES, borné aux mêmes arrondis que le format du
          document (0,01 mm) pour éviter les 210,00000001. */
       if (strategie === 'multi') {
@@ -672,7 +672,7 @@
     version: VERSION,
     estFigma: estFigma,
     versSP: versSP,
-    /* 🆕 v1.7.678 — l'inventaire, pour la boîte d'options d'ouverture. */
+    /* 🆕 v1.7.679 — l'inventaire, pour la boîte d'options d'ouverture. */
     analyser: analyse,
     cadres: function (json, opts) { return cadresDe(json, opts).length; }
   };

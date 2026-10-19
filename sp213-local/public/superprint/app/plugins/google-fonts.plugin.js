@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN INTÉGRÉ « POLICES GOOGLE »  (v1.7.678)
+   SUPERPRINT — PLUG-IN INTÉGRÉ « POLICES GOOGLE »  (v1.7.679)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Demande utilisateur : « créer un plugin fonts qui affichera les plus grandes typo
@@ -946,7 +946,7 @@
   function restaurer() {
     var noms = journal();
     if (!pret()) return;
-    /* ══ 🆕 v1.7.678 — UNE POLICE GOOGLE ARRIVÉE PAR UN DOCUMENT EST RETENUE ══════
+    /* ══ 🆕 v1.7.679 — UNE POLICE GOOGLE ARRIVÉE PAR UN DOCUMENT EST RETENUE ══════
        Question de l'utilisateur : « comment on va avec le .sp et le .json pour les
        typo Google, il va les retrouver, les recharger ? ».
 
