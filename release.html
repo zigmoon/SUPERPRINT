@@ -1455,6 +1455,81 @@ footer, footer a { color: var(--after-text-color); }
        ouverte puis « Appliquer » -> le motif est sur le nouveau bloc, le précédent
        retrouve son remplissage, et le compte d'objets ne bouge pas. -->
 
+<!-- ===== SUPER PRINT v1.7.684 — LE SYSTÈME SE CHOISIT DANS LE BOUTON, ET NEUF PLANCHES REPRISES.
+     Demandes utilisateur : « (1) dans le bouton Download, à la place de "PowerShell ·
+     Node.js requis — npx.cmd contourne le blocage des scripts", propose trois boutons
+     PC, macOS et Linux, la commande doit changer dans le champ ; (2) reshoot les neuf
+     features, les shots ne sont pas parfaits ; (3) ne remets pas sous les trois zones
+     de download en bas de la page la partie "Installer SuperPrint en local" — supprime
+     cette zone, on garde que les trois colonnes Win/Mac/Linux du dessus ; (4) mets un
+     fond clair sous les deux blocs des auteurs. »
+
+     (1) TROIS BOUTONS LÀ OÙ IL Y AVAIT UNE PHRASE.
+     « PowerShell · Node.js requis — npx.cmd contourne le blocage des scripts » expliquait
+     une subtilité de PowerShell à des gens qui voulaient copier une ligne. Remplacée par
+     trois boutons — PC / macOS / Linux — et la commande du champ change : npx.cmd
+     superprint sous Windows, npx superprint ailleurs. MESURÉ, clic par clic, sur les
+     quatre pages : win -> « npx.cmd superprint », mac -> « npx superprint », linux ->
+     « npx superprint », et un seul bouton porte aria-pressed="true". Le système de
+     l'utilisateur est coché d'avance (navigator.userAgent) et le choix est mémorisé
+     (localStorage) : celui qui prépare une installation pour une autre machine ne
+     retrouve pas le réglage par défaut à chaque visite.
+
+     (2) LES NEUF PLANCHES SONT REPRISES, ET LA SURFACE DE CAPTURE A ÉTÉ MESURÉE.
+     Playwright rend une surface de 2400 x 1500, mais la fenêtre ne peint que
+     1536 x 983 : le reste est blanc. Deux relevés pour le prouver plutôt que le
+     supposer — bornes de l'encre sur une capture nue (0..1535 x 0..982), puis sonde :
+     un carré rouge en position:fixed ; right:0 dans un viewport émulé de 1600 x 1000
+     se retrouve à l'abscisse 1500, et le pixel (1550, 400) est blanc. Le viewport
+     entier est donc peint, à l'échelle 1600 -> 1536, DANS 1536 x 983. Les neuf captures
+     sont désormais recadrées sur ces 1536 x 983 exacts puis ramenées à 1600 x 1000
+     (1,042 en largeur, 1,017 en hauteur). CONTRÔLE APRÈS COUP, sur les neuf fichiers :
+     1600 x 1000, encre jusqu'à x=1599 et y=999, zéro pixel de blanc à droite et en bas.
+     Les neuf écrans sont refaits sur la 1.7.684, dans l'application courante et non dans
+     une copie installée : le port qui servait les captures rendait un index.html de
+     462 566 octets quand la source en fait 485 123 — deux versions d'écart.
+
+     (3) LA ZONE « INSTALLER SUPERPRINT EN LOCAL » EST SUPPRIMÉE.
+     Les trois cartes d'installeurs listent déjà les trois systèmes, et le bouton
+     « Télécharger » porte la ligne npx avec son choix de système : une troisième fois la
+     même information laissait croire à trois manières d'installer, alors qu'il y en a
+     deux. Partent avec elle le balisage, les trois .cmd-tab, le script qui les pilotait
+     ET le CSS devenu orphelin — vérifié, aucune des classes retirées n'est employée
+     ailleurs.
+
+     (4) LES DEUX FICHES D'AUTEURS PASSENT AU BLANC.
+     Elles étaient en --paper-2, rgb(239,234,224), donc PLUS SOUTENU que la bande qui les
+     porte (rgb(255,253,248)) : deux rectangles beige sur un fond plus clair se lisaient
+     comme des trous. Mesuré après : rgb(255,255,255) sur rgb(255,253,248), et c'est le
+     filet qui les détache. -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-684">
+ <h2>SUPER PRINT <span>v1.7.684</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 octobre 2026" data-i18n-en="Released October 19, 2026" data-i18n-jp="2026年10月19日公開">Released October 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le bouton « Télécharger » demande maintenant <strong>sur quel système</strong> vous êtes — PC, macOS ou Linux — et la commande <code>npx</code> change sous vos yeux. La zone « Installer SuperPrint en local » disparaît du bas de page : elle répétait ce que les trois cartes disent déjà. Les <strong>neuf captures</strong> sont reprises, pleines, sans bande blanche, et les fiches des deux auteurs passent au blanc." data-i18n-en-html="The “Download” button now asks <strong>which system</strong> you are on — PC, macOS or Linux — and the <code>npx</code> command changes before your eyes. The “Install SuperPrint locally” zone is gone from the bottom of the page: it repeated what the three cards already say. The <strong>nine captures</strong> are redone, full-bleed, with no white band, and both author cards turn white." data-i18n-jp-html="「ダウンロード」ボタンが<strong>お使いのシステム</strong>（PC・macOS・Linux）を尋ね、<code>npx</code> コマンドがその場で変わります。ページ下部の「SuperPrint をローカルにインストール」は削除しました。3つのカードがすでに示している内容の繰り返しでした。<strong>9枚の画面写真</strong>は撮り直し、白帯のない全面に。著者2名のカードは白になりました。">Download now asks which system you are on, and the npx command follows; nine captures redone; author cards turn white.</p>
+
+ <h3 data-i18n-fr-html="⌨️ Trois boutons, une commande qui suit" data-i18n-en-html="⌨️ Three buttons, a command that follows" data-i18n-jp-html="⌨️ 3つのボタン、それに従うコマンド">⌨️ Three buttons, a command that follows</h3>
+ <ul>
+  <li data-i18n-fr-html="« PowerShell · Node.js requis — npx.cmd contourne le blocage des scripts » expliquait une subtilité de PowerShell à des gens qui voulaient copier une ligne. <strong>PC / macOS / Linux</strong> remplacent la phrase, et le champ change : <code>npx.cmd superprint</code> sous Windows, <code>npx superprint</code> ailleurs." data-i18n-en-html="“PowerShell · requires Node.js — npx.cmd bypasses the script policy” explained a PowerShell subtlety to people who just wanted to copy a line. <strong>PC / macOS / Linux</strong> replace the sentence, and the field changes: <code>npx.cmd superprint</code> on Windows, <code>npx superprint</code> elsewhere." data-i18n-jp-html="「PowerShell · Node.js が必要 — npx.cmd はスクリプト制限を回避します」は、1行コピーしたいだけの人に PowerShell の細かい話を説明していました。<strong>PC / macOS / Linux</strong> がその文を置き換え、欄のコマンドが変わります：Windows は <code>npx.cmd superprint</code>、それ以外は <code>npx superprint</code>。">PC / macOS / Linux replace the sentence, and the command changes with it.</li>
+  <li data-i18n-fr-html="MESURÉ, clic par clic : <strong>win</strong> → « npx.cmd superprint », <strong>mac</strong> → « npx superprint », <strong>linux</strong> → « npx superprint », et un seul bouton porte <code>aria-pressed="true"</code>. Le système de l'utilisateur est coché d'avance, et le choix est mémorisé : préparer une installation pour une autre machine ne se rejoue pas à chaque visite." data-i18n-en-html="Measured, click by click: <strong>win</strong> → “npx.cmd superprint”, <strong>mac</strong> → “npx superprint”, <strong>linux</strong> → “npx superprint”, and only one button carries <code>aria-pressed="true"</code>. The visitor's own system is pre-selected, and the choice is remembered." data-i18n-jp-html="クリックごとに実測：<strong>win</strong> →「npx.cmd superprint」、<strong>mac</strong> →「npx superprint」、<strong>linux</strong> →「npx superprint」。<code>aria-pressed="true"</code> は常に1つだけです。">Measured: the command follows the system, one button pressed at a time.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🖼️ Neuf captures reprises, et la surface mesurée" data-i18n-en-html="🖼️ Nine captures redone, and a measured surface" data-i18n-jp-html="🖼️ 撮り直した9枚と、実測した描画面">🖼️ Nine captures redone</h3>
+ <ul>
+  <li data-i18n-fr-html="Playwright rend une surface de <strong>2400 × 1500</strong>, mais la fenêtre ne peint que <strong>1536 × 983</strong> : le reste est blanc. Prouvé deux fois plutôt que supposé — bornes de l'encre sur une capture nue (0..1535 × 0..982), puis sonde : un carré rouge en <code>position:fixed; right:0</code> dans un viewport émulé de 1600 × 1000 ressort à l'abscisse 1500, et le pixel (1550, 400) est blanc." data-i18n-en-html="Playwright returns a <strong>2400 × 1500</strong> surface, but the window only paints <strong>1536 × 983</strong>: the rest is white. Proved twice rather than assumed — ink bounds on a bare capture (0..1535 × 0..982), then a probe: a red square in <code>position:fixed; right:0</code> inside an emulated 1600 × 1000 viewport lands at x=1500, and pixel (1550, 400) is white." data-i18n-jp-html="Playwright は <strong>2400 × 1500</strong> の面を返しますが、ウィンドウが描くのは <strong>1536 × 983</strong> だけで、残りは白です。2通りに実測：地のキャプチャのインク範囲（0..1535 × 0..982）と、<code>position:fixed; right:0</code> の赤い四角が x=1500 に来ること、(1550, 400) が白いこと。">Measured twice: painted surface is 1536 × 983, proved with a probe square.</li>
+  <li data-i18n-fr-html="Les neuf captures sont recadrées sur ces 1536 × 983 exacts puis ramenées à 1600 × 1000. CONTRÔLE APRÈS COUP, sur les neuf fichiers : 1600 × 1000, encre jusqu'à <strong>x=1599 et y=999</strong>, zéro pixel de blanc à droite comme en bas. Elles sont refaites dans l'application courante : le port qui servait les anciennes rendait un <code>index.html</code> de 462 566 octets quand la source en fait 485 123." data-i18n-en-html="The nine captures are cropped to those exact 1536 × 983 and scaled to 1600 × 1000. CHECKED AFTERWARDS, on all nine files: 1600 × 1000, ink to <strong>x=1599 and y=999</strong>, zero white pixels right or bottom. They are redone in the current app: the port used before served an <code>index.html</code> of 462,566 bytes when the source is 485,123." data-i18n-jp-html="9枚は正確に 1536 × 983 で切り出し、1600 × 1000 に拡大。9ファイルすべてを事後検証：1600 × 1000、インクは <strong>x=1599・y=999</strong> まで、右にも下にも白はゼロ。">Checked on all nine: ink to x=1599 and y=999, no white band.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧹 Une zone en moins, un fond en plus" data-i18n-en-html="🧹 One zone fewer, one lighter card" data-i18n-jp-html="🧹 1つ減らし、1つ明るく">🧹 One zone fewer, one lighter card</h3>
+ <ul>
+  <li data-i18n-fr-html="La zone « Installer SuperPrint en local » est supprimée : les trois cartes d'installeurs listent déjà les trois systèmes, et le bouton « Télécharger » porte la ligne <code>npx</code>. Partent avec elle le balisage, les trois <code>.cmd-tab</code>, le script qui les pilotait et le CSS devenu orphelin — vérifié, aucune des classes retirées n'est employée ailleurs." data-i18n-en-html="The “Install SuperPrint locally” zone is removed: the three installer cards already list the three systems, and the “Download” button carries the <code>npx</code> line. Markup, the three <code>.cmd-tab</code>, their script and the orphaned CSS go with it — checked, none of the removed classes is used elsewhere." data-i18n-jp-html="「ローカルにインストール」を削除。3つのカードがすでに3システムを並べ、<code>npx</code> 行はダウンロードボタンにあります。マークアップ、3つの <code>.cmd-tab</code>、そのスクリプト、孤立した CSS も一緒に削除しました。">The local-install zone and its dead code are gone.</li>
+  <li data-i18n-fr-html="Les deux fiches d'auteurs passent au blanc. MESURÉ avant : <code>--paper-2</code>, rgb(239,234,224), donc plus soutenu que la bande qui les porte (rgb(255,253,248)) — deux rectangles beige sur un fond plus clair se lisaient comme des trous. Après : rgb(255,255,255), et c'est le filet qui les détache." data-i18n-en-html="Both author cards turn white. Measured before: <code>--paper-2</code>, rgb(239,234,224), i.e. deeper than the band carrying them (rgb(255,253,248)) — two beige rectangles on a lighter background read as holes. After: rgb(255,255,255), with the rule doing the separating." data-i18n-jp-html="著者2名のカードを白に。実測前：<code>--paper-2</code>（rgb(239,234,224)）は帯（rgb(255,253,248)）より濃く、明るい背景のベージュの四角は穴に見えました。後：rgb(255,255,255)。">Author cards go from rgb(239,234,224) to rgb(255,255,255).</li>
+ </ul>
+</article>
+
 <article class="release-block" data-app="superprint" id="superprint-v1-7-683">
  <h2>SUPER PRINT <span>v1.7.683</span></h2>
  <div class="release-meta">

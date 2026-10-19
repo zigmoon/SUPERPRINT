@@ -1,4 +1,4 @@
-/* sp-export-designer.js — EXPORT EPS ET WORD (.docx) — v1.7.683.
+/* sp-export-designer.js — EXPORT EPS ET WORD (.docx) — v1.7.684.
  *
  * Demande : « dans Sauvegarder, on doit pouvoir enregistrer les .eps designer, et
  * enregistrer sa maquette en Word ».
@@ -399,7 +399,7 @@
 
         var entete = [
             '%!PS-Adobe-3.0 EPSF-3.0',
-            '%%Creator: SuperPrint (sp-export-designer 1.7.683)',
+            '%%Creator: SuperPrint (sp-export-designer 1.7.684)',
             '%%Title: page ' + (index + 1) + ' — ' + format.width + 'x' + format.height + ' mm',
             '%%CreationDate: ' + new Date().toISOString(),
             '%%BoundingBox: 0 0 ' + Math.ceil(largeurPt) + ' ' + Math.ceil(hauteurPt),
@@ -584,7 +584,7 @@
     }
 
     window.SPExportDesigner = {
-        version: '1.7.683',
+        version: '1.7.684',
         eps: exporterEPS,
         docx: exporterDOCX,
         /* Exposés pour les bancs d'audit : contenu d'une page, sans téléchargement. */
