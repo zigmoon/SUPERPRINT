@@ -1503,6 +1503,68 @@ footer, footer a { color: var(--after-text-color); }
      comme des trous. Mesuré après : rgb(255,255,255) sur rgb(255,253,248), et c'est le
      filet qui les détache. -->
 
+<!-- ===== SUPER PRINT v1.7.685 — LES DEUX PLANCHES QUI DEVAIENT MONTRER LES POP-INS.
+
+     Demande utilisateur : « dans features re-shoot bien le point 04 tu dois afficher la
+     pop d'import ici en image et pour le 05 la pop in d'export sauver reshoot la aussi ».
+
+     CE QUI N'ALLAIT PAS, ET C'EST MESURÉ. Les neuf planches de la 1.7.684 avaient été
+     prises dans la fenêtre du navigateur intégré, dont la surface de peinture est
+     verrouillée à 1024 x 768 CSS (DPR 1,5) à l'intérieur d'un canevas de 2400 x 1500.
+     La planche 04 montrait bien l'application, mais la pop-in d'import n'y était qu'un
+     détail : après recadrage il restait 31 px de blanc à droite (encre jusqu'à x=1568
+     sur 1600), parce que la moitié droite de l'écran, derrière une boîte de 524 px, est
+     du papier clair. Une planche censée montrer l'import ne montrait pas l'import.
+
+     COMMENT ELLES SONT REFAITES. Les deux captures sont désormais prises en Chromium
+     SANS FENÊTRE, où la taille de viewport est réellement celle qu'on demande : 1024 x 768
+     CSS avec un DPR de 1,5, soit une surface rendue de 1536 x 1152 ENTIÈREMENT peinte.
+     Contrôle : bornes de l'encre 0..1535 x 0..1151, zéro pixel de blanc à droite et en
+     bas. Le recadrage 1536 x 983 -> 1600 x 1000 ne change pas d'un iota, donc l'échelle
+     de l'interface reste rigoureusement la même que sur les sept autres planches.
+
+     CE QUE LES DEUX IMAGES MONTRENT, VÉRIFIÉ AU PIXEL.
+     · 04 — la pop-in d'import, ouverte par #openImportModal : 512 x 359 CSS, centrée
+       (x 256..768), titre, croix de fermeture et DOUZE boutons. Pixel : #FFFFFF au
+       centre de la carte, #E8E8E8 sur les panneaux de l'application de part et d'autre.
+     · 05 — la pop-in de sauvegarde, ouverte par openSaveModal() : carte de 480 x 553,
+       voile rgba(0,0,0,0.6) par-dessus l'application. Pixel : #5D5D5D de chaque côté
+       (le voile sur #E8E8E8), #FFFFFF dans la carte. Le dialogue porte bien les deux
+       sorties de la planche : EPS « Pour l'imprimeur, sans perte de qualité » et Word
+       « À ouvrir dans Word, une image par page », plus Format natif, JSON, IPFS, HTML,
+       EPUB.
+     Après recadrage, les deux fichiers font 1600 x 1000, encre jusqu'à x=1599 et y=999,
+     zéro pixel de blanc.
+
+     LE LOGICIEL, LUI, NE CHANGE PAS. Ces deux planches ne vivent que dans la page de
+     présentation ; aucun fichier de l'application n'est touché. Les installeurs sont
+     recompilés pour que le numéro de version reste aligné, pas pour corriger l'app.
+
+     ⚠️ ET UNE TENTATIVE QUI A ÉCHOUÉ, NOTÉE POUR NE PAS LA REFAIRE. On a voulu grossir
+     la maquette à 150 % pour que l'artwork passe derrière la boîte blanche de l'import.
+     Deux méthodes, deux échecs mesurés : écrire la valeur du champ #zoomLevel puis
+     dispatcher input/change/Enter laisse la barre à « 100% », et cinq keydown Ctrl+« = »
+     synthétiques sur window ne la font pas bouger non plus — « zoomLevel » est déclaré par
+     « let » en portée de module, donc invisible depuis page.evaluate. Les deux planches
+     sont donc prises au zoom réel de l'application, ce qui suffit. -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-685">
+ <h2>SUPER PRINT <span>v1.7.685</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 octobre 2026" data-i18n-en="Released October 19, 2026" data-i18n-jp="2026年10月19日公開">Released October 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Deux planches de la présentation reprennent leur sujet. La <strong>04</strong> montre maintenant la <strong>pop-in d'import</strong> — formats Word, PDF, IDML, RTF, ODT, TXT — et la <strong>05</strong> la <strong>pop-in de sauvegarde</strong> avec ses sorties EPS « pour l'imprimeur, sans perte de qualité » et Word « une image par page ». Les deux sont capturées plein cadre, sans bande blanche." data-i18n-en-html="Two presentation plates take back their subject. Plate <strong>04</strong> now shows the <strong>import dialog</strong> — Word, PDF, IDML, RTF, ODT and TXT — and plate <strong>05</strong> the <strong>save dialog</strong> with its EPS “for the printer, lossless” and Word “one image per page” outputs. Both are captured full-frame, with no white band." data-i18n-jp-html="紹介ページの2枚の画面写真が本来の主題を取り戻しました。<strong>04</strong> は<strong>読み込みダイアログ</strong>（Word・PDF・IDML・RTF・ODT・TXT）、<strong>05</strong> は<strong>保存ダイアログ</strong>と、EPS「印刷所向け、無劣化」／Word「1ページ1画像」の書き出し。どちらも白帯のない全面撮影です。">Plates 04 and 05 now show the import and save dialogs themselves.</p>
+
+ <h3 data-i18n-fr-html="📥 Deux planches qui montrent enfin ce qu'elles annoncent" data-i18n-en-html="📥 Two plates that finally show what they promise" data-i18n-jp-html="📥 やっと名乗りどおりになった2枚">📥 Two plates that finally show what they promise</h3>
+ <ul>
+  <li data-i18n-fr-html="La planche <strong>04</strong> ouvre la pop-in d'import : <strong>512 x 359</strong> au centre de l'écran, titre, croix et <strong>douze boutons</strong>. Vérifié au pixel : #FFFFFF au centre de la carte, #E8E8E8 sur les panneaux de l'application de part et d'autre." data-i18n-en-html="Plate <strong>04</strong> opens the import dialog: <strong>512 x 359</strong> in the middle of the screen, title, close cross and <strong>twelve buttons</strong>. Pixel-checked: #FFFFFF at the centre of the card, #E8E8E8 on the application panels either side." data-i18n-jp-html="<strong>04</strong> は読み込みダイアログを開いた状態。<strong>512 x 359</strong> で画面中央、タイトル・閉じる×・<strong>12ボタン</strong>。ピクセル検証：カード中央は #FFFFFF、左右のアプリパネルは #E8E8E8。">Plate 04 opens the import dialog: 512 × 359, twelve buttons, pixel-checked.</li>
+  <li data-i18n-fr-html="La planche <strong>05</strong> ouvre la pop-in de sauvegarde : carte de <strong>480 x 553</strong> sur un voile <code>rgba(0,0,0,0.6)</code>. Vérifié au pixel : #5D5D5D de chaque côté (le voile sur #E8E8E8), #FFFFFF dans la carte. On y lit les deux sorties annoncées — <strong>EPS</strong> « Pour l'imprimeur, sans perte de qualité » et <strong>Word</strong> « À ouvrir dans Word, une image par page » — avec Format natif, JSON, IPFS, HTML et EPUB." data-i18n-en-html="Plate <strong>05</strong> opens the save dialog: a <strong>480 x 553</strong> card over an <code>rgba(0,0,0,0.6)</code> scrim. Pixel-checked: #5D5D5D either side (the scrim over #E8E8E8), #FFFFFF inside the card. Both advertised outputs are readable — <strong>EPS</strong> “For the printer, lossless” and <strong>Word</strong> “Opens in Word, one image per page” — alongside native format, JSON, IPFS, HTML and EPUB." data-i18n-jp-html="<strong>05</strong> は保存ダイアログ。<strong>480 x 553</strong> のカードが <code>rgba(0,0,0,0.6)</code> の覆いの上に。ピクセル検証：左右は #5D5D5D（#E8E8E8 に覆い）、カード内は #FFFFFF 。<strong>EPS</strong>「印刷所向け、無劣化」と <strong>Word</strong>「Wordで開く、1ページ1画像」、ほかにネイティブ形式・JSON・IPFS・HTML・EPUB。">Plate 05 opens the save dialog: 480 × 553 over a 60 % scrim, with EPS and Word readable.</li>
+  <li data-i18n-fr-html="<strong>Pourquoi les précédentes rataient leur sujet, mesuré.</strong> Elles étaient prises dans la fenêtre du navigateur intégré, dont la surface de peinture est verrouillée à 1024 x 768 CSS (DPR 1,5) dans un canevas de 2400 x 1500. La pop-in d'import ne faisait plus que 524 px de large, et la moitié droite de l'écran, derrière elle, est du papier clair : 31 px de blanc à droite après recadrage, encre jusqu'à x=1568 sur 1600." data-i18n-en-html="<strong>Why the previous ones missed their subject, measured.</strong> They were taken in the integrated browser window, whose paint surface is locked to 1024 x 768 CSS (DPR 1.5) inside a 2400 x 1500 canvas. The import dialog was only 524 px wide, and the right half of the screen behind it is pale paper: 31 px of white on the right after reframing, ink stopping at x=1568 of 1600." data-i18n-jp-html="<strong>以前のものが主題を外していた理由（実測）。</strong>統合ブラウザのウィンドウは描画面が 1024 x 768 CSS（DPR 1.5）に固定され、キャンバスは 2400 x 1500。読み込みダイアログは幅524pxしかなく、その背後の右半分は明るい紙：切り出し後に右へ31pxの白、インクは1600中x=1568まで。">Why the previous plates missed their subject: the paint surface was locked at 1024 × 768 CSS.</li>
+  <li data-i18n-fr-html="<strong>La correction, et sa preuve.</strong> Les deux captures sont désormais prises en Chromium <strong>sans fenêtre</strong>, où le viewport est réellement celui qu'on demande : 1024 x 768 CSS à DPR 1,5, soit <strong>1536 x 1152 entièrement peints</strong>. Contrôle : encre 0..1535 x 0..1151, zéro pixel de blanc à droite et en bas. Le recadrage 1536 x 983 vers 1600 x 1000 est inchangé, donc l'échelle de l'interface reste identique aux sept autres planches ; les deux fichiers finissent à 1600 x 1000, encre jusqu'à x=1599 et y=999." data-i18n-en-html="<strong>The fix, and its proof.</strong> Both captures are now taken in <strong>headless</strong> Chromium, where the viewport really is the one requested: 1024 x 768 CSS at DPR 1.5, i.e. <strong>1536 x 1152 fully painted</strong>. Checked: ink 0..1535 × 0..1151, zero white pixels right and bottom. The 1536 × 983 to 1600 × 1000 reframing is untouched, so the UI scale stays identical to the other seven plates; both files end at 1600 × 1000, ink to x=1599 and y=999." data-i18n-jp-html="<strong>修正とその証拠。</strong>2枚は<strong>ヘッドレス</strong>Chromiumで撮影。ビューポートは要求どおり 1024 x 768 CSS（DPR 1.5）、つまり<strong>1536 x 1152 が全て描画</strong>。検証：インク 0..1535 × 0..1151、右と下に白ゼロ。1536 x 983 → 1600 x 1000 の切り出しは変わらないため、UIの縮尺は他の7枚と同一。両ファイルは 1600 x 1000、インクは x=1599・y=999 まで。">The fix: headless Chromium gives 1536 × 1152 fully painted, zero white.</li>
+ </ul>
+</article>
+
 <article class="release-block" data-app="superprint" id="superprint-v1-7-684">
  <h2>SUPER PRINT <span>v1.7.684</span></h2>
  <div class="release-meta">

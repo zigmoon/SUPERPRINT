@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — SERVEUR MCP  (v1.7.684)
+   SUPERPRINT — SERVEUR MCP  (v1.7.685)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce serveur expose SuperPrint à un client MCP : Claude Desktop, Claude Code,
@@ -27,7 +27,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { basename, resolve, dirname } from 'node:path';
 
-const VERSION = '1.7.684';
+const VERSION = '1.7.685';
 const PROTOCOLE = '2025-06-18';
 
 /* ── Unités ────────────────────────────────────────────────────────────────────

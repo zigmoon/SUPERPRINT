@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.684)
+   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.685)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce que fait ce plug-in : il habille un fond de page — ou un bloc sélectionné —
@@ -81,7 +81,7 @@
    `api.apercu`, `api.toileApercu`. S'il fonctionne sans rien d'autre, l'API est
    suffisante pour un plug-in réel.
    ─────────────────────────────────────────────────────────────────────────────── */
-/* ═══ v1.7.684 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
+/* ═══ v1.7.685 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
    Demande utilisateur : « relie bien la partie plug-in et nos deux plugins en
    trois langue EN fr ja ».
    Chaque libellé visible est écrit `L(français, english, 日本語)` et résolu à
@@ -97,7 +97,7 @@ var L = window.SPPluginL || function (fr, en, ja) { return { fr: fr, en: en || f
 
 SPPluginAPI({
   id: 'motif-vectoriel',
-  /* ⚠️ v1.7.684 — « MOTIF », SANS « VECTORIEL ».
+  /* ⚠️ v1.7.685 — « MOTIF », SANS « VECTORIEL ».
      Demande utilisateur : « qu'on va juste appeler motif d'ailleurs en wording
      (car cela n'est pas vraiment vectoriel) ». C'est exact et c'était vérifiable :
      l'export PDF embarque la tuile comme une IMAGE, il n'y a pas un seul tracé
@@ -108,11 +108,11 @@ SPPluginAPI({
   version: '3.1.0',
   author: 'SuperPrint',
   icon: '▦',
-  /* ⚠️ v1.7.684 — LA DESCRIPTION DIT CE QUE L'EXPORT FAIT VRAIMENT.
+  /* ⚠️ v1.7.685 — LA DESCRIPTION DIT CE QUE L'EXPORT FAIT VRAIMENT.
      MESURÉ : le plug-in ne pose pas de tracés, il remplit un bloc avec un
      `fabric.Pattern` dont la source est un CANEVAS (la tuile). Les classificateurs
      d'export traitent un remplissage de motif comme RASTER — c'est mesuré dans le
-     PDF. Ce qui a changé en 1.7.684 : ce n'est plus LE BLOC ENTIER qui est
+     PDF. Ce qui a changé en 1.7.685 : ce n'est plus LE BLOC ENTIER qui est
      rasterisé. La tuile est embarquée UNE fois et répétée par le PDF, à la densité
      de l'export. Un bloc de 380 × 200 px rempli de motif passait de 187 Ko à 2 Ko,
      et une page A4 entière en ULTRA HD — qui ne se terminait pas — sort désormais
@@ -122,13 +122,13 @@ SPPluginAPI({
     'Pattern, rosette, kaleidoscope or chaos — from a shape or a mix of images. Live preview in the panel. In PDF export the pattern is repeated as an image, at the chosen resolution.',
     'パターン・ロゼット・万華鏡・混沌 — 図形または画像のミックスから。パネル内でライブプレビュー。PDF 書き出しでは、柄は画像として繰り返され、選択した解像度になります。'),
 
-  /* 🆕 v1.7.684 — L'ICÔNE DE LA BARRE DU HAUT.
+  /* 🆕 v1.7.685 — L'ICÔNE DE LA BARRE DU HAUT.
      Demande utilisateur : « pour motif trouve une icône ». On dessine un MOTIF :
      des points en quinconce, c'est-à-dire ce que fait ce plug-in — une forme
      répétée en grille décalée.
      ⚠️ MÊME FACTURE QUE LES AUTRES ICÔNES DE CETTE ZONE : 24×24, `fill="none"`,
      `stroke="currentColor"`, épaisseur 1,8.
-     ⚠️ v1.7.684 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
+     ⚠️ v1.7.685 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
      Demande utilisateur : « les icons que les plugins ajoute dans la top
      navigation me semble plus noir que les autre en chromie ». La couleur était la
      même ; c'est l'encre qui pesait. Mesuré en pixels opaques sur un rendu 48×48 :
@@ -144,7 +144,7 @@ SPPluginAPI({
     { key: 'apercu', label: L('Aperçu', 'Preview', 'プレビュー'), type: 'apercu', ratio: 1 },
 
     /* ── Où poser ─────────────────────────────────────────────────────────── */
-    /* ⚠️ v1.7.684 — LA LISTE DIT CE QU'ELLE FAIT, ET RIEN DE PLUS.
+    /* ⚠️ v1.7.685 — LA LISTE DIT CE QU'ELLE FAIT, ET RIEN DE PLUS.
        Demande utilisateur : « dans appliquer à, retirer la phrase "bloc sélectionné
        sinon la page" ». C'était le libellé de l'option `auto` : une troisième voie
        qui décidait à la place de l'utilisateur, selon qu'une sélection existait ou
@@ -713,7 +713,7 @@ SPPluginAPI({
            assez peu pour que chaque forme reste lisible. */
         var ech = (W / 3) / cote;
         var pas = cote * ech;
-        /* ⚠️ v1.7.684 — LA GRILLE EST ANCRÉE SUR LE CONTENU DE LA TUILE, PAS SUR
+        /* ⚠️ v1.7.685 — LA GRILLE EST ANCRÉE SUR LE CONTENU DE LA TUILE, PAS SUR
            SON BORD.
            DÉFAUT MESURÉ (trappe Motif, toile 632 × 632, réglages par défaut) : le
            motif partait vers la droite. Sur la ligne médiane, les formes tombaient
@@ -777,7 +777,7 @@ SPPluginAPI({
     function cible() {
       var doc = api.document;
       var sel = api.selection();
-      /* ⚠️ v1.7.684 — UN OBJET POSÉ PAR LE PLUG-IN N'EST JAMAIS UNE CIBLE.
+      /* ⚠️ v1.7.685 — UN OBJET POSÉ PAR LE PLUG-IN N'EST JAMAIS UNE CIBLE.
          Les objets créés (rectangle de page, rosace) sont `selectable: true` pour
          qu'on puisse les déplacer. S'ils étaient pris pour la cible d'une nouvelle
          exécution, le nettoyage les retirerait juste après : on remplirait un objet
@@ -863,7 +863,7 @@ SPPluginAPI({
           });
 
           if (c.remplace && c.objet) {
-            /* ⚠️ v1.7.684 — ON MÉMORISE AUSSI L'OPACITÉ, ET ON LA RESTAURE.
+            /* ⚠️ v1.7.685 — ON MÉMORISE AUSSI L'OPACITÉ, ET ON LA RESTAURE.
                Un motif appliqué à 60 % d'opacité rendait le bloc à 60 % même après
                retrait du motif : la valeur d'avant n'était pas conservée. */
             if (!c.objet._spMotifAvant) {
@@ -903,7 +903,7 @@ SPPluginAPI({
           resolve(rect);
         }
 
-        /* ⚠️ v1.7.684 — DEUX SORTES D'OBJETS, DEUX TRAITEMENTS. MESURÉ, ET C'EST
+        /* ⚠️ v1.7.685 — DEUX SORTES D'OBJETS, DEUX TRAITEMENTS. MESURÉ, ET C'EST
            LA CAUSE DU BLOC QUI DISPARAÎT.
            Jusqu'ici le nettoyage retirait TOUT objet portant `_spMotifPlugin` — y
            compris les blocs que le plug-in n'avait fait que REMPLIR. Relevé dans la
