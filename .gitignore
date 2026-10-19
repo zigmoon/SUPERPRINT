@@ -17,11 +17,12 @@
 # Linux, que Windows ne peut pas fabriquer. Sans ce dossier dans le depot, il n'y
 # a pas de paquet macOS ni Linux a telecharger.
 !/.github/
-# PDF-YZ : produit a part entiere, avec son propre depot et son propre CI
-# (les workflows de PDF-YZ ne peuvent pas vivre ici : GitHub ne lit que
-# .github/workflows/ a la racine du depot). Enregistre comme sous-module,
-# donc le depot ne contient qu'un pointeur, pas les 3 Mo de sources.
-!/PDF-YZ/
+# PDF-YZ a son propre depot : https://github.com/zigmoon/PDF-YZ
+# Il n'est volontairement PAS liste ici. Un sous-module avait ete essaye, mais il
+# n'apportait qu'un pointeur bleu illisible a la racine du depot, sans le contenu
+# et sans les workflows (GitHub ne lit que `.github/workflows/` a la racine d'un
+# depot, jamais celui d'un sous-dossier). Le dossier reste ignore par la regle
+# `/*` ci-dessus, et le clone local n'est pas touche.
 # Les 7 dossiers produit
 !/superprint/
 !/sp213-local/
