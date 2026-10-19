@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Windows 10/11, macOS (Intel et Apple silicon), Linux x86_64 — et tout navigateur moderne (Chrome 90+, Firefox 90+, Safari 14+, Edge 90+)",
-      "softwareVersion": "1.7.680",
+      "softwareVersion": "1.7.681",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -558,7 +558,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
-/* 🆕 v1.7.680 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+/* 🆕 v1.7.681 — LE MENU NE SE REFERME PLUS EN CHEMIN.
    Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
    du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
    couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
@@ -623,24 +623,83 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   }
 }
 .nav-dd-boite {
-  padding: 16px; text-align: left;
+  /* ⚠️ v1.7.681 — LA BOÎTE N'A PLUS DE REMBOURRAGE : CE SONT SES ZONES QUI LE PORTENT.
+     Demande utilisateur : « bouton download, le filet de séparation horizontale doit
+     toucher les deux bouts de la boîte ». MESURÉ avant : le filet du haut de la liste
+     partait de 16 px et s'arrêtait à 16 px du bord — la boîte payait un rembourrage
+     unique de 16 px que le filet ne franchissait pas. En le déplaçant sur `.nav-dd-haut`
+     et sur chaque `.nav-dd-item`, le filet occupe toute la largeur sans marge négative,
+     et rien d'autre ne bouge : le texte reste à 16 px du bord, comme avant. */
+  padding: 0; text-align: left;
   background: var(--paper-3); border: 1px solid var(--line-strong);
   box-shadow: 0 26px 52px rgba(23,19,13,.19);
 }
-.nav-dd-tete { margin: 0 0 12px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--ink); }
-.nav-dd-sous {
-  display: block; margin-top: 3px; font-family: var(--f-mono); font-size: 10px;
-  font-weight: 400; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+/* ══ LA ZONE DU HAUT : le titre, puis la ligne `npx` à copier (v1.7.681) ══
+   Demande utilisateur : « ajoute dans le bouton une nouvelle en-tête comme Desktop
+   application — garde que cette phrase ici — et dans cette nouvelle zone on va
+   permettre de copier le npx, pense à tout ».
+   ⚠️ ELLE PORTE SON PROPRE FILET BAS, et c'est ce qui règle la demande du filet :
+   posé sur la zone, il va d'un bord à l'autre par construction. */
+.nav-dd-haut { padding: 15px 16px 14px; border-bottom: 1px solid var(--line); }
+.nav-dd-tete { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--ink); }
+/* ══ LA LIGNE À COPIER ══
+   Un cadre d'un seul tenant, coupé par le filet du bouton : la commande à gauche,
+   l'action à droite. Trois choix, tous mesurés :
+   · `user-select: all` — un clic dans la commande sélectionne TOUTE la ligne. Sans
+     ça, on sélectionne un mot et le copier-coller manuel donne `npx` seul ;
+   · `overflow-x: auto` — sur un téléphone de 320 px, la commande reste lisible en
+     la faisant glisser, au lieu de déborder de la boîte ;
+   · une seule couleur d'accent (le magenta de la quadri) sur le CHEVRON, pas sur la
+     commande : c'est un terminal, il doit se lire comme du texte, pas comme un titre. */
+.nav-dd-npx {
+  display: flex; align-items: stretch; margin-top: 9px;
+  border: 1px solid var(--line-strong); background: var(--paper);
 }
-.nav-dd-liste { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.nav-dd-npx-cmd {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 7px;
+  padding: 7px 10px; overflow-x: auto; white-space: nowrap;
+  font-family: var(--f-mono); font-size: 12px; line-height: 1.2; color: var(--ink);
+  scrollbar-width: none; -ms-overflow-style: none;
+  -webkit-user-select: all; user-select: all; cursor: text;
+}
+.nav-dd-npx-cmd::-webkit-scrollbar { display: none; }
+.nav-dd-npx-sig { color: var(--magenta); font-weight: 700; flex: 0 0 auto; }
+.nav-dd-npx-copy {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 11px; border: 0; border-left: 1px solid var(--line-strong);
+  background: transparent; color: var(--ink); cursor: pointer;
+  font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase;
+  transition: background .2s var(--ease), color .2s var(--ease);
+}
+.nav-dd-npx-copy:hover, .nav-dd-npx-copy:focus-visible { background: var(--ink); color: var(--paper); outline: none; }
+.nav-dd-npx-copy svg {
+  width: 13px; height: 13px; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+/* L'état « copié » garde le fond encre et allume le glyphe en jaune : le même
+   contraste que les chevrons du carrousel, pour un retour qui se voit sans crier. */
+.nav-dd-npx-copy.est-copie { background: var(--ink); color: var(--yellow); border-left-color: var(--ink); }
+.nav-dd-npx-note {
+  margin: 7px 0 0; font-family: var(--f-mono); font-size: 9.5px;
+  letter-spacing: .06em; color: var(--muted);
+}
+/* La confirmation pour les lecteurs d'écran : `role="status"` annonce le changement
+   sans déplacer le focus. Visuellement masquée, jamais `display: none`. */
+.nav-dd-live {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+.nav-dd-liste { display: flex; flex-direction: column; }
 .nav-dd-item {
-  position: relative; display: flex; align-items: center; gap: 12px;
-  padding: 11px 10px; margin: 0 -10px;
+  position: relative; display: flex; align-items: flex-start; gap: 12px;
+  /* Le rembourrage latéral est ICI, désormais : c'est lui qui laisse le filet de la
+     zone du haut atteindre les deux bords. */
+  padding: 13px 16px;
   border-bottom: 1px solid var(--line);
   transition: background .2s var(--ease);
 }
-/* Pas de surbrillance de ligne : la ligne n'est plus une cible. */
-.nav-dd-item { align-items: flex-start; padding-top: 13px; padding-bottom: 13px; }
+.nav-dd-liste > .nav-dd-item:last-child { border-bottom: 0; }
 .nav-dd-item:has(a:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
 /* Les marques des trois systemes, et non plus trois pictogrammes au trait : ici on
    cherche un systeme, pas un objet. La couleur est cuite dans le fichier, a l'encre
@@ -675,7 +734,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    concurrencer le nom de l'application — 8 px, sans approche forcée, et un peu
    effacé pour qu'il se lise comme une précision et non comme un titre. */
 .nav-dd-app-ver { font-family: var(--f-mono); font-size: 8px; letter-spacing: .02em; color: var(--muted); opacity: .85; }
-/* 🆕 v1.7.680 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+/* 🆕 v1.7.681 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
    peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
@@ -717,7 +776,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
   color: var(--paper); background: var(--ink);
 }
-/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.680) ══════════════
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.681) ══════════════
    Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
    plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
    systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
@@ -727,7 +786,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    32px)`) : les deux formes du seuil sont donc équivalentes, et une requête de
    média suffit — une requête de conteneur n'ajouterait rien.
 
-   ⚠️ v1.7.680 — LE PANNEAU PASSE DE 940 À 820 px, ET C'EST UNE MESURE.
+   ⚠️ v1.7.681 — LE PANNEAU PASSE DE 940 À 820 px, ET C'EST UNE MESURE.
    Demande utilisateur : « pour apple mets juste ARM et pas Apple silicon, pour
    linux n'affiche pas .rpm ». « Apple silicon » (331 px de large) était le plus
    long libellé du panneau, et la gélule « .rpm » était la troisième de la colonne
@@ -741,28 +800,19 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    `.nav-dd-liste` ; il suffit que ce conteneur devienne une grille. Le
    balisage reste donc identique dans les deux mises en page. */
 @media (min-width: 960px) {
-  .nav-dd-liste { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 0; }
-  /* ⚠️ v1.7.680 — LES FILETS VONT JUSQU'EN BAS DE LA BOÎTE. Demande utilisateur :
-     « les traits verticaux doivent aller jusqu'en bas de la boîte du sous-menu
-     ouvert ». MESURÉ avant : la liste finissait à 294 px et la boîte à 311 px, soit
-     17 px de filet manquant — le rembourrage bas de `.nav-dd-boite` (16 px) plus le
-     filet (1 px). On le retire ICI et on le rend aux cases : le bord droit de chaque
-     case touche alors le bord inférieur de la boîte, sans rien déplacer d'autre. */
-  .nav-dd-boite { padding-bottom: 0; }
+  .nav-dd-liste { display: grid; grid-template-columns: repeat(3, 1fr); }
+  /* ⚠️ v1.7.681 — LES TROIS MARQUES SONT CALÉES EN HAUT. Demande utilisateur :
+     « cale en haut les logos Windows Mac et Linux et non au centre de l'espace en
+     hauteur ». MESURÉ avant : les cases étaient centrées (`align-items: center`), ce
+     qui centrait le logo ET le texte dans la hauteur de la case la plus haute — or les
+     trois colonnes n'ont pas la même hauteur de contenu, donc les trois marques ne
+     tombaient pas sur la même ligne. En haut, les trois repères s'alignent sur le nom
+     du système, et le vide tombe en bas, là où l'œil ne cherche rien. */
   .nav-dd-item {
-    margin: 0; padding: 15px 16px 16px;
+    padding: 15px 16px 16px; align-items: flex-start;
     border-bottom: 0; border-right: 1px solid var(--line);
-    /* ⚠️ CENTRÉ VERTICALEMENT — même demande, « recentre bien les informations dans
-       la hauteur ». Les trois cases font la hauteur de la plus haute ; alignées en
-       haut, les deux plus courtes laissaient un vide en bas et le texte semblait
-       remonter. */
-    align-items: center;
   }
-  /* Les colonnes du bord ne portent pas de rembourrage vers l'extérieur : celui
-     de la boîte le fait déjà, et le doubler décalerait leur texte par rapport à
-     l'en-tête, qui est aligné sur la boîte. */
-  .nav-dd-item:first-child { padding-left: 0; }
-  .nav-dd-item:last-child { padding-right: 0; border-right: 0; }
+  .nav-dd-item:last-child { border-right: 0; }
 }
 /* 🆕 v1.7.472 — le sélecteur de langue était 0,5 px trop haut : les éléments se centrent
    dans la zone de contenu de la barre (65 px), alors que la barre en fait 66 avec son
@@ -883,7 +933,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-kicker::before { content:''; display: none; }
 /* #hero h1 SEULE, PAS h1 EN GÉNÉRAL : les pages tarif, rock, doc, api et
    install ont leur propre h1, et leur taille ne doit pas bouger avec l'accueil.
-   🆕 v1.7.680 — LE TITRE RÉTRÉCIT ENCORE. Demande utilisateur : « l'édition
+   🆕 v1.7.681 — LE TITRE RÉTRÉCIT ENCORE. Demande utilisateur : « l'édition
    créative nouvelle génération, typo un peu plus petite ». MESURÉ AVANT :
    #hero h1 { clamp(38px, 6.6vw, 88px) } → 88 px à 1600 px de large, deux lignes
    sur 180 px de haut.
@@ -915,14 +965,14 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   margin: 0 -.14em;
 }
 /* ══════════════ COMPATIBILITÉ SYSTÈMES — TROIS LOGOS, TROIS LIENS ══════════════
-   🆕 v1.7.680 — DEMANDE UTILISATEUR : « met les 3 logos mac pc linux et info
+   🆕 v1.7.681 — DEMANDE UTILISATEUR : « met les 3 logos mac pc linux et info
    Windows macOS Linux un peu plus grand (ceux en dessous les 3 boîtes (app) ils
    sont tout petit) et met un lien qui pointe vers les installeurs sur github ».
    ⚠️ MESURÉ AVANT : 10 px de corps, pictogrammes de 14 × 14, ligne haute de 17 px,
    et AUCUN lien. C'était la plus petite écriture du hero, alors que c'est elle qui
    dit sur quoi le logiciel tourne.
 
-   🆕 v1.7.680 — DEUXIÈME RETOUR, ET IL RACCOURCIT PLUS QU'IL N'ALLONGE :
+   🆕 v1.7.681 — DEUXIÈME RETOUR, ET IL RACCOURCIT PLUS QU'IL N'ALLONGE :
    « supprimer Installateurs et COMPATIBLE, mettre que les logos avec le lien
    GitHub ». Le mot d'introduction (« Compatible » / « Runs on » / 対応OS) et la
    gélule « Installateurs » DISPARAISSENT donc du visible. Il ne reste que les
@@ -939,7 +989,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    cliquable est plus grande que le dessin (padding 4px), pour qu'on ne vise pas
    un carré de 26 px à la souris.
 
-   🆕 v1.7.680 — UN FILET DE TÊTE, AVEC « INSTALLEUR » AU MILIEU.
+   🆕 v1.7.681 — UN FILET DE TÊTE, AVEC « INSTALLEUR » AU MILIEU.
    Demande utilisateur : « avant les 3 icônes Windows macOS Linux j'aimerais un
    séparateur fin centré avec au centre la typo Installeur (même typo que Le n°1 de
    la PAO gratuite) ».
@@ -989,7 +1039,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
      endroits, et « MACOS » est une faute de marque. */
   text-transform: none;
 }
-/* ⚠️ v1.7.680 — LE TRIO EST RÉDUIT D'UN CRAN, PAS DE DEUX.
+/* ⚠️ v1.7.681 — LE TRIO EST RÉDUIT D'UN CRAN, PAS DE DEUX.
    Historique mesuré de ce bloc, pour que personne ne refasse l'aller-retour :
      · 26 px / 13 px  → demande « un peu trop gros » ;
      · 20 px / 11,5 px → retour « finalement c'était mieux avant » ;
@@ -1030,7 +1080,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-dots .dot.m { background: var(--magenta); }
 .hero-dots .dot.y { background: var(--yellow); }
 .hero-dots .dot.k { background: var(--ink); }
-/* 🆕 v1.7.680 — L'INTERLIGNE DU HERO PASSE DE 1,75 À 1,45.
+/* 🆕 v1.7.681 — L'INTERLIGNE DU HERO PASSE DE 1,75 À 1,45.
    Demande utilisateur : « Ici l'interlignage est trop fort, réduis-le ! » — la
    phrase de l'accroche, celle qui commence par « SuperPrint rend la PAO
    accessible… ». MESURÉ AVANT : corps de 19 px, interligne de 33,25 px, soit un
@@ -1451,7 +1501,7 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 .cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
 .cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
 
-/* ══════════════ 🆕 v1.7.680 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
+/* ══════════════ 🆕 v1.7.681 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
    DERNIÈRE ZONE AVANT LE PIED DE PAGE. Elle ne double pas les trois entrées du
    haut de page, elle les prolonge : les entrées ouvrent l'application en ligne et
    ne disent rien des versions ; ici on donne le numéro de version, les trois
@@ -1665,7 +1715,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 }
 .foot-note { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .06em; color: rgba(139,129,114,.8); }
 /* ══════════════ RÉSEAUX — DANS LE COLOPHON ══════════════
-/* 🆕 v1.7.680 — LA RANGÉE SOCIALE DU COLOPHON A ÉTÉ RETIRÉE.
+/* 🆕 v1.7.681 — LA RANGÉE SOCIALE DU COLOPHON A ÉTÉ RETIRÉE.
    ⚠️ ELLE ÉTAIT AU MAUVAIS ENDROIT, ET L'UTILISATEUR L'A DIT APRÈS L'AVOIR VUE :
    « Footer de superprint.cc la barre qui est fixe sur la page et pas le footer de
    la page a droite de github on va ajouter notre discord ». Le mot « footer »
@@ -1750,7 +1800,7 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   LES HUIT CAPTURES, AVANT LA LISTE — v1.7.680.
+   LES HUIT CAPTURES, AVANT LA LISTE — v1.7.681.
    Demande utilisateur : « je n'aime pas cette accroche, fais plus court, ne parle
    pas du temps qui passe, sois moderne… aussi je veux trois colonnes pour les
    nouveaux blocs des features avec images, et ne mets pas en grand une première
@@ -1762,11 +1812,13 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
    cartes de même poids, trois par ligne, se lisent comme une planche contact —
    c'est ce qu'on demande à une ouverture visuelle.
 
-   ⚠️ LA GRILLE EST EN SIX PISTES POUR LA DERNIÈRE LIGNE. Huit cartes en trois
-   colonnes laissent deux orphelines sur la troisième ligne : avec des cartes à
-   `span 2` sur six pistes, les deux dernières passent à `span 3` et remplissent
-   la ligne sans trou. Mesuré à 1600 px : trois lignes pleines, aucune carte
-   isolée, aucun débordement horizontal.
+   ⚠️ NEUF CARTES, TROIS PAR LIGNE, TOUTES DE MÊME POIDS. Dernière demande : « je
+   veux trois colonnes pour les nouveaux blocs des features avec images, ne mets
+   pas en grand une première feature » puis « ajoute une neuvième feature pour faire
+   des grilles de 3 par ligne en desktop ». Neuf, c'est exactement trois lignes
+   pleines : la neuvième carte n'est pas un bouche-trou, c'est elle qui rend la
+   grille parfaite. Trois colonnes sur une largeur de 1180 px donnent 392 px par
+   carte — la même largeur qu'avant, avec un rythme régulier et aucun trou.
 
    ⚠️ CE SONT DE VRAIES CAPTURES, PRISES DANS L'APPLICATION, pas des maquettes :
    1600 × 1000, même cadrage et même poids que les planches existantes
@@ -1793,20 +1845,44 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
 }
 .spv-t em { font-style: italic; color: var(--magenta); }
 .spv-grid {
-  display: grid; grid-template-columns: repeat(6, minmax(0,1fr));
+  display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
   gap: 1px; background: var(--line); border: 1px solid var(--line);
 }
 .spv-card {
-  grid-column: span 2; margin: 0; display: flex; flex-direction: column;
+  margin: 0; display: flex; flex-direction: column;
   background: var(--paper-3); position: relative;
   transition: background .3s var(--ease);
 }
 .spv-card:hover { background: var(--white); }
-/* Les deux dernières cartes remplissent la troisième ligne : deux demi-largeurs
-   plutôt qu'un trou d'une colonne à droite. */
-.spv-card:nth-last-child(2), .spv-card:last-child { grid-column: span 3; }
-.spv-img { overflow: hidden; border-bottom: 1px solid var(--line); background: var(--paper-2); }
-.spv-img img { display: block; width: 100%; height: auto; }
+/* ══ LA LOUPE DES CAPTURES (v1.7.681) ══
+   ⚠️ LA ZONE IMAGE EST DEVENUE UN `<button>`. Un `<div>` cliquable aurait obligé à
+   poser `tabindex` et un rôle : c'est exactement ce qu'un bouton natif fait mieux —
+   il reçoit Entrée et Espace, il est annoncé « bouton », et il se met en évidence
+   au clavier sans une règle de plus. Les remises à zéro sont donc obligatoires,
+   sinon le bouton hérite du fond, du rembourrage et de la police du navigateur. */
+.spv-img, .tcard-img {
+  display: block; width: 100%; padding: 0; margin: 0; text-align: inherit; font: inherit;
+  border: 0; border-bottom: 1px solid var(--line); background: var(--paper-2);
+  overflow: hidden; cursor: zoom-in; position: relative;
+}
+.spv-img:focus-visible, .tcard-img:focus-visible { outline: 2px solid var(--ink); outline-offset: -3px; }
+.spv-img img, .tcard-img img { display: block; width: 100%; height: auto; transition: transform .6s var(--ease); }
+.spv-img:hover img, .tcard-img:hover img { transform: scale(1.015); }
+/* Le repère de loupe : il n'apparaît qu'au survol ou au focus, et il ne masque
+   jamais le propos de la capture (30 px, dans un coin, sur une pastille d'encre). */
+.spv-img::after, .tcard-img::after {
+  content: ''; position: absolute; right: 10px; bottom: 10px; width: 30px; height: 30px;
+  border-radius: 50%; background: var(--ink); opacity: 0; transform: translateY(5px);
+  transition: opacity .28s var(--ease), transform .28s var(--ease);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F7F3EC' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5 21 21'/%3E%3Cpath d='M10.5 8v5M8 10.5h5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: center; background-size: 15px 15px;
+}
+.spv-img:hover::after, .spv-img:focus-visible::after,
+.tcard-img:hover::after, .tcard-img:focus-visible::after { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .spv-img img, .tcard-img img, .spv-img::after, .tcard-img::after { transition: none; }
+  .spv-img:hover img, .tcard-img:hover img { transform: none; }
+}
 .spv-body { padding: clamp(13px,1.5vw,19px) clamp(14px,1.7vw,22px) clamp(15px,1.7vw,21px); }
 .spv-num {
   display: block; font-family: var(--f-mono); font-size: 10px; font-weight: 600;
@@ -1846,17 +1922,106 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
 .spv-chip.out::before { content: '↗ '; color: var(--yellow); font-weight: 700; }
 .spv-chip.in::before { content: '↙ '; color: var(--cyan); font-weight: 700; }
 @media (max-width: 1180px) {
-  /* Deux colonnes : les cartes reprennent trois pistes, y compris les deux
-     dernières (sinon elles resteraient à demi-largeur sur deux pistes). */
-  .spv-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
-  .spv-card, .spv-card:nth-last-child(2), .spv-card:last-child { grid-column: span 2; }
+  .spv-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
 @media (max-width: 720px) {
   .spv-grid { grid-template-columns: minmax(0,1fr); }
-  .spv-card, .spv-card:nth-last-child(2), .spv-card:last-child { grid-column: span 1; }
   .spv-bande { flex-direction: column; align-items: flex-start; }
 }
-@media (prefers-reduced-motion: reduce) { .spv-card { transition: none; } }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LA VISIONNEUSE DES CAPTURES (v1.7.681)
+   Demande utilisateur : « les images des features doivent s'ouvrir en lightbox
+   super moderne ».
+
+   ⚠️ AUCUN FICHIER DE PLUS. La planche affichée dans la grille EST l'image
+   d'origine (1600 × 1000) : la visionneuse montre exactement le même fichier, en
+   grand. Pas de seconde version « haute définition » à maintenir, pas de tuile
+   supplémentaire à télécharger — et donc rien qui puisse se désynchroniser.
+
+   ⚠️ LE FOND EST L'ENCRE DE LA PAGE, PAS DU NOIR PUR, et il est flouté : la
+   capture se détache du document qu'on vient de quitter sans qu'on perde le
+   contexte. Le voile est opaque à 92 % — à 70 %, le texte de la page transparaissait
+   derrière les titres de la capture et gênait la lecture.
+
+   ⚠️ `visibility` EST ANIMÉ PAR PALIER (`transition-delay`), PAS PAR `opacity` :
+   une visionneuse fermée doit être INATTEIGNABLE au clavier et au pointeur, et
+   `opacity: 0` la laisse cliquable. C'est le piège classique de ce composant.
+   ════════════════════════════════════════════════════════════════════════════ */
+.spv-lb {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(52px, 6vw, 78px) clamp(14px, 4vw, 64px);
+  background: rgba(15,12,8,.92);
+  -webkit-backdrop-filter: blur(9px) saturate(115%); backdrop-filter: blur(9px) saturate(115%);
+  opacity: 0; visibility: hidden;
+  transition: opacity .26s var(--ease), visibility 0s linear .26s;
+}
+.spv-lb.ouvert { opacity: 1; visibility: visible; transition-delay: 0s; }
+.spv-lb-fig {
+  margin: 0; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  max-width: 100%; max-height: 100%;
+  transform: scale(.965); opacity: 0;
+  transition: transform .36s var(--ease), opacity .36s var(--ease);
+}
+.spv-lb.ouvert .spv-lb-fig { transform: none; opacity: 1; }
+.spv-lb-img {
+  display: block; max-width: 100%; max-height: calc(100vh - 190px);
+  width: auto; height: auto; background: var(--paper);
+  border: 1px solid rgba(247,243,236,.2);
+  box-shadow: 0 44px 90px -34px #000, 0 0 0 1px rgba(0,0,0,.4);
+}
+.spv-lb-cap {
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: rgba(247,243,236,.78); text-align: center;
+  max-width: 760px; line-height: 1.6;
+}
+.spv-lb-cap b { color: var(--yellow); font-weight: 700; margin-right: 10px; }
+/* Les commandes : cercle fin sur verre, qui s'inverse au survol. Aucune ombre
+   superflue — sur un fond déjà très sombre, c'est le contour qui fait le bouton. */
+.spv-lb-x, .spv-lb-arr {
+  position: fixed; display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(247,243,236,.34); background: rgba(23,19,13,.55);
+  color: var(--paper); cursor: pointer; border-radius: 50%;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  transition: background .22s var(--ease), color .22s var(--ease), border-color .22s var(--ease), transform .18s var(--ease);
+}
+.spv-lb-x {
+  top: clamp(12px, 2vw, 22px); right: clamp(12px, 2vw, 22px);
+  width: 46px; height: 46px; font-size: 22px; line-height: 1;
+}
+.spv-lb-arr { top: 50%; width: 52px; height: 52px; transform: translateY(-50%); }
+.spv-lb-prev { left: clamp(8px, 1.6vw, 22px); }
+.spv-lb-next { right: clamp(8px, 1.6vw, 22px); }
+.spv-lb-x:hover, .spv-lb-x:focus-visible,
+.spv-lb-arr:hover, .spv-lb-arr:focus-visible {
+  background: var(--paper); color: var(--ink); border-color: var(--paper); outline: none;
+}
+.spv-lb-arr:active { transform: translateY(-50%) scale(.93); }
+.spv-lb-x svg, .spv-lb-arr svg {
+  width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.spv-lb-cpt {
+  position: fixed; top: clamp(16px, 2.4vw, 28px); left: clamp(16px, 2.4vw, 28px);
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .2em; color: var(--paper);
+}
+.spv-lb-cpt em { font-style: normal; color: rgba(247,243,236,.5); }
+/* La page ne défile plus derrière la visionneuse. Posé sur `html` ET `body` : la
+   page défile par l'un ou par l'autre selon le navigateur, et `body` seul ne
+   suffisait pas — mesuré, la molette continuait de déplacer le document. */
+html.lb-ouvert, html.lb-ouvert body { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .spv-lb, .spv-lb-fig, .spv-lb-img { transition: none; }
+  .spv-lb-fig { transform: none; opacity: 1; }
+}
+@media (max-width: 620px) {
+  .spv-lb { padding: 58px 10px 74px; }
+  .spv-lb-arr { width: 44px; height: 44px; bottom: 12px; top: auto; transform: none; }
+  .spv-lb-arr:active { transform: scale(.93); }
+  .spv-lb-img { max-height: calc(100vh - 200px); }
+}
 
 /* ——— la barre : le geste unique ——— */
 details.spf-fold { border-top: 2px solid var(--ink); margin-top: clamp(26px,3.4vw,44px); }
@@ -2219,7 +2384,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
-  /* 🎯 v1.7.680 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+  /* 🎯 v1.7.681 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
      Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
      ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
      texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
@@ -2469,7 +2634,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.680 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.681 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -2477,14 +2642,14 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    correspondante. */
 .fondations-grid {
   display: grid;
-  /* 🆕 v1.7.680 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+  /* 🆕 v1.7.681 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
      Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
      bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
      363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
      quatre cases d'information se partagent le reste à parts égales. */
   grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.680 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+  /* 🆕 v1.7.681 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
      353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
      la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
@@ -2514,14 +2679,14 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .fondation-chiffre { font-family: var(--f-mono); font-size: 1.02em; color: var(--ink); font-weight: 600; }
 .fondation-date { font-family: var(--f-mono); font-size: 0.85em; color: var(--muted); }
 /* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
-/* 🆕 v1.7.680 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
+/* 🆕 v1.7.681 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
    Demande : « on met juste les marques au premier abord ; au survol la marque disparaît
    et affiche la phrase ».
    ⚠️ LES DEUX SONT DANS LA MÊME CELLULE DE GRILLE (grid-area 1/1) : la hauteur du bloc
    vaut donc le MAXIMUM des deux, et la barre ne saute pas quand la phrase apparaît.
    Mesuré : la phrase npm passe à 2 lignes en japonais à 1280 px (38 px) quand le nom en
    fait 18 — une mise en page en flux aurait fait grandir la case de 20 px au survol.
-   🆕 v1.7.680 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
+   🆕 v1.7.681 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
    Retour utilisateur : « sur les grands écrans on pouvait garder finalement la petite
    phrase qui était en dessous grise, désolé… garde le comportement actuellement pour
    les écrans moyens (les petits laptops, les tablettes) ».
@@ -2530,7 +2695,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    ⚠️ SOUS 1024 px LA PHRASE RESTE MASQUÉE : à cette largeur les quatre cases tiennent
    à peine le nom, et une deuxième ligne ferait passer la barre de 73 à 254 px
    (mesuré sur `index.html`, mise en page mobile). */
-/* 🆕 v1.7.680 — LE CROISEMENT AU SURVOL DISPARAÎT, ET LA PHRASE SE RESSERRE.
+/* 🆕 v1.7.681 — LE CROISEMENT AU SURVOL DISPARAÎT, ET LA PHRASE SE RESSERRE.
    Demande : « la petite ligne de texte engrisée qui sert de description sous GitHub,
    npm, Discord, etc. doit disparaître dès 1200 px aussi » — et, sur les grands
    écrans où elle reste, « la typo GitHub/Discord n'est pas assez proche de la petite
@@ -2558,7 +2723,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   .fondation-desc { margin-top: -5px; }
 }
 
-/* ═══ v1.7.680 — LES LIGNES DE TEXTE DESCENDENT DE 2 px, LA PHRASE DE 2 DE PLUS ═══
+/* ═══ v1.7.681 — LES LIGNES DE TEXTE DESCENDENT DE 2 px, LA PHRASE DE 2 DE PLUS ═══
    Demandes : « mets la petite ligne grise en dessous les marques un petit peu plus
    bas » et « globalement dans le footer fixe, on devrait redescendre les lignes de
    texte à droite des logos de quelques pixels (2 px) ».
@@ -2584,7 +2749,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .fondation-txt { transform: translateY(2px); }
 .fondation-desc { transform: translateY(2px); }
 /* Le nom garde son soulignement d'affordance : c'est la seule marque de lien là où
-   la phrase est absente. ⚠️ LA BORNE SUIT CELLE DE LA PHRASE (1200 px, v1.7.680) : à
+   la phrase est absente. ⚠️ LA BORNE SUIT CELLE DE LA PHRASE (1200 px, v1.7.681) : à
    1024–1199 px la phrase n'existe plus, mais le nom doit rester cliquable à l'œil. */
 @media (max-width: 1199.9px) {
   .fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
@@ -2595,7 +2760,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   .fondation-nom, .fondation-desc { transition: none; }
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-/* 🆕 v1.7.680 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+/* 🆕 v1.7.681 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
    Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
    ICON MÊME NOIR QUE RUST ».
    ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
@@ -2666,7 +2831,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
    toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
    elles se lisent sans qu'on aille les chercher.
-   🆕 v1.7.680 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   🆕 v1.7.681 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
    cette même barre.
 
    LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
@@ -2698,7 +2863,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     🆕 v1.7.680 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     🆕 v1.7.681 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
      À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
      des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
      DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
@@ -2716,7 +2881,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
      réservée devient exacte par construction. */
   .fondations {
-    /* ⚠️ v1.7.680 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
+    /* ⚠️ v1.7.681 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
        Mesuré sur rock.html : en pleine case GitHub, elementFromPoint rendait
        « li.rk-fn < div.container » — le contenu passait devant la barre, qui restait en
        z-index auto. La règle d'index.html (.container:has(.fondations) { z-index: 40 })
@@ -2740,7 +2905,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    /* 🆕 v1.7.680 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+    /* 🆕 v1.7.681 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
        Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
        desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
        d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
@@ -2769,13 +2934,13 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
 @media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
 
-/* ═══ NOMS SEULS SOUS 1200 px (v1.7.680) ═══
+/* ═══ NOMS SEULS SOUS 1200 px (v1.7.681) ═══
    Demande utilisateur : « quand le footer fixe passe en dessous de 1024 px, mets
    que GitHub, Discord, npm et Rust ; ne mets pas les petites phrases en gris en
    dessous à cette résolution ». La règle est bornée des DEUX côtés : sous 901 px
    la barre n'est plus fixe (liste empilée du fil du document), et les
    descriptions y ont la place — cette mise en page n'est pas touchée.
-   ⚠️ v1.7.680 — LA BORNE PASSE DE 1024 À 1200 px. Demande : « la petite ligne de
+   ⚠️ v1.7.681 — LA BORNE PASSE DE 1024 À 1200 px. Demande : « la petite ligne de
    texte engrisée doit disparaître dès 1200 px aussi ».
    Le texte est MASQUÉ par `display: none`, et il faut le dire exactement : il
    disparaît donc AUSSI pour un lecteur d'écran. C'est assumé : la marque seule
@@ -2854,9 +3019,9 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .tpl-arrow {
   position: absolute; top: calc(14px + clamp(196px,21.5vw,246px) / 2); transform: translateY(-50%);
   width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-  /* ⚠️ v1.7.680 — JAUNE QUADRI, CHEVRON À L'ENCRE. Demande utilisateur : « met les
+  /* ⚠️ v1.7.681 — JAUNE QUADRI, CHEVRON À L'ENCRE. Demande utilisateur : « met les
      fonds jaune, on ne les voit pas / fond jaune et chevrons en noir ». Elles étaient
-     passées en papier sur encre à la v1.7.680, quand la bande des modèles est devenue
+     passées en papier sur encre à la v1.7.681, quand la bande des modèles est devenue
      noire : lisibles, mais muettes. Le jaune de la palette (`--yellow`, celui de la
      quadri) les pose comme des COMMANDES sur les deux fonds — la bande est sombre, les
      cartes sont claires, et un aplat jaune tient sur les deux.
@@ -2874,7 +3039,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   box-shadow: 0 10px 22px -10px rgba(23,19,13,.95);
 }
 .tpl-arrow:active { transform: translateY(-50%) scale(.94); }
-/* ⚠️ v1.7.680 — PLUS D'ÉTAT « DÉSACTIVÉ ». Demande utilisateur : « les chevrons pour le
+/* ⚠️ v1.7.681 — PLUS D'ÉTAT « DÉSACTIVÉ ». Demande utilisateur : « les chevrons pour le
    swipe des templates ne marchent pas du tout ». La cause mesurable était là : en butée,
    le bouton était `disabled` — donc un clic ne produisait STRICTEMENT RIEN, et au
    chargement le premier clic tombait toujours sur `prev`, désactivé. Le rail boucle
@@ -3074,7 +3239,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 @media (prefers-reduced-motion: reduce) { .sp-wa { transition: none; } }
 @media print { .sp-wa { display: none; } }
 
-/* 🆕 v1.7.680 — LA BULLE FLOTTANTE N'EXISTE PLUS QU'EN MOBILE.
+/* 🆕 v1.7.681 — LA BULLE FLOTTANTE N'EXISTE PLUS QU'EN MOBILE.
    Demande utilisateur : « mets le bouton WhatsApp directement dans la barre plutôt
    que flottant, cependant garde-le bien en mobile (cette bulle WhatsApp est à
    conserver en mobile) ». Sous 901 px la barre n'est plus fixe — elle défile avec
@@ -3090,7 +3255,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 /* _PAGE_ROCK_588 — la page ROCK v1 vit désormais dans rock.html. */
 
-/* ═══ VERSION TÉLÉCHARGEABLE — MASQUÉE TANT QU'ELLE N'EST PAS CONFIRMÉE (v1.7.680) ═══
+/* ═══ VERSION TÉLÉCHARGEABLE — MASQUÉE TANT QU'ELLE N'EST PAS CONFIRMÉE (v1.7.681) ═══
    Le numéro affiché doit être celui qu'on TÉLÉCHARGE. Il vient de GitHub
    (JS/versions-github.js) et de nulle part ailleurs. Tant qu'il n'a pas été lu,
    il reste invisible : un numéro faux est pire qu'aucun numéro.
@@ -3102,7 +3267,7 @@ html[data-sp-version="ok"] .brand-ver,
 html[data-sp-version="ok"] .nav-dd-app-ver,
 html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 
-/* ═══ v1.7.680 — ESSAI : LA BANDE DES MODÈLES PASSE À L'ENCRE ═══
+/* ═══ v1.7.681 — ESSAI : LA BANDE DES MODÈLES PASSE À L'ENCRE ═══
    Demande utilisateur : « fais un essai où le fond des templates sur la page de
    présentation est noir (le noir du projet) et le fond des templates actuel passe
    sous les deux auteurs dans la page ».
@@ -3131,7 +3296,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 #templates .tpl-arrow { background: var(--yellow); border-color: var(--ink); color: var(--ink); }
 #templates .tpl-arrow:hover, #templates .tpl-arrow:focus-visible { background: #FFCF2A; border-color: var(--ink); }
 /* L'ancien fond de la bande des modèles passe sous les deux auteurs.
-   ⚠️ v1.7.680 — DEMANDE : « mets le fond de la boîte des auteurs plus clair ».
+   ⚠️ v1.7.681 — DEMANDE : « mets le fond de la boîte des auteurs plus clair ».
    C'était « --paper-2 » (#EFEAE0), un cran plus soutenu que le papier de la page.
    On prend « --paper-3 » (#FFFDF8), le papier le plus clair de la palette — un cran
    AU-DESSUS de « --paper » (#F7F3EC) qui habille la section précédente, pour que les
@@ -3156,7 +3321,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.680</span>
+  <span class="brand-ver">v1.7.681</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -3198,10 +3363,25 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
       </button>
       <div class="nav-dd-panel" id="navDlPanel">
         <div class="nav-dd-boite">
-          <p class="nav-dd-tete">
-            <span data-lang="fr">Application de bureau</span><span data-lang="en">Desktop application</span><span data-lang="ja">デスクトップアプリ</span>
-            <span class="nav-dd-sous"><span class="inline-fr">Trois applications · un installeur chacune</span><span class="inline-en">Three apps · one installer each</span><span class="inline-ja">3つのアプリ · それぞれ専用インストーラー</span></span>
-          </p>
+          <!-- ══ LA ZONE DU HAUT (v1.7.681) ══
+               « Application de bureau », et rien d'autre : la sous-phrase « Trois
+               applications · un installeur chacune » est supprimée (demande
+               utilisateur). Dessous, la ligne `npx` à copier, qui installe la version
+               locale sans passer par un installeur. -->
+          <div class="nav-dd-haut">
+            <p class="nav-dd-tete">
+              <span data-lang="fr">Application de bureau</span><span data-lang="en">Desktop application</span><span data-lang="ja">デスクトップアプリ</span>
+            </p>
+            <div class="nav-dd-npx">
+              <code class="nav-dd-npx-cmd" id="navNpxCmd"><span class="nav-dd-npx-sig" aria-hidden="true">$</span><span id="navNpxTxt">npx superprint</span></code>
+              <button type="button" class="nav-dd-npx-copy" id="navNpxCopy">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="nav-dd-npx-lbl"><span class="inline-fr">Copier</span><span class="inline-en">Copy</span><span class="inline-ja">コピー</span></span>
+              </button>
+            </div>
+            <p class="nav-dd-npx-note" id="navNpxNote">Terminal · Node.js requis</p>
+            <span class="nav-dd-live" id="navNpxLive" role="status" aria-live="polite"></span>
+          </div>
           <!-- Les cinq fichiers sont ICI, et nulle part ailleurs dans la page.
                Un système par ligne ; la variante (Intel, .deb) est un second lien
                sur la même ligne. Le nom porte le lien principal, étiré sur toute
@@ -3216,15 +3396,15 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
               <span class="nav-dd-os">PC — Windows</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.680</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.681</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.680</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.681</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.680</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.681</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64-setup.exe" rel="noopener">.exe</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Windows-x64.msi" rel="noopener">.msi</a></span>
             </span>
               </span>
@@ -3237,15 +3417,15 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
               <span class="nav-dd-os">MAC — macOS</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.680</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.681</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-AppleSilicon.dmg" rel="noopener">ARM</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.680</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.681</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-AppleSilicon.dmg" rel="noopener">ARM</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.680</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.681</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-AppleSilicon.dmg" rel="noopener">ARM</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-macOS-Intel.dmg" rel="noopener">Intel</a></span>
             </span>
               </span>
@@ -3258,15 +3438,15 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
               <span class="nav-dd-os">LINUX</span>
               <span class="nav-dd-apps">
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.680</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperPrint</span><span class="nav-dd-app-ver">v1.7.681</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperPrint-Linux-x86_64.deb" rel="noopener">.deb</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.680</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">Studio IA</span><span class="nav-dd-app-ver">v1.7.681</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/Studio-IA-Linux-x86_64.deb" rel="noopener">.deb</a></span>
             </span>
             <span class="nav-dd-app">
-              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.680</span></span>
+              <span class="nav-dd-app-id"><span class="nav-dd-app-nom">SuperTyPo</span><span class="nav-dd-app-ver">v1.7.681</span></span>
               <span class="nav-dd-app-fmt"><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.AppImage" rel="noopener">.AppImage</a><a href="https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/SuperTyPo-Linux-x86_64.deb" rel="noopener">.deb</a></span>
             </span>
               </span>
@@ -3311,7 +3491,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
        que setLang() continue de marquer la langue choisie. -->
-  <!-- (v1.7.680 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
+  <!-- (v1.7.681 — l'entrée « Télécharger » du burger A ÉTÉ RETIRÉE. Le menu de
        la barre a été déplacé dans .nav-tools, qui reste visible sous 1000 px :
        il n'y a donc plus rien à dupliquer ici.) -->
   <div class="mm-lang">
@@ -3325,7 +3505,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.680</span>
+    <span>SuperPrint v1.7.681</span>
   </div>
 </div>
 
@@ -3343,7 +3523,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 <section id="hero">
   <div class="ghost" aria-hidden="true">PRINT</div>
   <div class="container">
-    <!-- 🆕 v1.7.680 — « 100% ONLINE » DEVIENT « GRATUITE ».
+    <!-- 🆕 v1.7.681 — « 100% ONLINE » DEVIENT « GRATUITE ».
          Demande utilisateur : « Le n°1 de la PAO 100% online (remplace par
          gratuit) ». Accord au féminin : le sujet est LA PAO (publication assistée
          par ordinateur). L'anglais et le japonais suivent le même déplacement —
@@ -3366,7 +3546,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 
       <a class="entry" href="app/index.html" style="--entry-accent:#00A7C7">
         <span class="entry-name">SuperPrint</span>
-        <!-- 🆕 v1.7.680 — « Le bureau de PAO complet : mise en page, prépresse,
+        <!-- 🆕 v1.7.681 — « Le bureau de PAO complet : mise en page, prépresse,
              export. » devient « Bureau de PAO de dernière génération. » Demande
              utilisateur, mot pour mot. La version anglaise et la japonaise suivent
              le même déplacement : elles décrivaient une LISTE DE FONCTIONS, elles
@@ -3399,7 +3579,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
     </div>
 
     <!-- L'ACCROCHE PASSE AVANT LE BLOC DES SYSTÈMES.
-         🆕 v1.7.680 — DEMANDE UTILISATEUR : « je pense que le texte [l'accroche] va
+         🆕 v1.7.681 — DEMANDE UTILISATEUR : « je pense que le texte [l'accroche] va
          au-dessus INSTALLEUR du coup ». Elle était après la barre des fondations,
          donc tout en bas du hero ; elle présente le produit AVANT qu'on propose de
          le télécharger, et c'est l'ordre qui se lit.
@@ -3408,7 +3588,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
     <p class="lead hero-lead" data-lang="en"><strong>SuperPrint</strong> makes professional layout accessible: not a clone, not a fork — written from scratch, today's most solid creation studio.</p>
     <p class="lead hero-lead" data-lang="ja"><strong>SuperPrint</strong> はプロの組版を身近にします。クローンでもフォークでもなく、ゼロから書かれた、今もっとも堅牢な制作スタジオです。</p>
     <!-- COMPATIBILITÉ SYSTÈMES — juste après les trois entrées.
-         🆕 v1.7.680 — TROIS LOGOS, RIEN D'AUTRE. Demande utilisateur : « supprimer
+         🆕 v1.7.681 — TROIS LOGOS, RIEN D'AUTRE. Demande utilisateur : « supprimer
          Installateurs et COMPATIBLE, mettre que les logos avec le lien GitHub ».
          Le mot d'introduction et la gélule ont donc disparu ; il ne reste que les
          trois pictogrammes, et CHACUN EST LE LIEN vers les installeurs. Un logo de
@@ -3421,7 +3601,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
          aux vingt et un fichiers (sept par application), exactement comme le
          sous-menu « Télécharger » du haut de page. -->
     <div class="hero-os">
-      <!-- 🆕 v1.7.680 — LE FILET DE TÊTE, « INSTALLEUR » AU MILIEU.
+      <!-- 🆕 v1.7.681 — LE FILET DE TÊTE, « INSTALLEUR » AU MILIEU.
            Demande utilisateur : « avant les 3 icônes Windows macOS Linux j'aimerais
            un séparateur fin centré avec au centre la typo Installeur (même typo que
            Le n°1 de la PAO gratuite) ». Le libellé est traduit : EN « Installers »,
@@ -3443,7 +3623,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
     <!-- ══════════════ FONDATIONS OPEN SOURCE — GitHub, npm, Rust ══════════════
          Placées SOUS les trois entrées, et volontairement plus discrètes : ce sont
          les briques techniques, pas des applications à ouvrir. QUATRE colonnes depuis la
-         v1.7.680 (Discord à droite de GitHub), et AUCUN panneau : les trois colonnes tombent dans le
+         v1.7.681 (Discord à droite de GitHub), et AUCUN panneau : les trois colonnes tombent dans le
          fond de page, séparées par des filets. -->
     <div class="fondations">
       <div class="fondations-grid">
@@ -3456,7 +3636,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
           </span>
         </a>
 
-        <!-- 🆕 v1.7.680 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
+        <!-- 🆕 v1.7.681 — DISCORD ENTRE DANS LA BARRE FIXE, À DROITE DE GITHUB.
              Demande utilisateur, après avoir vu la première tentative reléguée au
              colophon : « Footer de superprint.cc LA BARRE QUI EST FIXE SUR LA PAGE
              et pas le footer de la page, à droite de github on va ajouter notre
@@ -3497,7 +3677,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
           </span>
         </a>
 
-            <!-- 🆕 v1.7.680 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
+            <!-- 🆕 v1.7.681 — WHATSAPP ENCARRE AU BOUT DE LA BARRE, EN DESKTOP.
                  Demande utilisateur : « à la fin du footer fixe en carré mets le bouton
                  WhatsApp directement, cela sera plus simple directement dans la barre
                  plutôt que flottant ; cependant garde-le bien en mobile (cette bulle
@@ -3681,7 +3861,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
           </span>
           <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
         </a>
-        <!-- 🆕 v1.7.680 — « Theatre Play — 12p » N'EST PLUS PROPOSÉ ICI.
+        <!-- 🆕 v1.7.681 — « Theatre Play — 12p » N'EST PLUS PROPOSÉ ICI.
              Demande utilisateur : « sur la page de présentation n'affiche pas le template
              THEATRE PLAY - 12P ».
              ⚠️ LA CARTE EST COMMENTÉE, PAS SUPPRIMÉE : le modèle existe toujours et
@@ -3959,7 +4139,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
       <p class="spf-note" data-lang="ja">使う順に並んでいます。必要なブロックだけを開いて、また閉じてください。</p>
     </div>
 
-    <!-- ═══ LES HUIT CAPTURES, AVANT LA LISTE — v1.7.680 ═════════════════════
+    <!-- ═══ LES HUIT CAPTURES, AVANT LA LISTE — v1.7.681 ═════════════════════
          Demande utilisateur : « je n'aime pas cette accroche, fais plus court,
          sois moderne, ne parle pas du temps qui passe ; je veux trois colonnes
          pour les nouveaux blocs des features avec images, sans mettre en grand
@@ -3969,27 +4149,29 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
          ⚠️ RIEN N'EST DÉPLACÉ : la liste des quinze outils et les sept autres
          soufflets restent exactement là où ils étaient, sous ce bloc.
 
-         ⚠️ LES HUIT IMAGES SONT DE VRAIES CAPTURES DE L'APPLICATION, prises au
+         ⚠️ LES NEUF IMAGES SONT DE VRAIES CAPTURES DE L'APPLICATION, prises au
          même cadrage que les planches existantes (1600 × 1000, `img/landing/`),
-         et légendées sur ce que l'écran montre réellement. Les trois nouvelles
-         sont celles qui font le plus d'effet à l'ouverture : le rapport de
-         pré-vol (l'avant-impression), la galerie Google Fonts (218 familles) et
-         le feuilletage 3D. Aucune ne promet un format que l'application
-         n'écrit pas. -->
+         et légendées sur ce que l'écran montre réellement. Les trois dernières sont
+         celles qui font le plus d'effet à l'ouverture : le rapport de pré-vol
+         (l'avant-impression), la galerie Google Fonts (218 familles) et le
+         feuilletage 3D. La neuvième, le Studio IA, ferme la grille sur trois lignes
+         pleines — et c'est la fonction qui donne son nom à la moitié du produit.
+         Aucune ne promet un format que l'application n'écrit pas.
+         ⚠️ CHAQUE IMAGE EST UN BOUTON : elle ouvre la visionneuse (cf. `.spv-lb`). -->
     <div class="spv">
       <div class="spv-tete">
         <span class="spv-k" data-lang="fr">À l'écran</span>
         <span class="spv-k" data-lang="en">On screen</span>
         <span class="spv-k" data-lang="ja">画面で見る</span>
-        <p class="spv-t" data-lang="fr">Huit écrans, rien de retouché.</p>
-        <p class="spv-t" data-lang="en">Eight screens, nothing staged.</p>
-        <p class="spv-t" data-lang="ja">8つの画面、すべて実際の表示。</p>
+        <p class="spv-t" data-lang="fr">Neuf fonctions, montrées à l'usage.</p>
+        <p class="spv-t" data-lang="en">Nine features, shown in use.</p>
+        <p class="spv-t" data-lang="ja">9つの機能を、使うままに。</p>
       </div>
 
       <div class="spv-grid">
 
         <figure class="spv-card">
-          <div class="spv-img"><img src="img/landing/motif.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le plug-in Motif : une page entière remplie d'un kaléidoscope de fleurs, panneau de réglages ouvert à droite"></div>
+          <button type="button" class="spv-img" data-lb><img src="img/landing/motif.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le plug-in Motif : une page entière remplie d'un kaléidoscope de fleurs, panneau de réglages ouvert à droite"></button>
           <figcaption class="spv-body">
             <span class="spv-num">01</span>
             <h3 data-lang="fr">Le motif, posé en direct</h3>
@@ -4002,7 +4184,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="spv-card">
-          <div class="spv-img"><img src="img/landing/plugins.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="La bibliothèque de plug-ins de SuperPrint : contrôle avant impression, Global Refactor, Motif, Polices Google"></div>
+          <button type="button" class="spv-img" data-lb><img src="img/landing/plugins.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="La bibliothèque de plug-ins de SuperPrint : contrôle avant impression, Global Refactor, Motif, Polices Google"></button>
           <figcaption class="spv-body">
             <span class="spv-num">02</span>
             <h3 data-lang="fr">La bibliothèque de plug-ins</h3>
@@ -4015,7 +4197,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="spv-card">
-          <div class="spv-img"><img src="img/landing/refactor.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le panneau Global Refactor ouvert sur une maquette de magazine"></div>
+          <button type="button" class="spv-img" data-lb><img src="img/landing/refactor.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le panneau Global Refactor ouvert sur une maquette de magazine"></button>
           <figcaption class="spv-body">
             <span class="spv-num">03</span>
             <h3 data-lang="fr">Tout le document, d'un seul réglage</h3>
@@ -4028,7 +4210,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="spv-card">
-          <div class="spv-img"><img src="img/landing/importer-word-formats.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="La fenêtre Importer : image, JSON, PDF, TXT/RTF, DOC/DOCX, Excel, Open Office, IDML, .sla, EPS/Illustrator, .sp, Figma"></div>
+          <button type="button" class="spv-img" data-lb><img src="img/landing/importer-word-formats.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="La fenêtre Importer : image, JSON, PDF, TXT/RTF, DOC/DOCX, Excel, Open Office, IDML, .sla, EPS/Illustrator, .sp, Figma"></button>
           <figcaption class="spv-body">
             <span class="spv-num">04</span>
             <h3 data-lang="fr">Word entre sans conversion</h3>
@@ -4041,7 +4223,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="spv-card">
-          <div class="spv-img"><img src="img/landing/exporter-word-eps.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="La fenêtre Sauvegarder : .sp, JSON, IPFS, puis HTML, EPUB, EPS et Word"></div>
+          <button type="button" class="spv-img" data-lb><img src="img/landing/exporter-word-eps.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="La fenêtre Sauvegarder : .sp, JSON, IPFS, puis HTML, EPUB, EPS et Word"></button>
           <figcaption class="spv-body">
             <span class="spv-num">05</span>
             <h3 data-lang="fr">Et il ressort en Word, en EPS</h3>
@@ -4054,7 +4236,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="spv-card">
-          <div class="spv-img"><img src="img/landing/controle-avant-impression.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le plug-in Contrôle avant impression, onglet Pré-vol : format, pages, fond perdu, marges, résolution des images, polices, couverture d'encre et espace colorimétrique"></div>
+          <button type="button" class="spv-img" data-lb><img src="img/landing/controle-avant-impression.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le plug-in Contrôle avant impression, onglet Pré-vol : format, pages, fond perdu, marges, résolution des images, polices, couverture d'encre et espace colorimétrique"></button>
           <figcaption class="spv-body">
             <span class="spv-num">06</span>
             <h3 data-lang="fr">Le pré-vol, avant l'envoi</h3>
@@ -4067,7 +4249,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="spv-card">
-          <div class="spv-img"><img src="img/landing/polices-google.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le plug-in Polices Google : 218 familles, un champ pour écrire son propre texte, chacune dessinée dans sa police"></div>
+          <button type="button" class="spv-img" data-lb><img src="img/landing/polices-google.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le plug-in Polices Google : 218 familles, un champ pour écrire son propre texte, chacune dessinée dans sa police"></button>
           <figcaption class="spv-body">
             <span class="spv-num">07</span>
             <h3 data-lang="fr">218 familles, dans votre phrase</h3>
@@ -4080,7 +4262,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="spv-card">
-          <div class="spv-img"><img src="img/landing/apercu-3d.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="L'aperçu 3D de SuperPrint : les pages du magazine feuilletées en volume, double page ouverte"></div>
+          <button type="button" class="spv-img" data-lb><img src="img/landing/apercu-3d.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="L'aperçu 3D de SuperPrint : les pages du magazine feuilletées en volume, double page ouverte"></button>
           <figcaption class="spv-body">
             <span class="spv-num">08</span>
             <h3 data-lang="fr">Feuilleté en volume</h3>
@@ -4089,6 +4271,19 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
             <p data-lang="fr">Couverture seule, intérieur en double page, dernière page seule : la maquette se tourne à la souris, se zoome à la molette, se feuillette au clavier — et l'on juge le dos, la pliure et le poids d'une page <strong>avant</strong> l'imprimeur, pas après.</p>
             <p data-lang="en">Cover alone, spreads for the inside, last page alone: turn it with the mouse, zoom with the wheel, leaf through with the keyboard — and judge the spine, the fold and the weight of a page <strong>before</strong> the printer, not after.</p>
             <p data-lang="ja">表紙は単独、本文は見開き、最終ページは単独。マウスで回し、ホイールで拡大し、キーボードでめくれます。背・折り目・ページの厚みを、印刷所に出す<strong>前に</strong>判断できます。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="spv-card">
+          <button type="button" class="spv-img" data-lb><img src="img/landing/studio-ia.jpg" width="1600" height="1000" loading="lazy" decoding="async" alt="Le Studio IA de SuperPrint : une conversation en langage naturel qui compose une maquette, réglages du projet à côté"></button>
+          <figcaption class="spv-body">
+            <span class="spv-num">09</span>
+            <h3 data-lang="fr">Une phrase, une maquette</h3>
+            <h3 data-lang="en">One sentence, one layout</h3>
+            <h3 data-lang="ja">ひとことで、レイアウト</h3>
+            <p data-lang="fr">Le <strong>Studio IA</strong> compose une maquette à partir d'une description écrite : format, nombre de pages, ton, images. On garde sa propre clé et le modèle de son choix, puis la maquette s'ouvre dans SuperPrint et se retouche comme n'importe quel document — ce n'est pas une image, c'est du texte et des blocs.</p>
+            <p data-lang="en">The <strong>AI Studio</strong> builds a layout from a written description: page size, number of pages, tone, images. You keep your own key and pick the model, then the layout opens in SuperPrint and can be reworked like any document — it is not a picture, it is text and blocks.</p>
+            <p data-lang="ja"><strong>AI スタジオ</strong>は書いた説明からレイアウトを組みます。判型、ページ数、トーン、画像。鍵は自分のものを使い、モデルも選べます。できたレイアウトは SuperPrint で開き、普通の文書と同じように直せます。画像ではなく、テキストとブロックです。</p>
           </figcaption>
         </figure>
 
@@ -4829,7 +5024,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 <div class="tgrid" id="tgridOutils">
 
         <figure class="tcard">
-          <div class="tcard-img"><img src="img/landing/clic-droit-forme.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur une forme"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/clic-droit-forme.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur une forme"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">01</span>
             <h3 data-lang="fr">Le clic droit, sur une forme</h3>
@@ -4842,7 +5037,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard">
-          <div class="tcard-img"><img src="img/landing/clic-droit-texte.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur un bloc de texte"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/clic-droit-texte.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur un bloc de texte"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">02</span>
             <h3 data-lang="fr">Le clic droit, sur un texte</h3>
@@ -4855,7 +5050,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard">
-          <div class="tcard-img"><img src="img/landing/habillage-deux-cotes.jpg" width="1600" height="1000" loading="lazy" alt="Habillage du texte autour d'une forme"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/habillage-deux-cotes.jpg" width="1600" height="1000" loading="lazy" alt="Habillage du texte autour d'une forme"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">03</span>
             <h3 data-lang="fr">L'habillage du texte</h3>
@@ -4868,7 +5063,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard">
-          <div class="tcard-img"><img src="img/landing/habillage-popin.jpg" width="1600" height="1000" loading="lazy" alt="Réglage de l'habillage du texte"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/habillage-popin.jpg" width="1600" height="1000" loading="lazy" alt="Réglage de l'habillage du texte"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">04</span>
             <h3 data-lang="fr">Régler l'habillage</h3>
@@ -4881,7 +5076,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/habillage-produit.jpg" width="1600" height="1000" loading="lazy" alt="Habillage sur une fiche produit"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/habillage-produit.jpg" width="1600" height="1000" loading="lazy" alt="Habillage sur une fiche produit"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">05</span>
             <h3 data-lang="fr">Habillage sur une fiche</h3>
@@ -4894,7 +5089,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/ecrire-dans-forme.jpg" width="1600" height="1000" loading="lazy" alt="Écrire dans une forme"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/ecrire-dans-forme.jpg" width="1600" height="1000" loading="lazy" alt="Écrire dans une forme"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">06</span>
             <h3 data-lang="fr">Écrire dans une forme</h3>
@@ -4907,7 +5102,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/panneau-typographie.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Typographie"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/panneau-typographie.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Typographie"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">07</span>
             <h3 data-lang="fr">Typographie</h3>
@@ -4920,7 +5115,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/panneau-couleurs.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Couleurs"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/panneau-couleurs.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Couleurs"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">08</span>
             <h3 data-lang="fr">Couleurs</h3>
@@ -4933,7 +5128,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/panneau-calques.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Calques"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/panneau-calques.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Calques"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">09</span>
             <h3 data-lang="fr">Calques</h3>
@@ -4946,7 +5141,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/reperes-grille.jpg" width="1600" height="1000" loading="lazy" alt="Règles et grilles"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/reperes-grille.jpg" width="1600" height="1000" loading="lazy" alt="Règles et grilles"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">10</span>
             <h3 data-lang="fr">Règles &amp; grilles</h3>
@@ -4959,7 +5154,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/atelier-voyage.jpg" width="1600" height="1000" loading="lazy" alt="Une maquette ouverte sur le bureau"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/atelier-voyage.jpg" width="1600" height="1000" loading="lazy" alt="Une maquette ouverte sur le bureau"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">11</span>
             <h3 data-lang="fr">Une maquette sur le bureau</h3>
@@ -4972,7 +5167,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/supertypo.jpg" width="1600" height="1000" loading="lazy" alt="SuperTyPo, le composeur typographique"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/supertypo.jpg" width="1600" height="1000" loading="lazy" alt="SuperTyPo, le composeur typographique"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">12</span>
             <h3 data-lang="fr">SuperTyPo</h3>
@@ -4985,7 +5180,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/studio-ia.jpg" width="1600" height="1000" loading="lazy" alt="Le Studio IA et sa conversation"></div>
+          <button type="button" class="tcard-img" data-lb><img src="img/landing/studio-ia.jpg" width="1600" height="1000" loading="lazy" alt="Le Studio IA et sa conversation"></button>
           <figcaption class="tcard-body">
             <span class="tcard-num">13</span>
             <h3 data-lang="fr">Studio IA</h3>
@@ -5184,7 +5379,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         <p class="lg-desc" data-lang="ja">DTPデスクのすべて — 組版、プリプレス、PDF書き出し。</p>
         <div class="lg-ver">
           <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
-          <b>v1.7.680</b>
+          <b>v1.7.681</b>
         </div>
         <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
         <div class="lg-actions">
@@ -5210,7 +5405,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         <p class="lg-desc" data-lang="ja">レイアウトを言葉に。AIが組み、あなたが直し、書き出す。</p>
         <div class="lg-ver">
           <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
-          <b>v1.7.680</b>
+          <b>v1.7.681</b>
         </div>
         <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
         <div class="lg-actions">
@@ -5236,7 +5431,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
         <p class="lg-desc" data-lang="ja">書体を読み込み、1文字ずつ曲線で描き直し、書き出す。</p>
         <div class="lg-ver">
           <span data-lang="fr">Version</span><span data-lang="en">Version</span><span data-lang="ja">バージョン</span>
-          <b>v1.7.680</b>
+          <b>v1.7.681</b>
         </div>
         <div class="lg-os"><i><img src="icons/windows.svg" alt="" width="14" height="14" loading="lazy" decoding="async">PC</i><i><img src="icons/macos.svg" alt="" width="14" height="14" loading="lazy" decoding="async">macOS</i><i><img src="icons/linux.svg" alt="" width="14" height="14" loading="lazy" decoding="async">Linux</i></div>
         <div class="lg-actions">
@@ -5365,8 +5560,8 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.680</span>
-      <!-- 🆕 v1.7.680 — LA RANGÉE SOCIALE N'EST PAS ICI.
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.681</span>
+      <!-- 🆕 v1.7.681 — LA RANGÉE SOCIALE N'EST PAS ICI.
            Elle avait d'abord été posée dans le colophon ; l'utilisateur l'a vue et a
            corrigé le 17 octobre : « Footer de superprint.cc la barre qui est
            fixe sur la page et pas le footer de la page » — c'est la BARRE FIXE
@@ -5524,10 +5719,110 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' || e.keyCode === 27) poser(false);
   });
+
+  /* ── La ligne `npx` du menu « Télécharger » (v1.7.681) ────────────────────────
+     Demande utilisateur : « dans cette nouvelle zone on va permettre de copier le
+     npx, pense à tout ».
+     ⚠️ LA COMMANDE DÉPEND DU SYSTÈME, ET CE N'EST PAS UN DÉTAIL : sous Windows,
+     PowerShell refuse d'exécuter `npx` (le shim est un .cmd, bloqué par la
+     politique d'exécution) et il faut `npx.cmd`. La page le sait déjà plus bas
+     (INSTALL_CMDS) ; le menu dit donc la même chose, sans que l'utilisateur ait à
+     comprendre pourquoi deux commandes existent.
+     ⚠️ LA NOTE AUSSI EST CONTEXTUELLE : elle annonce le terminal réellement employé
+     (PowerShell sous Windows, Terminal ailleurs) et la dépendance (Node.js), qui est
+     LA raison pour laquelle cette ligne peut échouer.
+     ⚠️ TROIS CHEMINS DE COPIE, DANS CET ORDRE : `navigator.clipboard` (nécessite un
+     contexte sécurisé — absent en `file://`), puis `execCommand` sur un textarea
+     hors écran, puis la sélection de la commande. Le dernier recours laisse la
+     commande sélectionnée : l'utilisateur n'a plus qu'à faire Ctrl+C, au lieu de
+     lire « copié » alors que rien ne l'est.
+     ⚠️ LE RETOUR EST DOUBLE : le bouton change de libellé ET `role="status"`
+     l'annonce. Un changement visuel seul est muet pour un lecteur d'écran. */
+  var npxTxt = document.getElementById('navNpxTxt');
+  var npxBtn = document.getElementById('navNpxCopy');
+  var npxNote = document.getElementById('navNpxNote');
+  var npxLive = document.getElementById('navNpxLive');
+
+  function langCourante() {
+    var l = document.documentElement.getAttribute('lang');
+    return (l === 'fr' || l === 'ja') ? l : 'en';
+  }
+  var estWindows = /Windows/i.test(navigator.userAgent || '');
+  var CMD = estWindows ? 'npx.cmd superprint' : 'npx superprint';
+  var NOTES = {
+    win: {
+      fr: 'PowerShell · Node.js requis — npx.cmd contourne le blocage des scripts',
+      en: 'PowerShell · requires Node.js — npx.cmd bypasses the script policy',
+      ja: 'PowerShell · Node.js が必要 — npx.cmd はスクリプト制限を回避します'
+    },
+    autre: {
+      fr: 'Terminal · Node.js requis',
+      en: 'Terminal · requires Node.js',
+      ja: 'ターミナル · Node.js が必要です'
+    }
+  };
+  function majNote() {
+    if (npxTxt) npxTxt.textContent = CMD;
+    if (!npxNote) return;
+    var cle = estWindows ? 'win' : 'autre';
+    npxNote.textContent = (NOTES[cle][langCourante()] || NOTES[cle].en);
+  }
+  majNote();
+  /* ⚠️ LA NOTE EST ÉCRITE PAR LE SCRIPT, DONC ELLE NE SUIT PAS `html[lang]` TOUTE
+     SEULE (contrairement aux libellés `data-lang`, que la CSS masque). On enveloppe
+     `setLang` au lieu d'écouter les clics sur les boutons : le changement de langue
+     peut venir d'ailleurs (paramètre d'URL, menu mobile), et un écouteur sur la barre
+     en oublierait la moitié. */
+  if (typeof window.setLang === 'function') {
+    var _setLang = window.setLang;
+    window.setLang = function (l, e) { _setLang(l, e); majNote(); };
+  }
+
+  if (npxBtn) npxBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var lbl = npxBtn.querySelector('.nav-dd-npx-lbl');
+    var avant = lbl ? lbl.innerHTML : '';
+    var l = langCourante();
+    var dit = { fr: 'Copié', en: 'Copied', ja: 'コピー済み' }[l];
+    var annonce = { fr: 'Commande copiée : ', en: 'Command copied: ', ja: 'コマンドをコピーしました：' }[l] + CMD;
+    function confirmer() {
+      if (lbl) lbl.innerHTML = '<span>' + dit + '</span>';
+      npxBtn.classList.add('est-copie');
+      if (npxLive) npxLive.textContent = annonce;
+      setTimeout(function () {
+        if (lbl) lbl.innerHTML = avant;
+        npxBtn.classList.remove('est-copie');
+        if (npxLive) npxLive.textContent = '';
+      }, 1900);
+    }
+    function secours() {
+      var ta = document.createElement('textarea');
+      ta.value = CMD;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+      ta.remove();
+      if (ok) { confirmer(); return; }
+      /* Dernier recours : on sélectionne la commande dans le menu. */
+      var cmd = document.getElementById('navNpxCmd');
+      if (cmd) {
+        var r = document.createRange(); r.selectNodeContents(cmd);
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      }
+      if (npxLive) npxLive.textContent = { fr: 'Commande sélectionnée, à copier', en: 'Command selected, ready to copy', ja: 'コマンドを選択しました。コピーしてください' }[l];
+      setTimeout(function () { if (npxLive) npxLive.textContent = ''; }, 2600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+      navigator.clipboard.writeText(CMD).then(confirmer).catch(secours);
+    } else { secours(); }
+  });
 })();
 
 // ── Zone « Nos logiciels · Nos versions » : le bouton ouvre le menu de la barre ──
-/* 🆕 v1.7.680 — Le bouton de la zone du bas ne recopie pas les sept adresses de
+/* 🆕 v1.7.681 — Le bouton de la zone du bas ne recopie pas les sept adresses de
    fichiers : il ouvre le menu de la barre, qui reste la seule liste du site.
    Deux pièges, tous les deux traités ici :
    1. Le menu se referme au moindre clic hors de lui (écouteur sur `document`).
@@ -5768,6 +6063,166 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 </script>
 
+<!-- ══════════════════════════════════════════════════════════════════════════
+     LA VISIONNEUSE DES CAPTURES (v1.7.681)
+     Demande utilisateur : « les images des features doivent s'ouvrir en lightbox
+     super moderne ».
+
+     ⚠️ ELLE EST ÉCRITE DANS LE DOCUMENT, PAS CONSTRUITE EN JS. Un lecteur d'écran
+     et les moteurs de recherche voient la même chose que le visiteur, et le
+     composant ne dépend pas de l'ordre d'exécution des scripts.
+
+     ⚠️ `aria-hidden` N'EST PAS COSMÉTIQUE : tant que la visionneuse est fermée,
+     ses trois boutons sont hors de l'arbre d'accessibilité, donc hors de la
+     tabulation. `visibility: hidden` fait le reste côté pointeur.
+
+     ⚠️ LE TEXTE ALTERNATIF DE L'IMAGE EST RECOPIÉ DEPUIS LA VIGNETTE, et la
+     légende vient du titre de la carte, dans la langue affichée. On ne réécrit
+     aucune description à la main : il n'y a donc rien à maintenir en double.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="spv-lb" id="spvLb" role="dialog" aria-modal="true" aria-labelledby="spvLbCap" aria-hidden="true">
+  <span class="spv-lb-cpt" id="spvLbCpt" aria-hidden="true"></span>
+  <button type="button" class="spv-lb-x" id="spvLbX" aria-label="Fermer">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+  <button type="button" class="spv-lb-arr spv-lb-prev" id="spvLbPrev" aria-label="Capture précédente">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+  <figure class="spv-lb-fig">
+    <img class="spv-lb-img" id="spvLbImg" alt="" width="1600" height="1000" decoding="async">
+    <figcaption class="spv-lb-cap" id="spvLbCap"></figcaption>
+  </figure>
+  <button type="button" class="spv-lb-arr spv-lb-next" id="spvLbNext" aria-label="Capture suivante">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+</div>
+
+<script>
+/* ── La visionneuse : ouvrir, feuilleter, fermer ──────────────────────────────
+   ⚠️ DEUX FAMILLES D'IMAGES, UN SEUL COMPOSANT : les neuf cartes de la grille
+   (`.spv-img`) et les treize captures du soufflet « Les outils, un par un »
+   (`.tcard-img`) sont toutes des boutons `[data-lb]`. Le parcours suit l'ordre du
+   document, donc les flèches vont de la première à la dernière, sans rupture.
+   ⚠️ `data-lb` ET PAS UNE CLASSE : un plug-in ou une feuille de style peut ajouter
+   une classe à ces boutons ; l'attribut, lui, ne sert qu'à ça. */
+(function () {
+  var lb = document.getElementById('spvLb');
+  if (!lb) return;
+  var img = document.getElementById('spvLbImg');
+  var cap = document.getElementById('spvLbCap');
+  var cpt = document.getElementById('spvLbCpt');
+  var btnX = document.getElementById('spvLbX');
+  var btnP = document.getElementById('spvLbPrev');
+  var btnN = document.getElementById('spvLbNext');
+  var vignettes = Array.prototype.slice.call(document.querySelectorAll('[data-lb]'));
+  if (!vignettes.length) return;
+
+  var courant = 0, dernierFocus = null, defilement = 0;
+
+  function langue() {
+    var l = document.documentElement.getAttribute('lang');
+    return (l === 'fr' || l === 'ja') ? l : 'en';
+  }
+  /* Le titre de la carte, dans la langue affichée. `offsetParent` suffit : la CSS
+     de langue masque les deux autres avec `display: none`, et un élément masqué
+     n'a pas de parent de mise en page. À défaut, on retombe sur le texte
+     alternatif — qui est toujours là, et qui décrit la capture. */
+  function legendeDe(bouton) {
+    var fig = bouton.closest('figure');
+    if (fig) {
+      var titres = fig.querySelectorAll('.spv-body h3, .tcard-body h3');
+      for (var i = 0; i < titres.length; i++) {
+        if (titres[i].offsetParent !== null) return titres[i].textContent.trim();
+      }
+    }
+    var im = bouton.querySelector('img');
+    return im ? (im.getAttribute('alt') || '').trim() : '';
+  }
+  function afficher(i) {
+    courant = (i + vignettes.length) % vignettes.length;
+    var b = vignettes[courant];
+    var source = b.querySelector('img');
+    if (!source) return;
+    img.src = source.currentSrc || source.src;
+    img.alt = source.getAttribute('alt') || '';
+    cap.textContent = legendeDe(b);
+    var n = vignettes.length, p = (courant + 1);
+    cpt.innerHTML = (p < 10 ? '0' : '') + p + ' <em>/ ' + (n < 10 ? '0' : '') + n + '</em>';
+    /* Une seule capture : les flèches n'ont pas de sens, on les retire du chemin
+       au clavier plutôt que de les laisser cliquer dans le vide. */
+    var une = n < 2;
+    btnP.hidden = une; btnN.hidden = une;
+  }
+  function ouvrir(i, declencheur) {
+    dernierFocus = declencheur || document.activeElement;
+    defilement = window.pageYOffset || 0;
+    document.documentElement.classList.add('lb-ouvert');
+    afficher(i);
+    lb.classList.add('ouvert');
+    lb.setAttribute('aria-hidden', 'false');
+    btnX.focus();
+  }
+  function fermer() {
+    lb.classList.remove('ouvert');
+    lb.setAttribute('aria-hidden', 'true');
+    document.documentElement.classList.remove('lb-ouvert');
+    /* ⚠️ ON REND LE DÉFILEMENT À LA PAGE. Sans cette restitution, fermer la
+       visionneuse laissait le document bloqué en haut : le visiteur avait perdu
+       sa place dans une page de 9 000 px. */
+    if (Math.abs((window.pageYOffset || 0) - defilement) > 2) window.scrollTo(0, defilement);
+    if (dernierFocus && dernierFocus.focus) dernierFocus.focus({ preventScroll: true });
+  }
+  var ouvert = function () { return lb.classList.contains('ouvert'); };
+
+  vignettes.forEach(function (b, i) {
+    b.addEventListener('click', function () { ouvrir(i, b); });
+  });
+  btnX.addEventListener('click', fermer);
+  btnP.addEventListener('click', function () { afficher(courant - 1); });
+  btnN.addEventListener('click', function () { afficher(courant + 1); });
+  /* Un clic sur le fond (et non sur l'image) referme : c'est le geste attendu
+     d'une visionneuse, et il évite de chercher la croix sur un grand écran. */
+  lb.addEventListener('click', function (e) {
+    if (e.target === lb || e.target.classList.contains('spv-lb-fig')) fermer();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!ouvert()) return;
+    if (e.key === 'Escape' || e.keyCode === 27) { e.preventDefault(); fermer(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); afficher(courant + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); afficher(courant - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); afficher(0); }
+    else if (e.key === 'End') { e.preventDefault(); afficher(vignettes.length - 1); }
+    /* ⚠️ LE FOCUS RESTE DANS LA VISIONNEUSE. Sans ce garde-fou, la tabulation
+       partait derrière le voile, dans la page — un dialogue modal qui laisse
+       sortir le clavier n'est pas modal. Les trois commandes sont les seuls
+       éléments focalisables du composant, on boucle donc sur elles. */
+    else if (e.key === 'Tab') {
+      var f = [btnX, btnP, btnN].filter(function (x) { return x && !x.hidden; });
+      var pos = f.indexOf(document.activeElement);
+      e.preventDefault();
+      var suivant = e.shiftKey ? (pos <= 0 ? f.length - 1 : pos - 1)
+                               : (pos === -1 || pos === f.length - 1 ? 0 : pos + 1);
+      f[suivant].focus();
+    }
+  });
+  /* Le glissé au doigt : à gauche la capture suivante, à droite la précédente.
+     Seuil de 40 px, sinon un simple appui sur l'image la ferait sauter. */
+  var x0 = null;
+  lb.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse') x0 = e.clientX; });
+  lb.addEventListener('pointerup', function (e) {
+    if (x0 === null) return;
+    var d = e.clientX - x0; x0 = null;
+    if (Math.abs(d) < 40) return;
+    afficher(courant + (d < 0 ? 1 : -1));
+  });
+  /* La langue peut changer visionneuse ouverte : la légende est redessinée. */
+  if (typeof window.setLang === 'function') {
+    var _sl = window.setLang;
+    window.setLang = function (l, ex) { _sl(l, ex); if (ouvert()) cap.textContent = legendeDe(vignettes[courant]); };
+  }
+})();
+</script>
+
 <!-- 🎠 CARROUSEL DES MODÈLES : flèches, compteur, glisser à la souris.
      Le SWIPE tactile est celui du navigateur (défilement natif + scroll-snap). -->
 <script>
@@ -5839,7 +6294,7 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     // garde le compteur restait bloqué sur « 39 / 43 » au bout du rail.
     if (max - g <= 2) i = total - 1;
     if (compteur) compteur.textContent = (i + 1) + ' / ' + total;
-    /* ⚠️ v1.7.680 — AUCUN BOUTON N'EST DÉSACTIVÉ. Demande utilisateur : « les chevrons
+    /* ⚠️ v1.7.681 — AUCUN BOUTON N'EST DÉSACTIVÉ. Demande utilisateur : « les chevrons
        pour le swipe des templates ne marchent pas du tout ». MESURÉ, et c'est bien ce
        qui se passait : au chargement `prev` était `disabled` (le rail est à zéro), donc
        le premier clic — celui qu'on fait — ne déclenchait RIEN ; arrivé au bout, `next`
@@ -6471,6 +6926,6 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 </script>
 
-<script src="JS/versions-github.js?v=1.7.680" defer></script>
+<script src="JS/versions-github.js?v=1.7.681" defer></script>
 </body>
 </html>

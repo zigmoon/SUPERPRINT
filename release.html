@@ -1314,6 +1314,85 @@ footer, footer a { color: var(--after-text-color); }
      · le panneau passe de 940 à 820 px : le contenu mesuré tombe à 195 / 195 / 228 px
        de besoin réel, et il restait 290 px de vide à répartir. -->
 
+<!-- ===== SUPER PRINT v1.7.681 — MENU PROPRE, npx À COPIER, NEUF FEATURES EN LIGHTBOX.
+     Demande utilisateur : « (1) Bouton download, le filet de séparation horizontale
+     doit toucher les deux bouts de la boîte ; cale en haut les logos Windows Mac et
+     Linux et non au centre de l'espace en hauteur ; ajoute dans le bouton une
+     nouvelle en-tête comme Desktop application — garde que cette phrase ici — et
+     dans cette nouvelle zone on va permettre de copier le npx, pense à tout ; cela
+     doit être parfait. (2) Dans L'inventaire de SuperPrint, la phrase "Huit écrans,
+     rien de retouché." on ne la comprend pas, parle des features plus ; aussi ajoute
+     une neuvième feature pour faire des grilles de 3 par ligne en desktop ; les
+     images des features doivent s'ouvrir en lightbox super moderne. »
+
+     (1) LE MENU « TÉLÉCHARGER ».
+     · LE FILET TOUCHE LES DEUX BORDS. La boîte portait un rembourrage unique de
+       16 px : le filet partait donc de 16 px et s'arrêtait à 16 px du bord. Ce
+       rembourrage est passé sur les zones (en-tête et lignes), le filet va d'un
+       bord à l'autre sans marge négative, et le texte reste à 16 px du bord.
+     · LES TROIS MARQUES SONT CALÉES EN HAUT. Les cases étaient centrées
+       verticalement ; les trois colonnes n'ayant pas la même hauteur de contenu,
+       les trois logos tombaient sur trois lignes différentes. En haut, ils
+       s'alignent sur le nom du système.
+     · LA SOUS-PHRASE EST SUPPRIMÉE, SUR TOUTES LES PAGES. « Trois applications ·
+       un installeur chacune » disparaît de index.html, faq.html, rock.html et
+       price.html : il n'y a plus que « Desktop application ».
+     · UNE LIGNE « npx » À COPIER occupe cette nouvelle zone. La commande dépend du
+       système (« npx.cmd » sous Windows, où PowerShell bloque le shim « npx »), la
+       note dit le terminal et la dépendance (Node.js), et la copie a trois chemins :
+       API presse-papiers, « execCommand », puis sélection de la commande. Le retour
+       est visuel (libellé « Copié », fond encre, glyphe jaune) ET annoncé
+       (role="status"). Un clic dans la commande la sélectionne entière.
+
+     (2) L'INVENTAIRE.
+     · L'ACCROCHE DEVIENT « Neuf fonctions, montrées à l'usage. » — elle parle des
+       fonctions, plus du temps qui passe ni du nombre de captures.
+     · NEUF CARTES, TROIS PAR LIGNE. La grille repasse en trois colonnes simples :
+       neuf cartes font exactement trois lignes pleines, sans trou et sans carte
+       d'appel. La neuvième est le Studio IA — une phrase, une maquette —, la
+       fonction qui donne son nom à la moitié du produit.
+     · LES IMAGES S'OUVRENT EN VISIONNEUSE. Un clic (ou Entrée) et la capture
+       s'affiche en grand sur un fond d'encre flouté : flèches, compteur « 01 / 22 »,
+       légende dans la langue affichée, Échap pour fermer, flèches du clavier pour
+       feuilleter, glissé au doigt sur mobile. Le focus est piégé dans la
+       visionneuse, le défilement de la page est rendu à la fermeture, et les treize
+       captures du soufflet « Les outils, un par un » en profitent aussi. -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-681">
+ <h2>SUPER PRINT <span>v1.7.681</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 octobre 2026" data-i18n-en="Released October 19, 2026" data-i18n-jp="2026年10月19日公開">Released October 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le menu de téléchargement est nettoyé — filet d'un bord à l'autre, marques calées en haut, et une <strong>ligne <code>npx</code> à copier</strong> dans la nouvelle zone d'en-tête. L'inventaire s'ouvre sur <strong>neuf fonctions en trois colonnes</strong>, et chaque capture s'ouvre en <strong>visionneuse</strong>." data-i18n-en-html="The download menu is cleaned up — a rule that runs edge to edge, marks aligned to the top, and an <strong><code>npx</code> line to copy</strong> in the new header zone. The inventory opens on <strong>nine features in three columns</strong>, and every screenshot opens in a <strong>viewer</strong>." data-i18n-jp-html="ダウンロードメニューを整理しました。罫線は端から端まで、マークは上揃え、そして新しいヘッダー領域に<strong>コピーできる <code>npx</code> 行</strong>。インベントリは<strong>9つの機能を3列で</strong>並べ、各画面写真は<strong>ビューア</strong>で開きます。">The download menu is cleaned up, and every screenshot now opens in a viewer.</p>
+
+ <h3 data-i18n-fr-html="💾 Le menu de téléchargement" data-i18n-en-html="💾 The download menu" data-i18n-jp-html="💾 ダウンロードメニュー">💾 The download menu</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le filet touche les deux bords.</strong> La boîte portait un rembourrage unique de 16 px : le filet partait de 16 px et s'arrêtait à 16 px du bord. Ce rembourrage est passé sur les zones (en-tête et lignes) — le filet va d'un bord à l'autre, et le texte reste à 16 px du bord." data-i18n-en-html="<strong>The rule runs edge to edge.</strong> The box carried a single 16 px padding, so the rule started and stopped 16 px from each edge. That padding moved onto the zones (header and rows) — the rule now runs the full width, and the text is still 16 px from the edge." data-i18n-jp-html="<strong>罫線が端から端まで届きます。</strong>ボックスに16 pxの余白がひとつあり、罫線は両端から16 px内側で切れていました。余白を領域（ヘッダーと行）に移したので、罫線は全幅にわたり、テキストは16 pxのままです。"><strong>The rule runs edge to edge</strong> — the 16 px padding moved from the box onto its zones.</li>
+  <li data-i18n-fr-html="<strong>Les trois marques sont calées en haut.</strong> Les cases étaient centrées verticalement ; les trois colonnes n'ayant pas la même hauteur de contenu, les trois logos tombaient sur trois lignes différentes. En haut, ils s'alignent sur le nom du système." data-i18n-en-html="<strong>The three marks sit at the top.</strong> The cells were vertically centred; since the three columns do not have the same content height, the three logos landed on three different lines. Aligned to the top, they line up with the system name." data-i18n-jp-html="<strong>3つのマークを上揃えに。</strong>セルは垂直中央揃えで、3列の内容高さが違うため3つのロゴが別々の行に落ちていました。上揃えにするとシステム名と揃います。"><strong>The three marks sit at the top</strong>, aligned with the system name.</li>
+  <li data-i18n-fr-html="« Trois applications · un installeur chacune » est <strong>supprimée sur toutes les pages</strong> (index, faq, rock, price) : l'en-tête ne dit plus que « Desktop application »." data-i18n-en-html="“Three apps · one installer each” is <strong>removed from every page</strong> (index, faq, rock, price): the header now only says “Desktop application”." data-i18n-jp-html="「3つのアプリ · それぞれ専用インストーラー」を<strong>全ページから削除</strong>（index・faq・rock・price）。ヘッダーは「デスクトップアプリ」だけになりました。">“Three apps · one installer each” is <strong>removed from every page</strong>.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="⌨️ La ligne npx, à copier" data-i18n-en-html="⌨️ The npx line, ready to copy" data-i18n-jp-html="⌨️ コピーできる npx 行">⌨️ The npx line, ready to copy</h3>
+ <ul>
+  <li data-i18n-fr-html="La commande <strong>dépend du système</strong> : <code>npx.cmd superprint</code> sous Windows, où PowerShell bloque le shim <code>npx</code> ; <code>npx superprint</code> ailleurs. La note dit le terminal réellement employé et la dépendance — <strong>Node.js</strong> —, qui est la seule raison pour laquelle cette ligne peut échouer." data-i18n-en-html="The command <strong>depends on the system</strong>: <code>npx.cmd superprint</code> on Windows, where PowerShell blocks the <code>npx</code> shim; <code>npx superprint</code> elsewhere. The note names the terminal actually used and the dependency — <strong>Node.js</strong> —, the only reason this line can fail." data-i18n-jp-html="コマンドは<strong>OS によって変わります</strong>。Windows では PowerShell が <code>npx</code> のシムを止めるため <code>npx.cmd superprint</code>、それ以外は <code>npx superprint</code>。注記は実際に使うターミナルと依存関係（<strong>Node.js</strong>）を示します。"><strong>The command depends on the system</strong>: <code>npx.cmd</code> on Windows, <code>npx</code> elsewhere.</li>
+  <li data-i18n-fr-html="Trois chemins de copie, dans l'ordre : API presse-papiers, <code>execCommand</code>, puis <strong>sélection de la commande</strong> (dernier recours : on ne dit jamais « copié » quand rien ne l'est). Le retour est visuel — libellé « Copié », fond encre, glyphe jaune — et annoncé par <code>role="status"</code> pour les lecteurs d'écran. Un clic dans la commande la sélectionne entière." data-i18n-en-html="Three copy paths, in order: clipboard API, <code>execCommand</code>, then <strong>selecting the command</strong> (last resort: we never say “copied” when nothing was). The feedback is visual — “Copied”, ink background, yellow glyph — and announced through <code>role="status"</code> for screen readers. One click in the command selects all of it." data-i18n-jp-html="コピーの経路は3つ。クリップボード API、<code>execCommand</code>、そして<strong>コマンドを選択</strong>（最後の手段：「コピーした」と嘘をつかないため）。表示は「コピー済み」、インク色の背景、黄色の記号で、<code>role="status"</code> により読み上げにも伝わります。コマンドをクリックすると全体が選択されます。">Three copy paths, a visual and announced confirmation, and one click selects the whole command.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🖼️ Neuf fonctions, en trois colonnes" data-i18n-en-html="🖼️ Nine features, in three columns" data-i18n-jp-html="🖼️ 9つの機能、3列で">🖼️ Nine features, in three columns</h3>
+ <ul>
+  <li data-i18n-fr-html="L'accroche « Huit écrans, rien de retouché » ne parlait pas du produit. Elle devient <strong>« Neuf fonctions, montrées à l'usage. »</strong> — courte, concrète, et au présent." data-i18n-en-html="The headline “Eight screens, nothing staged” said nothing about the product. It becomes <strong>“Nine features, shown in use.”</strong> — short, concrete, in the present tense." data-i18n-jp-html="「8つの画面、すべて実際の表示」は製品の話をしていませんでした。<strong>「9つの機能を、使うままに。」</strong>に変わります。短く、具体的で、現在形です。">The headline becomes <strong>“Nine features, shown in use.”</strong></li>
+  <li data-i18n-fr-html="La grille repasse en <strong>trois colonnes simples</strong> : neuf cartes font exactement trois lignes pleines, sans trou et sans carte d'appel. MESURÉ à 1600 px : trois colonnes de 392 px, aucune carte isolée, aucun débordement ; deux colonnes à 1180 px et moins, une à 720 px et moins." data-i18n-en-html="The grid goes back to <strong>three plain columns</strong>: nine cards make exactly three full lines, with no hole and no lead card. Measured at 1600 px: three 392 px columns, no orphan card, no overflow; two columns at 1180 px and below, one at 720 px and below." data-i18n-jp-html="グリッドは<strong>素直な3列</strong>に戻ります。9枚でちょうど3行、穴もメインカードもありません。1600 px での実測：392 px の3列、孤立したカードなし、はみ出しなし。1180 px 以下で2列、720 px 以下で1列。">The grid goes back to <strong>three plain columns</strong>: nine cards, three full lines.</li>
+  <li data-i18n-fr-html="La neuvième carte est le <strong>Studio IA</strong> — « Une phrase, une maquette » : une description écrite, une maquette composée, qui s'ouvre dans SuperPrint et se retouche comme n'importe quel document. C'est la fonction qui donne son nom à la moitié du produit, et la neuvième rend la grille parfaite." data-i18n-en-html="The ninth card is the <strong>AI Studio</strong> — “One sentence, one layout”: a written description, a composed layout that opens in SuperPrint and can be reworked like any document. It is the feature that names half of the product, and the ninth one makes the grid perfect." data-i18n-jp-html="9枚目は<strong>AI スタジオ</strong>——「ひとことで、レイアウト」。書いた説明からレイアウトを組み、SuperPrint で開いて普通の文書のように直せます。製品名の半分を担う機能であり、9枚目がグリッドを完成させます。">The ninth card is the <strong>AI Studio</strong>: one sentence, one layout.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🔍 La visionneuse des captures" data-i18n-en-html="🔍 The screenshot viewer" data-i18n-jp-html="🔍 画面写真のビューア">🔍 The screenshot viewer</h3>
+ <ul>
+  <li data-i18n-fr-html="Un clic (ou Entrée) sur une capture l'affiche en grand, sur un fond d'encre flouté : <strong>flèches</strong>, compteur « 01 / 22 », légende dans la langue affichée, Échap pour fermer, flèches du clavier pour feuilleter, <strong>glissé au doigt</strong> sur mobile. Les treize captures du soufflet « Les outils, un par un » en profitent aussi, dans l'ordre du document." data-i18n-en-html="A click (or Enter) on a screenshot shows it large, on a blurred ink backdrop: <strong>arrows</strong>, a “01 / 22” counter, a caption in the displayed language, Escape to close, keyboard arrows to page through, <strong>finger swipe</strong> on mobile. The thirteen screenshots inside “The tools, one by one” get it too, in document order." data-i18n-jp-html="画面写真をクリック（または Enter）すると、ぼかしたインク色の背景に大きく表示されます。<strong>矢印</strong>、「01 / 22」のカウンター、表示中の言語のキャプション、Esc で閉じる、キーボードの矢印でめくる、モバイルでは<strong>指でスワイプ</strong>。「道具をひとつずつ」の13枚も同じように開き、順序は文書順です。">A click opens the screenshot large, with arrows, a counter, a caption, Escape to close and swipe on mobile.</li>
+  <li data-i18n-fr-html="⚠️ Ce ne sont pas des vignettes agrandies : la visionneuse affiche <strong>le fichier d'origine</strong> (1600 × 1000), celui de la grille. Aucune seconde version à maintenir, rien qui puisse se désynchroniser. Le focus est <strong>piégé</strong> dans la visionneuse (Tab ne part pas derrière le voile), et le défilement de la page est rendu à la fermeture — vérifié : on revient exactement où l'on était." data-i18n-en-html="⚠️ These are not enlarged thumbnails: the viewer shows <strong>the original file</strong> (1600 × 1000), the one in the grid. No second version to maintain, nothing that can drift. Focus is <strong>trapped</strong> inside the viewer (Tab does not go behind the veil), and page scrolling is restored on close — verified: you come back exactly where you were." data-i18n-jp-html="⚠️ 拡大したサムネイルではありません。ビューアは<strong>元のファイル</strong>（1600 × 1000）を表示します。二重管理なし、ずれようがありません。フォーカスはビューア内に<strong>閉じ込め</strong>られ（Tab がヴェールの後ろへ行きません）、閉じるとスクロールが元に戻ります。確認済み：元の位置に正確に戻ります。">⚠️ The viewer shows the <strong>original file</strong>, traps focus, and restores the scroll position.</li>
+ </ul>
+</article>
+
 <article class="release-block" data-app="superprint" id="superprint-v1-7-680">
  <h2>SUPER PRINT <span>v1.7.680</span></h2>
  <div class="release-meta">

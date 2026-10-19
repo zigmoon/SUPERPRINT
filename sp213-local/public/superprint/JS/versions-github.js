@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   v1.7.680 — LA VERSION AFFICHÉE EST CELLE QUI SE TÉLÉCHARGE VRAIMENT
+   v1.7.681 — LA VERSION AFFICHÉE EST CELLE QUI SE TÉLÉCHARGE VRAIMENT
    _SP_VERSIONS_GITHUB
 
    POURQUOI CE FICHIER EXISTE. La page de présentation annonçait « v1.7.662 »

@@ -9,7 +9,7 @@
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
 - **Trademarks**: "SuperPrint", "SP213" and "SuperTyPo" names and logos remain trademarks of the publisher, governed separately from the code license — see https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/TRADEMARKS.md
-- **Version**: 1.7.680 (October 2026)
+- **Version**: 1.7.681 (October 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
@@ -191,7 +191,7 @@ SPPluginAPI({
 
 Option types: `text`, `number`, `range`, `color`, `select`, `checkbox`, `image`. The panel renders the form from the declaration, so a plug-in never touches the application DOM and automatically inherits the light and dark theme.
 
-Two plug-ins ship with the app. **Global Refactor** (`app/plugins/global-refactor.plugin.js`) sets the styles, sizes, margins and colours of the whole document in one pass, with a live preview, a single undo step on Apply and a Cancel that restores the previous state exactly. Since 1.7.680 it has no button in the top bar: it is launched from the plug-in library like any other.
+Two plug-ins ship with the app. **Global Refactor** (`app/plugins/global-refactor.plugin.js`) sets the styles, sizes, margins and colours of the whole document in one pass, with a live preview, a single undo step on Apply and a Cancel that restores the previous state exactly. Since 1.7.681 it has no button in the top bar: it is launched from the plug-in library like any other.
 
 A plug-in that already owns a panel declares `trappe: '<panel id>'` and opens it from `run()`; the library then just executes it and builds no form. The field is honoured only for built-in plug-ins (`integre`), so a file dropped by the user cannot claim a panel of the product.
 
