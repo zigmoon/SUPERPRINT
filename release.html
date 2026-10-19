@@ -1402,6 +1402,82 @@ footer, footer a { color: var(--after-text-color); }
      en-tête / colonnes / bas, mêmes filets pleine largeur, ARM x3, aucun .rpm,
      et la copie qui répond (« Copié » + annonce role=status). -->
 
+<!-- ===== SUPER PRINT v1.7.683 — LES QUATRE BORDS DU TABLEAU, ET LE BLOC QUI RESTE UN BLOC.
+     Demandes utilisateur : « (1) dans la fonction des tableaux, permettre le clic long
+     sur les bords du tableau pour pouvoir retoucher la dernière ou la première colonne
+     et la dernière ou la première ligne ; bien montrer le changement d'état lorsqu'on
+     fait un clic long sur le filet. (2) Dans le plug-in Motif, dans la colonne de
+     droite : retirer "Enregistrer" et mettre "Appliquer" ; dans "Appliquer à", retirer
+     la phrase "bloc sélectionné sinon la page". Attention : quand je fais un nouveau
+     bloc et que je veux appliquer un motif, avec "Enregistrer" le motif n'apparaît
+     pas ; et quand je sélectionne un bloc qui a un motif et que je change de forme,
+     le bloc disparaît. »
+
+     (1) LES QUATRE BORDS DU TABLEAU SE RETOUCHENT.
+     MESURÉ sur un tableau 3 x 4 : les frontières INTÉRIEURES marchaient déjà (la
+     frontière X[1] élargissait la colonne 1 de 141,7 à 181,7 px), mais le POURTOUR
+     ne marchait pas. Clic long à 1 px du bord droit puis glissement de 40 px :
+     le tableau était DÉPLACÉ (x 36,9 -> -3,2), la dernière colonne intacte. Or la
+     dernière colonne et la dernière ligne n'ont QUE le pourtour comme frontière :
+     elles étaient donc hors d'atteinte.
+     Après correction, mesuré : bord droit -> dernière colonne 141,7 -> 101,7 px ;
+     bord gauche -> première colonne 141,7 -> 111,7 px ET x 36,9 -> 66,9 ; bord bas
+     -> dernière ligne 22,7 -> 34,7 px ; bord haut -> première ligne 22,7 -> 12,7 px
+     ET y 36,9 -> 46,9. Un glissement SEC continue de déplacer le tableau, et il
+     ANNULE l'armement : sans cela la minuterie arrivait en pleine translation.
+
+     L'ÉTAT SE VOIT, et c'est mesuré : un filet accentué #0d99ff est posé sur la
+     frontière tenue — pixel relevé sur le calque inférieur : [13,153,255] — une
+     étiquette suit le pointeur et donne la largeur en millimètres (« 35,9 mm »),
+     le curseur passe en col-resize / row-resize dès l'armement, et un curseur de
+     redimensionnement apparaît déjà AU SURVOL, pour que le bord soit découvrable
+     avant le clic. Le filet est en excludeFromExport (vérifié : Fabric ne le
+     sérialise pas), donc il ne peut pas entrer dans un document enregistré.
+
+     (2) « APPLIQUER », DEUX CIBLES, ET LE BLOC QUI RESTE UN BLOC.
+     · Le bouton s'appelle « Appliquer » dans les trois langues.
+     · « Appliquer à » ne propose plus que « Toute la page » et « Le bloc
+       sélectionné ». La troisième voie « Le bloc sélectionné, sinon la page »
+       décidait à la place de l'utilisateur selon qu'une sélection existait ou non,
+       ce qui était imprévisible depuis la trappe.
+     · LE BLOC QUI DISPARAÎT, cause trouvée : le nettoyage de début d'exécution
+       retirait TOUT objet portant _spMotifPlugin, y compris les blocs que le
+       plug-in n'avait fait que REMPLIR. Relevé : 1 objet avant, puis changement de
+       « Forme » -> le bloc n'était plus sur le plan de travail et un rectangle
+       plein cadre apparaissait à sa place. Désormais on RETIRE ce que le plug-in a
+       CRÉÉ (marque _spMotifCree) et on RESTAURE ce qu'il a seulement rempli
+       (remplissage et opacité d'avant : #e8e8e8 retrouvé).
+     · LE MOTIF QUI N'APPARAÎT PAS : depuis 1.7.682 le bouton ne faisait plus
+       qu'écrire l'historique. Tant que le document n'avait pas changé, c'était
+       juste ; mais un NOUVEAU bloc dessiné trappe ouverte n'avait jamais été
+       aperçu, donc le bouton validait un état périmé. Il réexécute maintenant le
+       plug-in sur le document courant, PUIS valide — mesuré : bloc créé trappe
+       ouverte puis « Appliquer » -> le motif est sur le nouveau bloc, le précédent
+       retrouve son remplissage, et le compte d'objets ne bouge pas. -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-683">
+ <h2>SUPER PRINT <span>v1.7.683</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 octobre 2026" data-i18n-en="Released October 19, 2026" data-i18n-jp="2026年10月19日公開">Released October 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les <strong>quatre bords d'un tableau</strong> se retouchent au clic long — la première et la dernière colonne, la première et la dernière ligne — avec un filet accentué et la valeur en millimètres pendant le geste. Dans le plug-in <strong>Motif</strong>, le bouton devient « <strong>Appliquer</strong> », la cible ne propose plus que deux cas nommés, et <strong>un bloc rempli de motif ne disparaît plus</strong> quand on change de forme." data-i18n-en-html="All <strong>four edges of a table</strong> can now be adjusted with a long press — first and last column, first and last row — with an accent rule and the value in millimetres during the gesture. In the <strong>Pattern</strong> plug-in the button becomes “<strong>Apply</strong>”, the target offers two clearly named cases, and <strong>a block filled with a pattern no longer disappears</strong> when the shape changes." data-i18n-jp-html="表の<strong>四辺すべて</strong>が長押しで調整できます — 最初と最後の列、最初と最後の行 — 操作中はアクセント線とミリメートル値が表示されます。<strong>パターン</strong>プラグインではボタンが「<strong>適用</strong>」になり、対象は名前の付いた2つの場合だけになり、図形を変えても<strong>パターンで塗ったブロックが消えなくなりました</strong>。">Table edges adjust with a long press, and a pattern-filled block no longer disappears.</p>
+
+ <h3 data-i18n-fr-html="📐 Les quatre bords du tableau" data-i18n-en-html="📐 All four table edges" data-i18n-jp-html="📐 表の四辺">📐 All four table edges</h3>
+ <ul>
+  <li data-i18n-fr-html="MESURÉ sur un tableau 3 × 4 : les frontières <strong>intérieures</strong> marchaient déjà (X[1] élargissait la colonne 1 de 141,7 à 181,7 px), mais le <strong>pourtour</strong> non. Clic long à 1 px du bord droit puis glissement de 40 px : le tableau était <strong>déplacé</strong> (x 36,9 → −3,2), dernière colonne intacte. Or la dernière colonne et la dernière ligne n'ont que le pourtour comme frontière : elles étaient hors d'atteinte." data-i18n-en-html="Measured on a 3 × 4 table: the <strong>inner</strong> borders already worked (X[1] widened column 1 from 141.7 to 181.7 px), but the <strong>outer edge</strong> did not. A long press 1 px from the right edge then a 40 px drag <strong>moved</strong> the table (x 36.9 → −3.2), last column untouched. Yet the last column and last row only have the outer edge as a border." data-i18n-jp-html="3 × 4 の表で実測：<strong>内側</strong>の境界は既に機能していました（X[1] で列1が 141.7 → 181.7 px）。しかし<strong>外周</strong>は違いました。右端から1 pxの長押し＋40 pxのドラッグで、表は<strong>移動</strong>し（x 36.9 → −3.2）、最後の列は変わりませんでした。">Measured: inner borders worked, the outer edge moved the table instead of resizing.</li>
+  <li data-i18n-fr-html="Après correction, mesuré : bord droit → dernière colonne 141,7 → 101,7 px ; bord gauche → première colonne 141,7 → 111,7 px <em>et</em> x 36,9 → 66,9 ; bord bas → dernière ligne 22,7 → 34,7 px ; bord haut → première ligne 22,7 → 12,7 px <em>et</em> y 36,9 → 46,9. Un glissement <strong>sec</strong> continue de déplacer le tableau, et il annule l'armement : sans cela la minuterie arrivait en pleine translation." data-i18n-en-html="After the fix, measured: right edge → last column 141.7 → 101.7 px; left edge → first column 141.7 → 111.7 px <em>and</em> x 36.9 → 66.9; bottom edge → last row 22.7 → 34.7 px; top edge → first row 22.7 → 12.7 px <em>and</em> y 36.9 → 46.9. A <strong>quick</strong> drag still moves the table, and cancels the arming." data-i18n-jp-html="修正後の実測：右端 → 最後の列 141.7 → 101.7 px、左端 → 最初の列 141.7 → 111.7 px <em>かつ</em> x 36.9 → 66.9、下端 → 最後の行 22.7 → 34.7 px、上端 → 最初の行 22.7 → 12.7 px <em>かつ</em> y 36.9 → 46.9。<strong>素早い</strong>ドラッグは今も表を移動し、待機を取り消します。">Measured: each edge adjusts the adjacent column or row; a quick drag still moves the table.</li>
+  <li data-i18n-fr-html="L'état se voit, et c'est mesuré : un filet accentué <code>#0d99ff</code> sur la frontière tenue — pixel relevé sur le calque inférieur : <strong>[13,153,255]</strong> — une étiquette qui suit le pointeur avec la largeur en millimètres (« 35,9 mm »), le curseur en <code>col-resize</code> / <code>row-resize</code> dès l'armement, et déjà un curseur de redimensionnement <strong>au survol</strong> pour que le bord soit découvrable avant le clic." data-i18n-en-html="The state is visible, and measured: an accent rule <code>#0d99ff</code> on the held border — pixel sampled on the lower layer: <strong>[13,153,255]</strong> — a label following the pointer with the width in millimetres (“35.9 mm”), the cursor in <code>col-resize</code> / <code>row-resize</code> as soon as it arms, and already a resize cursor <strong>on hover</strong> so the edge is discoverable before the click." data-i18n-jp-html="状態は目に見え、計測済みです。保持した境界にはアクセント線 <code>#0d99ff</code>（下層で採取したピクセル：<strong>[13,153,255]</strong>）、ポインタを追うミリメートル表示（「35.9 mm」）、待機と同時に <code>col-resize</code> / <code>row-resize</code>、そして<strong>ホバー時</strong>からサイズ変更カーソル。">Measured: accent rule <code>#0d99ff</code> ([13,153,255]), live millimetre label, resize cursor on hover and on arming.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="▦ Motif : « Appliquer », deux cibles, et le bloc qui reste un bloc" data-i18n-en-html="▦ Pattern: “Apply”, two targets, and the block that stays a block" data-i18n-jp-html="▦ パターン：「適用」、2つの対象、ブロックはブロックのまま">▦ Pattern: “Apply”, two targets, block stays a block</h3>
+ <ul>
+  <li data-i18n-fr-html="Le bouton s'appelle <strong>« Appliquer »</strong> dans les trois langues. « Appliquer à » ne propose plus que <strong>« Toute la page »</strong> et <strong>« Le bloc sélectionné »</strong> : la troisième voie, « Le bloc sélectionné, sinon la page », décidait à la place de l'utilisateur selon qu'une sélection existait ou non — imprévisible depuis la trappe." data-i18n-en-html="The button reads <strong>“Apply”</strong> in all three languages. “Apply to” now offers only <strong>“Whole page”</strong> and <strong>“Selected block”</strong>: the third path, “Selected block, otherwise the page”, decided on the user's behalf depending on whether a selection existed — unpredictable from the panel." data-i18n-jp-html="ボタンは3言語すべてで<strong>「適用」</strong>です。「適用先」は<strong>「ページ全体」</strong>と<strong>「選択ブロック」</strong>だけになりました。3つ目の「選択ブロック、なければページ全体」は選択の有無で勝手に決めるため、パネルからは予測できませんでした。">The button reads “Apply”; the target offers only two clearly named cases.</li>
+  <li data-i18n-fr-html="<strong>Le bloc qui disparaît</strong>, cause trouvée : le nettoyage de début d'exécution retirait <em>tout</em> objet portant <code>_spMotifPlugin</code>, y compris les blocs que le plug-in n'avait fait que <em>remplir</em>. Relevé : 1 objet avant, puis changement de « Forme » → le bloc n'était plus sur le plan de travail et un rectangle plein cadre apparaissait à sa place. Désormais on <strong>retire</strong> ce que le plug-in a créé et on <strong>restaure</strong> ce qu'il a seulement rempli — remplissage et opacité d'avant (le <code>#e8e8e8</code> d'origine est retrouvé)." data-i18n-en-html="<strong>The block that disappeared</strong>, cause found: the clean-up at the start of each run removed <em>every</em> object carrying <code>_spMotifPlugin</code>, including blocks the plug-in had only <em>filled</em>. Recorded: 1 object before, then a shape change → the block was no longer on the canvas and a full-frame rectangle appeared in its place. Now we <strong>remove</strong> what the plug-in created and <strong>restore</strong> what it merely filled — fill and opacity (the original <code>#e8e8e8</code> comes back)." data-i18n-jp-html="<strong>消えるブロック</strong>の原因：実行開始時の後片付けが <code>_spMotifPlugin</code> を持つ<em>すべて</em>のオブジェクトを削除し、プラグインが<em>塗っただけ</em>のブロックも対象でした。記録：前は1オブジェクト、図形変更後はブロックがキャンバスから消え、代わりに全画面の矩形が現れました。今後はプラグインが<strong>作成した</strong>ものだけを削除し、<strong>塗っただけ</strong>のものは元の塗りと不透明度に戻します。">The block disappeared because clean-up removed every tagged object; now only created objects are removed, and filled blocks are restored.</li>
+  <li data-i18n-fr-html="<strong>Le motif qui n'apparaît pas</strong> : depuis 1.7.682 le bouton ne faisait plus qu'écrire l'historique. Tant que le document n'avait pas changé, c'était juste ; mais un <strong>nouveau bloc</strong> dessiné trappe ouverte n'avait jamais été aperçu, donc le bouton validait un état périmé. Il réexécute maintenant le plug-in sur le document courant, <em>puis</em> valide. Mesuré : bloc créé trappe ouverte puis « Appliquer » → le motif est sur le nouveau bloc, le précédent retrouve son remplissage, et le nombre d'objets ne bouge pas (2 avant, 2 après)." data-i18n-en-html="<strong>The pattern that did not appear</strong>: since 1.7.682 the button only wrote the history entry. As long as the document had not changed that was correct; but a <strong>new block</strong> drawn with the panel open had never been previewed, so the button committed a stale state. It now re-runs the plug-in on the current document, <em>then</em> validates. Measured: block created with the panel open then “Apply” → the pattern is on the new block, the previous one gets its fill back, and the object count does not move (2 before, 2 after)." data-i18n-jp-html="<strong>表示されないパターン</strong>：1.7.682 以降、ボタンは履歴を書くだけでした。ドキュメントが変わらない間は正しく、パネルを開いたまま<strong>新しいブロック</strong>を描くと未プレビューのまま古い状態を確定していました。今後は現在のドキュメントでプラグインを再実行してから確定します。実測：パネルを開いたままブロックを作成→「適用」で新しいブロックにパターンが付き、前のブロックは元の塗りに戻り、オブジェクト数は変わりません（前2、後2）。">The button now re-runs the plug-in before committing; a new block gets the pattern and the previous one is restored.</li>
+ </ul>
+</article>
+
 <article class="release-block" data-app="superprint" id="superprint-v1-7-682">
  <h2>SUPER PRINT <span>v1.7.682</span></h2>
  <div class="release-meta">

@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.682)
+   SUPERPRINT — PANNEAU PLUG-INS  (v1.7.683)
    ═══════════════════════════════════════════════════════════════════════════════
 
    DEUX SURFACES, ET C'EST VOULU :
 
      · la BIBLIOTHÈQUE est une pop-in — on y installe, on supprime, on allume ou
        on éteint. Elle n'a pas besoin de voir la page : elle gère des fichiers.
-       ⚠️ v1.7.682 — ELLE NE FILTRE PLUS. La barre « Tous / 7 jours / 30 jours /
+       ⚠️ v1.7.683 — ELLE NE FILTRE PLUS. La barre « Tous / 7 jours / 30 jours /
        intégrés » a été retirée sur demande : elle découpait une liste qui tient à
        l'écran. La date d'installation reste écrite sur chaque carte.
 
@@ -34,7 +34,7 @@
     return e;
   }
 
-  /* ⚠️ v1.7.682 — `el()` PREND UN STYLE, PAS UNE CLASSE. Et ça s'était vu.
+  /* ⚠️ v1.7.683 — `el()` PREND UN STYLE, PAS UNE CLASSE. Et ça s'était vu.
      MESURÉ : `el('div', 'sp-pl-aide', …)` posait `style="sp-pl-aide"` — une
      déclaration invalide, donc ignorée par le navigateur. Résultat : les textes
      d'aide des plug-ins s'affichaient SANS leur style (9 px gris), et la valeur
@@ -142,7 +142,7 @@
     var ligne = el('div', 'padding:0 12px;margin-bottom:5px;');
     var id = 'spPluginOpt_' + option.key;
 
-    /* ═══ v1.7.682 — LE GRAND APERÇU ═══════════════════════════════════════
+    /* ═══ v1.7.683 — LE GRAND APERÇU ═══════════════════════════════════════
        Demande utilisateur : « une preview plus grand de mon image ou de mes
        images ». Un motif ne se juge pas sur une vignette de 28 px : ce champ pose
        une TOILE de la largeur de la trappe, et le plug-in y dessine lui-même la
@@ -166,7 +166,7 @@
       return { ligne: ligne, champ: null, option: option, toile: toile };
     }
 
-    /* ═══ v1.7.682 — LE MIXEUR D'IMAGES ════════════════════════════════════
+    /* ═══ v1.7.683 — LE MIXEUR D'IMAGES ════════════════════════════════════
        Demande utilisateur : « une preview plus grand de mon image ou de mes
        images (un mixer ?) ». Ce champ porte un TABLEAU de dataURL : on en ajoute
        autant qu'on veut, chacune se retire par sa croix, et le plug-in les
@@ -280,7 +280,7 @@
       if (valeurs && valeurs[option.key]) apercu.style.backgroundImage = 'url("' + valeurs[option.key] + '")';
       var bImg = petitBouton(texte('pluginsChooseImage', 'Image'), false);
       var etat = el('span', 'font-size:9px;color:#999;font-family:"IBM Plex Mono",monospace;', '—');
-      /* 🆕 v1.7.682 — l'aperçu doit RELANCER le plug-in quand l'image change.
+      /* 🆕 v1.7.683 — l'aperçu doit RELANCER le plug-in quand l'image change.
          Le bouton n'émet aucun événement natif : on publie donc un rappel, que la
          trappe branche sur l'aperçu en direct. Sans lui, choisir une image ne
          montrait rien tant qu'on n'avait pas cliqué « Appliquer » — exactement le
@@ -370,7 +370,7 @@
      ══════════════════════════════════════════════════════════════════════════ */
   var trappe = { id: null, champs: [], valeurs: {}, occupe: false };
 
-  /* ⚠️ v1.7.682 — L'APERÇU EN DIRECT.
+  /* ⚠️ v1.7.683 — L'APERÇU EN DIRECT.
      Demande utilisateur : « pourquoi et temps réel c'est-à-dire que je n'ai pas
      besoin de faire apply à chaque fois pour visualiser les modifications ».
      Chaque champ relance donc le plug-in, 140 ms après le dernier mouvement (assez
@@ -386,11 +386,15 @@
          être perdu : on le rejoue à la fin, une seule fois.
        · `aValider` — savoir s'il reste un aperçu non enregistré. C'est ce qui permet
          de n'écrire qu'UNE entrée d'historique, et de la fermeture comme de la
-         validation. */
+         validation.
+       · `appliquerDemande` — 🆕 v1.7.683. Un clic sur « Appliquer » arrivé pendant
+         qu'un aperçu tourne ne doit pas lancer une seconde exécution concurrente :
+         on le mémorise et on l'exécute à la fin de celle-ci. */
   var apercuEnCours = false;
   var apercuEnAttente = false;
   var aValider = false;
   var minuteurApercu = null;
+  var appliquerDemande = false;
 
   function valeursTrappe() {
     var vals = {};
@@ -406,14 +410,39 @@
   /* Écrit l'entrée d'historique UNE fois, quel que soit le nombre d'aperçus. */
   function validerApercu(silencieux) {
     if (!aValider || !trappe.id) {
-      if (!silencieux) trappeEtat(texte('pluginsNothingToApply', 'Rien à enregistrer'));
+      if (!silencieux) trappeEtat(texte('pluginsNothingToApply', 'Rien à appliquer'));
       return;
     }
     aValider = false;
     var ok = false;
     try { ok = window.SPPlugins.valider('Plug-in : ' + nomPlugIn()); } catch (_) { ok = false; }
-    trappeEtat(ok ? texte('pluginsSaved', 'Enregistré — Ctrl+Z pour annuler')
+    trappeEtat(ok ? texte('pluginsApplied', 'Appliqué — Ctrl+Z pour annuler')
                   : texte('pluginsFailed', 'Échec'));
+  }
+
+  /* Exécute le plug-in sur les valeurs COURANTES de la trappe, en aperçu (donc
+     sans toucher à l'historique), puis valide si `valider` est vrai. Une seule
+     fonction pour les deux entrées — la frappe et le bouton — afin que les deux
+     ne puissent pas diverger dans l'ordre des opérations. */
+  function executerApercu(valider) {
+    if (!trappe.id) return;
+    apercuEnCours = true;
+    trappeEtat(texte('pluginsPreviewing', 'Aperçu…'));
+    Promise.resolve()
+      .then(function () { return window.SPPlugins.run(trappe.id, valeursTrappe(), { apercu: true }); })
+      .then(function () {
+        aValider = true;
+        trappeEtat(texte('pluginsPreview', 'Aperçu en direct'));
+        if (valider) validerApercu(false);
+      })
+      .catch(function (e) {
+        trappeEtat(texte('pluginsFailed', 'Échec') + (e && e.message ? ' — ' + e.message : ''));
+      })
+      .then(function () {
+        apercuEnCours = false;
+        if (appliquerDemande) { appliquerDemande = false; appliquerMaintenant(); return; }
+        if (apercuEnAttente) { apercuEnAttente = false; lancerApercu(); }
+      });
   }
 
   function lancerApercu() {
@@ -422,22 +451,27 @@
     minuteurApercu = setTimeout(function () {
       minuteurApercu = null;
       if (apercuEnCours) { apercuEnAttente = true; return; }
-      apercuEnCours = true;
-      trappeEtat(texte('pluginsPreviewing', 'Aperçu…'));
-      Promise.resolve()
-        .then(function () { return window.SPPlugins.run(trappe.id, valeursTrappe(), { apercu: true }); })
-        .then(function () {
-          aValider = true;
-          trappeEtat(texte('pluginsPreview', 'Aperçu en direct'));
-        })
-        .catch(function (e) {
-          trappeEtat(texte('pluginsFailed', 'Échec') + (e && e.message ? ' — ' + e.message : ''));
-        })
-        .then(function () {
-          apercuEnCours = false;
-          if (apercuEnAttente) { apercuEnAttente = false; lancerApercu(); }
-        });
+      executerApercu(false);
     }, 140);
+  }
+
+  /* 🆕 v1.7.683 — « APPLIQUER » RÉEXÉCUTE LE PLUG-IN SUR LE DOCUMENT COURANT.
+     DÉFAUT MESURÉ (trappe Motif, 1.7.683) : le bouton ne faisait plus qu'écrire
+     l'entrée d'historique. Tant que le document n'avait pas changé depuis le
+     dernier aperçu, c'était juste. Mais dès qu'il change — l'utilisateur dessine
+     un NOUVEAU bloc, ou en sélectionne un autre — le dernier aperçu ne décrit
+     plus la cible : le bouton validait un état périmé, et « le motif n'apparaît
+     pas ». Reproduit : bloc créé puis « Enregistrer » → 1 objet, aucun motif.
+     Une réexécution était écartée en 1.7.683 par crainte d'un tirage au sort
+     différent ; elle est en fait DÉTERMINISTE — la graine est explicite dans les
+     réglages (`graine`), donc rejouer les mêmes valeurs redonne le même dessin.
+     Le bouton refait donc l'aperçu, PUIS valide : une seule entrée d'historique,
+     et le dessin correspond toujours au document tel qu'il est. */
+  function appliquerMaintenant() {
+    if (!trappe.id) return;
+    if (minuteurApercu) { clearTimeout(minuteurApercu); minuteurApercu = null; }
+    if (apercuEnCours) { appliquerDemande = true; return; }
+    executerApercu(true);
   }
 
   /* Branche l'aperçu sur TOUS les champs de la trappe. `input` couvre les
@@ -525,7 +559,7 @@
 
     if (t.titre) t.titre.textContent = p.name + '  ·  v' + p.version;
     t.corps.innerHTML = '';
-    /* ⚠️ v1.7.682 — LA DESCRIPTION DU PLUG-IN N'EST PLUS RÉPÉTÉE DANS LA TRAPPE.
+    /* ⚠️ v1.7.683 — LA DESCRIPTION DU PLUG-IN N'EST PLUS RÉPÉTÉE DANS LA TRAPPE.
        Demande utilisateur : « il y a beaucoup trop de texte d'info partout ».
        Elle est déjà sur la carte de la bibliothèque, où elle sert à choisir le
        plug-in ; ici, on a déjà choisi. La reprendre en tête de trappe repoussait
@@ -546,8 +580,8 @@
     });
     if (t.appliquer) {
       t.appliquer.disabled = !(p.options || []).length;
-      t.appliquer.textContent = texte('pluginsApplySave', 'Enregistrer');
-      t.appliquer.title = texte('pluginsApplyHint', 'Crée le point d\'annulation — Ctrl+Z revient à l\'état d\'avant.');
+      t.appliquer.textContent = texte('pluginsApply', 'Appliquer');
+      t.appliquer.title = texte('pluginsApplyHint', 'Applique le réglage au document — Ctrl+Z revient à l\'état d\'avant.');
     }
     aValider = false;
     apercuEnCours = false;
@@ -580,19 +614,17 @@
       ouvrirPanneau();
     });
 
-    /* ⚠️ v1.7.682 — « ENREGISTRER » N'EXÉCUTE PLUS LE PLUG-IN.
-       L'aperçu l'a déjà fait, et une exécution de plus écraserait le dessin par un
-       état identique en apparence — mais avec un nouveau tirage de hasard si la
-       graine avait changé entre-temps. Ce bouton ne fait donc qu'une chose :
-       écrire l'entrée d'historique. */
+    /* ⚠️ v1.7.683 — « APPLIQUER » RÉEXÉCUTE, IL NE SE CONTENTE PLUS DE VALIDER.
+       Voir `appliquerMaintenant` : le bouton doit décrire le document tel qu'il
+       est au moment du clic, pas tel qu'il était au dernier aperçu. */
     if (t.appliquer) t.appliquer.addEventListener('click', function () {
-      validerApercu(false);
+      appliquerMaintenant();
     });
   }
   /* ══════════════════════════════════════════════════════════════════════════
      BIBLIOTHÈQUE (pop-in)
      ══════════════════════════════════════════════════════════════════════════
-     ⚠️ v1.7.682 — PLUS DE BARRE DE FILTRES. Demande utilisateur : « supprime toute
+     ⚠️ v1.7.683 — PLUS DE BARRE DE FILTRES. Demande utilisateur : « supprime toute
      cette ligne de filtre All 2 / 7 days / 30 days / built-in 2 ».
      Elle coûtait 28 px de haut sur une liste qui en fait 83 par carte, pour
      découper une liste qui tient à l'écran — deux plug-ins livrés, et le plus
@@ -667,7 +699,7 @@
       }
       m.fermer();
       ouvrirPanneau();
-      /* 🆕 v1.7.682 — L'ICÔNE DE LA BARRE DU HAUT SUIT L'INTERRUPTEUR. Sans cet
+      /* 🆕 v1.7.683 — L'ICÔNE DE LA BARRE DU HAUT SUIT L'INTERRUPTEUR. Sans cet
          appel, éteindre un plug-in laissait son icône dans la barre : elle ouvrait
          un outil que la bibliothèque venait de déclarer hors service. */
       actualiserBarrePlugIns();
@@ -717,7 +749,7 @@
 
     actions.appendChild(interrupteur(p, m));
 
-    /* 🆕 v1.7.682 — « UTILISER » EST UNE GÉLULE, SANS FLÈCHE (cf. `.sp-pl-use`).
+    /* 🆕 v1.7.683 — « UTILISER » EST UNE GÉLULE, SANS FLÈCHE (cf. `.sp-pl-use`).
        La flèche a été retirée : elle allongeait le bouton de 12 px pour redire ce
        que le mot dit déjà. Le libellé seul se lit d'un coup d'œil. */
     var bUtiliser = el('button', '');
@@ -753,7 +785,7 @@
             window.SPPlugins.desinstaller(p.id);
             if (trappe.id === p.id) fermerTrappe();
             ouvrirPanneau();
-            /* 🆕 v1.7.682 — l'icône du plug-in désinstallé doit quitter la barre. */
+            /* 🆕 v1.7.683 — l'icône du plug-in désinstallé doit quitter la barre. */
             actualiserBarrePlugIns();
             try { window.spShowToast(p.name + ' — ' + texte('pluginsDeleted', 'désinstallé'), { kind: 'info', duration: 2600 }); } catch (_) {}
           } catch (e) {
@@ -863,7 +895,7 @@
       try {
         var res = window.SPPlugins.installerSource(String(r.result), f.name);
         ouvrirPanneau();
-        /* 🆕 v1.7.682 — un plug-in fraîchement installé est actif : sa place dans
+        /* 🆕 v1.7.683 — un plug-in fraîchement installé est actif : sa place dans
            la barre du haut doit apparaître sans attendre un rechargement. */
         actualiserBarrePlugIns();
         try { window.spShowToast(texte('pluginsInstalled', 'Plug-in installé : ') + res.name, { kind: 'info' }); } catch (_) {}
@@ -877,7 +909,7 @@
   }
 
   /* ── Ouverture de la trappe pour un plug-in donné ─────────────────────────── */
-  /* ═══ v1.7.682 — LES ICÔNES DE LA BARRE DU HAUT ═══════════════════════════
+  /* ═══ v1.7.683 — LES ICÔNES DE LA BARRE DU HAUT ═══════════════════════════
      Demande utilisateur : « affiche une icône dans la top nav quand c'est en on
      (global refactor on doit encore l'avoir, elle était dans la top nav avant en
      permanence) ». Un plug-in ALLUMÉ apparaît donc dans la barre du haut ; éteint,
@@ -963,7 +995,7 @@
   function ouvrirTrappePlugIn(id) {
     var p = window.SPPlugins.get(id);
 
-    /* 🆕 v1.7.682 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
+    /* 🆕 v1.7.683 — LE PLUG-IN APPORTE SA PROPRE TRAPPE (« Global Refactor »).
        Il n'a pas de formulaire à construire : son `run()` ouvre le panneau qu'il
        possède déjà. On l'EXÉCUTE donc directement, sans passer par la trappe
        générique — sinon on aurait deux panneaux pour un seul outil, et un bouton
@@ -990,7 +1022,7 @@
     brancherTrappe();
     var bPlug = document.getElementById('openPluginsPanel');
     if (bPlug) bPlug.addEventListener('click', function () {
-      /* ⚠️ v1.7.682 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
+      /* ⚠️ v1.7.683 — CE BOUTON OUVRE LA BIBLIOTHÈQUE, TOUJOURS.
          Il la refermait quand la trappe d'un plug-in était ouverte (« va-et-vient,
          pas une ouverture forcée »). MESURÉ : depuis que « Global Refactor » est un
          plug-in, cela fait deux clics pour l'atteindre — le premier referme la
@@ -1003,7 +1035,7 @@
     var bMcp = document.getElementById('openMcpPanel');
     if (bMcp) bMcp.addEventListener('click', ouvrirPanneauMCP);
 
-    /* 🆕 v1.7.682 — LA RANGÉE D'ICÔNES DE LA BARRE DU HAUT.
+    /* 🆕 v1.7.683 — LA RANGÉE D'ICÔNES DE LA BARRE DU HAUT.
        ⚠️ ELLE SE REMPLIT ICI, ET PAS AU CHARGEMENT DU SCRIPT : les fichiers de
        `app/plugins/` sont insérés par `index.html` APRÈS `main.js` et s'enregistrent
        de façon asynchrone. Un premier remplissage immédiat trouverait donc une liste
@@ -1015,7 +1047,7 @@
     setTimeout(actualiserBarrePlugIns, 400);
     setTimeout(actualiserBarrePlugIns, 1500);
 
-    /* 🆕 v1.7.682 — LA RANGÉE SUIT LA LANGUE DE L'INTERFACE.
+    /* 🆕 v1.7.683 — LA RANGÉE SUIT LA LANGUE DE L'INTERFACE.
        MESURÉ : `setLanguage('fr')` changeait bien les libellés de la bibliothèque
        (`liste()` traduit à la lecture), mais la barre du haut restait dans la
        langue précédente — elle avait été dessinée une fois, et rien ne la
@@ -1144,7 +1176,7 @@
     installerFichier: installerFichier
   };
 
-  /* ═══ v1.7.682 — LA TOILE D'APERÇU, VUE PAR LE REGISTRE ═══════════════════
+  /* ═══ v1.7.683 — LA TOILE D'APERÇU, VUE PAR LE REGISTRE ═══════════════════
      `sp-plugins.js` construit l'API offerte au plug-in, mais c'est CE module qui
      possède la trappe et donc la toile du champ « aperçu ». On publie un
      accesseur, et rien de plus : le registre n'a pas à connaître la structure de

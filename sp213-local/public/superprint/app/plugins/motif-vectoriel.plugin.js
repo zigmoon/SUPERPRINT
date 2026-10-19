@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.682)
+   SUPERPRINT — PLUG-IN « MOTIF VECTORIEL »  (v3.0.0, app 1.7.683)
    ═══════════════════════════════════════════════════════════════════════════════
 
    Ce que fait ce plug-in : il habille un fond de page — ou un bloc sélectionné —
@@ -81,7 +81,7 @@
    `api.apercu`, `api.toileApercu`. S'il fonctionne sans rien d'autre, l'API est
    suffisante pour un plug-in réel.
    ─────────────────────────────────────────────────────────────────────────────── */
-/* ═══ v1.7.682 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
+/* ═══ v1.7.683 — LES TROIS LANGUES (FR / EN / JA) ═══════════════════════════
    Demande utilisateur : « relie bien la partie plug-in et nos deux plugins en
    trois langue EN fr ja ».
    Chaque libellé visible est écrit `L(français, english, 日本語)` et résolu à
@@ -97,7 +97,7 @@ var L = window.SPPluginL || function (fr, en, ja) { return { fr: fr, en: en || f
 
 SPPluginAPI({
   id: 'motif-vectoriel',
-  /* ⚠️ v1.7.682 — « MOTIF », SANS « VECTORIEL ».
+  /* ⚠️ v1.7.683 — « MOTIF », SANS « VECTORIEL ».
      Demande utilisateur : « qu'on va juste appeler motif d'ailleurs en wording
      (car cela n'est pas vraiment vectoriel) ». C'est exact et c'était vérifiable :
      l'export PDF embarque la tuile comme une IMAGE, il n'y a pas un seul tracé
@@ -108,11 +108,11 @@ SPPluginAPI({
   version: '3.1.0',
   author: 'SuperPrint',
   icon: '▦',
-  /* ⚠️ v1.7.682 — LA DESCRIPTION DIT CE QUE L'EXPORT FAIT VRAIMENT.
+  /* ⚠️ v1.7.683 — LA DESCRIPTION DIT CE QUE L'EXPORT FAIT VRAIMENT.
      MESURÉ : le plug-in ne pose pas de tracés, il remplit un bloc avec un
      `fabric.Pattern` dont la source est un CANEVAS (la tuile). Les classificateurs
      d'export traitent un remplissage de motif comme RASTER — c'est mesuré dans le
-     PDF. Ce qui a changé en 1.7.682 : ce n'est plus LE BLOC ENTIER qui est
+     PDF. Ce qui a changé en 1.7.683 : ce n'est plus LE BLOC ENTIER qui est
      rasterisé. La tuile est embarquée UNE fois et répétée par le PDF, à la densité
      de l'export. Un bloc de 380 × 200 px rempli de motif passait de 187 Ko à 2 Ko,
      et une page A4 entière en ULTRA HD — qui ne se terminait pas — sort désormais
@@ -122,13 +122,13 @@ SPPluginAPI({
     'Pattern, rosette, kaleidoscope or chaos — from a shape or a mix of images. Live preview in the panel. In PDF export the pattern is repeated as an image, at the chosen resolution.',
     'パターン・ロゼット・万華鏡・混沌 — 図形または画像のミックスから。パネル内でライブプレビュー。PDF 書き出しでは、柄は画像として繰り返され、選択した解像度になります。'),
 
-  /* 🆕 v1.7.682 — L'ICÔNE DE LA BARRE DU HAUT.
+  /* 🆕 v1.7.683 — L'ICÔNE DE LA BARRE DU HAUT.
      Demande utilisateur : « pour motif trouve une icône ». On dessine un MOTIF :
      des points en quinconce, c'est-à-dire ce que fait ce plug-in — une forme
      répétée en grille décalée.
      ⚠️ MÊME FACTURE QUE LES AUTRES ICÔNES DE CETTE ZONE : 24×24, `fill="none"`,
      `stroke="currentColor"`, épaisseur 1,8.
-     ⚠️ v1.7.682 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
+     ⚠️ v1.7.683 — CINQ PETITS CERCLES AU LIEU DE CINQ CARRÉS, ET C'EST UNE MESURE.
      Demande utilisateur : « les icons que les plugins ajoute dans la top
      navigation me semble plus noir que les autre en chromie ». La couleur était la
      même ; c'est l'encre qui pesait. Mesuré en pixels opaques sur un rendu 48×48 :
@@ -144,10 +144,19 @@ SPPluginAPI({
     { key: 'apercu', label: L('Aperçu', 'Preview', 'プレビュー'), type: 'apercu', ratio: 1 },
 
     /* ── Où poser ─────────────────────────────────────────────────────────── */
+    /* ⚠️ v1.7.683 — LA LISTE DIT CE QU'ELLE FAIT, ET RIEN DE PLUS.
+       Demande utilisateur : « dans appliquer à, retirer la phrase "bloc sélectionné
+       sinon la page" ». C'était le libellé de l'option `auto` : une troisième voie
+       qui décidait à la place de l'utilisateur, selon qu'une sélection existait ou
+       non au moment de l'exécution. Impossible à prévoir depuis la trappe, et c'est
+       exactement ce qui rendait le comportement surprenant.
+       Restent les deux cas réels, nommés : « Toute la page » et « Le bloc
+       sélectionné ». Le défaut est `selection` — c'est la cible qu'on vient de
+       désigner en cliquant un bloc — et sans sélection le message d'erreur dit
+       quoi faire (« sélectionnez un cadre, ou choisissez "toute la page" »). */
     {
-      key: 'cible', label: L('Appliquer à', 'Apply to', '適用先'), type: 'select', defaut: 'auto',
+      key: 'cible', label: L('Appliquer à', 'Apply to', '適用先'), type: 'select', defaut: 'selection',
       choix: [
-        { value: 'auto', label: L('Le bloc sélectionné, sinon la page', 'Selected block, otherwise the page', '選択ブロック、なければページ全体') },
         { value: 'page', label: L('Toute la page', 'Whole page', 'ページ全体') },
         { value: 'selection', label: L('Le bloc sélectionné', 'Selected block', '選択ブロック') }
       ]
@@ -704,7 +713,7 @@ SPPluginAPI({
            assez peu pour que chaque forme reste lisible. */
         var ech = (W / 3) / cote;
         var pas = cote * ech;
-        /* ⚠️ v1.7.682 — LA GRILLE EST ANCRÉE SUR LE CONTENU DE LA TUILE, PAS SUR
+        /* ⚠️ v1.7.683 — LA GRILLE EST ANCRÉE SUR LE CONTENU DE LA TUILE, PAS SUR
            SON BORD.
            DÉFAUT MESURÉ (trappe Motif, toile 632 × 632, réglages par défaut) : le
            motif partait vers la droite. Sur la ligne médiane, les formes tombaient
@@ -768,6 +777,14 @@ SPPluginAPI({
     function cible() {
       var doc = api.document;
       var sel = api.selection();
+      /* ⚠️ v1.7.683 — UN OBJET POSÉ PAR LE PLUG-IN N'EST JAMAIS UNE CIBLE.
+         Les objets créés (rectangle de page, rosace) sont `selectable: true` pour
+         qu'on puisse les déplacer. S'ils étaient pris pour la cible d'une nouvelle
+         exécution, le nettoyage les retirerait juste après : on remplirait un objet
+         qui n'est plus sur le plan de travail, et rien n'apparaîtrait. */
+      if (sel && sel.length) {
+        sel = sel.filter(function (x) { return x && !x._spMotifCree; });
+      }
       if ((o.cible === 'selection' || o.cible === 'auto') && sel && sel.length) {
         var bloc = sel[0];
         return {
@@ -846,8 +863,15 @@ SPPluginAPI({
           });
 
           if (c.remplace && c.objet) {
+            /* ⚠️ v1.7.683 — ON MÉMORISE AUSSI L'OPACITÉ, ET ON LA RESTAURE.
+               Un motif appliqué à 60 % d'opacité rendait le bloc à 60 % même après
+               retrait du motif : la valeur d'avant n'était pas conservée. */
             if (!c.objet._spMotifAvant) {
-              try { c.objet._spMotifAvant = c.objet.fill; } catch (_) {}
+              try {
+                c.objet._spMotifAvant = c.objet.fill;
+                c.objet._spMotifOpaciteAvant = c.objet.opacity;
+                c.objet._spMotifAvantVu = true;
+              } catch (_) {}
             }
             c.objet.set({ fill: pat });
             if (opacite < 1) c.objet.set({ opacity: opacite });
@@ -872,38 +896,83 @@ SPPluginAPI({
             noScaleCache: true
           });
           rect._spMotifPlugin = true;
+          rect._spMotifCree = true;
           if (opacite < 1) rect.set({ opacity: opacite });
           try { rect.set({ name: o.libelle || 'Motif' }); } catch (_) {}
           api.add(rect, { libelle: 'Plug-in : ' + (o.libelle || 'Motif'), envoyerEnArriere: true });
           resolve(rect);
         }
 
+        /* ⚠️ v1.7.683 — DEUX SORTES D'OBJETS, DEUX TRAITEMENTS. MESURÉ, ET C'EST
+           LA CAUSE DU BLOC QUI DISPARAÎT.
+           Jusqu'ici le nettoyage retirait TOUT objet portant `_spMotifPlugin` — y
+           compris les blocs que le plug-in n'avait fait que REMPLIR. Relevé dans la
+           trappe Motif, un bloc sélectionné : aperçu 1 → bloc rempli (1 objet) ;
+           changement de « Forme » → aperçu 2 → le bloc est retiré du plan de
+           travail, la sélection se vide, la cible retombe sur la page et un
+           rectangle plein cadre apparaît à sa place. Le bloc de l'utilisateur avait
+           disparu, avec son texte et sa position.
+           Désormais : on RETIRE ce que le plug-in a CRÉÉ (`_spMotifCree`) et on
+           RESTAURE ce qu'il a seulement REMPLI (`_spMotifSurBloc`), en remettant le
+           remplissage et l'opacité d'avant. Un bloc reste un bloc. */
+        function restaurerBloc(obj) {
+          if (!obj) return false;
+          try {
+            if (obj._spMotifAvantVu) obj.set({ fill: obj._spMotifAvant });
+            if (obj._spMotifOpaciteAvant !== undefined) obj.set({ opacity: obj._spMotifOpaciteAvant });
+            obj.dirty = true;
+          } catch (_) { return false; }
+          obj._spMotifPlugin = false;
+          obj._spMotifSurBloc = false;
+          obj._spMotifAvantVu = false;
+          try { delete obj._spMotifAvant; delete obj._spMotifOpaciteAvant; } catch (_) {}
+          return true;
+        }
+
+        function surUnPlanDeTravail(obj) {
+          try {
+            return api.canvases().some(function (cv2) { return cv2 && typeof cv2.contains === 'function' && cv2.contains(obj); });
+          } catch (_) { return false; }
+        }
+
+        function nettoyerMotifs(cibleObjet) {
+          api.canvases().forEach(function (cv2) {
+            if (!cv2 || typeof cv2.getObjects !== 'function') return;
+            cv2.getObjects().slice().forEach(function (obj) {
+              if (!obj) return;
+              if (obj._spMotifCree) { cv2.remove(obj); return; }
+              /* La cible courante n'est pas restaurée : elle va être remplie juste
+                 après, la restaurer puis la re-remplir ferait clignoter le bloc. */
+              if (obj._spMotifSurBloc && obj !== cibleObjet) restaurerBloc(obj);
+            });
+            if (cv2.requestRenderAll) cv2.requestRenderAll();
+          });
+        }
+
         try {
-          /* ⚠️ LE NETTOYAGE PASSE AVANT TOUT, ET C'EST UNE NÉCESSITÉ, PAS UN ORDRE.
+          /* ⚠️ LA CIBLE EST LUE AVANT LE NETTOYAGE. MESURÉ : `cible()` s'appuie sur
+             la sélection ; or retirer du plan de travail un objet que le plug-in
+             avait créé et qui était sélectionné vide la sélection. Lue après, la
+             cible serait introuvable alors que l'utilisateur avait bien désigné un
+             bloc. On la lit donc d'abord, et on ne la relit qu'en dernier recours,
+             si elle a effectivement disparu. */
+          var c = null, errCible = null;
+          try { c = cible(); } catch (e) { errCible = e; }
+
+          /* ⚠️ LE NETTOYAGE PASSE ENSUITE, ET C'EST UNE NÉCESSITÉ, PAS UN ORDRE.
              Le mode « kaléidoscope de la page » relit le rendu du plan de travail :
              si le motif de l'aperçu précédent est encore posé, il se reflète
              lui-même, et chaque mouvement de tirette empile une génération de plus
              — le dessin se dégrade visiblement en quelques réglages.
-             On retire donc le motif d'AVANT sur TOUS les plans de travail, pas
+             On nettoie donc le motif d'AVANT sur TOUS les plans de travail, pas
              seulement l'actif : changer de page puis revenir ne doit pas révéler un
              ancien motif resté en place. */
-          try {
-            api.canvases().forEach(function (cv2) {
-              if (!cv2 || typeof cv2.getObjects !== 'function') return;
-              cv2.getObjects().slice().forEach(function (obj) {
-                if (obj && obj._spMotifPlugin) cv2.remove(obj);
-              });
-              if (cv2.requestRenderAll) cv2.requestRenderAll();
-            });
-          } catch (_) {}
+          try { nettoyerMotifs(c && c.objet); } catch (_) {}
 
-          /* ⚠️ LA CIBLE PEUT ÉCHOUER SANS QUE L'APERÇU DOIVE ÉCHOUER.
-             En mode « bloc sélectionné » sans sélection, `cible()` lève. Si l'on
-             sortait tout de suite, la trappe afficherait une erreur ET un aperçu
-             vide : impossible de régler le motif avant d'avoir choisi sa cible. On
-             note donc l'erreur, on montre l'aperçu, puis on la relève. */
-          var c = null, errCible = null;
-          try { c = cible(); } catch (e) { errCible = e; }
+          if (c && c.objet && !surUnPlanDeTravail(c.objet)) {
+            c = null; errCible = null;
+            try { c = cible(); } catch (e) { errCible = e; }
+          }
 
           if (mode === 'miroir') {
             var tailleRef = c || { largeur: api.document.largeur, hauteur: api.document.hauteur };
@@ -933,6 +1002,7 @@ SPPluginAPI({
             });
             try { img.set({ name: o.libelle || 'Rosace' }); } catch (_) {}
             img._spMotifPlugin = true;
+            img._spMotifCree = true;
             if (opacite < 1) img.set({ opacity: opacite });
             api.add(img, { libelle: 'Plug-in : ' + (o.libelle || 'Rosace'), envoyerEnArriere: true });
             resolve(img);
