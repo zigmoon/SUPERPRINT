@@ -25,8 +25,8 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
 //    version is invalid or older than the online version ».
 //    La version du paquet npm, elle, vit dans package.json.
-// 📌 Dernier plancher avancé : 1.7.682 — et c'est DÉLIBÉRÉMENT celui de la version
-//    DÉPLOYÉE, pas celle du dépôt.
+// 📌 Dernier plancher avancé : 1.7.685 — et c'est bien celui de la version
+//    DÉPLOYÉE, vérifié dans l'archive téléchargée, pas celle du dépôt.
 //    ⚠️ RÈGLE APPRISE À LA DURE, ET QUI A DÉJÀ SERVI : on ne conclut pas une
 //    version sur une empreinte. Le 15/10/2026, « zip 1.7.617 en ligne (56 459 564
 //    octets, sha256 EAB82EEA…8B951) » était exact — pour le zip de la version
@@ -39,18 +39,20 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    avance ne se voit pas à la lecture : il casse `npx superprint` pour tout le
 //    monde (« downloaded version is invalid or older »). D'où la règle : après un
 //    bump, RELIRE ce bloc et le remettre sur les mesures réelles.
-//    ÉTAT MESURÉ le 19/10/2026 à 17 h, APRÈS le bump en 1.7.683 :
-//      · app.zigmoon.com/sp213-local.zip — toujours la 1.7.682 : 56 704 044 octets,
-//        Last-Modified 12:42:04 GMT. Le zip 1.7.683 est prêt localement
-//        (56 710 209 octets, contrôlé : `bordSous`, `_spMotifCree`, `pluginsApply`
-//        et `version.txt` = 1.7.683 DANS l'archive) mais N'EST PAS EN LIGNE.
-//      · superprint.cc/version.txt = 1.7.682.
-//      · npm `superprint@1.0.116` est en ligne depuis 12:56:52 UTC, avec un
-//        plancher de 1.7.682 — donc cohérent avec ce qui est servi.
-//    → le plancher reste à 1.7.682 TANT QUE le zip 1.7.683 et le site ne sont pas
-//      téléversés. Le passer à 1.7.683 maintenant rendrait `onlineVersion` =
-//      max(1.7.682, 1.7.683) = 1.7.683 face à un zip 1.7.682 : REFUS pour tout le
-//      monde. À avancer DANS LE MÊME GESTE que le téléversement, jamais avant.
+//    ÉTAT MESURÉ le 19/10/2026 à 21 h 45, ET LE PLANCHER PEUT SUIVRE :
+//      · app.zigmoon.com/sp213-local.zip — la 1.7.685 : 56 795 983 octets,
+//        Last-Modified 19:25:40 GMT. Pas une empreinte : le fichier a été
+//        RETÉLÉCHARGÉ et son sha256 (8A9CFE8B…0C4406) est IDENTIQUE à celui du
+//        zip local, et `version.txt` vaut 1.7.685 DANS l'archive.
+//      · superprint.cc/version.txt = 1.7.685, Last-Modified 19:27:34 GMT.
+//      · superprint.cc/app/index.html et superprint.cc/index.html portent bien
+//        la 1.7.685 (27 et 86 occurrences, aucune autre version vivante).
+//      · npm `superprint@1.0.116` avait un plancher de 1.7.682 : juste tant que
+//        la 1.7.682 était servie, en retard depuis le téléversement.
+//    → le plancher passe donc à 1.7.685 DANS CE MÊME GESTE, maintenant que le
+//      zip ET le site sont en ligne. Un plancher égal à la version déployée est
+//      l'état visé : il refuse un zip plus ancien servi par erreur, sans jamais
+//      bloquer une version plus récente.
 //    ⚠️ CE QUE FAIT RÉELLEMENT LE PLANCHER, dit exactement : `onlineVersion` est le
 //      MAXIMUM entre `version.txt` et cette constante. C'est donc `version.txt` qui
 //      déclenche les mises à jour, et le plancher qui REFUSE un zip trop ancien —
@@ -63,7 +65,7 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //      aurait installé une version sans la visionneuse des captures, sans le menu de
 //      téléchargement refait et sans les neuf planches recadrées. Une garde ne sert
 //      que si elle est à jour.
-const MIN_APP_VERSION = '1.7.682';
+const MIN_APP_VERSION = '1.7.685';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');
