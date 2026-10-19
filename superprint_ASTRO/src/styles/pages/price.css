@@ -308,7 +308,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
-/* 🆕 v1.7.681 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+/* 🆕 v1.7.682 — LE MENU NE SE REFERME PLUS EN CHEMIN.
    Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
    du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
    couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
@@ -425,7 +425,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    concurrencer le nom de l'application — 8 px, sans approche forcée, et un peu
    effacé pour qu'il se lise comme une précision et non comme un titre. */
 .nav-dd-app-ver { font-family: var(--f-mono); font-size: 8px; letter-spacing: .02em; color: var(--muted); opacity: .85; }
-/* 🆕 v1.7.681 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+/* 🆕 v1.7.682 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
    peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
@@ -467,7 +467,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
   color: var(--paper); background: var(--ink);
 }
-/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.681) ══════════════
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.682) ══════════════
    Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
    plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
    systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
@@ -1316,7 +1316,7 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
-  /* 🎯 v1.7.681 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+  /* 🎯 v1.7.682 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
      Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
      ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
      texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
@@ -1860,7 +1860,7 @@ section.help-price > .help-ress-intro { text-align: center; margin-left: auto; m
 .help-price-card:nth-child(2) { border-top-color: var(--magenta); }
 .help-price-card:nth-child(3) { border-top-color: var(--yellow); }
 .help-price-card:nth-child(4) { border-top-color: var(--ink); }
-/* ⚠️ 1.7.681 — LE FILET DU HAUT GARDE L'ACCENT CYAN. `border-color` est un
+/* ⚠️ 1.7.682 — LE FILET DU HAUT GARDE L'ACCENT CYAN. `border-color` est un
    RACCOURCI qui écrit les QUATRE côtés à la fois : posé après la règle de base
    (`border-top: 3px solid var(--cyan)`), il repeignait aussi le filet du haut, et
    la carte gratuite perdait son accent — mesuré : rgb(23,19,13) sur les quatre
@@ -1876,7 +1876,7 @@ section.help-price > .help-ress-intro { text-align: center; margin-left: auto; m
 .help-price-no b { font-weight: 700; color: var(--ink); }
 .help-price-no i { font-style: normal; }
 .help-price-h { margin: 12px 0 0; min-height: 2.16em; font-family: var(--f-caps); font-weight: 400; font-size: clamp(20px,2.1vw,26px); line-height: 1.08; letter-spacing: .01em; color: var(--ink); }
-/* 🆕 v1.7.681 — LE MONTANT EST CENTRÉ DANS SA CARTE, ET LE ZÉRO EST LA RÉFÉRENCE.
+/* 🆕 v1.7.682 — LE MONTANT EST CENTRÉ DANS SA CARTE, ET LE ZÉRO EST LA RÉFÉRENCE.
    Demande utilisateur : « centre bien le zéro (c'est la référence en centrage) ».
    MESURÉ AVANT, à 1440 px : la carte 1 va de 165 à 425 (centre 295) et son
    montant de 192 à 233 (centre 213) — il était donc à 82 px du centre. En haut de
@@ -1895,7 +1895,7 @@ section.help-price > .help-ress-intro { text-align: center; margin-left: auto; m
 .help-price-amt--txt { font-size: clamp(20px,2.2vw,26px); }
 /* Strut : un espace de largeur nulle au corps des grands prix, pour que « Votre montant »
    partage exactement la même ligne de base que €0 / €13 / €39. */
-/* 🆕 v1.7.681 — LE ZÉRO INVISIBLE N'A PLUS DE RAISON D'ÊTRE. Il servait à ALIGNER
+/* 🆕 v1.7.682 — LE ZÉRO INVISIBLE N'A PLUS DE RAISON D'ÊTRE. Il servait à ALIGNER
    « Votre montant » sur la ligne de base des grands nombres, dans une rangée
    horizontale. La rangée est devenue une colonne centrée : le pseudo-élément
    n'aligne plus rien, il ajoute seulement 46 px de ligne vide au-dessus du texte.
@@ -2044,7 +2044,7 @@ section.help-price > .help-ress-intro { text-align: center; margin-left: auto; m
   margin: 0; font-family: var(--f-caps); font-weight: 400;
   font-size: clamp(21px,2.3vw,27px); line-height: 1.15; letter-spacing: .01em; color: var(--ink);
 }
-/* ═══ 1.7.681 — LE BOUTON DE CHAQUE FORMULE DEVIENT UN BOUTON, TOUT SIMPLEMENT ═══
+/* ═══ 1.7.682 — LE BOUTON DE CHAQUE FORMULE DEVIENT UN BOUTON, TOUT SIMPLEMENT ═══
    Demande utilisateur : « les boutons sont pas beaux et ne donnent pas envie ; avec
    le logo PayPal ça ne va pas en design → fais-moi un bouton classique dans chaque
    formule pour l'appel à la participation ».
@@ -2258,7 +2258,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 @media print { .sp-wa { display: none; } }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   1.7.681 — LA BARRE FIXE DES FONDATIONS, SUR « FAQ » ET « TARIF »
+   1.7.682 — LA BARRE FIXE DES FONDATIONS, SUR « FAQ » ET « TARIF »
    Demande utilisateur : « contrôle que le footer fixe soit bien implémenté dans
    les pages faq et price ». Le contrôle a montré qu'il ne l'était pas : les deux
    pages ne portaient aucune des trois classes (fondations, fondations-grid,
@@ -2271,7 +2271,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    commentaire dans la requête de média).
    ═══════════════════════════════════════════════════════════════════════════ */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.681 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.682 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -2279,14 +2279,14 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    correspondante. */
 .fondations-grid {
   display: grid;
-  /* 🆕 v1.7.681 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+  /* 🆕 v1.7.682 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
      Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
      bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
      363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
      quatre cases d'information se partagent le reste à parts égales. */
   grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.681 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+  /* 🆕 v1.7.682 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
      353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
      la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
@@ -2316,14 +2316,14 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 .fondation-chiffre { font-family: var(--f-mono); font-size: 1.02em; color: var(--ink); font-weight: 600; }
 .fondation-date { font-family: var(--f-mono); font-size: 0.85em; color: var(--muted); }
 /* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
-/* 🆕 v1.7.681 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
+/* 🆕 v1.7.682 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
    Demande : « on met juste les marques au premier abord ; au survol la marque disparaît
    et affiche la phrase ».
    ⚠️ LES DEUX SONT DANS LA MÊME CELLULE DE GRILLE (grid-area 1/1) : la hauteur du bloc
    vaut donc le MAXIMUM des deux, et la barre ne saute pas quand la phrase apparaît.
    Mesuré : la phrase npm passe à 2 lignes en japonais à 1280 px (38 px) quand le nom en
    fait 18 — une mise en page en flux aurait fait grandir la case de 20 px au survol.
-   🆕 v1.7.681 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
+   🆕 v1.7.682 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
    Retour utilisateur : « sur les grands écrans on pouvait garder finalement la petite
    phrase qui était en dessous grise, désolé… garde le comportement actuellement pour
    les écrans moyens (les petits laptops, les tablettes) ».
@@ -2332,7 +2332,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    ⚠️ SOUS 1024 px LA PHRASE RESTE MASQUÉE : à cette largeur les quatre cases tiennent
    à peine le nom, et une deuxième ligne ferait passer la barre de 73 à 254 px
    (mesuré sur `index.html`, mise en page mobile). */
-/* 🆕 v1.7.681 — LE CROISEMENT AU SURVOL DISPARAÎT, ET LA PHRASE SE RESSERRE.
+/* 🆕 v1.7.682 — LE CROISEMENT AU SURVOL DISPARAÎT, ET LA PHRASE SE RESSERRE.
    Demande : « la petite ligne de texte engrisée qui sert de description sous GitHub,
    npm, Discord, etc. doit disparaître dès 1200 px aussi » — et, sur les grands
    écrans où elle reste, « la typo GitHub/Discord n'est pas assez proche de la petite
@@ -2360,7 +2360,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   .fondation-desc { margin-top: -5px; }
 }
 
-/* ═══ v1.7.681 — LES LIGNES DE TEXTE DESCENDENT DE 2 px, LA PHRASE DE 2 DE PLUS ═══
+/* ═══ v1.7.682 — LES LIGNES DE TEXTE DESCENDENT DE 2 px, LA PHRASE DE 2 DE PLUS ═══
    Demandes : « mets la petite ligne grise en dessous les marques un petit peu plus
    bas » et « globalement dans le footer fixe, on devrait redescendre les lignes de
    texte à droite des logos de quelques pixels (2 px) ».
@@ -2386,7 +2386,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 .fondation-txt { transform: translateY(2px); }
 .fondation-desc { transform: translateY(2px); }
 /* Le nom garde son soulignement d'affordance : c'est la seule marque de lien là où
-   la phrase est absente. ⚠️ LA BORNE SUIT CELLE DE LA PHRASE (1200 px, v1.7.681) : à
+   la phrase est absente. ⚠️ LA BORNE SUIT CELLE DE LA PHRASE (1200 px, v1.7.682) : à
    1024–1199 px la phrase n'existe plus, mais le nom doit rester cliquable à l'œil. */
 @media (max-width: 1199.9px) {
   .fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
@@ -2397,7 +2397,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   .fondation-nom, .fondation-desc { transition: none; }
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-/* 🆕 v1.7.681 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+/* 🆕 v1.7.682 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
    Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
    ICON MÊME NOIR QUE RUST ».
    ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
@@ -2468,7 +2468,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
    toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
    elles se lisent sans qu'on aille les chercher.
-   🆕 v1.7.681 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   🆕 v1.7.682 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
    cette même barre.
 
    LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
@@ -2500,7 +2500,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     🆕 v1.7.681 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     🆕 v1.7.682 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
      À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
      des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
      DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
@@ -2518,7 +2518,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
      descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
      réservée devient exacte par construction. */
   .fondations {
-    /* ⚠️ v1.7.681 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
+    /* ⚠️ v1.7.682 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
        Mesuré sur rock.html : en pleine case GitHub, elementFromPoint rendait
        « li.rk-fn < div.container » — le contenu passait devant la barre, qui restait en
        z-index auto. La règle d'index.html (.container:has(.fondations) { z-index: 40 })
@@ -2527,7 +2527,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        (118), la navigation (120) et les fenêtres légales (300). */
     z-index: 40;
     position: fixed; left: 0; right: 0; bottom: 0;
-    /* 1.7.681 — le 40 est porté par la BARRE sur ces deux pages : elle est ici
+    /* 1.7.682 — le 40 est porté par la BARRE sur ces deux pages : elle est ici
        enfant direct de <body>, donc dans le contexte d'empilement racine (voir
        l'en-tête du script). Sur index.html il est porté par `.container`. */
     z-index: 40;
@@ -2546,7 +2546,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    /* 🆕 v1.7.681 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+    /* 🆕 v1.7.682 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
        Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
        desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
        d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
@@ -2575,13 +2575,13 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
 @media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
 
-/* ═══ NOMS SEULS SOUS 1200 px (v1.7.681) ═══
+/* ═══ NOMS SEULS SOUS 1200 px (v1.7.682) ═══
    Demande utilisateur : « quand le footer fixe passe en dessous de 1024 px, mets
    que GitHub, Discord, npm et Rust ; ne mets pas les petites phrases en gris en
    dessous à cette résolution ». La règle est bornée des DEUX côtés : sous 901 px
    la barre n'est plus fixe (liste empilée du fil du document), et les
    descriptions y ont la place — cette mise en page n'est pas touchée.
-   ⚠️ v1.7.681 — LA BORNE PASSE DE 1024 À 1200 px. Demande : « la petite ligne de
+   ⚠️ v1.7.682 — LA BORNE PASSE DE 1024 À 1200 px. Demande : « la petite ligne de
    texte engrisée doit disparaître dès 1200 px aussi ».
    Le texte est MASQUÉ par `display: none`, et il faut le dire exactement : il
    disparaît donc AUSSI pour un lecteur d'écran. C'est assumé : la marque seule
@@ -2590,7 +2590,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 @media (min-width: 901px) and (max-width: 1199.9px) {
   .fondation-desc { display: none; }
 }
-/* ═══ 1.7.681 — LA BULLE WHATSAPP S'EFFACE EN DESKTOP ═══
+/* ═══ 1.7.682 — LA BULLE WHATSAPP S'EFFACE EN DESKTOP ═══
    Sans cette règle, la barre fixe porterait une case WhatsApp ET la bulle
    flotterait par-dessus : deux commandes pour le même numéro, dont une qui masque
    le contenu. ⚠️ ELLE DOIT RESTER APRÈS .sp-wa : à spécificité égale, seule la
@@ -2599,7 +2599,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    et le bouton restait visible. */
 @media (min-width: 901px) { .sp-wa { display: none; } }
 
-/* ═══ VERSION TÉLÉCHARGEABLE — MASQUÉE TANT QU'ELLE N'EST PAS CONFIRMÉE (v1.7.681) ═══
+/* ═══ VERSION TÉLÉCHARGEABLE — MASQUÉE TANT QU'ELLE N'EST PAS CONFIRMÉE (v1.7.682) ═══
    Le numéro affiché doit être celui qu'on TÉLÉCHARGE. Il vient de GitHub
    (JS/versions-github.js) et de nulle part ailleurs. Tant qu'il n'a pas été lu,
    il reste invisible : un numéro faux est pire qu'aucun numéro.

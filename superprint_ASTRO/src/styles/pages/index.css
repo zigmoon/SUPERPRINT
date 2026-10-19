@@ -309,7 +309,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   transition: background .25s var(--ease);
 }
 .nav-dd-btn:hover { background: var(--ink-2); }
-/* 🆕 v1.7.681 — LE MENU NE SE REFERME PLUS EN CHEMIN.
+/* 🆕 v1.7.682 — LE MENU NE SE REFERME PLUS EN CHEMIN.
    Le bouton mesure 42 px et la barre 66 px : il reste donc 12 px entre le bas
    du bouton et le bas de la barre, et le panneau ne commence qu'APRÈS — il ne
    couvre pas cette bande. Le pointeur, en descendant du bouton vers le menu,
@@ -426,7 +426,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    concurrencer le nom de l'application — 8 px, sans approche forcée, et un peu
    effacé pour qu'il se lise comme une précision et non comme un titre. */
 .nav-dd-app-ver { font-family: var(--f-mono); font-size: 8px; letter-spacing: .02em; color: var(--muted); opacity: .85; }
-/* 🆕 v1.7.681 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
+/* 🆕 v1.7.682 — LES FORMATS SONT DES GÉLULES, PLUS DES LIENS SOULIGNÉS.
    Souligner chaque extension revenait à écrire trois fois « ceci est un lien »,
    dans une colonne de quinze lignes alignées : l'œil ne voyait plus qu'un
    peigne. Une gélule dit la même chose — c'est cliquable — et se lit comme un
@@ -468,7 +468,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-dd-app-fmt a:first-child:hover, .nav-dd-app-fmt a:first-child:focus-visible {
   color: var(--paper); background: var(--ink);
 }
-/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.681) ══════════════
+/* ══════════════ LE SOUS-MENU PASSE EN TROIS COLONNES (v1.7.682) ══════════════
    Les trois systèmes étaient empilés : le panneau mesurait 440 × 455 px, donc
    plus haut que large, et il fallait descendre pour voir Linux. Ce sont trois
    systèmes COMPARABLES — on cherche le sien, on ne les lit pas dans l'ordre.
@@ -637,7 +637,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-kicker::before { content:''; display: none; }
 /* #hero h1 SEULE, PAS h1 EN GÉNÉRAL : les pages tarif, rock, doc, api et
    install ont leur propre h1, et leur taille ne doit pas bouger avec l'accueil.
-   🆕 v1.7.681 — LE TITRE RÉTRÉCIT ENCORE. Demande utilisateur : « l'édition
+   🆕 v1.7.682 — LE TITRE RÉTRÉCIT ENCORE. Demande utilisateur : « l'édition
    créative nouvelle génération, typo un peu plus petite ». MESURÉ AVANT :
    #hero h1 { clamp(38px, 6.6vw, 88px) } → 88 px à 1600 px de large, deux lignes
    sur 180 px de haut.
@@ -669,14 +669,14 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   margin: 0 -.14em;
 }
 /* ══════════════ COMPATIBILITÉ SYSTÈMES — TROIS LOGOS, TROIS LIENS ══════════════
-   🆕 v1.7.681 — DEMANDE UTILISATEUR : « met les 3 logos mac pc linux et info
+   🆕 v1.7.682 — DEMANDE UTILISATEUR : « met les 3 logos mac pc linux et info
    Windows macOS Linux un peu plus grand (ceux en dessous les 3 boîtes (app) ils
    sont tout petit) et met un lien qui pointe vers les installeurs sur github ».
    ⚠️ MESURÉ AVANT : 10 px de corps, pictogrammes de 14 × 14, ligne haute de 17 px,
    et AUCUN lien. C'était la plus petite écriture du hero, alors que c'est elle qui
    dit sur quoi le logiciel tourne.
 
-   🆕 v1.7.681 — DEUXIÈME RETOUR, ET IL RACCOURCIT PLUS QU'IL N'ALLONGE :
+   🆕 v1.7.682 — DEUXIÈME RETOUR, ET IL RACCOURCIT PLUS QU'IL N'ALLONGE :
    « supprimer Installateurs et COMPATIBLE, mettre que les logos avec le lien
    GitHub ». Le mot d'introduction (« Compatible » / « Runs on » / 対応OS) et la
    gélule « Installateurs » DISPARAISSENT donc du visible. Il ne reste que les
@@ -693,7 +693,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
    cliquable est plus grande que le dessin (padding 4px), pour qu'on ne vise pas
    un carré de 26 px à la souris.
 
-   🆕 v1.7.681 — UN FILET DE TÊTE, AVEC « INSTALLEUR » AU MILIEU.
+   🆕 v1.7.682 — UN FILET DE TÊTE, AVEC « INSTALLEUR » AU MILIEU.
    Demande utilisateur : « avant les 3 icônes Windows macOS Linux j'aimerais un
    séparateur fin centré avec au centre la typo Installeur (même typo que Le n°1 de
    la PAO gratuite) ».
@@ -743,7 +743,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
      endroits, et « MACOS » est une faute de marque. */
   text-transform: none;
 }
-/* ⚠️ v1.7.681 — TAILLE D'ORIGINE RÉTABLIE. La v1.7.681 avait réduit ce trio
+/* ⚠️ v1.7.682 — TAILLE D'ORIGINE RÉTABLIE. La v1.7.682 avait réduit ce trio
    (icônes 26 → 20, texte 13 → 11,5 px) sur la demande « un peu trop gros ».
    Retour utilisateur après essai : « finalement c'était mieux avant la taille ».
    On revient donc EXACTEMENT aux valeurs d'avant — 26 × 26, 13 px, écart 9 px,
@@ -778,7 +778,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .hero-dots .dot.m { background: var(--magenta); }
 .hero-dots .dot.y { background: var(--yellow); }
 .hero-dots .dot.k { background: var(--ink); }
-/* 🆕 v1.7.681 — L'INTERLIGNE DU HERO PASSE DE 1,75 À 1,45.
+/* 🆕 v1.7.682 — L'INTERLIGNE DU HERO PASSE DE 1,75 À 1,45.
    Demande utilisateur : « Ici l'interlignage est trop fort, réduis-le ! » — la
    phrase de l'accroche, celle qui commence par « SuperPrint rend la PAO
    accessible… ». MESURÉ AVANT : corps de 19 px, interligne de 33,25 px, soit un
@@ -1199,7 +1199,7 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 .cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
 .cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
 
-/* ══════════════ 🆕 v1.7.681 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
+/* ══════════════ 🆕 v1.7.682 — TÉLÉCHARGEMENT : NOS LOGICIELS, NOS VERSIONS ══════════════
    DERNIÈRE ZONE AVANT LE PIED DE PAGE. Elle ne double pas les trois entrées du
    haut de page, elle les prolonge : les entrées ouvrent l'application en ligne et
    ne disent rien des versions ; ici on donne le numéro de version, les trois
@@ -1413,7 +1413,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 }
 .foot-note { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .06em; color: rgba(139,129,114,.8); }
 /* ══════════════ RÉSEAUX — DANS LE COLOPHON ══════════════
-/* 🆕 v1.7.681 — LA RANGÉE SOCIALE DU COLOPHON A ÉTÉ RETIRÉE.
+/* 🆕 v1.7.682 — LA RANGÉE SOCIALE DU COLOPHON A ÉTÉ RETIRÉE.
    ⚠️ ELLE ÉTAIT AU MAUVAIS ENDROIT, ET L'UTILISATEUR L'A DIT APRÈS L'AVOIR VUE :
    « Footer de superprint.cc la barre qui est fixe sur la page et pas le footer de
    la page a droite de github on va ajouter notre discord ». Le mot « footer »
@@ -1858,7 +1858,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
-  /* 🎯 v1.7.681 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
+  /* 🎯 v1.7.682 — LE BOUTON « TÉLÉCHARGER » PASSE AU-DESSUS DU LOGOTYPE.
      Sous 700 px, .nav-logo est en position absolue, étiré de left: 0 à
      ight: 0 avec z-index: 1 : sa BOÎTE couvre toute la barre, même si son
      texte reste centré. Le bouton, lui, se retrouve à gauche et tombait donc
@@ -2108,7 +2108,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.681 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.682 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -2116,14 +2116,14 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    correspondante. */
 .fondations-grid {
   display: grid;
-  /* 🆕 v1.7.681 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+  /* 🆕 v1.7.682 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
      Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
      bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
      363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
      quatre cases d'information se partagent le reste à parts égales. */
   grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.681 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+  /* 🆕 v1.7.682 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
      353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
      la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
@@ -2153,14 +2153,14 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .fondation-chiffre { font-family: var(--f-mono); font-size: 1.02em; color: var(--ink); font-weight: 600; }
 .fondation-date { font-family: var(--f-mono); font-size: 0.85em; color: var(--muted); }
 /* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
-/* 🆕 v1.7.681 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
+/* 🆕 v1.7.682 — LA PHRASE REMPLACE LA MARQUE AU SURVOL.
    Demande : « on met juste les marques au premier abord ; au survol la marque disparaît
    et affiche la phrase ».
    ⚠️ LES DEUX SONT DANS LA MÊME CELLULE DE GRILLE (grid-area 1/1) : la hauteur du bloc
    vaut donc le MAXIMUM des deux, et la barre ne saute pas quand la phrase apparaît.
    Mesuré : la phrase npm passe à 2 lignes en japonais à 1280 px (38 px) quand le nom en
    fait 18 — une mise en page en flux aurait fait grandir la case de 20 px au survol.
-   🆕 v1.7.681 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
+   🆕 v1.7.682 — LE CROISEMENT N'EST PLUS LE COMPORTEMENT DES GRANDS ÉCRANS.
    Retour utilisateur : « sur les grands écrans on pouvait garder finalement la petite
    phrase qui était en dessous grise, désolé… garde le comportement actuellement pour
    les écrans moyens (les petits laptops, les tablettes) ».
@@ -2169,7 +2169,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    ⚠️ SOUS 1024 px LA PHRASE RESTE MASQUÉE : à cette largeur les quatre cases tiennent
    à peine le nom, et une deuxième ligne ferait passer la barre de 73 à 254 px
    (mesuré sur `index.html`, mise en page mobile). */
-/* 🆕 v1.7.681 — LE CROISEMENT AU SURVOL DISPARAÎT, ET LA PHRASE SE RESSERRE.
+/* 🆕 v1.7.682 — LE CROISEMENT AU SURVOL DISPARAÎT, ET LA PHRASE SE RESSERRE.
    Demande : « la petite ligne de texte engrisée qui sert de description sous GitHub,
    npm, Discord, etc. doit disparaître dès 1200 px aussi » — et, sur les grands
    écrans où elle reste, « la typo GitHub/Discord n'est pas assez proche de la petite
@@ -2197,7 +2197,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   .fondation-desc { margin-top: -5px; }
 }
 
-/* ═══ v1.7.681 — LES LIGNES DE TEXTE DESCENDENT DE 2 px, LA PHRASE DE 2 DE PLUS ═══
+/* ═══ v1.7.682 — LES LIGNES DE TEXTE DESCENDENT DE 2 px, LA PHRASE DE 2 DE PLUS ═══
    Demandes : « mets la petite ligne grise en dessous les marques un petit peu plus
    bas » et « globalement dans le footer fixe, on devrait redescendre les lignes de
    texte à droite des logos de quelques pixels (2 px) ».
@@ -2223,7 +2223,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
 .fondation-txt { transform: translateY(2px); }
 .fondation-desc { transform: translateY(2px); }
 /* Le nom garde son soulignement d'affordance : c'est la seule marque de lien là où
-   la phrase est absente. ⚠️ LA BORNE SUIT CELLE DE LA PHRASE (1200 px, v1.7.681) : à
+   la phrase est absente. ⚠️ LA BORNE SUIT CELLE DE LA PHRASE (1200 px, v1.7.682) : à
    1024–1199 px la phrase n'existe plus, mais le nom doit rester cliquable à l'œil. */
 @media (max-width: 1199.9px) {
   .fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
@@ -2234,7 +2234,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   .fondation-nom, .fondation-desc { transition: none; }
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-/* 🆕 v1.7.681 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+/* 🆕 v1.7.682 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
    Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
    ICON MÊME NOIR QUE RUST ».
    ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
@@ -2305,7 +2305,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
    toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
    elles se lisent sans qu'on aille les chercher.
-   🆕 v1.7.681 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   🆕 v1.7.682 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
    cette même barre.
 
    LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
@@ -2337,7 +2337,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     🆕 v1.7.681 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     🆕 v1.7.682 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
      À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
      des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
      DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
@@ -2355,7 +2355,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
      réservée devient exacte par construction. */
   .fondations {
-    /* ⚠️ v1.7.681 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
+    /* ⚠️ v1.7.682 — LE z-index EST ICI, ET IL EST INDISPENSABLE SUR LES PAGES SECONDAIRES.
        Mesuré sur rock.html : en pleine case GitHub, elementFromPoint rendait
        « li.rk-fn < div.container » — le contenu passait devant la barre, qui restait en
        z-index auto. La règle d'index.html (.container:has(.fondations) { z-index: 40 })
@@ -2379,7 +2379,7 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    /* 🆕 v1.7.681 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+    /* 🆕 v1.7.682 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
        Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
        desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
        d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
@@ -2408,13 +2408,13 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
 @media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
 
-/* ═══ NOMS SEULS SOUS 1200 px (v1.7.681) ═══
+/* ═══ NOMS SEULS SOUS 1200 px (v1.7.682) ═══
    Demande utilisateur : « quand le footer fixe passe en dessous de 1024 px, mets
    que GitHub, Discord, npm et Rust ; ne mets pas les petites phrases en gris en
    dessous à cette résolution ». La règle est bornée des DEUX côtés : sous 901 px
    la barre n'est plus fixe (liste empilée du fil du document), et les
    descriptions y ont la place — cette mise en page n'est pas touchée.
-   ⚠️ v1.7.681 — LA BORNE PASSE DE 1024 À 1200 px. Demande : « la petite ligne de
+   ⚠️ v1.7.682 — LA BORNE PASSE DE 1024 À 1200 px. Demande : « la petite ligne de
    texte engrisée doit disparaître dès 1200 px aussi ».
    Le texte est MASQUÉ par `display: none`, et il faut le dire exactement : il
    disparaît donc AUSSI pour un lecteur d'écran. C'est assumé : la marque seule
@@ -2696,7 +2696,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 @media (prefers-reduced-motion: reduce) { .sp-wa { transition: none; } }
 @media print { .sp-wa { display: none; } }
 
-/* 🆕 v1.7.681 — LA BULLE FLOTTANTE N'EXISTE PLUS QU'EN MOBILE.
+/* 🆕 v1.7.682 — LA BULLE FLOTTANTE N'EXISTE PLUS QU'EN MOBILE.
    Demande utilisateur : « mets le bouton WhatsApp directement dans la barre plutôt
    que flottant, cependant garde-le bien en mobile (cette bulle WhatsApp est à
    conserver en mobile) ». Sous 901 px la barre n'est plus fixe — elle défile avec
@@ -2712,7 +2712,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 /* _PAGE_ROCK_588 — la page ROCK v1 vit désormais dans rock.html. */
 
-/* ═══ VERSION TÉLÉCHARGEABLE — MASQUÉE TANT QU'ELLE N'EST PAS CONFIRMÉE (v1.7.681) ═══
+/* ═══ VERSION TÉLÉCHARGEABLE — MASQUÉE TANT QU'ELLE N'EST PAS CONFIRMÉE (v1.7.682) ═══
    Le numéro affiché doit être celui qu'on TÉLÉCHARGE. Il vient de GitHub
    (JS/versions-github.js) et de nulle part ailleurs. Tant qu'il n'a pas été lu,
    il reste invisible : un numéro faux est pire qu'aucun numéro.
@@ -2724,7 +2724,7 @@ html[data-sp-version="ok"] .brand-ver,
 html[data-sp-version="ok"] .nav-dd-app-ver,
 html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 
-/* ═══ v1.7.681 — ESSAI : LA BANDE DES MODÈLES PASSE À L'ENCRE ═══
+/* ═══ v1.7.682 — ESSAI : LA BANDE DES MODÈLES PASSE À L'ENCRE ═══
    Demande utilisateur : « fais un essai où le fond des templates sur la page de
    présentation est noir (le noir du projet) et le fond des templates actuel passe
    sous les deux auteurs dans la page ».
@@ -2754,7 +2754,7 @@ html[data-sp-version="ok"] .lg-ver { visibility: visible; }
 }
 #templates .tpl-arrow:hover { background: var(--paper-3); border-color: var(--paper-3); }
 /* L'ancien fond de la bande des modèles passe sous les deux auteurs.
-   ⚠️ v1.7.681 — DEMANDE : « mets le fond de la boîte des auteurs plus clair ».
+   ⚠️ v1.7.682 — DEMANDE : « mets le fond de la boîte des auteurs plus clair ».
    C'était « --paper-2 » (#EFEAE0), un cran plus soutenu que le papier de la page.
    On prend « --paper-3 » (#FFFDF8), le papier le plus clair de la palette — un cran
    AU-DESSUS de « --paper » (#F7F3EC) qui habille la section précédente, pour que les

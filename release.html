@@ -1358,6 +1358,77 @@ footer, footer a { color: var(--after-text-color); }
        visionneuse, le défilement de la page est rendu à la fermeture, et les treize
        captures du soufflet « Les outils, un par un » en profitent aussi. -->
 
+<!-- ===== SUPER PRINT v1.7.682 — LE npx SOUS LES INSTALLEURS, ET NEUF PLANCHES PLEINES.
+     Demande utilisateur : « (1) dans le bouton Download, le npx tu aurais dû le mettre
+     en dessous des app Win Mac Linux avec une en-tête mais avec un autre wording de
+     séparation ; (2) "Neuf fonctions, montrées à l'usage" — remplace par quelque chose
+     du type "Les nouveautés de SuperPrint" ; (3) certaines images ne remplissent pas
+     l'espace de leur boîte sur les 9 features ; (4) contrôle qu'on a bien le même
+     header bouton de download sur les pages connexes à la présentation : faq / tarif. »
+
+     (1) LA LIGNE npx DESCEND SOUS LES TROIS COLONNES.
+     Elle se lisait avant les installeurs, donc avant ce qu'elle installe. Elle est
+     maintenant en bas du panneau, derrière un filet pleine largeur et un bandeau qui
+     ne répète pas « Application de bureau » mais dit la différence :
+     « Sans installeur · la ligne de commande ». MESURÉ : en-tête 136-186, liste
+     186-342, bas 342-448 ; les trois filets vont de 386 à 1204 dans une boîte de
+     385 à 1205, donc d'un bord à l'autre.
+
+     (2) L'ACCROCHE DEVIENT « Les nouveautés de SuperPrint. »
+     Elle parle du produit et plus du nombre de captures.
+
+     (3) NEUF PLANCHES SUR NEUF REMPLISSENT ENFIN LEUR BOÎTE.
+     MESURÉ, et c'était le vrai défaut : six captures sur neuf portaient une bande
+     blanche à droite et en bas, parce qu'elles avaient été prises dans une fenêtre
+     plus petite que le format de la vignette. Les bornes du contenu le disent :
+       · motif, controle-avant-impression, polices-google -> contenu 1364 x 856
+         (236 px de blanc à droite, 144 en bas) ;
+       · exporter-word-eps, apercu-3d -> contenu 1024 x 768
+         (576 px de blanc à droite, 232 en bas) ;
+       · studio-ia -> contenu 1232 x 1000.
+     Les trois autres (plugins, refactor, importer) atteignaient déjà 1599 x 999.
+     Les six planches sont recadrées, par mesure, sur la plus grande fenêtre 16:10
+     qui contient leur contenu, puis ramenées à 1600 x 1000 : aucun pixel n'est
+     inventé, aucune zone blanche n'est peinte, la perte est un recadrage choisi
+     pour tomber sur du vide. Vérifié après coup : contenu jusqu'à x=1599 et
+     y=999 sur les neuf, et dans la page les neuf images mesurent 392 x 245 dans
+     une boîte de 392 x 246.
+
+     (4) LE MÊME MENU SUR FAQ, TARIF ET ROCK.
+     Les trois pages secondaires n'avaient reçu, en 1.7.681, que le filet et les
+     libellés : la ligne npx et son script manquaient. Elles reçoivent maintenant
+     le CSS, le balisage et le script COPIÉS depuis index.html — source unique.
+     Vérifié sur les quatre pages à 1600 px : même largeur de boîte, même ordre
+     en-tête / colonnes / bas, mêmes filets pleine largeur, ARM x3, aucun .rpm,
+     et la copie qui répond (« Copié » + annonce role=status). -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-682">
+ <h2>SUPER PRINT <span>v1.7.682</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 octobre 2026" data-i18n-en="Released October 19, 2026" data-i18n-jp="2026年10月19日公開">Released October 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="La ligne <code>npx</code> descend sous les trois colonnes d'installeurs et s'annonce « <strong>Sans installeur</strong> » ; l'inventaire s'ouvre sur « <strong>Les nouveautés de SuperPrint</strong> » ; et les <strong>neuf planches remplissent enfin leur boîte</strong> — six d'entre elles portaient une bande blanche de 236 à 576 px." data-i18n-en-html="The <code>npx</code> line moves below the three installer columns and announces itself as “<strong>No installer</strong>”; the inventory opens on “<strong>What's new in SuperPrint</strong>”; and the <strong>nine plates finally fill their box</strong> — six of them carried a white band of 236 to 576 px." data-i18n-jp-html="<code>npx</code> 行は3つのインストーラー列の下に移り、「<strong>インストーラーなし</strong>」と名乗ります。インベントリは「<strong>SuperPrint の新機能</strong>」で始まり、<strong>9枚の図版がようやく枠を埋めます</strong>。6枚には236〜576 pxの白帯がありました。">The npx line moves below the installers, and the nine plates finally fill their box.</p>
+
+ <h3 data-i18n-fr-html="⌨️ Le npx passe sous les installeurs" data-i18n-en-html="⌨️ npx moves below the installers" data-i18n-jp-html="⌨️ npx はインストーラーの下へ">⌨️ npx moves below the installers</h3>
+ <ul>
+  <li data-i18n-fr-html="Elle se lisait <strong>avant</strong> les installeurs, donc avant ce qu'elle installe. Elle est maintenant en bas du panneau, derrière un filet pleine largeur et un bandeau qui ne répète pas « Application de bureau » mais dit la différence : <strong>« Sans installeur · la ligne de commande »</strong>." data-i18n-en-html="It used to read <strong>before</strong> the installers, therefore before what it installs. It now sits at the bottom of the panel, behind a full-width rule and a band that does not repeat “Desktop application” but states the difference: <strong>“No installer · the command line”</strong>." data-i18n-jp-html="以前はインストーラーの<strong>前</strong>、つまりインストールされるものより前に読めました。今はパネルの下、全幅の罫線と「<strong>インストーラーなし · コマンドライン</strong>」という帯の後ろにあります。">It now sits below the installers, under the band <strong>“No installer · the command line”</strong>.</li>
+  <li data-i18n-fr-html="MESURÉ à 1600 px : en-tête 136-186, liste 186-342, bas 342-448 ; les trois filets vont de 386 à 1204 dans une boîte de 385 à 1205, donc <strong>d'un bord à l'autre</strong>, et les marques restent calées en haut." data-i18n-en-html="Measured at 1600 px: header 136-186, list 186-342, bottom 342-448; the three rules run from 386 to 1204 inside a box from 385 to 1205, so <strong>edge to edge</strong>, and the marks stay top-aligned." data-i18n-jp-html="1600 px での実測：ヘッダー 136-186、一覧 186-342、下部 342-448。3本の罫線は 385〜1205 のボックス内で 386〜1204、つまり<strong>端から端まで</strong>。マークは上揃えのままです。">Measured: header, list and bottom stack in that order, with rules running edge to edge.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🖼️ Neuf planches, neuf fois pleines" data-i18n-en-html="🖼️ Nine plates, full nine times" data-i18n-jp-html="🖼️ 9枚の図版、9枚とも枠いっぱい">🖼️ Nine plates, full nine times</h3>
+ <ul>
+  <li data-i18n-fr-html="MESURÉ, et c'était le vrai défaut : six captures sur neuf portaient une bande blanche à droite et en bas, prises dans une fenêtre plus petite que le format de la vignette. Bornes du contenu : <strong>motif, controle-avant-impression, polices-google</strong> à 1364 × 856 (236 px de blanc à droite) ; <strong>exporter-word-eps, apercu-3d</strong> à 1024 × 768 (576 px) ; <strong>studio-ia</strong> à 1232 × 1000." data-i18n-en-html="Measured, and it was the real defect: six captures out of nine carried a white band on the right and at the bottom, taken in a window smaller than the thumbnail format. Content bounds: <strong>motif, controle-avant-impression, polices-google</strong> at 1364 × 856 (236 px of white); <strong>exporter-word-eps, apercu-3d</strong> at 1024 × 768 (576 px); <strong>studio-ia</strong> at 1232 × 1000." data-i18n-jp-html="実測、そしてこれが本当の不具合でした。9枚のうち6枚が右と下に白帯を持ち、サムネイルの形式より小さいウィンドウで撮影されていました。内容の範囲：<strong>motif・controle-avant-impression・polices-google</strong> は 1364 × 856（右に236 pxの白）、<strong>exporter-word-eps・apercu-3d</strong> は 1024 × 768（576 px）、<strong>studio-ia</strong> は 1232 × 1000。">Measured: six of the nine carried a white band of 236 to 576 px.</li>
+  <li data-i18n-fr-html="Les six planches sont recadrées sur la plus grande fenêtre 16:10 qui contient leur contenu, puis ramenées à 1600 × 1000. <strong>Aucun pixel n'est inventé, aucune zone blanche n'est peinte</strong> : la perte est un recadrage choisi pour tomber sur du vide, la fenêtre étant centrée sur la boîte d'encre mesurée. Vérifié après coup : contenu jusqu'à x=1599 et y=999 sur les neuf, et dans la page les neuf images mesurent 392 × 245 dans une boîte de 392 × 246." data-i18n-en-html="The six plates are cropped to the largest 16:10 window that holds their content, then brought to 1600 × 1000. <strong>No pixel is invented, no white area is painted</strong>: the loss is a crop chosen to land on empty space, the window being centred on the measured ink box. Verified afterwards: content up to x=1599 and y=999 on all nine, and in the page the nine images measure 392 × 245 in a 392 × 246 box." data-i18n-jp-html="6枚は内容を含む最大の16:10ウィンドウで切り出し、1600 × 1000 に整えました。<strong>ピクセルを足すことはせず、白を塗ることもしていません</strong>。失うのは、測定したインク範囲を中心に置いた結果として空白に落ちるクロップだけです。確認済み：9枚とも x=1599・y=999 まで内容があり、ページ上では 392 × 245 の画像が 392 × 246 の枠に収まります。">The six plates are cropped to the largest 16:10 window holding their content, with no invented pixels.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🔗 Le même menu sur faq, tarif et rock" data-i18n-en-html="🔗 The same menu on faq, pricing and rock" data-i18n-jp-html="🔗 faq・料金・rock も同じメニュー">🔗 The same menu on faq, pricing and rock</h3>
+ <ul>
+  <li data-i18n-fr-html="Les trois pages secondaires n'avaient reçu, en 1.7.681, que le filet et les libellés : <strong>la ligne npx et son script manquaient</strong>. Elles reçoivent désormais le CSS, le balisage et le script copiés depuis index.html — une seule source, donc plus d'écart possible." data-i18n-en-html="In 1.7.681 the three secondary pages had only received the rule and the labels: <strong>the npx line and its script were missing</strong>. They now receive the CSS, markup and script copied from index.html — one source, so no drift is possible." data-i18n-jp-html="1.7.681 では3つのサブページに罫線とラベルだけが入り、<strong>npx 行とスクリプトが欠けていました</strong>。今後は index.html から CSS・マークアップ・スクリプトをそのまま複製します。出所がひとつなので、ずれようがありません。">The three secondary pages were missing the npx line and its script; they now receive them from a single source.</li>
+  <li data-i18n-fr-html="Vérifié sur les <strong>quatre pages</strong> à 1600 px : même largeur de boîte, même ordre en-tête / colonnes / bas, filets d'un bord à l'autre, <strong>ARM ×3</strong>, <strong>aucun .rpm</strong>, et la copie qui répond — « Copié » en jaune sur encre, plus l'annonce <code>role="status"</code> pour les lecteurs d'écran." data-i18n-en-html="Verified on all <strong>four pages</strong> at 1600 px: same box width, same header / columns / bottom order, edge-to-edge rules, <strong>ARM ×3</strong>, <strong>no .rpm</strong>, and a copy that answers — “Copied” in yellow on ink, plus the <code>role="status"</code> announcement for screen readers." data-i18n-jp-html="<strong>4ページ</strong>すべてで 1600 px を確認：同じボックス幅、同じヘッダー／列／下部の順序、端から端までの罫線、<strong>ARM ×3</strong>、<strong>.rpm なし</strong>、そしてコピーが反応します（インク色に黄色の「コピー済み」、<code>role="status"</code> による読み上げも）。">Verified on all four pages: same order, edge-to-edge rules, ARM ×3, no .rpm, and a working copy.</li>
+ </ul>
+</article>
+
 <article class="release-block" data-app="superprint" id="superprint-v1-7-681">
  <h2>SUPER PRINT <span>v1.7.681</span></h2>
  <div class="release-meta">

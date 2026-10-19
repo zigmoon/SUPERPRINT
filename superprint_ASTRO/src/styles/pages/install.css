@@ -78,7 +78,7 @@
     border: 1px solid var(--input-border); font-family: inherit; font-size: 12px; cursor: pointer;
   }
 
-  /* ⚠️ v1.7.681 — CETTE PAGE N'A PLUS DE PIED DE PAGE FIXE.
+  /* ⚠️ v1.7.682 — CETTE PAGE N'A PLUS DE PIED DE PAGE FIXE.
      Demande utilisateur : « install.html CETTE PAGE ne doit pas avoir le footer fixed ».
      MESURÉ AVANT, et c'était pire qu'un simple choix esthétique :
        · à 1440 × 900 la barre occupait les 73 derniers pixels de l'écran, et les
@@ -383,7 +383,7 @@
   }
 
   /* ─── Footer très léger (typo seule) ─── */
-  /* ⚠️ v1.7.681 — DANS LE FIL, ET NON `fixed` : voir l'en-tête de `#welcome`.
+  /* ⚠️ v1.7.682 — DANS LE FIL, ET NON `fixed` : voir l'en-tête de `#welcome`.
      `fixed` le posait exactement là où arrive la barre des fondations, donc sur
      elle. Il ferme désormais la page, sous la barre. */
   .home-footer {
@@ -433,7 +433,7 @@
   #welcome::-webkit-scrollbar-thumb:hover { background: #999; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   BARRE FIXE DE BAS DE PAGE — recopiée depuis index.html en v1.7.681.
+   BARRE FIXE DE BAS DE PAGE — recopiée depuis index.html en v1.7.682.
    Demande utilisateur : « applique bien le même footer fixe sur toutes les pages
    de présentation ». Le CSS et le balisage sont EXTRAITS de la page d'accueil,
    jamais retapés : une correction là-bas se reporte ici par le même script.
@@ -444,7 +444,7 @@
    .entries). Le hero centre ses enfants et les réduit à leur contenu — sans ça
    cette grille serait plus étroite que celle du dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; align-self: stretch; }
-/* (v1.7.681 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
+/* (v1.7.682 — `.fondations-titre` est SUPPRIMÉE. La phrase « Construit avec des
    logiciels libres » / « Built with open-source software » annonçait ce que les
    trois logotypes disent déjà ; le filet de 2 px ouvre le bloc à lui seul.) */
 /* Même écart de colonne que .entries : les cases ont EXACTEMENT la largeur des
@@ -452,14 +452,14 @@
    correspondante. */
 .fondations-grid {
   display: grid;
-  /* 🆕 v1.7.681 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
+  /* 🆕 v1.7.682 — QUATRE COLONNES ÉGALES, PLUS UNE CASE AJUSTÉE AU CONTENU.
      Discord est entré à droite de GitHub (quatre cases), puis WhatsApp en carré au
      bout (cinquième). La cinquième NE DOIT PAS être à 1fr : un carré étiré sur
      363 px ne serait plus un carré. `auto` la laisse prendre sa largeur, et les
      quatre cases d'information se partagent le reste à parts égales. */
   grid-template-columns: repeat(4, minmax(0,1fr)) auto;
   column-gap: clamp(12px,1.6vw,20px);
-  /* 🆕 v1.7.681 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
+  /* 🆕 v1.7.682 — QUATRE COLONNES, ET NON TROIS : Discord est entré à droite de
      GitHub dans la barre fixe. Mesuré à 1180 px de large, la colonne passe de
      353 à 260 px ; le texte le plus long tient toujours dans la hauteur fixe de
      la barre (72 px), qui ne bouge pas — vérifié à 1600, 1280, 1024 et 901 px. */
@@ -493,7 +493,7 @@
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
 .fondation:focus-visible { outline: 2px solid var(--ink, #17130D); outline-offset: 6px; }
-/* 🆕 v1.7.681 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
+/* 🆕 v1.7.682 — LA CASE EST UN CARRÉ, ET LE DESSIN EST À L'ENCRE.
    Demande utilisateur : « ICON WHATSAPP EN CARRÉ (actuellement en rectangle),
    ICON MÊME NOIR QUE RUST ».
    ⚠️ MESURÉ AVANT, ET LES DEUX DÉFAUTS SONT RÉELS :
@@ -564,7 +564,7 @@
    entrées. Ce sont désormais une BARRE FIXE EN BAS DE L'ÉCRAN, pleine largeur,
    toujours visible : ce sont les trois briques sur lesquelles le projet repose, et
    elles se lisent sans qu'on aille les chercher.
-   🆕 v1.7.681 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
+   🆕 v1.7.682 — ELLES SONT QUATRE : Discord est venu à droite de GitHub, dans
    cette même barre.
 
    LE MÊME BALISAGE SERT LES DEUX MISES EN PAGE. En desktop la barre est `fixed`,
@@ -596,7 +596,7 @@
      serait locale à `.container`, dont le contexte d'empilement est déjà en
      position 2, sous celui des sections suivantes.
 
-     🆕 v1.7.681 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
+     🆕 v1.7.682 — LA VALEUR PASSE DE 3 À 40, ET C'EST ENCORE UNE MESURE QUI L'IMPOSE.
      À 3, la barre gagnait contre les sections à 2 mais PERDAIT contre le carrousel
      des modèles, dont les chevrons portent `z-index: 3` : à égalité, c'est l'ordre du
      DOM qui tranche, et `#templates` vient APRÈS le hero. Relevé au banc, chevron
@@ -614,7 +614,7 @@
      descriptions passe à la ligne. On fixe donc la hauteur de la barre, et la valeur
      réservée devient exacte par construction. */
   .fondations {
-    /* ⚠️ v1.7.681 — PLUS `fixed` SUR CETTE PAGE (voir `#welcome`). La hauteur reste
+    /* ⚠️ v1.7.682 — PLUS `fixed` SUR CETTE PAGE (voir `#welcome`). La hauteur reste
        celle de la barre : elle est en bas du fil, donc sa hauteur n'écrase plus rien
        et l'alignement des quatre cases ne bouge pas d'un pixel. */
     position: static; left: auto; right: auto; bottom: auto;
@@ -633,7 +633,7 @@
      grille) et un troisième au ras de l'écran. */
   .fondations-grid {
     width: 100%; height: 100%;
-    /* 🆕 v1.7.681 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
+    /* 🆕 v1.7.682 — LA BARRE S'ÉTALE SUR TOUTE LA LARGEUR EN DESKTOP.
        Demande utilisateur : « le footer fixe doit s'étaler sur toute la largeur en
        desktop ». Elle était bornée à 1180 px et centrée — la barre peignait bien
        d'un bord à l'autre, mais ses quatre colonnes s'arrêtaient à 205 px de chaque
@@ -653,7 +653,7 @@
      séparent ne couvriraient que la hauteur du texte. Le contenu, lui, se centre. */
   .fondation { align-items: center; padding-top: 0; padding-bottom: 0; }
 
-  /* ⚠️ v1.7.681 — LE DÉGAGEMENT DU BAS DE PAGE DISPARAÎT SUR CETTE PAGE.
+  /* ⚠️ v1.7.682 — LE DÉGAGEMENT DU BAS DE PAGE DISPARAÎT SUR CETTE PAGE.
      Il compensait une barre `fixed`. La barre est maintenant dans le fil : réserver
      sa hauteur en plus laisserait justement le vide qu'on voulait éviter — et la page
      mesurait 900 px pour 900 px de fenêtre, donc rien ne pouvait défiler pour le voir. */
@@ -666,7 +666,7 @@
    elle sert à rester visible, sur papier elle n'a plus de raison d'être. */
 @media print { .fondations { position: static; height: auto; padding-bottom: 0; } }
 
-/* ═══ NOMS SEULS SOUS 1024 px (v1.7.681) ═══
+/* ═══ NOMS SEULS SOUS 1024 px (v1.7.682) ═══
    Demande utilisateur : « quand le footer fixe passe en dessous de 1024 px, mets
    que GitHub, Discord, npm et Rust ; ne mets pas les petites phrases en gris en
    dessous à cette résolution ». La règle est bornée des DEUX côtés : sous 901 px
@@ -678,7 +678,7 @@
   .fondation-desc { display: none; }
 }
 
-/* ═══ RÈGLES DE LANGUE DE LA BARRE (v1.7.681) ═══
+/* ═══ RÈGLES DE LANGUE DE LA BARRE (v1.7.682) ═══
    Cette page ne charge pas la feuille du site : sans ces quatre règles, chaque
    case de la barre fixe affichait ses trois langues à la suite. Elles ne portent
    que sur les `.inline-fr/…` de la barre — la page n'emploie pas cette
