@@ -9,6 +9,43 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.687] — 2026-10-22
+
+_L'image remplacée est celle qui s'exporte — et un PDF de remplacement laisse choisir sa page_
+
+> **Pourquoi cette version existe.** Deux retours utilisateur, deux défauts distincts, **tous deux mesurés dans l'application** avant correction.
+
+### Fixed — une image remplacée n'est plus « l'ancienne page PDF »
+
+- Retour utilisateur (app macOS, Mac Intel) : « lorsque l'on duplique un fichier, et je remplace l'image dans le fichier dupliqué, lorsque j'exporte le fichier c'est l'ancienne image qui apparaît. Les images utilisées étaient des PDF. »
+- **La cause n'était pas le rendu mais la PROVENANCE.** Une page PDF importée (mode « fichier » ou « bloc image ») porte `_spPdfImport`, `_spPdfContentType`, `_spPdfArchiveKey`, `_spPdfPageNumber`, et le buffer source reste en mémoire (`window._spPdfArchives`). À l'export, les trois chemins vectoriels (pdf-lib simple, imposé, hybride jsPDF) **ré-embarquent cette page et sautent le rendu de l'objet**. Or le remplacement n'échangeait que le bitmap (`setElement`) : la provenance restait accrochée. L'éditeur affichait la nouvelle image, le PDF sortait l'ancienne.
+- **Correctif** : la provenance est effacée au remplacement (`spOublierProvenanceImportPdf`), et une **empreinte du bitmap** (`_spPdfRasterSig` : longueur + trois échantillons) invalide la provenance si un autre chemin remplace le bitmap sans passer par cette fonction. L'empreinte tranche **même à dimensions identiques** — deux PDF de même format, cas que les dimensions seules ne distinguaient pas.
+- **Aucun autre format n'était touché** : JPEG, PNG, TIFF, WebP, SVG, EPS, ni un PDF importé en mode « raster » ne portent cette provenance. Le défaut ne dépendait pas non plus de la machine : l'archive n'existe que dans la session où le PDF a été importé, ce qui le rendait intermittent après un rechargement.
+
+### Added — remplacer une image par un PDF, en choisissant la page
+
+- Retour utilisateur : « lorsque je charge un pdf en image et que je change cette image avec l'aide du bouton situé en dehors du cadre pour insérer un autre pdf, il faudrait avoir la possibilité de choisir la bonne page du pdf ».
+- **Mesuré avant** : le bouton « remplacer » ouvrait un `<input type="file" accept="image/*">` — un PDF n'était **pas sélectionnable** ; et par un autre chemin, la data-URL `application/pdf` que Fabric ne décode pas faisait échouer le remplacement **sans message**.
+- **Maintenant** : le sélecteur accepte les PDF. Un PDF choisi ouvre la pop-in d'import **en mode remplacement** : elle ne sert qu'à choisir **une** page (blocs « Fichier/Image », recadrage, mode d'import et insertion masqués, bouton renommé « Remplacer l'image »), puis la page est rendue à la résolution de l'import bloc (6×, plafonnée à 220 Mpx) et **échangée dans l'objet existant**.
+- **Rien d'autre ne bouge** : mesuré sur un recadrage décalé, la fenêtre visible est identique au pixel avant/après — centre `435 / 295,8`, largeur `159,6`, hauteur `109,2` **dans les deux sens**, `delta = 0`. Le rang dans la pile est conservé (`index` identique), l'angle, l'opacité et le cadre aussi.
+- **L'export ré-embarque la BONNE page** : la provenance est re-marquée sur le **nouveau** fichier (archive créée pour la page choisie, `_spPdfRasterSig` recalculée). Mesuré après remplacement par la page 2 : `_spPdfPageNumber = 2`, archive `pages = [2]`, `provenance valide = true`.
+- Le même chemin sert au menu **Importer → Remplacer l'image** ; il en profite pour ne plus reconstruire l'objet (il perdait son recadrage et son rang).
+- **Annuler ne remplace rien** : fermer la pop-in (✕, overlay, « Annuler ») libère le contexte, laisse le bitmap intact et restaure l'interface d'import.
+
+### Fixed — toutes les sorties partent du document de travail à jour
+
+- `saveAllPages(true)` sortait **en silence** quand une planche était en `loadFromJSON` — duplication de page/fichier, changement de vue, ou simple reconstruction. L'export lisait alors `pages[]`, donc l'état **d'avant** la modification. Sur une machine lente la fenêtre est longue : d'où l'impression que « réessayer plus tard » réparait.
+- `saveAllPages()` renvoie désormais `true`/`false` au lieu de `undefined`, et `spPreparerDocumentPourExport()` **attend** l'état réel (aucune planche en chargement, aucune image en décodage, aucune reconstruction en cours), puis **rejoue** la sauvegarde forcée jusqu'à réussite. Chemin rapide sans attente quand tout est prêt.
+- Appliquée à **toutes** les sorties : PDF simple et tons directs, planches imposées, PRINT-TO-WEB, PNG/JPG, `.sp`, `.json`, IPFS, impression navigateur et impression réseau.
+
+### Verification
+
+- Flux complet rejoué dans Chromium sur un PDF de 3 pages généré à la volée : PDF accepté, 3 vignettes, mode remplacement (4 blocs masqués, bouton « Remplacer l'image »), clic page 3, remplacement effectif (`page = 3`, `1800 × 2400` px, archive `[3]`, empreinte valide), pop-in refermée, interface restaurée, historique « Image remplacée (page PDF 3) ».
+- Nouvelle passe après remplacement par une **image** simple : `_spPdfImport`, `_spPdfRasterSig` et `_spPdfArchiveKey` **absents** — l'ancienne page PDF ne peut plus ressortir.
+- `node --check` sur les copies alignées de `main.js` et `virtual-printer.js` : OK.
+
+---
+
 ## [1.7.633] — 2026-10-16
 
 _Les widgets du bord droit suivent la trappe, l'icône devient celle de ses voisines, et la trappe gagne des tirettes_

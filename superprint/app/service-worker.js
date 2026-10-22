@@ -9,7 +9,7 @@
    précachés changent, et c'est ce qui invalide le cache d'un utilisateur.
    Le contrôle `_dev/scripts/_make_zip_492.cjs` exige que ce nom contienne
    `version.txt` — ne pas repartir sur une numérotation parallèle. */
-const CACHE_NAME = 'superprint-shell-v1.7.685-version-telechargeable';
+const CACHE_NAME = 'superprint-shell-v1.7.687-page-pdf-remplacee';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -21,7 +21,7 @@ const APP_SHELL = [
   './CSS/mobile-widgets.css',
   './SP/super_print_logo_blanc.svg',
   './JS/main.js',
-  // 🎯 v1.7.685 — _SP_RANGEMENT_655 : soufflets des deux colonnes.
+  // 🎯 v1.7.687 — _SP_RANGEMENT_655 : soufflets des deux colonnes.
   './JS/sp-sidebar-clean.js',
   // 🎨 v1.7.525 — _SP_NUANCIERS_525 : nuanciers (accordéons) + import .ase.
   './JS/swatchbooks.js',
@@ -157,7 +157,7 @@ const APP_SHELL = [
   './icons/icon-192x192.png',
   './icons/icon-384x384.png',
   './icons/icon-512x512.png',
-  // 🎨 v1.7.685 — IMAGES DU SPLASH : 30 photos, 1 014 Ko au total.
+  // 🎨 v1.7.687 — IMAGES DU SPLASH : 30 photos, 1 014 Ko au total.
   //   Précachées pour un affichage IMMÉDIAT et hors ligne : le splash est la
   //   première chose que voit l'utilisateur, il ne doit jamais attendre le réseau.
   //   ⚠️ CHIFFRES VÉRIFIÉS : 30 images de 600 × 430, qualité 50, 12 à 76 Ko

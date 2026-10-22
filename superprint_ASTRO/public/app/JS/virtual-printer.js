@@ -1165,9 +1165,17 @@
                 fin();
             });
     }
-    function printToNetwork(printer) {
+    async function printToNetwork(printer) {
         const ov = document.getElementById(overlayId);
         if (!ov) return;
+        /* 🆕 v1.7.686 : l'impression lit pages[] via renderPageToImageWithBleed.
+           Même préparation que l'export PDF, sinon une image remplacée pendant un
+           loadFromJSON ressort à l'ancienne version. */
+        try {
+            if (typeof window.spPreparerDocumentPourExport === 'function') {
+                await window.spPreparerDocumentPourExport(20000);
+            }
+        } catch (_) {}
         const copies = Math.max(1, parseInt(ov.querySelector('#vpsCopies').value, 10) || 1);
         const quality = ov.querySelector('#vpsQuality').value;
         const orient = getOrient();
@@ -1449,9 +1457,15 @@
         return { wMm: fmt.width, hMm: fmt.height };
     }
 
-    function doPrint() {
+    async function doPrint() {
         const ov = document.getElementById(overlayId);
         if (!ov) return;
+        /* 🆕 v1.7.686 : même préparation que printToNetwork / export PDF. */
+        try {
+            if (typeof window.spPreparerDocumentPourExport === 'function') {
+                await window.spPreparerDocumentPourExport(20000);
+            }
+        } catch (_) {}
         const copies = Math.max(1, parseInt(ov.querySelector('#vpsCopies').value, 10) || 1);
         const quality = ov.querySelector('#vpsQuality').value;
         const pgs = docPages();

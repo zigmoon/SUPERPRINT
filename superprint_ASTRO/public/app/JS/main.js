@@ -813,7 +813,7 @@ function syncZoomWidgetWithRightSidebar() {
     const zoomWidget = document.getElementById('zoomWidget');
     if (!rightSidebar || !zoomWidget) return;
 
-    /* ⚠️ v1.7.685 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
+    /* ⚠️ v1.7.687 — LA TRAPPE « RÉGLAGES DE LA MAQUETTE » DOIT ÊTRE COMPTÉE ICI.
        Cette fonction place le widget de zoom juste à gauche de la barre latérale
        droite. Or la trappe est un PANNEAU FIXE qui, lui aussi, occupe le bord
        droit : sans cette ligne, le widget tombait PAR-DESSUS elle et interceptait
@@ -823,7 +823,7 @@ function syncZoomWidgetWithRightSidebar() {
        défaut qu'aucune relecture ne trouve : les deux éléments sont corrects
        séparément, c'est leur superposition qui casse.
 
-       ⚠️ v1.7.685 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
+       ⚠️ v1.7.687 — ON N'ÉCRIT PLUS LA POSITION ICI, ON PUBLIE UNE LARGEUR.
        C'est une correction de fond, pas un ajustement. Il y avait DEUX écrivains
        pour la même propriété : cette fonction, et une copie du même calcul au
        démarrage AVEC la trappe ; et la règle CSS en portait un troisième, écrasé
@@ -848,7 +848,7 @@ function syncZoomWidgetWithRightSidebar() {
     try {
         document.documentElement.style.setProperty('--sp-sidebar-r', largeur + 'px');
     } catch (_) {}
-    /* ⚠️ v1.7.685 — CETTE VALEUR EST UN POINT DE DÉPART, PAS LA VÉRITÉ. Elle est
+    /* ⚠️ v1.7.687 — CETTE VALEUR EST UN POINT DE DÉPART, PAS LA VÉRITÉ. Elle est
        mesurée avant que la classe `collapsed` n'ait produit son effet, donc elle vaut
        l'ancienne largeur ; `spPublierLargeursPanneauxDroits()` (juste en dessous) la
        corrige à chaque image grâce à un ResizeObserver. On garde cet appel pour que
@@ -908,7 +908,7 @@ function spPublierLargeursPanneauxDroits() {
             }
             racine.setProperty('--sp-sidebar-r', Math.round(w) + 'px');
         }
-        /* 🆕 v1.7.685 — DEUX TRAPPES, UNE SEULE LARGEUR CUMULÉE.
+        /* 🆕 v1.7.686 — DEUX TRAPPES, UNE SEULE LARGEUR CUMULÉE.
            `#maquettePanel` (Global Refactor) et `#pluginPanel` (plug-ins) sont deux
            panneaux distincts, empilés au même bord droit. Le widget de zoom et les
            encarts flottants se positionnent avec `--sp-maquette-l` : il doit donc
@@ -1226,7 +1226,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // ✨ NOUVEAU : Initialiser le positionnement du zoom-widget selon l'état de la sidebar droite
             setTimeout(() => {
-                /* ⚠️ v1.7.685 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
+                /* ⚠️ v1.7.687 — CETTE COPIE DU CALCUL A ÉTÉ SUPPRIMÉE, ET C'EST ELLE QUI
                    CAUSAIT LE DÉFAUT. Elle écrivait `zoomWidget.style.right` en dur
                    (« calc(56px + 16px) »), SANS la largeur de la trappe, alors que la
                    fonction deux lignes plus bas écrit la même chose AVEC la trappe. Deux
@@ -1867,7 +1867,7 @@ function spSetMargesMm(parCote, uniforme) {
    il n'y a donc aucune boucle possible avec les gestionnaires « change ». */
 function spSyncMarginInputs() {
     try {
-        /* ⚠️ v1.7.685 — DEUX REPLIS, ET LE SECOND EST INDISPENSABLE. MESURÉ : au
+        /* ⚠️ v1.7.687 — DEUX REPLIS, ET LE SECOND EST INDISPENSABLE. MESURÉ : au
            démarrage, `spAppliquerUnite` s'exécute depuis le bloc d'initialisation
            des préférences, AVANT que `window.spPageMmVersUnite` ne soit publiée
            (elle l'est dans une portée exécutée plus tard). Le repli identité
@@ -2323,7 +2323,7 @@ let transformLockAspect = true;
 let lastTransformField = null;
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   🆕 v1.7.685 — L'UNITÉ D'AFFICHAGE EST UNE SEULE DÉCISION, APPLIQUÉE PARTOUT
+   🆕 v1.7.686 — L'UNITÉ D'AFFICHAGE EST UNE SEULE DÉCISION, APPLIQUÉE PARTOUT
    Demande utilisateur : « dans les préférences, lorsque je change d'unités, cela
    s'applique dans les transformations situées en colonne de droite mais pas sur
    le format et les marges situés en colonne de gauche. Le changement d'unité
@@ -3104,7 +3104,7 @@ const SP_CUSTOM_PROPS = [
        nouveau coulage du gabarit d'en recréer un second par-dessus. */
     '_spGabaritLibere',
     '_isPageNumber',
-    /* 🆕 v1.7.685 — _SP_IDML_LIENS_638 : LES LIENS HYPERTEXTE D'UN BLOC TEXTE.
+    /* 🆕 v1.7.686 — _SP_IDML_LIENS_638 : LES LIENS HYPERTEXTE D'UN BLOC TEXTE.
        MESURÉ (banc d'audit, features-561.idml) : l'import IDML détecte bien la plage
        du lien (window.__sp561Stats.plagesLien = 1), souligne le texte en bleu et lui
        donne la couleur #0000EE — mais l'URL elle-même n'était écrite NULLE PART :
@@ -3117,7 +3117,7 @@ const SP_CUSTOM_PROPS = [
            qui survit à un changement de césure, de colonnes ou de largeur.
        La propriété est déclarée ici pour être sérialisée par le .sp et le .json. */
     '_spLiens',
-    /* 🆕 v1.7.685 — LES MOTIFS POSÉS PAR LE PLUG-IN « MOTIF VECTORIEL ».
+    /* 🆕 v1.7.686 — LES MOTIFS POSÉS PAR LE PLUG-IN « MOTIF VECTORIEL ».
        Le plug-in retire ses motifs précédents avant d'en reposer un, sinon un
        utilisateur qui essaie trois pas successifs empile trois fonds. Ce retrait
        ne fonctionne que si la marque SURVIT à la sérialisation : sans ces deux
@@ -3153,6 +3153,13 @@ const SP_CUSTOM_PROPS = [
     // voyaient jamais le PDF importé comme vectoriel → toujours rasterisé (lourd).
     '_spPdfContentType',
     '_spPdfArchiveKey',
+    // 🆕 v1.7.686 — _SP_IMAGE_REMPLACEE_686 : empreinte du bitmap RÉELLEMENT issu
+    //   de l'import PDF. Si le bitmap de l'objet ne correspond plus, c'est qu'il a
+    //   été remplacé, et l'export ne doit PAS ré-embarquer la page PDF d'origine
+    //   (cf. spProvenanceImportPdfValide).
+    '_spPdfRasterW',
+    '_spPdfRasterH',
+    '_spPdfRasterSig',
     // 🎨 v1.7.347 — ENCRE DIRECTE (PANTONE). Marqueur posé sur un objet dont
     // la couleur est un ton direct : identifie la COUCHE CHROMATIQUE
     // supplémentaire à produire dans le PDF (CMJN + Pantone, façon InDesign).
@@ -3410,7 +3417,7 @@ setInterval(function () {
 }, 2000);
 let _isAddingFromAsset = false; // Guard: empêche double saveState lors d'ajout depuis Assets
 
-/* 🆕 v1.7.685 — _SP_APERCU_MUET_647 : LE COMPTEUR QUI REND L'APERÇU D'UN PLUG-IN GRATUIT.
+/* 🆕 v1.7.686 — _SP_APERCU_MUET_647 : LE COMPTEUR QUI REND L'APERÇU D'UN PLUG-IN GRATUIT.
    ⚠️ DÉFAUT MESURÉ (banc, trappe « Motif vectoriel », journal d'historique instrumenté) :
    l'aperçu en direct relançait le plug-in à chaque mouvement de tirette, comme voulu,
    MAIS `historyStep` montait quand même de 13 à 29 en une trentaine de secondes SANS
@@ -3437,7 +3444,7 @@ function debouncedSaveState(action) {
        Pour les deux autres drapeaux, on DIFFÈRE. */
     if (_isRestoringState || _isRenderingAllPages) { _spSaveDiffere(action); return; }
     if (_isAddingFromAsset) return;
-    /* 🆕 v1.7.685 — ABANDON VOULU, comme `_isAddingFromAsset` : un aperçu de plug-in
+    /* 🆕 v1.7.686 — ABANDON VOULU, comme `_isAddingFromAsset` : un aperçu de plug-in
        n'est pas une action de l'utilisateur (voir _SP_APERCU_MUET_647). */
     if (_spApercuMuet > 0) return;
     _lastSaveAction = action || _lastSaveAction;
@@ -3454,7 +3461,7 @@ function debouncedSaveState(action) {
         _lastSaveAction = '';
         if (_isRestoringState || _isRenderingAllPages) { _spSaveDiffere(_action602); return; }
         if (_isAddingFromAsset) return;
-        /* 🆕 v1.7.685 — un minuteur armé AVANT le début de l'aperçu doit se taire lui
+        /* 🆕 v1.7.686 — un minuteur armé AVANT le début de l'aperçu doit se taire lui
            aussi : sans ce test, le silence ne valait que pour les mouvements suivants. */
         if (_spApercuMuet > 0) return;
         if (typeof saveState === 'function') saveState(_action602);
@@ -3583,6 +3590,12 @@ window._spSaveDiffereAnnuler = _spSaveDiffereAnnuler;
    Aucun délai arbitraire : on teste l'état réel, avec un plafond de patience. */
 function spPlanchesEnChargementPourExport() {
     try {
+        /* 🆕 v1.7.686 : la reconstruction globale (duplication de fichier/page,
+           changement de vue) et la restauration d'historique ne sont PAS des états
+           d'export. `saveAllPages(true)` bypasse volontairement leur garde : sans
+           cette attente, on photographiait des canevas à moitié reconstruits. */
+        if (typeof _isRenderingAllPages !== 'undefined' && _isRenderingAllPages) return true;
+        if (typeof _isRestoringState !== 'undefined' && _isRestoringState) return true;
         const cvs = (typeof window._spCanvasCandidats === 'function') ? window._spCanvasCandidats() : [];
         for (let i = 0; i < cvs.length; i++) {
             const c = cvs[i];
@@ -3641,6 +3654,45 @@ async function spAttendreDocumentPretPourExport(maxMs) {
     }
 }
 window.spAttendreDocumentPretPourExport = spAttendreDocumentPretPourExport;
+
+/* ═══ _SP_EXPORT_SYNC_686 — TOUTE SORTIE PART DU DOCUMENT DE TRAVAIL À JOUR ═══
+   Le défaut rapporté (« je remplace l'image, l'export montre l'ancienne ») ne vient
+   pas seulement du PDF ré-embarqué : `saveAllPages(true)` sort EN SILENCE quand une
+   planche est en `loadFromJSON` (duplication de page/fichier, changement de vue…).
+   L'export lit alors `pages[]`, c'est-à-dire l'état d'AVANT le remplacement.
+   On attend donc la fin réelle des chargements, puis on REJOUE la sauvegarde forcée
+   tant qu'elle n'a pas abouti. Toutes les sorties passent par ici : PDF simple,
+   planches, tons directs, PNG/JPG, PRINT-TO-WEB, .sp, .json et IPFS. */
+async function spPreparerDocumentPourExport(maxMs) {
+    const plafond = Number(maxMs) || 20000;
+    /* Chemin RAPIDE : si tout est prêt, la sauvegarde forcée se fait TOUT DE SUITE,
+       sans premier `await`. Le téléchargement qui suit reste ainsi dans le geste
+       utilisateur qui l'a déclenché (un `await` de 20 s peut faire bloquer le
+       téléchargement par le navigateur). */
+    try {
+        if ((typeof spPlanchesEnChargementPourExport !== 'function' || !spPlanchesEnChargementPourExport())
+            && typeof saveAllPages === 'function' && saveAllPages(true) !== false) {
+            return true;
+        }
+    } catch (_) {}
+    try {
+        if (typeof spAttendreDocumentPretPourExport === 'function') {
+            await spAttendreDocumentPretPourExport(plafond);
+        }
+    } catch (_) {}
+    const fin = Date.now() + Math.min(8000, plafond);
+    for (;;) {
+        let ok = false;
+        try { ok = (typeof saveAllPages === 'function') ? (saveAllPages(true) !== false) : false; } catch (_) { ok = false; }
+        if (ok) return true;
+        if (Date.now() >= fin) {
+            console.warn('[SP export] Document non synchronisé après ' + Math.round(plafond / 1000) + ' s : la sortie peut contenir l\'état précédent.');
+            return false;
+        }
+        await new Promise(function (r) { setTimeout(r, 100); });
+    }
+}
+window.spPreparerDocumentPourExport = spPreparerDocumentPourExport;
 
 /* Contrôle du cliché JUSTE AVANT de composer le PDF : tout ce qui est DESSINÉ doit être
    ENREGISTRÉ. Si le canevas porte plus d'objets que `pages[]` (cas du doublon/ajout fait
@@ -4753,7 +4805,7 @@ if (window._spGpuEnabled) {
         };
     }
 
-    /* ══ v1.7.685 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
+    /* ══ v1.7.687 — TRACÉ ARRONDI COMPATIBLE AVEC LES ANCIENS WEBKIT ══
 
        `CanvasRenderingContext2D.roundRect` est une API **Safari 16.0+**. Sur les
        WebKit antérieurs — dont celui d'un macOS Monterey resté en Safari 15.x —
@@ -5190,7 +5242,7 @@ if (window._spGpuEnabled) {
             if (!H || !H.length) return hauteurDemandee;
 
             const TOL = 0.5;
-            /* ═══ v1.7.685 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
+            /* ═══ v1.7.687 — SI TOUT LE TEXTE TIENT, ON NE ROGNE RIEN ═══
                ⚠️ C'EST LA CAUSE DU « le bas du bloc se contracte quand il y a du
                blanc », et elle est mesuree : un texte d'UNE ligne (15,82 px) dans un
                cadre de 320 px ressortait a 15,82 px, hauteur ensuite ECRITE dans
@@ -5784,7 +5836,7 @@ if (window._spGpuEnabled) {
                     base._spHyphenFlags = this.__spHyphenFlags.slice();
                 }
             } catch (_) {}
-            /* ══ 🆕 v1.7.685 — L'APPARTENANCE À UN TABLEAU PART DANS LE FICHIER ══
+            /* ══ 🆕 v1.7.686 — L'APPARTENANCE À UN TABLEAU PART DANS LE FICHIER ══
                Retour utilisateur : « un tableau perd son groupement après sauvegarde
                + réouverture, c'est dommage non ? on peut faire quelque chose ? ».
                Oui, et c'est même peu de chose : il suffisait d'écrire la place de
@@ -5810,7 +5862,7 @@ if (window._spGpuEnabled) {
     }
         } catch(_) {}
 
-        /* ══ v1.7.685 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
+        /* ══ v1.7.687 — CE `const` EST SORTI DU BLOC, ET C'EST UN CORRECTIF MESURÉ ══
 
            RETOUR UTILISATEUR, macOS Monterey 12.7.6 : « l'outil bloc texte bug —
            bloc bleu au relâchement de la souris, il disparaît. Sur les macOS plus
@@ -8300,7 +8352,7 @@ window.spTestDiag = function () {
 
     /* Relecture inverse : « bahnschrift|700|normal|d87.5 » → { wght: 700, wdth: 87.5 },
        coordonnées d'axe à demander à fontkit pour instancier la police du PDF.
-       ⚠️ v1.7.685 — LA GRAISSE SEULE SUFFIT DÉSORMAIS, ET C'ÉTAIT UN VRAI DÉFAUT.
+       ⚠️ v1.7.687 — LA GRAISSE SEULE SUFFIT DÉSORMAIS, ET C'ÉTAIT UN VRAI DÉFAUT.
        MESURÉ : cette fonction exigeait un suffixe de LARGEUR (« |d87.5 ») et rendait
        `null` sinon. Une police variable qui n'a QUE l'axe de graisse — c'est le cas de
        Bodoni Moda, Playfair Display, Anton variable, Sora… — n'écrivait donc jamais ce
@@ -8435,7 +8487,7 @@ window.spTestDiag = function () {
             if (axes) {
                 REGISTRE[nom] = axes;
                 enregistrerFaceVariable(nom, buffer, axes);
-                /* ⚠️ v1.7.685 — LA PLAGE RÉELLE EST PUBLIÉE AU SÉLECTEUR DE GRAISSE.
+                /* ⚠️ v1.7.687 — LA PLAGE RÉELLE EST PUBLIÉE AU SÉLECTEUR DE GRAISSE.
                    DÉFAUT MESURÉ (import d'une police variable, panneau « Graisse »
                    déplié) : une seule option, « 400 ». `fontWeights` n'était alimenté
                    que par le plug-in Google Fonts ; une police importée à la main
@@ -8769,7 +8821,7 @@ window.spTestDiag = function () {
                 host.appendChild(ligne);
                 majPiste(a.tag);
             });
-            /* ═══ v1.7.685 — L'INTERLETTRAGE DANS LE PANNEAU DE LA POLICE VARIABLE ═══
+            /* ═══ v1.7.687 — L'INTERLETTRAGE DANS LE PANNEAU DE LA POLICE VARIABLE ═══
                Demande utilisateur : « on doit pouvoir modifier l'inter-lettrage de la
                font variable ». Le champ « Esp. lettres » existait déjà dans les réglages
                typographiques généraux, mais il vit ailleurs, et une police variable se
@@ -8810,7 +8862,7 @@ window.spTestDiag = function () {
                 etiquette('spVarVal_' + a.tag, String(val));
                 majPiste(a.tag);
             });
-            /* v1.7.685 — la piste d'interlettrage suit le bloc sélectionné, pas les
+            /* v1.7.687 — la piste d'interlettrage suit le bloc sélectionné, pas les
                axes : elle est resynchronisée même quand la liste d'axes n'a pas changé. */
             var inpT = host.querySelector('input[data-sp-var-axe="__track"]');
             if (inpT && !host._spGlisse) {
@@ -8823,7 +8875,7 @@ window.spTestDiag = function () {
         }
     }
 
-    /* v1.7.685 — applique l'interlettrage (`charSpacing`, en millièmes de cadratin)
+    /* v1.7.687 — applique l'interlettrage (`charSpacing`, en millièmes de cadratin)
        aux blocs sélectionnés. Même chemin que le champ « Esp. lettres » existant :
        c'est Fabric qui porte la valeur, l'aperçu et l'export la lisent déjà. */
     function appliquerInterlettrage(val, cible) {
@@ -8853,7 +8905,7 @@ window.spTestDiag = function () {
     function actionAxe(cible) {
         if (!cible || !cible.dataset) return;
         var tag = cible.dataset.spVarAxe;
-        /* v1.7.685 — l'interlettrage n'est pas un axe : il se traite à part, sinon
+        /* v1.7.687 — l'interlettrage n'est pas un axe : il se traite à part, sinon
            `v['__track'] = …` serait rangé dans `spVarFont` (donc dans le document)
            alors que Fabric persiste déjà `charSpacing`. */
         if (tag === '__track') { appliquerInterlettrage(parseFloat(cible.value), cible); return; }
@@ -8971,7 +9023,7 @@ window.spTestDiag = function () {
        L'enveloppe est posée sur le DOCUMENT (chaque export a son PDFDocument) et la
        variation « en attente » est consommée par le prochain `create`, ce qui suit
        exactement le rythme des `await doc.embedFont(...)` de l'export. */
-    /* ═══ v1.7.685 — LE PONT `encodeStream` SURVIT À `getVariation` ═══════════
+    /* ═══ v1.7.687 — LE PONT `encodeStream` SURVIT À `getVariation` ═══════════
        DÉFAUT MESURÉ (export « Format fini » d'un bloc en police variable après le
        correctif de graisse) : `TypeError: t.subset.encodeStream is not a function`,
        l'export s'arrête, aucun PDF n'est produit.
@@ -8980,7 +9032,7 @@ window.spTestDiag = function () {
        pdf-lib appelle. Or `font.getVariation(coords)` rend un NOUVEL objet police,
        qui n'a pas été passé par cette enveloppe : son `createSubset()` rend un
        sous-ensemble fontkit 2 qui n'a que `encode()`. Le pont est donc perdu.
-       Avant la 1.7.685 le défaut ne se voyait presque jamais, parce que
+       Avant la 1.7.687 le défaut ne se voyait presque jamais, parce que
        `coordsDepuisCle` exigeait une largeur d'instance (`|d87.5`) : la variation
        n'était demandée que pour les polices à axe `wdth`. Depuis que la graisse
        seule suffit, TOUTE police variable y passait — d'où la régression, corrigée
@@ -10784,7 +10836,7 @@ window.spTestDiag = function () {
                 var objT = null;
                 try { objT = cT && ((cT.getActiveObjects() || [])[0] || cT.getActiveObject()); } catch (_) {}
                 var estTexteT = !!(objT && (objT.type === 'textbox' || objT.type === 'i-text' || objT.type === 'text'));
-                /* 🆕 v1.7.685 — DANS UN TABLEAU, TAB CHANGE DE CELLULE.
+                /* 🆕 v1.7.686 — DANS UN TABLEAU, TAB CHANGE DE CELLULE.
                    ⚠️ Cette cellule EST un bloc de texte : sans ce garde-fou, Tab y
                    insérait une tabulation (comportement voulu pour un bloc
                    ordinaire, mesuré en v1.7.485) et la navigation de cellule à
@@ -15066,7 +15118,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         }
 
         /* ═══════════════════════════════════════════════════════════════════════════════
-           🆕 v1.7.685 — _SP_MULTIFORMAT_669 : UN DOCUMENT, DES PAGES DE FORMATS DIFFÉRENTS.
+           🆕 v1.7.686 — _SP_MULTIFORMAT_669 : UN DOCUMENT, DES PAGES DE FORMATS DIFFÉRENTS.
            ═══════════════════════════════════════════════════════════════════════════════
 
            POURQUOI, ET POURQUOI SEULEMENT ICI. Un fichier Figma porte souvent plusieurs
@@ -15109,7 +15161,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         window._spFormatDePage = _spFormatDePage;
         window._spDocumentMultiFormat = _spDocumentMultiFormat;
 
-        /* 🆕 v1.7.685 — LE PANNEAU « FORMAT » AFFICHE LA PAGE QU'ON REGARDE.
+        /* 🆕 v1.7.686 — LE PANNEAU « FORMAT » AFFICHE LA PAGE QU'ON REGARDE.
            ⚠️ MESURÉ : sur le document Figma de trois formats, le panneau restait à
            210 × 297 en page 2 (297 × 210) et en page 3 (141 × 141). Un champ qui
            annonce une valeur que la feuille n'a pas est pire qu'un champ absent :
@@ -15301,7 +15353,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     const width = mmToPx(pageFormat.width);
     const height = mmToPx(pageFormat.height);
 
-    /* 🆕 v1.7.685 — PAS DE CHEMIN DE FER POUR DES PAGES DE FORMATS DIFFÉRENTS.
+    /* 🆕 v1.7.686 — PAS DE CHEMIN DE FER POUR DES PAGES DE FORMATS DIFFÉRENTS.
        Le mode double page compose deux pages IDENTIQUES côte à côte : avec des tailles
        différentes, les planches seraient fausses (et les repères de coupe aussi). On
        repasse donc en pages simples, en le disant — c'est un choix, pas une panne. */
@@ -15368,7 +15420,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         // Mode pages simples (fond perdu partout)
         pages.forEach((page, index) => {
             const wrapper = document.createElement('div');
-            /* 🆕 v1.7.685 — CHAQUE PAGE PEUT AVOIR SON FORMAT.
+            /* 🆕 v1.7.686 — CHAQUE PAGE PEUT AVOIR SON FORMAT.
                `_spFormatDePage` rend pageFormat quand la page n'a pas de format propre —
                c'est-à-dire TOUJOURS, sauf dans un document importé de Figma en
                multi-format. Les deux valeurs sont donc identiques à l'octet près pour
@@ -15822,7 +15874,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 // RESTAURER les patterns d'images dans les formes après chargement
                 restoreImageMasksAfterLoad(fabricCanvas);
 
-                /* 🆕 v1.7.685 — LES TABLEAUX SE REFORMENT APRÈS UNE RÉOUVERTURE.
+                /* 🆕 v1.7.686 — LES TABLEAUX SE REFORMENT APRÈS UNE RÉOUVERTURE.
                    `window.spTableau.restaurer` relit l'appartenance écrite par
                    `Textbox.toObject` (`_spTab`) et reconstruit le cadre et les gestes.
                    Il est appelé ICI, au seul endroit qui remonte une page depuis du
@@ -16176,7 +16228,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         
         if (!target) {
             if (!canvas.selection) canvas.selection = true;
-            /* 🆕 v1.7.685 — FILET DE SÉCURITÉ DU DRAPEAU DE TRANSFORMATION.
+            /* 🆕 v1.7.686 — FILET DE SÉCURITÉ DU DRAPEAU DE TRANSFORMATION.
                Un relâchement hors du canevas n'atteint pas `mouse:up` : le drapeau
                posé par `before:transform` resterait alors à `true` et le lasso
                suivant serait ignoré. Un clic DANS LE VIDE (`target` nul) ne peut
@@ -17150,7 +17202,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         // 🛡️ FIX 2026-08-26 : pas de sauvegarde pour les retraits de guides de
         //   maquette (drawMargins/clear) — voir _spIsGuideObject en tête de handler.
         if (!_spIsGuideObject) {
-            /* 🆕 v1.7.685 — pendant un aperçu, le plug-in RETIRE ses formes précédentes
+            /* 🆕 v1.7.686 — pendant un aperçu, le plug-in RETIRE ses formes précédentes
                à chaque rendu. Sans ce test, chaque retrait relançait une sérialisation
                COMPLÈTE de toutes les planches (mesuré : ~1 s par retrait sur 12 pages). */
             if (_spApercuMuet === 0) saveAllPages();
@@ -17277,7 +17329,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         }
     });
     
-    /* 🆕 v1.7.685 — UN GESTE DE POIGNÉE N'EST PAS UN LASSO.
+    /* 🆕 v1.7.686 — UN GESTE DE POIGNÉE N'EST PAS UN LASSO.
        ⚠️ MESURÉ, ET C'EST LA CAUSE RACINE DU TABLEAU QUI SE DÉTACHE DES FILETS.
        `mouse:down` enregistre `__spSelectionStart` À CHAQUE FOIS, y compris quand
        le clic tombe sur une poignée de redimensionnement. Au relâcher, le bloc
@@ -19567,19 +19619,21 @@ function spCoordsMondeSerialisation(obj, data) {
 }
 try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_) {}
         function saveAllPages(force) {
-    if (!pages || !canvases) return;
+    // ⚠️ Le retour booléen est ce qui permet à spPreparerDocumentPourExport() de
+    //   SAVOIR qu'un cliché a été refusé (false) au lieu de le supposer réussi.
+    if (!pages || !canvases) return false;
     // GUARD: Ne pas sauvegarder pendant la reconstruction des canvases
     // (sauf si force=true — appelé depuis addPage/deletePage où les canvases sont encore valides)
-    if (!force && _isRenderingAllPages) return;
+    if (!force && _isRenderingAllPages) return false;
     // GUARD: Ne pas sauvegarder pendant un undo/redo (pages[] contient l'état historique)
-    if (!force && _isRestoringState) return;
+    if (!force && _isRestoringState) return false;
     // GUARD: Ne pas sauvegarder si un canvas est encore en chargement JSON (positions partielles = état corrompu)
-    if (!force && canvases.some(c => c && c._isLoading)) return;
+    if (!force && canvases.some(c => c && c._isLoading)) return false;
     // 🛡️ FIX 2026-05-07 : même avec force=true, NE JAMAIS lire depuis un
     //   canvas en cours de loadFromJSON. force=true bypass _isRendering &
     //   _isRestoring (légitime : la dup veut snapshot le live), mais il ne doit
     //   PAS bypass _isLoading sinon on écrase pages[] avec un getObjects() partiel.
-    if (force && canvases.some(c => c && c._isLoading)) return;
+    if (force && canvases.some(c => c && c._isLoading)) return false;
     
     const customProps = SP_CUSTOM_PROPS;
     
@@ -19732,6 +19786,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             }
         });
     }
+    return true;
         }
 
         // 🛡️ v1.7.297 — FIX : détecte si un canvas contient une image dont
@@ -20272,7 +20327,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             // RESTAURER les patterns d'images dans les formes après chargement
             restoreImageMasksAfterLoad(fabricCanvas);
 
-            /* 🆕 v1.7.685 — LES TABLEAUX SE REFORMENT APRÈS UNE RÉOUVERTURE.
+            /* 🆕 v1.7.686 — LES TABLEAUX SE REFORMENT APRÈS UNE RÉOUVERTURE.
                Même appel que dans le rendu simple page (voir le commentaire détaillé
                là-bas) : ce second chemin remonte les pages de la vue double, et un
                tableau doit s'y comporter exactement pareil. */
@@ -25691,7 +25746,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 return cellules;
             }
 
-            /* 🆕 v1.7.685 — LE TABLEAU A DES COLONNES ET DES LIGNES DE LARGEURS
+            /* 🆕 v1.7.686 — LE TABLEAU A DES COLONNES ET DES LIGNES DE LARGEURS
                DIFFÉRENTES.
 
                Demande : « si je clique sur le bord d'une colonne ou d'une ligne en
@@ -25961,7 +26016,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                     if (typeof scheduleRender === 'function') scheduleRender(cv);
                 });
 
-                /* ═══ v1.7.685 — UNE CELLULE N'ENTRE JAMAIS DANS UNE SÉLECTION ═══
+                /* ═══ v1.7.687 — UNE CELLULE N'ENTRE JAMAIS DANS UNE SÉLECTION ═══
                    ⚠️ MESURÉ : `fabric.ActiveSelection` RECALCULE les `left`/`top` de
                    ses membres par rapport au centre de la sélection et ne sauvegarde
                    PAS leurs valeurs d'origine (`__origProps` n'est posé que par
@@ -26032,7 +26087,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             }
 
             /* ═══════════════════════════════════════════════════════════════════════
-               🆕 v1.7.685 — LE TABLEAU EST UN SEUL ÉLÉMENT
+               🆕 v1.7.686 — LE TABLEAU EST UN SEUL ÉLÉMENT
                ═══════════════════════════════════════════════════════════════════════
                Demande : « les cellules doivent être groupées pour ne faire qu'un
                élément, car je dois pouvoir déplacer, agrandir ou réduire le tableau.
@@ -26142,7 +26197,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             }
 
             /* ═══════════════════════════════════════════════════════════════════════
-               🆕 v1.7.685 — TABULATION ET FLÈCHES ENTRE LES CELLULES
+               🆕 v1.7.686 — TABULATION ET FLÈCHES ENTRE LES CELLULES
                ═══════════════════════════════════════════════════════════════════════
                Demande : « je peux passer d'une cellule à une autre avec la touche Tab
                du clavier, ou en utilisant les flèches du clavier avec Entrée après
@@ -26296,7 +26351,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             }
 
             /* ═══════════════════════════════════════════════════════════════════════
-               🆕 v1.7.685 — CLIC LONG SUR UNE FRONTIÈRE = LARGEUR / HAUTEUR
+               🆕 v1.7.686 — CLIC LONG SUR UNE FRONTIÈRE = LARGEUR / HAUTEUR
                ═══════════════════════════════════════════════════════════════════════
                Demande : « si je clique sur le bord d'une colonne ou d'une ligne en
                laissant le clic appuyé (clic long), je dois pouvoir agrandir ou
@@ -26318,7 +26373,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 var ACCENT = '#0d99ff';
 
                 /* ═══════════════════════════════════════════════════════════════════
-                   🆕 v1.7.685 — TOUTES LES FRONTIÈRES SONT RETOUCHABLES, Y COMPRIS
+                   🆕 v1.7.686 — TOUTES LES FRONTIÈRES SONT RETOUCHABLES, Y COMPRIS
                    CELLES DU POURTOUR
                    ═══════════════════════════════════════════════════════════════════
                    Demande utilisateur : « permettre le clic long sur les bords du
@@ -26485,7 +26540,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                     }
                 };
 
-                /* ⚠️ v1.7.685 — LE CURSEUR DIT « ICI ON PEUT TIRER » AVANT MÊME LE
+                /* ⚠️ v1.7.687 — LE CURSEUR DIT « ICI ON PEUT TIRER » AVANT MÊME LE
                    CLIC. Sans lui, les frontières du pourtour n'étaient pas
                    découvrables : rien ne distinguait le bord du tableau d'une
                    cellule, alors que les deux n'ont pas le même geste.
@@ -26563,7 +26618,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                             }
                         } catch (_) {}
                         selectionnerTableau(desc, cv);
-                        /* ⚠️ v1.7.685 — LE POURTOUR AUSSI SE RETOUCHE.
+                        /* ⚠️ v1.7.687 — LE POURTOUR AUSSI SE RETOUCHE.
                            Une frontière extérieure borde la PREMIÈRE ou la DERNIÈRE
                            colonne (ligne). Un clic long l'arme ; un glissement sec
                            continue de déplacer le tableau, exactement comme avant.
@@ -26611,7 +26666,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 var armer = function () {
                     var b = desc._bord;
                     if (!b) return;
-                    /* ⚠️ v1.7.685 — UN GLISSEMENT DÉJÀ COMMENCÉ DÉSARME.
+                    /* ⚠️ v1.7.687 — UN GLISSEMENT DÉJÀ COMMENCÉ DÉSARME.
                        Sur le pourtour, un glissement sec déplace le tableau : si la
                        minuterie arrivait pendant ce glissement, on déplacerait ET on
                        redimensionnerait en même temps. On rend donc la main au
@@ -26671,7 +26726,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                     var delta = (b.sens === 'col' ? p.x : p.y) - b.depart;
                     var mini = mmVersPx(4);
                     var neuf, decal = 0;
-                    /* ⚠️ v1.7.685 — LES BORDS GAUCHE ET HAUT SE DÉPLACENT AUSSI.
+                    /* ⚠️ v1.7.687 — LES BORDS GAUCHE ET HAUT SE DÉPLACENT AUSSI.
                        Régler la première colonne par son bord droit (frontière
                        intérieure) ne change pas le tableau de place. Par son bord
                        GAUCHE, si : le tableau rétrécit par la gauche, donc son coin
@@ -26744,7 +26799,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             }
 
             /* ═══════════════════════════════════════════════════════════════════════
-               🆕 v1.7.685 — RETROUVER LES TABLEAUX APRÈS UNE RÉOUVERTURE
+               🆕 v1.7.686 — RETROUVER LES TABLEAUX APRÈS UNE RÉOUVERTURE
                ═══════════════════════════════════════════════════════════════════════
                Demande utilisateur : « un tableau perd son groupement après sauvegarde
                et réouverture : on peut faire quelque chose ? »
@@ -29416,7 +29471,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     if (window.__spReplaceImageInput) return window.__spReplaceImageInput;
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    /* _SP_PDF_REMPLACER_687 : les PDF sont acceptés — un PDF choisi ici ouvre le
+       sélecteur de page (cf. spOuvrirSelecteurPagePdfPourRemplacement). */
+    input.accept = 'image/*,application/pdf,.pdf';
     input.style.position = 'fixed';
     input.style.left = '-9999px';
     input.style.top = '-9999px';
@@ -29426,6 +29483,278 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     window.__spReplaceImageInput = input;
     return input;
         }
+
+        /* 🆕 v1.7.686 — _SP_IMAGE_REMPLACEE_686 : UNE IMAGE REMPLACÉE N'EST PLUS
+           LE PDF D'ORIGINE.
+
+           Retour utilisateur (app macOS, Mac Intel) : « lorsque l'on duplique un
+           fichier, et je remplace l'image dans le fichier dupliqué, lorsque
+           j'exporte le fichier c'est l'ancienne image qui apparaît. Les images
+           utilisées étaient des PDF. »
+
+           CAUSE MESURÉE : une page PDF importée comme image porte sa provenance
+           (_spPdfImport, _spPdfContentType, _spPdfArchiveKey, _spPdfPageNumber…) et
+           l'archive du PDF source reste en mémoire (window._spPdfArchives). À
+           l'export, les chemins vectoriels (pdf-lib simple, imposé, hybride jsPDF)
+           préfèrent RÉ-EMBARQUER la page PDF d'origine depuis cette archive, puis
+           SAUTENT le rendu de l'objet (_spPdfReplaced / _spPdfImportsToSkip). Or le
+           remplacement n'échangeait que le bitmap (setElement) : la provenance
+           restait accrochée à l'objet, donc l'export redessinait l'ANCIENNE page PDF
+           pendant que l'éditeur affichait la nouvelle image.
+           Les autres formats (JPEG, PNG, TIFF, WebP, SVG, EPS…) ne portent pas cette
+           provenance : ils n'étaient pas touchés — pas plus qu'un PDF importé en mode
+           « raster » (_spPdfContentType === 'raster'), qui passe par le rendu normal.
+           C'est aussi pourquoi le défaut semblait dépendre de la machine : l'archive
+           n'existe que dans la session où le PDF a été importé.
+
+           CORRECTIF : dès que le bitmap est remplacé, on efface la provenance PDF.
+           Le garde-fou spProvenanceImportPdfValide() couvre les chemins qu'on ne
+           maîtrise pas (plug-ins, code futur) : il compare l'empreinte du bitmap
+           courant à celle relevée à l'import (_spPdfRasterSig, avec les dimensions
+           _spPdfRasterW/_spPdfRasterH comme repli) et refuse le ré-embarquement si
+           le bitmap a changé — même à dimensions identiques. */
+        function spOublierProvenanceImportPdf(obj) {
+    if (!obj) return;
+    try {
+        delete obj._spPdfImport;
+        delete obj._spPdfPageNumber;
+        delete obj._spPdfSourceWidthMM;
+        delete obj._spPdfSourceHeightMM;
+        delete obj._spPdfImportMode;
+        delete obj._spPdfRecadrageMode;
+        delete obj._spPdfContentType;
+        delete obj._spPdfArchiveKey;
+        delete obj._spPdfRasterW;
+        delete obj._spPdfRasterH;
+        delete obj._spPdfRasterSig;
+        delete obj._spPdfReplaced;
+        obj.dirty = true;
+    } catch (_) {}
+        }
+        try { window.spOublierProvenanceImportPdf = spOublierProvenanceImportPdf; } catch (_) {}
+
+        /* Empreinte courte du bitmap : longueur + trois échantillons. Elle distingue
+           deux images SANS relire des mégaoctets de data-URL à chaque export. */
+        function spEmpreinteBitmap(src) {
+    try {
+        var s = String(src || '');
+        if (!s) return '';
+        var n = s.length;
+        var morceau = function (debut) {
+            var h = 0x811c9dc5;
+            var fin = Math.min(n, debut + 96);
+            for (var i = Math.max(0, debut); i < fin; i++) {
+                h ^= s.charCodeAt(i);
+                h = Math.imul(h, 0x01000193);
+            }
+            return (h >>> 0).toString(36);
+        };
+        return n + ':' + morceau(0) + ':' + morceau((n >> 1) - 48) + ':' + morceau(n - 96);
+    } catch (_) { return ''; }
+        }
+        try { window.spEmpreinteBitmap = spEmpreinteBitmap; } catch (_) {}
+
+        /* La source RÉELLEMENT affichée (et non l'URL mémorisée, qui peut retarder
+           d'un chemin de remplacement à l'autre). */
+        function spSrcBitmap(obj) {
+    try {
+        if (!obj) return '';
+        if (typeof obj.getSrc === 'function') {
+            var s = obj.getSrc();
+            if (s) return s;
+        }
+        /* Objet issu de `pages[]` (JSON, sans méthodes Fabric) : `src` est la
+           propriété sérialisée par Image.toObject. */
+        return obj._imageSourceURL || obj.src || '';
+    } catch (_) { return ''; }
+        }
+
+        /* Marque un import PDF avec l'empreinte du bitmap qu'il affiche. */
+        function spMarquerProvenanceImportPdf(obj) {
+    if (!obj || !obj._spPdfImport) return;
+    try {
+        obj._spPdfRasterW = obj.width;
+        obj._spPdfRasterH = obj.height;
+        obj._spPdfRasterSig = spEmpreinteBitmap(spSrcBitmap(obj));
+    } catch (_) {}
+        }
+        try { window.spMarquerProvenanceImportPdf = spMarquerProvenanceImportPdf; } catch (_) {}
+
+        /* La provenance PDF est-elle encore celle de l'image affichée ? L'empreinte
+           du bitmap tranche même quand le remplacement conserve les mêmes dimensions
+           (deux PDF de même format). Les documents antérieurs à v1.7.687 n'ont pas
+           d'empreinte : on garde le comportement historique (ré-embarquement). */
+        function spProvenanceImportPdfValide(obj) {
+    if (!obj || !obj._spPdfImport) return false;
+    var sig = obj._spPdfRasterSig;
+    if (sig) {
+        var courant = spEmpreinteBitmap(spSrcBitmap(obj));
+        if (courant && courant !== sig) return false;
+    }
+    var rw = obj._spPdfRasterW, rh = obj._spPdfRasterH;
+    if (!(rw > 0) || !(rh > 0)) return true;
+    return Math.abs((obj.width || 0) - rw) < 0.5 && Math.abs((obj.height || 0) - rh) < 0.5;
+        }
+        try { window.spProvenanceImportPdfValide = spProvenanceImportPdfValide; } catch (_) {}
+
+        /* ═══ _SP_PDF_REMPLACER_687 — REMPLACER UNE IMAGE PAR UNE PAGE DE PDF ═══
+           Retour utilisateur : « lorsque je charge un pdf en image et que je change
+           cette image avec l'aide du bouton situé en dehors du cadre pour insérer un
+           autre pdf, il faudrait avoir la possibilité de choisir la bonne page du pdf ».
+
+           MESURÉ AVANT CORRECTIF : le bouton « remplacer » ouvrait un
+           `<input type="file" accept="image/*">` — un PDF n'était donc même pas
+           sélectionnable. Et s'il arrivait par un autre chemin,
+           `FileReader.readAsDataURL()` produisait une data-URL `application/pdf`
+           que `fabric.Image.fromURL` ne sait pas décoder : le remplacement échouait
+           sans message.
+
+           CORRECTIF : le sélecteur accepte les PDF. Quand le fichier choisi en est
+           un, la pop-in d'import PDF s'ouvre en MODE REMPLACEMENT — elle ne sert
+           plus qu'à choisir LA page ; la page choisie est rendue en haute résolution
+           puis échangée DANS l'objet existant (setElement). Le cadre, le recadrage,
+           l'angle, l'opacité et le rang dans la pile sont conservés, et l'export
+           ré-embarque désormais la page du NOUVEAU PDF (provenance re-marquée). */
+        function spFichierEstPdf(file) {
+    if (!file) return false;
+    var t = String(file.type || '').toLowerCase();
+    if (t === 'application/pdf' || t === 'application/x-pdf') return true;
+    return /\.pdf$/i.test(String(file.name || ''));
+        }
+        try { window.spFichierEstPdf = spFichierEstPdf; } catch (_) {}
+
+        /* Rend une page PDF en data-URL PNG, à la résolution de l'import « bloc
+           image » (6×, plafonnée à 220 Mpx : au-delà, toDataURL renvoie une image
+           vide dans les navigateurs). */
+        async function spRendrePagePdfEnDataUrl(pdfDoc, pageNum) {
+    const page = await pdfDoc.getPage(pageNum);
+    const unit = page.getViewport({ scale: 1.0 });   // 1 pt PDF = 1 px de document
+    const widthMM = unit.width * 0.352778;
+    const heightMM = unit.height * 0.352778;
+    let renderScale = 6.0;
+    try {
+        const k = 72 / 25.4;
+        const maxScale = Math.sqrt((220 * 1e6) / (widthMM * heightMM * k * k));
+        if (isFinite(maxScale) && maxScale > 0 && maxScale < renderScale) renderScale = maxScale;
+    } catch (_) {}
+    const viewport = page.getViewport({ scale: renderScale });
+    const cnv = document.createElement('canvas');
+    cnv.width = Math.max(1, Math.round(viewport.width));
+    cnv.height = Math.max(1, Math.round(viewport.height));
+    await page.render({ canvasContext: cnv.getContext('2d'), viewport: viewport }).promise;
+    const dataUrl = cnv.toDataURL('image/png');
+    try { if (typeof page.cleanup === 'function') page.cleanup(); } catch (_) {}
+    try { cnv.width = 0; cnv.height = 0; } catch (_) {}
+    return { dataUrl: dataUrl, widthMM: widthMM, heightMM: heightMM };
+        }
+        try { window.spRendrePagePdfEnDataUrl = spRendrePagePdfEnDataUrl; } catch (_) {}
+
+        /* Habillage de la pop-in PDF en mode « remplacer une image » : on masque tout
+           ce qui ne concerne pas le choix d'UNE page, et on renomme l'action. */
+        function spModeRemplacementPdfUI(actif) {
+    try {
+        const titre = document.getElementById('pdfImportModalTitle');
+        const blocKind = document.getElementById('pdfImportKindBlock');
+        const blocRec = document.getElementById('pdfRecadrageBlock');
+        const blocMode = document.getElementById('pdfImportModeBlock');
+        const blocSel = document.getElementById('pdfSelectionToolsBlock');
+        const blocInstr = document.getElementById('pdfInstructionBlock');
+        const btn = document.getElementById('confirmPdfImportBtn');
+        if (titre) {
+            titre.textContent = actif ? '📄 Choisir la page à placer dans le cadre'
+                                      : '📄 Importer un fichier PDF';
+        }
+        if (blocKind) blocKind.style.display = actif ? 'none' : '';
+        if (blocRec) blocRec.style.display = actif ? 'none' : '';
+        if (blocMode) blocMode.style.display = actif ? 'none' : '';
+        if (blocSel) blocSel.style.display = actif ? 'none' : '';
+        if (blocInstr) {
+            blocInstr.innerHTML = actif
+                ? '<span style="font-size:16px;">ℹ️</span><div style="font-size:12px;color:#856404;line-height:1.5;">'
+                  + '<strong>Choisissez la page du PDF à placer dans le cadre.</strong><br>'
+                  + 'Le cadre, le recadrage, l\'angle et le rang dans la pile sont conservés : seule l\'image est remplacée.</div>'
+                : '<span style="font-size:16px;">ℹ️</span><div style="font-size:12px;color:#856404;line-height:1.5;">'
+                  + '<strong>Sélectionnez une ou plusieurs pages du PDF.</strong><br>'
+                  + 'Cliquez sur une miniature pour la sélectionner. Utilisez "Toutes les pages" pour tout importer.</div>';
+        }
+        if (btn && !btn.disabled) btn.textContent = actif ? 'Remplacer l\'image' : 'OK';
+        if (!actif && typeof window.spPdfMajImportKind === 'function') {
+            try { window.spPdfMajImportKind(); } catch (_) {}
+        }
+    } catch (_) {}
+        }
+        try { window.spModeRemplacementPdfUI = spModeRemplacementPdfUI; } catch (_) {}
+
+        /* Ouvre la pop-in PDF en mode remplacement pour l'objet donné. */
+        function spOuvrirSelecteurPagePdfPourRemplacement(imageObj, canvas, file, reopenCropAfter) {
+    if (!document.getElementById('pdfImportModal') || typeof showPDFImportModal !== 'function') {
+        window._spPdfRemplacement = null;
+        alert(translate('alertCannotReplaceImage'));
+        return;
+    }
+    window._spPdfRemplacement = {
+        imageObj: imageObj,
+        canvas: canvas,
+        reopenCropAfter: !!reopenCropAfter
+    };
+    /* L'habillage est appliqué APRÈS l'ouverture : showPDFImportModal réapplique
+       son propre état (et la bascule fichier/image) en fin de chargement. */
+    const p = showPDFImportModal(file);
+    if (p && typeof p.then === 'function') {
+        p.then(function () { spModeRemplacementPdfUI(true); },
+               function () { window._spPdfRemplacement = null; spModeRemplacementPdfUI(false); });
+    } else {
+        spModeRemplacementPdfUI(true);
+    }
+        }
+        try { window.spOuvrirSelecteurPagePdfPourRemplacement = spOuvrirSelecteurPagePdfPourRemplacement; } catch (_) {}
+
+        /* Confirme le remplacement : rend la page choisie, échange le bitmap, puis
+           rattache la provenance au NOUVEAU PDF (archive incluse) pour l'export. */
+        async function spConfirmerRemplacementPdf() {
+    const ctx = window._spPdfRemplacement;
+    if (!ctx || !ctx.imageObj || !currentPDFDocument) return;
+    const pageNum = (selectedPDFPages && selectedPDFPages.length)
+        ? selectedPDFPages[selectedPDFPages.length - 1] : 1;
+    const btn = document.getElementById('confirmPdfImportBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Remplacement…'; }
+    try {
+        if (typeof window.showPageLoader === 'function') {
+            window.showPageLoader('Remplacement de l\'image…');
+        }
+        let archiveKey = null;
+        try {
+            if (currentPDFFile && typeof currentPDFFile.arrayBuffer === 'function') {
+                const buf = await currentPDFFile.arrayBuffer();
+                archiveKey = 'imp' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                if (!window._spPdfArchives) window._spPdfArchives = {};
+                window._spPdfArchives[archiveKey] = { buffer: buf, pages: [pageNum] };
+            }
+        } catch (_) {}
+        const rendu = await spRendrePagePdfEnDataUrl(currentPDFDocument, pageNum);
+        await spAppliquerBitmapSurObjet(ctx.imageObj, ctx.canvas, rendu.dataUrl, {
+            reopenCropAfter: ctx.reopenCropAfter,
+            historique: 'Image remplacée (page PDF ' + pageNum + ')',
+            pdfMeta: {
+                pageNumber: pageNum,
+                archiveKey: archiveKey,
+                contentType: (pdfContentTypes && pdfContentTypes[pageNum]) || 'raster',
+                widthMM: rendu.widthMM,
+                heightMM: rendu.heightMM
+            }
+        });
+    } catch (e) {
+        console.warn('[SP PDF] remplacement par une page PDF impossible :', e);
+        alert(translate('alertCannotReplaceImage'));
+    } finally {
+        try { if (typeof window.hidePageLoader === 'function') window.hidePageLoader(); } catch (_) {}
+        if (btn) { btn.disabled = false; btn.textContent = 'OK'; }
+        window._spPdfRemplacement = null;
+        try { closePDFImportModal(); } catch (_) {}
+        spModeRemplacementPdfUI(false);
+    }
+        }
+        try { window.spConfirmerRemplacementPdf = spConfirmerRemplacementPdf; } catch (_) {}
 
         function replaceImageForObject(imageObj, opts = {}) {
     const reopenCropAfter = !!opts.reopenCropAfter;
@@ -29441,11 +29770,35 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         input.value = '';
         if (!file) return;
 
+        /* _SP_PDF_REMPLACER_687 : un PDF n'est pas une image — on ouvre le choix de
+           page, puis on échange le bitmap de CET objet (aucune reconstruction). */
+        if (spFichierEstPdf(file)) {
+            spOuvrirSelecteurPagePdfPourRemplacement(imageObj, canvas, file, reopenCropAfter);
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (ev) => {
             const dataURL = ev && ev.target ? ev.target.result : null;
             if (!dataURL) return;
+            spAppliquerBitmapSurObjet(imageObj, canvas, dataURL, { reopenCropAfter: reopenCropAfter });
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+        }
 
+        /* Applique un bitmap (data-URL) à un objet image EXISTANT, sans le
+           reconstruire : même place, même recadrage, même rang dans la pile.
+           `opts.pdfMeta` rattache le résultat à une page PDF : c'est ce qui permet
+           à l'export de ré-embarquer la BONNE page. Résout true quand c'est posé. */
+        function spAppliquerBitmapSurObjet(imageObj, canvas, dataURL, opts) {
+    opts = opts || {};
+    const reopenCropAfter = !!opts.reopenCropAfter;
+    const pdfMeta = opts.pdfMeta || null;
+    const actionHistorique = opts.historique || 'Image remplacée';
+    return new Promise(function (resolve) {
+        if (!canvas || !imageObj || imageObj.type !== 'image' || !dataURL) { resolve(false); return; }
             const oldIndex = canvas.getObjects().indexOf(imageObj);
             const targetDisplayedW = (typeof imageObj.getScaledWidth === 'function')
                 ? imageObj.getScaledWidth()
@@ -29589,7 +29942,24 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 imageObj.needsItsOwnCache = () => false;
                 imageObj.imageSmoothing = true;
                 imageObj.imageSmoothingQuality = 'high';
+                /* _SP_IMAGE_REMPLACEE_686 : la provenance PDF de l'ANCIENNE image est
+                   toujours effacée. _SP_PDF_REMPLACER_687 : si le remplacement vient
+                   d'une page PDF, on rattache ensuite la provenance au NOUVEAU
+                   fichier — l'export ré-embarquera donc la page choisie, en
+                   vectoriel, au lieu de l'ancienne. */
+                spOublierProvenanceImportPdf(imageObj);
                 imageObj._imageSourceURL = dataURL;
+                if (pdfMeta) {
+                    imageObj._spPdfImport = true;
+                    imageObj._spPdfPageNumber = pdfMeta.pageNumber || 1;
+                    imageObj._spPdfSourceWidthMM = pdfMeta.widthMM || 0;
+                    imageObj._spPdfSourceHeightMM = pdfMeta.heightMM || 0;
+                    imageObj._spPdfImportMode = 'single';
+                    imageObj._spPdfRecadrageMode = 'none';
+                    imageObj._spPdfContentType = pdfMeta.contentType || 'raster';
+                    imageObj._spPdfArchiveKey = pdfMeta.archiveKey || null;
+                    spMarquerProvenanceImportPdf(imageObj);
+                }
                 try { imageObj._hasCropControl = false; attachCropControlToImage(imageObj); } catch (_) {}
                 imageObj.dirty = true;
                 if (imageObj._cacheCanvas) { imageObj._cacheCanvas = null; imageObj._cacheContext = null; }
@@ -29599,18 +29969,17 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
 
                 try { debouncedUpdateLayersPanel(); } catch (_) {}
                 try { saveAllPages(); } catch (_) {}
-                try { saveState('Image remplacée'); } catch (_) {}
+                try { saveState(actionHistorique); } catch (_) {}
 
                 if (reopenCropAfter) {
                     // Refresh crop modal with the new image (le même objet : recadrage conservé)
                     try { openCropModal(imageObj); } catch (_) {}
                 }
+                try { resolve(true); } catch (_) {}
             }, { crossOrigin: 'anonymous' });
-        };
-        reader.readAsDataURL(file);
-    };
-    input.click();
+    });
         }
+        try { window.spAppliquerBitmapSurObjet = spAppliquerBitmapSurObjet; } catch (_) {}
 
         function attachReplaceControlToImage(imageObj) {
     if (!imageObj || imageObj.type !== 'image') return;
@@ -32033,7 +32402,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         setTimeout(() => { try { _updateCanvasDPRForZoom(currentPageIndex); } catch(_) {} }, 50);
     }
 
-    /* 🆕 v1.7.685 — LE PANNEAU FORMAT DIT LA VÉRITÉ DE LA PAGE QU'ON REGARDE.
+    /* 🆕 v1.7.686 — LE PANNEAU FORMAT DIT LA VÉRITÉ DE LA PAGE QU'ON REGARDE.
        ⚠️ DÉFAUT MESURÉ (import Figma multi-format, 3 pages 210×297 / 297×210 /
        141×141) : en passant de la page 1 à la page 2, les champs L et H du
        panneau de gauche restaient à 210 × 297 — la valeur du DOCUMENT — alors que
@@ -36493,7 +36862,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     document.getElementById('pageWidth').addEventListener('change', (e) => {
         // v1.7.411 - l'unite vient du selecteur d'unite, PAS de la langue.
         const _vMm = spPageUnitVersMm(e.target.value);
-        /* 🆕 v1.7.685 — sur un document multi-format, la largeur saisie s'applique à
+        /* 🆕 v1.7.686 — sur un document multi-format, la largeur saisie s'applique à
            la PAGE COURANTE, pas au document : sinon corriger la page 2 redimensionnait
            les trois feuilles et détruisait les formats importés de Figma.
            ⚠️ DOCUMENT ORDINAIRE : on exécute les cinq lignes d'origine, à l'identique —
@@ -38297,7 +38666,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     document.getElementById('undo').addEventListener('click', undo);
     document.getElementById('redo').addEventListener('click', redo);
 
-    /* 🆕 v1.7.685 — LE SÉLECTEUR mm/cm/px DE LA COLONNE DE DROITE PASSE PAR LA
+    /* 🆕 v1.7.686 — LE SÉLECTEUR mm/cm/px DE LA COLONNE DE DROITE PASSE PAR LA
        MÊME FONCTION QUE LES PRÉFÉRENCES. Avant, il ne rafraîchissait que les
        pas de la transformation : choisir « cm » ici laissait le Format et les
        Marges en millimètres. `spAppliquerUnite` fait les six choses d'un coup
@@ -38326,7 +38695,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         });
     });
 
-    /* 🆕 v1.7.685 — `updateTransformPanel` vit dans une portée imbriquée ; on la
+    /* 🆕 v1.7.686 — `updateTransformPanel` vit dans une portée imbriquée ; on la
        publie pour que `spAppliquerUnite` (portée programme) puisse rafraîchir
        X / Y / L / H quand l'unité change ailleurs (préférences, langue). */
     try { window.updateTransformPanel = updateTransformPanel; } catch (_) {}
@@ -41616,6 +41985,21 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         importImageIntoShapeInput.addEventListener('change', (e) => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
+            const canvas0 = getActiveCanvas();
+            const obj0 = canvas0 ? canvas0.getActiveObject() : null;
+            /* _SP_PDF_REMPLACER_687 : même règle que le bouton « remplacer » posé
+               hors cadre — un PDF ouvre le choix de page, et le bitmap est échangé
+               dans l'objet existant (cadre, recadrage et rang conservés). */
+            if (spFichierEstPdf(file) && obj0 && obj0.type === 'image') {
+                e.target.value = '';
+                spOuvrirSelecteurPagePdfPourRemplacement(obj0, canvas0, file, false);
+                return;
+            }
+            if (spFichierEstPdf(file)) {
+                e.target.value = '';
+                alert(translate('alertCannotReplaceImage'));
+                return;
+            }
             const reader = new FileReader();
             reader.onload = (ev) => {
                 const dataUrl = ev.target.result;
@@ -41624,44 +42008,14 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 const obj = canvas.getActiveObject();
                 const supported = ['rect','circle','ellipse','polygon','path'];
                 if (obj && obj.type === 'image') {
-                    // Remplacer l'image existante par la nouvelle
-                    fabric.Image.fromURL(dataUrl, (newImg) => {
-                        newImg.objectCaching = false;
-                        newImg.statefullCache = false;
-                        newImg.needsItsOwnCache = () => false;
-                        newImg.imageSmoothing = true;
-                        newImg.imageSmoothingQuality = 'high';
-
-                        const oldIndex = canvas.getObjects().indexOf(obj);
-                        const targetW = (typeof obj.getScaledWidth === 'function') ? obj.getScaledWidth() : ((obj.width || 1) * (obj.scaleX || 1));
-                        const targetH = (typeof obj.getScaledHeight === 'function') ? obj.getScaledHeight() : ((obj.height || 1) * (obj.scaleY || 1));
-                        const safeW = Math.max(1, newImg.width || 1);
-                        const safeH = Math.max(1, newImg.height || 1);
-                        const fitScale = Math.min(targetW / safeW, targetH / safeH);
-                        const uniformScale = Number.isFinite(fitScale) && fitScale > 0 ? fitScale : 1;
-
-                        newImg.set({
-                            left: obj.left, top: obj.top,
-                            originX: obj.originX, originY: obj.originY,
-                            angle: obj.angle,
-                            scaleX: uniformScale, scaleY: uniformScale,
-                            flipX: obj.flipX, flipY: obj.flipY,
-                            opacity: obj.opacity,
-                            lockUniScaling: true, uniformScaling: true, lockScalingFlip: true,
-                            _imageSourceURL: dataUrl
-                        });
-
-                        try { canvas.remove(obj); } catch (_) {}
-                        if (oldIndex >= 0) { canvas.insertAt(newImg, oldIndex); } else { canvas.add(newImg); }
-                        try { newImg._hasCropControl = false; attachCropControlToImage(newImg); } catch (_) {}
-                        try { newImg._hasReplaceControl = false; attachReplaceControlToImage(newImg); } catch (_) {}
-                        canvas.setActiveObject(newImg);
-                        canvas.requestRenderAll();
-                        debouncedUpdateLayersPanel();
-                        saveState('Image remplacée');
-                        importModal.style.display = 'none';
-                    }, { crossOrigin: 'anonymous' });
-                } else if (obj && supported.includes(obj.type)) {
+                    /* Remplacement sur place : mêmes garanties que le bouton
+                       « remplacer » (l'ancien code reconstruisait l'objet et
+                       perdait son recadrage et son rang dans la pile). */
+                    spAppliquerBitmapSurObjet(obj, canvas, dataUrl, {});
+                    try { importModal.style.display = 'none'; } catch (_) {}
+                    return;
+                }
+                if (obj && supported.includes(obj.type)) {
                     fabric.Image.fromURL(dataUrl, (img) => {
                         applyImageMaskToShape(obj, img, canvas, dataUrl);
                         importModal.style.display = 'none';
@@ -41692,7 +42046,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const reader = new FileReader();
             reader.onload = (ev) => {
                 try {
-                    /* 🆕 v1.7.685 — un JSON FIGMA n'est pas un projet SuperPrint : le
+                    /* 🆕 v1.7.686 — un JSON FIGMA n'est pas un projet SuperPrint : le
                        chargeur ci-dessous le refuserait (« structure non reconnue »). On
                        le repère ici, sans charger le module Figma, et on le passe à
                        l'import dédié — c'est le même fichier, la même attente. */
@@ -42007,7 +42361,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 { check: () => !!window.svg2pdf, src: 'JS/svg2pdf.umd.min.js' },
                 { check: () => !!window.opentype, src: 'JS/opentype.min.js' },
                 { check: () => !!(window.Module && window.Module.run), src: 'JS/wawoff2.js', inline: _spInitWawoff2Module },
-                /* ⚠️ JETON DE VERSION OBLIGATOIRE ICI (v1.7.685).
+                /* ⚠️ JETON DE VERSION OBLIGATOIRE ICI (v1.7.687).
                    Ce fichier est injecté à la demande, sans <script> dans index.html :
                    il n'hérite donc d'AUCUN cache-busting du document. Sans ce jeton, un
                    visiteur ayant déjà fontkit.min.js en cache HTTP gardait la version
@@ -42016,7 +42370,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                    la page resservait l'ancien fichier malgré un rechargement forcé.
                    Le jeton ne sert QUE de discriminant de cache : le chemin reste
                    `JS/fontkit.min.js`, donc aucune résolution relative n'est touchée. */
-                { check: () => !!window.fontkit, src: 'JS/fontkit.min.js?v=20261019-v685-sousensemble-variable' },
+                { check: () => !!window.fontkit, src: 'JS/fontkit.min.js?v=20261019-v687-sousensemble-variable' },
                 { check: () => !!window.PDFLib, src: 'JS/pdf-lib.min.js' },
                 { check: () => !!window.JSZip, src: 'JS/jszip.min.js' },
             ], resolve);
@@ -42704,7 +43058,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             if (s.fontSize) st.fontSize = s.fontSize;
             if (s.fontWeight) st.fontWeight = s.fontWeight;
             if (s.fontStyle) st.fontStyle = s.fontStyle;
-            /* 🆕 v1.7.685 — LA POLICE DU DOCUMENT, avec son repli. Le nom exact reste en
+            /* 🆕 v1.7.686 — LA POLICE DU DOCUMENT, avec son repli. Le nom exact reste en
                tête de pile (c'est lui qui repart en .sp et en PDF) ; s'il n'est pas
                installé, le navigateur descend la pile au lieu de tomber en Times. */
             if (s.fontFamily) st.fontFamily = '"' + String(s.fontFamily).replace(/"/g, '') + '", "Open Sans", sans-serif';
@@ -42775,7 +43129,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     }
                     var mCo = /color\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))/i.exec(sInl);
                     if (mCo) { if (ns === s) ns = copier(s); ns.fill = mCo[1]; }
-                    /* 🆕 v1.7.685 — la POLICE du run Word (cf. _spWordRunsFmt). On garde
+                    /* 🆕 v1.7.686 — la POLICE du run Word (cf. _spWordRunsFmt). On garde
                        le nom exact du document : c'est lui qui repart en PDF et en .sp.
                        Le repli est ajouté au moment de l'application (cf. _spAppliquerRuns),
                        pour qu'une police absente de la machine ne casse pas la mesure. */
@@ -42818,7 +43172,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 var n = children[i];
                 if (!n) continue;
                 if (n.type === 'text') {
-                    /* 🆕 v1.7.685 — couleur et police du run, relevées dans
+                    /* 🆕 v1.7.686 — couleur et police du run, relevées dans
                        word/document.xml (cf. _spWordRunsFmt). */
                     var _st638 = '';
                     if (n.spColor) _st638 += 'color:' + n.spColor + ';';
@@ -42919,7 +43273,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     window._spAstVersHtml = _spAstVersHtml;
 
     async function flowHtmlIntoPages(html, startPageIndex, wordOpts) {
-        /* 🆕 v1.7.685 — la famille du document Word pilote tout le flux (cf. _SP_FAM_FLUX).
+        /* 🆕 v1.7.686 — la famille du document Word pilote tout le flux (cf. _SP_FAM_FLUX).
            Un appel sans `_docFont` (autre importeur) retrouve exactement Open Sans : on
            RÉINITIALISE donc à chaque entrée, jamais seulement quand l'option est là. */
         _SP_FAM_FLUX = (wordOpts && wordOpts._docFont)
@@ -43096,7 +43450,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             getPageObjs().push(data);
         }
 
-        /* 🆕 v1.7.685 — LA POLICE DU DOCUMENT WORD, POUR TOUT LE FLUX.
+        /* 🆕 v1.7.686 — LA POLICE DU DOCUMENT WORD, POUR TOUT LE FLUX.
            MESURÉ (banc d'audit) : les 15 blocs d'un .docx ressortaient tous en « Open Sans »
            alors que le document déclare sa police (par run, ou par défaut dans
            word/styles.xml → thème). On pose la famille RÉELLE en tête de pile, avec
@@ -43511,7 +43865,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             Promise.resolve()
                                 .then(function () { return _spWordImageSizesMM(arrayBuffer); })
                                 .then(function (sz) { if (sz && sz.length) _opts569._imgSizesMM = sz; })
-                                /* 🆕 v1.7.685 — COULEUR ET POLICE DES RUNS (cf. _spWordRunsFmt). */
+                                /* 🆕 v1.7.686 — COULEUR ET POLICE DES RUNS (cf. _spWordRunsFmt). */
                                 .then(function () { return _spWordRunsFmt(arrayBuffer); })
                                 .then(function (fmt) {
                                     if (!fmt) return;
@@ -43523,7 +43877,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                                 .then(function () { _spImpBusyEtape(1); return mammoth.convertToHtml({ arrayBuffer }, options); })
                                 .then(function () {
                                     if (!_ast569) throw new Error('AST Word indisponible');
-                                    /* 🆕 v1.7.685 — on reverse couleur et police sur l'AST
+                                    /* 🆕 v1.7.686 — on reverse couleur et police sur l'AST
                                        AVANT de le convertir : le HTML produit porte alors des
                                        <span style="color:…;font-family:…"> que le compositeur
                                        sait déjà lire (cf. _spHtmlRuns). */
@@ -43659,7 +44013,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             });
         }
 
-        /* ══ 🆕 v1.7.685 — _SP_WORD_FMT_638 : COULEUR ET POLICE DES RUNS ══
+        /* ══ 🆕 v1.7.686 — _SP_WORD_FMT_638 : COULEUR ET POLICE DES RUNS ══
 
            DÉFAUT MESURÉ (banc d'audit, _test_fidelite.docx) : le document Word contient
            <w:color w:val="C00000"/> sur un run et une table de polices (fontTable.xml) ;
@@ -43695,7 +44049,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             var f = zip.file('word/document.xml');
                             if (!f) { resolve(null); return; }
                             var xml = await f.async('string');
-                            /* 🆕 v1.7.685 — LA POLICE PAR DÉFAUT DU DOCUMENT.
+                            /* 🆕 v1.7.686 — LA POLICE PAR DÉFAUT DU DOCUMENT.
                                MESURÉ (fixture _test_fidelite.docx) : AUCUN run ne porte
                                <w:rFonts> — dans Word, la police du corps est déclarée une
                                seule fois, dans word/styles.xml → w:docDefaults →
@@ -44090,7 +44444,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             });
         }
         window._spImportDocxFile = importDocxFile;
-        /* 🆕 v1.7.685 — exposé comme _spAstVersHtml / _spTexteOdf : c'est la seule façon
+        /* 🆕 v1.7.686 — exposé comme _spAstVersHtml / _spTexteOdf : c'est la seule façon
            de vérifier la lecture couleur+police sans passer par une composition entière. */
         window._spWordRunsFmt = _spWordRunsFmt;
         window._spLancerImportWord = lancerImportWord;
@@ -44660,7 +45014,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         });
     })();
 
-    // ===== Figma (.json) Import — 🆕 v1.7.685 =====
+    // ===== Figma (.json) Import — 🆕 v1.7.686 =====
     /* Un document Figma s'importe à partir de son JSON (API REST `/v1/files/:key`,
        ou greffon SuperPrint). Le module `sp-figma-import.js` est chargé À LA DEMANDE,
        comme `sp-doc-import.js` : il ne pèse rien sur le démarrage d'un utilisateur
@@ -44671,7 +45025,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         if (!figBtn || !figInput) return;
 
         /* ══════════════════════════════════════════════════════════════════════════
-           🆕 v1.7.685 — LA BOÎTE D'OPTIONS D'OUVERTURE
+           🆕 v1.7.686 — LA BOÎTE D'OPTIONS D'OUVERTURE
            ══════════════════════════════════════════════════════════════════════════
            POURQUOI ELLE EXISTE, ET POURQUOI ELLE NE S'OUVRE PAS TOUJOURS.
            Un fichier Figma peut porter plusieurs formats de cadre (affiche A4
@@ -44690,8 +45044,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         const FIG_TXT = {
             fr: {
                 titre: 'Options d\u2019import Figma',
-                /* ⚠️ v1.7.685 — LA PHRASE DISAIT UNE CHOSE DEVENUE FAUSSE : « SuperPrint
-                   n'a qu'un format de page par document ». Depuis 1.7.685 un document
+                /* ⚠️ v1.7.687 — LA PHRASE DISAIT UNE CHOSE DEVENUE FAUSSE : « SuperPrint
+                   n'a qu'un format de page par document ». Depuis 1.7.687 un document
                    PEUT porter un format par page (c'est même le choix recommandé) ; la
                    garder aurait fait douter l'utilisateur du choix qu'on lui propose. */
                 intro: function (n, m) { return 'Ce fichier contient ' + n + ' cadre(s) r\u00e9partis dans ' + m + ' format(s) diff\u00e9rent(s). Chaque choix ci-dessous dit exactement ce qu\u2019il advient de leurs dimensions.'; },
@@ -44845,7 +45199,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const grand = info.formats[0];
             const prem = info.formats[0];
             const setTxt = function (id, v) { const e = document.getElementById(id); if (e) e.textContent = v; };
-            /* 🆕 v1.7.685 — le mode recommandé : chaque page à son format. */
+            /* 🆕 v1.7.686 — le mode recommandé : chaque page à son format. */
             setTxt('figmaMultiNom', T.multiNom);
             setTxt('figmaMultiDetail', T.multiDetail(info.formats.length));
             setTxt('figmaEnvNom', T.envNom(nbFig(env.wmm, lang), nbFig(env.hmm, lang)));
@@ -44895,7 +45249,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 }
             }
 
-            /* 🆕 v1.7.685 — CHOIX PAR DÉFAUT : « un document, chaque page à son format ».
+            /* 🆕 v1.7.686 — CHOIX PAR DÉFAUT : « un document, chaque page à son format ».
                C'est le seul mode qui ne rogne ni n'agrandit rien, et c'est la demande :
                « si plusieurs formats de boards dans le figma, proposer des canvas
                différents pour respecter le figma ». */
@@ -44940,7 +45294,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return new Promise(function (res, rej) {
                 const sc = document.createElement('script');
                 /* ⚠️ MESURÉ PENDANT L'AUDIT : l'URL était figée à
-                   `?v=20261017-v685-figma`. Après correction du module, le navigateur a
+                   `?v=20261017-v687-figma`. Après correction du module, le navigateur a
                    resservi la version en cache et l'import a continué d'échouer — un
                    fichier de code dont l'URL ne change pas est un fichier qu'on ne peut
                    pas corriger. On reprend donc l'empreinte de `main.js`, celle que le
@@ -45000,7 +45354,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         alert(translate('alertFigmaNotFigma'));
                         return;
                     }
-                    /* 🆕 v1.7.685 — ON DEMANDE AVANT DE CONVERTIR, quand il y a un
+                    /* 🆕 v1.7.686 — ON DEMANDE AVANT DE CONVERTIR, quand il y a un
                        choix réel. Un fichier d'un seul format sans nœud libre saute la
                        boîte et s'importe exactement comme avant. */
                     const _info = (typeof mod.analyser === 'function') ? mod.analyser(json) : null;
@@ -45759,7 +46113,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         docPageH = ph * 25.4 / 72;
                         _spIdmlAPref = true;
                     }
-                    /* 🆕 v1.7.685 — _SP_IDML_GEOM_638 : LE FOND PERDU DU DOCUMENT.
+                    /* 🆕 v1.7.686 — _SP_IDML_GEOM_638 : LE FOND PERDU DU DOCUMENT.
                        MESURÉ (banc d'audit, banquet_republicain_master.idml) : le fichier
                        déclare DocumentBleed*Offset = 14,17 pt (= 5 mm) et l'import posait
                        3 mm — la valeur par défaut de l'application — sans le dire. Le fond
@@ -45774,7 +46128,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     if (_bdMax > 0) _spIdmlBleedMm = Math.round(_bdMax * 25.4 / 72 * 100) / 100;
                 }
             }
-            /* 🆕 v1.7.685 — _SP_IDML_GEOM_638 : REPLI SUR LA GÉOMÉTRIE DES PAGES.
+            /* 🆕 v1.7.686 — _SP_IDML_GEOM_638 : REPLI SUR LA GÉOMÉTRIE DES PAGES.
                MESURÉ (banc d'audit, features-561.idml) : un IDML sans
                <DocumentPreference> — c'est légal : seul <Preferences> est obligatoire —
                s'importait en A4 PORTRAIT, alors que son unique <Page> porte
@@ -45783,7 +46137,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                est la source de vérité de dernier recours. */
             var _spIdmlGeom = null;
             try {
-                /* 🆕 v1.7.685 — LU MÊME QUAND <DocumentPreference> EXISTE : c'est la seule
+                /* 🆕 v1.7.686 — LU MÊME QUAND <DocumentPreference> EXISTE : c'est la seule
                    façon de savoir si les pages ont des formats différents. Le format du
                    document reste celui de <DocumentPreference> (comportement d'origine) ;
                    seule la présence de PLUSIEURS formats de page change la décision. */
@@ -45793,7 +46147,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     docPageH = _spIdmlGeom.h;
                 }
             } catch (_) {}
-            /* 🆕 v1.7.685 — LES PAGES N'ONT PAS TOUTES LE MÊME FORMAT.
+            /* 🆕 v1.7.686 — LES PAGES N'ONT PAS TOUTES LE MÊME FORMAT.
                Le choix se fait dans la fenêtre d'import (deux boutons radio), il est lu
                ici, au moment de l'import — pas au chargement de la page. Par défaut :
                l'ENVELOPPE, parce que c'est le seul choix qui ne rogne rien. */
@@ -45822,7 +46176,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             pageFormat.width = Math.round(docPageW);
             pageFormat.height = Math.round(docPageH);
 
-            /* 🆕 v1.7.685 — _SP_IDML_GEOM_638 : LES MARGES DU DOCUMENT.
+            /* 🆕 v1.7.686 — _SP_IDML_GEOM_638 : LES MARGES DU DOCUMENT.
                MESURÉ (banc d'audit, banquet_republicain_master.idml) : <MarginPreference>
                vaut Top/Bottom/Left/Right = 28,35 pt (= 10 mm) et l'import posait 20 mm
                partout — la valeur par défaut de l'application. « MarginPreference »
@@ -46324,7 +46678,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 if (!spreadEl) continue;
 
                 var pageEls = spreadEl.querySelectorAll('Page');
-                /* 🆕 v1.7.685 — _SP_IDML_RACINE_664 : UN SEUL IMPORT PAR OBJET.
+                /* 🆕 v1.7.686 — _SP_IDML_RACINE_664 : UN SEUL IMPORT PAR OBJET.
                    MESURÉ : `querySelectorAll` descend dans la profondeur, donc les objets
                    situés DANS un <Group> figuraient aussi dans `allItems`. Ils étaient
                    convertis une fois par la branche Group (avec les matrices des ancêtres)
@@ -46413,7 +46767,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         //   a un ItemTransform qui décale son contenu.)
                         var centreDedans = (centerX >= pgOriginX && centerX <= pgOriginX + pgW &&
                                             centerY >= pgOriginY && centerY <= pgOriginY + pgH);
-                        /* 🆕 v1.7.685 — _SP_IDML_DEBORD_664 : UN OBJET QUI DÉBORDE
+                        /* 🆕 v1.7.686 — _SP_IDML_DEBORD_664 : UN OBJET QUI DÉBORDE
                            N'EST PLUS JETÉ.
                            MESURÉ (fichier InDesign réel _dev/idml-reel) : le test
                            ci-dessus ne regardait QUE le centre. Trois rectangles
@@ -46428,7 +46782,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                            le plus. */
                         var ix = Math.min(itmSpread.right, pgOriginX + pgW) - Math.max(itmSpread.left, pgOriginX);
                         var iy = Math.min(itmSpread.bottom, pgOriginY + pgH) - Math.max(itmSpread.top, pgOriginY);
-                        /* 🆕 v1.7.685 — _SP_IDML_FILET_670 : UNE LIGNE N'A PAS D'ÉPAISSEUR.
+                        /* 🆕 v1.7.686 — _SP_IDML_FILET_670 : UNE LIGNE N'A PAS D'ÉPAISSEUR.
                            MESURÉ (gabarit de contrôle `complexe.idml`, filet horizontal
                            GeometricBounds="820 60 820 540") : `top === bottom`, donc
                            `iy` vaut exactement 0 et le test `iy <= 0` JETAIT le filet.
@@ -46570,7 +46924,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
         // ===================== HELPER FUNCTIONS =====================
 
-        /* 🆕 v1.7.685 — _SP_IDML_GEOM_638 : FORMAT ET MARGES, LUS DANS LES PAGES.
+        /* 🆕 v1.7.686 — _SP_IDML_GEOM_638 : FORMAT ET MARGES, LUS DANS LES PAGES.
            Un IDML porte sa géométrie à DEUX endroits :
              · Resources/Preferences.xml → <DocumentPreference PageWidth PageHeight
                DocumentBleed*Offset> — les valeurs du document ;
@@ -46582,7 +46936,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
            lieu de 210 × 148 paysage ; `banquet_republicain_master.idml` déclare 10 mm de
            marges et l'import posait 20 mm. On lit donc la première page qui porte une
            géométrie exploitable. Points → mm : × 25,4 / 72. */
-        /* ⚠️ v1.7.685 — LA GÉOMÉTRIE SE LIT SUR TOUTES LES PAGES, PLUS SEULEMENT LA PREMIÈRE.
+        /* ⚠️ v1.7.687 — LA GÉOMÉTRIE SE LIT SUR TOUTES LES PAGES, PLUS SEULEMENT LA PREMIÈRE.
            MESURÉ (gabarit de contrôle `multi-formats.idml`, page A4 + page A3) : le format
            du document venait de <DocumentPreference> — ou, à défaut, de la PREMIÈRE page —
            et il était appliqué à TOUTES les pages. Les objets de la page A3 posés sous
@@ -46850,7 +47204,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             // --- Opacité ---
             try {
                 var op = parseFloat(item.getAttribute('Opacity') || item.getAttribute('Transparency'));
-                /* 🆕 v1.7.685 — _SP_IDML_OPACITE_670 : L'OPACITÉ EST DANS BlendingSetting.
+                /* 🆕 v1.7.686 — _SP_IDML_OPACITE_670 : L'OPACITÉ EST DANS BlendingSetting.
                    MESURÉ (gabarit de contrôle `complexe.idml`, rectangle
                    `<TransparencySetting><BlendingSetting Opacity="40"/>`) : l'objet
                    arrivait à 100 % — invisible pour qui compare à InDesign, et la
@@ -46992,7 +47346,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 midY: cy
             };
         }
-        /* 🆕 v1.7.685 — _SP_IDML_ANCRAGE_664 : ANCRAGE DES ITEMS TOURNÉS.
+        /* 🆕 v1.7.686 — _SP_IDML_ANCRAGE_664 : ANCRAGE DES ITEMS TOURNÉS.
            MESURÉ (banc d'import, fichier InDesign réel _dev/idml-reel) : un objet tourné
            était posé par son COIN (left/top = coin haut-gauche de la boîte droite) puis
            pivoté. Fabric tourne autour du point d'origine : avec originX/originY =
@@ -47027,7 +47381,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         }
         // Bounds LOCAUX d'un item (repère avant ItemTransform).
         function getItemGeoBounds(item) {
-            /* 🆕 v1.7.685 — _SP_IDML_ENV_GRP_664 : ENVELOPPE D'UN GROUPE.
+            /* 🆕 v1.7.686 — _SP_IDML_ENV_GRP_664 : ENVELOPPE D'UN GROUPE.
                MESURÉ (banc d'import, fichier InDesign réel _dev/idml-reel) : un <Group>
                IDML ne porte NI GeometricBounds NI PathGeometry. La fonction renvoyait donc
                null pour lui, le groupe était purement IGNORÉ, et ses enfants étaient
@@ -47838,7 +48192,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 }
                 var fullText = '';
                 var fabricStyles = {};
-                /* 🆕 v1.7.685 — plages de liens en indices ABSOLUS dans `fullText`. */
+                /* 🆕 v1.7.686 — plages de liens en indices ABSOLUS dans `fullText`. */
                 var _spLiensSpans = [];
                 var domFontSize = 12, domFontFamily = 'Open Sans', domFontWeight = 'normal', domFontStyle = 'normal', domFill = '#000000', domTracking = 0, domUnderline = false, domLinethrough = false, domLang = '', domAlign = 'left', domLeading = 0;
                 var hasBaseStyle = false;
@@ -47871,7 +48225,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             if (run.tracking !== domTracking) fabricStyles[lineIdx][chIdx].charSpacing = run.tracking;
                             if (run.underline !== domUnderline) fabricStyles[lineIdx][chIdx].underline = run.underline;
                             if (run.linethrough !== domLinethrough) fabricStyles[lineIdx][chIdx].linethrough = run.linethrough;
-                            /* 🆕 v1.7.685 — L'URL DU LIEN (cf. _spLiens, une seule source de
+                            /* 🆕 v1.7.686 — L'URL DU LIEN (cf. _spLiens, une seule source de
                                vérité : la liste en indices absolus, pas une clé par caractère
                                que le moteur de texte ne connaît pas). */
                             if (run.lien) {
@@ -47907,7 +48261,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     textAlign: domAlign,
                     lineHeight: Math.max(1, Math.min(3, lhVal)),
                     styles: fabricStyles,
-                    /* 🆕 v1.7.685 — les liens hypertexte du bloc, en indices absolus :
+                    /* 🆕 v1.7.686 — les liens hypertexte du bloc, en indices absolus :
                        [{debut, fin, url}]. Placé ici (et non dans les seuls styles) pour
                        rester valide si le texte est recésuré ou recomposé. */
                     _spLiens: _spLiensSpans.length ? _spLiensSpans.slice() : undefined,
@@ -48341,7 +48695,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     //   logique que « 📁 Charger polices » : FontFace + document.fonts + parse
     //   opentype + _SP_FONT_CACHE/_SP_FONT_RESOLVED (pour la vectorisation PDF) +
     //   ajout au <select id="fontFamily"> + au tableau customFonts.
-    /* 🆕 v1.7.685 — LES OCTETS D'UNE POLICE, QU'ELLE SOIT TTF, OTF OU WOFF2.
+    /* 🆕 v1.7.686 — LES OCTETS D'UNE POLICE, QU'ELLE SOIT TTF, OTF OU WOFF2.
        ⚠️ C'EST LA PIÈCE QUI MANQUAIT POUR QU'UNE POLICE GOOGLE S'EXPORTE EN VECTORIEL.
        MESURÉ : le plug-in « Polices Google » range la police dans `customFonts` sous
        forme de data URL WOFF2 (`data:font/woff2;base64,wOF2…`, 8 680 octets pour
@@ -48431,7 +48785,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const _opentypeLoad = (async () => {
                 try {
                     if (!window.opentype) return;
-                    /* ⚠️ v1.7.685 — PAR LE MÊME CHEMIN QUE L'EXPORT : la police peut
+                    /* ⚠️ v1.7.687 — PAR LE MÊME CHEMIN QUE L'EXPORT : la police peut
                        être un WOFF2 (c'est le cas de toute police Google), et
                        `opentype.parse` le refuse. Avant, on voyait ici un
                        avertissement « Echec parse opentype (restauration .sp) » pour
@@ -48481,7 +48835,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     }
     window._spRegisterCustomFontDataUrl = _spRegisterCustomFontDataUrl;
 
-    /* 🆕 v1.7.685 — LE CADRE D'UN TABLEAU SE RECONNAÎT APRÈS RÉOUVERTURE.
+    /* 🆕 v1.7.686 — LE CADRE D'UN TABLEAU SE RECONNAÎT APRÈS RÉOUVERTURE.
        `fabric.Group.prototype.toObject` n'écrit rien de ce qui n'est pas une
        propriété Fabric standard : le groupe de filets revenait donc comme un simple
        groupe de traits, sans rien qui dise qu'il appartient à un tableau. On marque
@@ -48504,7 +48858,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         }
     } catch (_) {}
 
-    /* 🆕 v1.7.685 — LES GRAISSES D'UNE POLICE AJOUTÉE PAR UN PLUG-IN.
+    /* 🆕 v1.7.686 — LES GRAISSES D'UNE POLICE AJOUTÉE PAR UN PLUG-IN.
        `_spRegisterCustomFontDataUrl` ne connaît qu'une graisse par police : elle
        range la famille sous `['400']`. Le plug-in « Polices Google » installe des
        familles variables (une seule fichier, toutes les graisses de 100 à 900) et
@@ -48515,7 +48869,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     window._spSetFontWeights = function (fontName, poids) {
         try {
             if (!fontName || !Array.isArray(poids) || !poids.length) return false;
-            /* ⚠️ v1.7.685 — LE FILTRE N'ACCEPTE PLUS SEULEMENT LES MULTIPLES DE 100.
+            /* ⚠️ v1.7.687 — LE FILTRE N'ACCEPTE PLUS SEULEMENT LES MULTIPLES DE 100.
                MESURÉ : `/^[1-9]00$/` rejetait 450, 550, 650… — c'est-à-dire EXACTEMENT
                les crans fins qu'une police variable sait dessiner et que le panneau
                « Police variable » produit (curseur au pas de 1). La plage d'une police
@@ -52578,6 +52932,17 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     const modal = document.getElementById('exportModal');
     modal.classList.remove('active');
 
+    // 🆕 v1.7.686 : PRINT-TO-WEB lit pages[] (renderPageToImage). Même préparation
+    //   que le PDF : sans elle, une image remplacée pendant un loadFromJSON pouvait
+    //   ressortir à l'ancienne version dans le mini-site.
+    try {
+        if (typeof window.spPreparerDocumentPourExport === 'function') {
+            await window.spPreparerDocumentPourExport(20000);
+        } else if (typeof saveAllPages === 'function') {
+            saveAllPages(true);
+        }
+    } catch (_) {}
+
     const exportQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
     const colorModeSelected = document.querySelector('input[name="colorMode"]:checked')?.value || 'rgb';
 
@@ -53076,12 +53441,14 @@ https://superprint.app
             showPageLoader(currentLanguage === 'en' ? 'Preparing pages…'
                 : (currentLanguage === 'ja' ? 'ページを準備中…' : 'Préparation des pages…'));
         }
-        if (typeof window.spAttendreDocumentPretPourExport === 'function') {
+        if (typeof window.spPreparerDocumentPourExport === 'function') {
+            await window.spPreparerDocumentPourExport(20000);
+        } else if (typeof window.spAttendreDocumentPretPourExport === 'function') {
             await window.spAttendreDocumentPretPourExport(20000);
+            try { saveAllPages(true); } catch (_) {}
         }
         if (_attenteNecessaire && typeof hidePageLoader === 'function') hidePageLoader();
     } catch (_eAttente) {}
-    try { saveAllPages(true); } catch(_) {}
     try { if (typeof window.spControleClicheExportAvantEnvoi === 'function') window.spControleClicheExportAvantEnvoi(); } catch (_eCliche) {}
 
     const exportQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
@@ -53632,7 +53999,7 @@ https://superprint.app
         const extraBarSpace = options.colorBars ? 10 : 0; // 3mm barre + 3mm espace + marge
         
         // Format canvas éditeur = pageFormat + (bleed actuel à 2)
-        /* 🆕 v1.7.685 — LE DOCUMENT PDF S'OUVRE AU FORMAT DE LA PREMIÈRE PAGE.
+        /* 🆕 v1.7.686 — LE DOCUMENT PDF S'OUVRE AU FORMAT DE LA PREMIÈRE PAGE.
            `_spFormatDePage(0)` rend `pageFormat` quand la page n'a pas de format propre :
            la valeur est donc IDENTIQUE pour tous les documents existants. */
         const _fpExport0 = _spFormatDePage(0);
@@ -53695,7 +54062,7 @@ https://superprint.app
                     _spPct2
                 );
             } catch (_) {}
-            /* 🆕 v1.7.685 — DIMENSIONS PAR PAGE POUR L'EXPORT.
+            /* 🆕 v1.7.686 — DIMENSIONS PAR PAGE POUR L'EXPORT.
                Un document multi-format (import Figma) a des pages de tailles différentes :
                le PDF doit avoir une taille de page DIFFÉRENTE par page, sinon les pages
                larges sont rognées et les petites flottent dans du blanc.
@@ -54224,7 +54591,7 @@ https://superprint.app
     const canvasInner = canvasElement.closest('.canvas-inner');
     if (!canvasInner) return;
     
-    /* ══ v1.7.685 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
+    /* ══ v1.7.687 — LES RÈGLES SUIVENT ENFIN LE PASSAGE SIMPLE ↔ DOUBLE ══
 
        ⚠️ LES TROIS SYMPTÔMES RAPPORTÉS N'EN FONT QU'UN, ET IL EST MESURÉ.
        `#toggleRulers` appelle cette fonction UNE FOIS PAR CANVAS. Sur un document
@@ -54372,7 +54739,7 @@ https://superprint.app
     const SP_REGLE_TAILLE = 20;
     const _spZoomInitial = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
 
-    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.685) ══
+    /* ══ OUTILS DE CHOIX DE PAGE (v1.7.687) ══
        Ils vivent dans la même portée que le dessin parce qu'ils doivent lire le
        MÊME état, et parce que la question qu'ils tranchent est celle du dessin :
        quelle page donne l'origine ? */
@@ -55103,7 +55470,7 @@ https://superprint.app
         /* L'INVERSE : LA COTE, EN MILLIMETRES, D'UN REPERE REELLEMENT POSE SUR LE CANVAS.
            Sert a la collecte, pour enregistrer un repere GLISSE a sa vraie place.
 
-           ⚠️ v1.7.685 — ON LIT `left`/`top`, PAS LE CENTRE DE LA BOÎTE ENGLOBANTE.
+           ⚠️ v1.7.687 — ON LIT `left`/`top`, PAS LE CENTRE DE LA BOÎTE ENGLOBANTE.
            MESURÉ : un repère posé à 42 mm était relu à 42,18 mm, soit +0,176 mm —
            exactement une demi-épaisseur de trait (`strokeWidth: 1` = 0,51 px).
            Cause : pour une `fabric.Line` de largeur nulle, `getBoundingRect` renvoie
@@ -55200,7 +55567,16 @@ https://superprint.app
     //   cours d'édition (notamment la couverture page 1, traitée comme single
     //   page en mode spread) peut ne pas être encore poussé dans pages[0].objects
     //   → la planche d'imposition correspondante sort blanche.
-    try { saveAllPages(true); } catch(_) {}
+    // 🆕 v1.7.686 : on ATTEND la fin des loadFromJSON, puis on rejoue la sauvegarde
+    //   jusqu'à ce qu'elle aboutisse (même défaut que l'export PDF simple : une
+    //   planche en chargement avalait le cliché, et l'ancienne image ressortait).
+    try {
+        if (typeof window.spPreparerDocumentPourExport === 'function') {
+            await window.spPreparerDocumentPourExport(20000);
+        } else {
+            saveAllPages(true);
+        }
+    } catch (_) {}
 
     // ✏️ v1.7.175 : Réinitialiser les tableaux de texte pour pdf-lib
     window._spPdfTexts = [];
@@ -56224,7 +56600,7 @@ https://superprint.app
             const sheetCount = sheets.length;
 
             let helvetica = null;
-            /* ⚠️ v1.7.685 — PAR LE MÊME POINT D'ENTRÉE QUE LES AUTRES CHEMINS : c'est lui
+            /* ⚠️ v1.7.687 — PAR LE MÊME POINT D'ENTRÉE QUE LES AUTRES CHEMINS : c'est lui
                qui note la police de secours pour l'élagage à la sortie. Voir la longue
                note de `_spEmbarquerPoliceDeSecours` (police non embarquée déclarée). */
             helvetica = await _spEmbarquerPoliceDeSecours(doc);
@@ -56389,7 +56765,7 @@ https://superprint.app
                     }
                 });
 
-                /* v1.7.685 — filtre par police réellement utilisée (cf.
+                /* v1.7.687 — filtre par police réellement utilisée (cf.
                    `_spPolicesDeLaPage`) : la planche n'embarque plus les 72 variantes
                    livrées quand aucun texte ne s'en sert. */
                 const _spFamillesSpot = _spPolicesDeLaPage(objects);
@@ -56749,7 +57125,7 @@ https://superprint.app
                 });
 
                 // Embarquer les polices TTF
-                /* v1.7.685 — seulement les polices que cette page utilise vraiment
+                /* v1.7.687 — seulement les polices que cette page utilise vraiment
                    (voir `_spPolicesDeLaPage`). Sans ce filtre, l'export embarquait
                    les 72 variantes livrées même dans un document sans texte, et
                    s'arrêtait sur la 8e. */
@@ -56772,7 +57148,7 @@ https://superprint.app
                     }
                 }
 
-                /* 🆕 v1.7.685 — LA FEUILLE PDF SUIT LE FORMAT DE CHAQUE PAGE.
+                /* 🆕 v1.7.686 — LA FEUILLE PDF SUIT LE FORMAT DE CHAQUE PAGE.
                    Un document multi-format (import Figma) a des pages de tailles
                    différentes : sans ce recalcul, toutes les pages PDF prenaient la
                    taille du document et les pages larges étaient rognées.
@@ -56841,6 +57217,9 @@ https://superprint.app
                     for (var vi = 0; vi < objects.length; vi++) {
                         var vobj = objects[vi];
                         if (!vobj || vobj.type !== 'image' || !vobj._spPdfImport) continue;
+                        /* _SP_IMAGE_REMPLACEE_686 : le bitmap a pu être remplacé
+                           depuis l'import → la provenance ne vaut plus. */
+                        if (!spProvenanceImportPdfValide(vobj)) continue;
                         if (vobj._spPdfContentType === 'raster') continue;
                         var arcKey = vobj._spPdfArchiveKey;
                         var arc = (window._spPdfArchives && arcKey) ? window._spPdfArchives[arcKey] : null;
@@ -57059,7 +57438,7 @@ https://superprint.app
                 }
 
                 // Embarquer les polices dans pdf-lib
-                /* v1.7.685 — filtre par police réellement utilisée (cf.
+                /* v1.7.687 — filtre par police réellement utilisée (cf.
                    `_spPolicesDeLaPage`). */
                 var _spFamillesEmb2 = _spPolicesDeLaPage(objects);
                 for (var fk in _SP_FONT_RESOLVED) {
@@ -57104,6 +57483,9 @@ https://superprint.app
                     for (var vi = 0; vi < objects.length; vi++) {
                         var vobj = objects[vi];
                         if (!vobj || vobj.type !== 'image' || !vobj._spPdfImport) continue;
+                        /* _SP_IMAGE_REMPLACEE_686 : voir l'export simple — un bitmap
+                           remplacé ne doit plus ressortir comme page PDF d'origine. */
+                        if (!spProvenanceImportPdfValide(vobj)) continue;
                         if (vobj._spPdfContentType === 'raster') continue;
                         var arcKey = vobj._spPdfArchiveKey;
                         var arc = (window._spPdfArchives && arcKey) ? window._spPdfArchives[arcKey] : null;
@@ -57458,7 +57840,7 @@ https://superprint.app
             } catch (e) { return ''; }
         }
 
-        /* ══ 🆕 v1.7.685 — LA POLICE DE SECOURS NE RESTE PLUS DANS LE PDF QUAND ELLE N'A SERVI À RIEN.
+        /* ══ 🆕 v1.7.686 — LA POLICE DE SECOURS NE RESTE PLUS DANS LE PDF QUAND ELLE N'A SERVI À RIEN.
            MESURÉ, ET C'EST LE VRAI DÉFAUT QUE L'AUDIT A SOULEVÉ : sur un document qui
            n'utilise que Bebas Neue, le fichier livré contient un objet `/Type1 /Helvetica`
            que la page NE RÉFÉRENCE PAS — vérifié en énumérant les objets du PDF puis en
@@ -57480,7 +57862,7 @@ https://superprint.app
            export ; la référence d'objet (`4 0 R`), elle, désigne l'objet réel. */
         const _SP_POLICES_SECOURS = new WeakMap();
 
-        /* ═══ v1.7.685 — N'EMBARQUER QUE LES POLICES RÉELLEMENT UTILISÉES ═════════
+        /* ═══ v1.7.687 — N'EMBARQUER QUE LES POLICES RÉELLEMENT UTILISÉES ═════════
            DÉFAUT MESURÉ (export « Format fini » HD, document SANS UN SEUL TEXTE,
            journal de `embedAll` de pdf-lib ouvert) : 73 polices embarquées — les 72
            variantes des six familles livrées (outfit, anton, sora, fraunces, caveat,
@@ -57494,7 +57876,7 @@ https://superprint.app
              • le fichier transportait 72 sous-ensembles vides : du poids, et pour
                un imprimeur 72 polices déclarées dont aucune n'est employée — le
                même défaut de fond que le `/Type1 /Helvetica` orphelin corrigé en
-               1.7.685.
+               1.7.687.
            MESURE APRÈS : document sans texte → 0 police embarquée, export en 102 ms
            (contre « jamais »). Document avec un seul bloc en Outfit → 1 police.
            ⚠️ LA CLÉ EST RECONSTITUÉE EXACTEMENT COMME LE RENDU LA DEMANDE, et c'est
@@ -57587,7 +57969,7 @@ https://superprint.app
         /* L'élagage est branché UNE fois par document, sur `flush` ET APRÈS lui :
            toutes les sorties (simple, imposée, CMJN, planches) passent par `flush`
            avant d'écrire, donc aucune ne peut l'oublier.
-           ⚠️ v1.7.685 — POURQUOI `flush` ET PLUS `save`. MESURÉ : branché sur `save`,
+           ⚠️ v1.7.687 — POURQUOI `flush` ET PLUS `save`. MESURÉ : branché sur `save`,
            l'élagage s'exécutait AVANT que pdf-lib n'enregistre la police dans le
            contexte ; le contexte contenait `1 0 R, 2 0 R, 3 0 R, 5 0 R` quand la police
            annonçait `4 0 R`, la suppression ne touchait donc rien et `/Helvetica`
@@ -57619,8 +58001,8 @@ https://superprint.app
             let retirees = 0;
             try {
                 const PDFLib = window.PDFLib;
-                /* ⚠️ v1.7.685 — ON COMPARE DES NOMS DE RESSOURCE, PLUS DES RÉFÉRENCES,
-                   ET C'EST UNE MESURE. La version 1.7.685 comparait la référence de la
+                /* ⚠️ v1.7.687 — ON COMPARE DES NOMS DE RESSOURCE, PLUS DES RÉFÉRENCES,
+                   ET C'EST UNE MESURE. La version 1.7.687 comparait la référence de la
                    police (`4 0 R`) à celles du dictionnaire `/Font` des pages. Or
                    pdf-lib enregistre la police dans son contexte au moment de `flush` :
                    avant, la police annonce `4 0 R` alors que le contexte ne contient que
@@ -57698,7 +58080,7 @@ https://superprint.app
         }
         try { window._spElaguerPolicesDeSecours = _spElaguerPolicesDeSecours; } catch (_) {}
 
-        /* ══ 🆕 v1.7.685 — UN MOTIF RÉPÉTÉ N'A PLUS BESOIN D'UN BITMAP GRAND COMME LA PAGE.
+        /* ══ 🆕 v1.7.686 — UN MOTIF RÉPÉTÉ N'A PLUS BESOIN D'UN BITMAP GRAND COMME LA PAGE.
            Question de l'audit : « le motif est rasterisé deux fois, une seule image
            devrait suffire ».
            ⚠️ LA PRÉMISSE ÉTAIT FAUSSE, ET C'EST MESURÉ : les « deux images » d'un export
@@ -57940,7 +58322,7 @@ https://superprint.app
             var hPt = pxToMm(br.height) * mmToPt;
             var yPt = page.getHeight() - (pxToMm(br.top + br.height) * mmToPt);
 
-            /* 🆕 v1.7.685 — LE MOTIF RÉPÉTÉ PASSE AVANT LE BITMAP (voir la note complète
+            /* 🆕 v1.7.686 — LE MOTIF RÉPÉTÉ PASSE AVANT LE BITMAP (voir la note complète
                de `_spRemplirMotifEnTuiles`). La fonction refuse tout cas qu'elle ne sait
                pas reproduire à l'identique et rend `false` : le rendu continue alors
                exactement comme avant.
@@ -60313,6 +60695,7 @@ https://superprint.app
             const _list = (typeof _objs === 'string') ? (JSON.parse(_objs).objects || []) : (_objs.objects || _objs);
             const _hasVectorPdf = Array.isArray(_list) && _list.some(o =>
                 o && o._spPdfImport && o._spPdfContentType && o._spPdfContentType !== 'raster'
+                && spProvenanceImportPdfValide(o)
             );
             if (_hasVectorPdf && rasterFormat === 'jpeg') {
                 // 🆕 v1.7.417 — meme correctif que les 6 autres sites : 'NONE'
@@ -60953,7 +61336,7 @@ https://superprint.app
                 if (customEntry && customEntry.data) {
                     const parsed = (async () => {
                         try {
-                            /* ⚠️ v1.7.685 — WOFF2 DÉCOMPRESSÉ AVANT PARSING.
+                            /* ⚠️ v1.7.687 — WOFF2 DÉCOMPRESSÉ AVANT PARSING.
                                MESURÉ AVANT : `window.opentype.parse` sur les octets
                                bruts d'Anton (WOFF2) levait « WOFF2 require an external
                                decompressor library » ; la fonction rendait `null`, donc
@@ -60978,7 +61361,7 @@ https://superprint.app
                     })();
                     _SP_FONT_CACHE[key] = parsed;
                     try { _SP_FONT_RESOLVED[key] = await parsed; } catch (_) {}
-                    /* ⚠️ v1.7.685 — UN ÉCHEC NE DOIT PAS ÊTRE DÉFINITIF.
+                    /* ⚠️ v1.7.687 — UN ÉCHEC NE DOIT PAS ÊTRE DÉFINITIF.
                        MESURÉ : appelée pendant la restauration du document, cette
                        branche peut tomber avant que `wawoff2` ne soit initialisé ; la
                        promesse se résout alors à `null` et RESTE dans le cache — la
@@ -63653,6 +64036,10 @@ https://superprint.app
                 if (_spPdfImportCm !== 'bw') {
                     objects.forEach(function(o) {
                         if (!o || o.type !== 'image' || !o._spPdfImport) return;
+                        /* _SP_IMAGE_REMPLACEE_686 : ne pas exclure du rendu raster un
+                           objet dont le bitmap a été remplacé (sinon l'ancienne page
+                           PDF ressortirait, exactement le défaut signalé). */
+                        if (!spProvenanceImportPdfValide(o)) return;
                         if (o._spPdfContentType === 'raster') return;
                         if (!o._spPdfArchiveKey) return;
                         var _arc = (window._spPdfArchives) ? window._spPdfArchives[o._spPdfArchiveKey] : null;
@@ -67724,7 +68111,7 @@ function alignSelectedObjects(direction) {
     const activeUnitBtn = Array.from(document.querySelectorAll('#settingsUnits .btn')).find(b => b.classList.contains('active'));
     const newUnit = activeUnitBtn ? activeUnitBtn.dataset.unit : (unitsPerLanguage[currentLanguage] || ['mm'])[0];
     localStorage.setItem('sp_unit', newUnit);
-    /* 🆕 v1.7.685 — UNE UNITÉ APPLIQUÉE L'EST PARTOUT. Avant, ces trois lignes ne
+    /* 🆕 v1.7.686 — UNE UNITÉ APPLIQUÉE L'EST PARTOUT. Avant, ces trois lignes ne
        posaient que `currentUnit` et recoloreraient les .unit-btn : la colonne de
        droite se rafraîchissait au clic suivant (updateTransformPanel lit
        currentUnit) mais le Format, les Marges, le Fond perdu et les libellés de
@@ -70391,7 +70778,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
     })
-    /* 🆕 v1.7.685 — ÉCHEC RÉSEAU DU PROXY : BASCULE SUR L'API DIRECTE.
+    /* 🆕 v1.7.686 — ÉCHEC RÉSEAU DU PROXY : BASCULE SUR L'API DIRECTE.
        MESURÉ (banc d'audit, conditions desktop : `ai-proxy.php` intercepté en échec
        réseau, comme le fait le protocole d'actifs de Tauri quand l'asset n'existe
        pas) : le journal affichait « ❌ Test échoué: Failed to fetch » et RIEN ne
@@ -73529,7 +73916,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         document.addEventListener('change', (e) => {
     if (e.target.id === 'settingsLang') {
         const newLang = e.target.value;
-        /* ⚠️ v1.7.685 — CE BLOC ÉCRASAIT LE CHOIX D'UNITÉ. Il retenait l'unité
+        /* ⚠️ v1.7.687 — CE BLOC ÉCRASAIT LE CHOIX D'UNITÉ. Il retenait l'unité
            active, reconstruisait les boutons pour la nouvelle langue, puis
            réactivait d'office le PREMIER — ce qui, combiné à l'index 0 de
            updateUnitsForLanguage(), ramenait toujours à « Millimètres » dès que
@@ -73632,7 +74019,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 pluginsClearImage: "Retirer l'image",
         pluginsChooseImage: "Image",
         pluginsImageLoaded: "chargée",
-        /* 🆕 v1.7.685 — CLÉS QUI MANQUAIENT DANS LES TROIS LANGUES.
+        /* 🆕 v1.7.686 — CLÉS QUI MANQUAIENT DANS LES TROIS LANGUES.
            `copy`, `copied`, `pluginsAddImage`, `pluginsNoImage` et `pluginsOpenTrap`
            étaient appelées par `sp-plugins-ui.js` sans exister dans aucun des trois
            dictionnaires : `texte()` retombait donc sur son repli français, et ces
@@ -73643,7 +74030,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         pluginsAddImage: "+ Image",
         pluginsNoImage: "Aucune image",
         pluginsOpenTrap: "Ouvrir le plug-in",
-        /* 🆕 v1.7.685 — messages d'échec, jusque-là écrits en français dans
+        /* 🆕 v1.7.686 — messages d'échec, jusque-là écrits en français dans
            `sp-plugins-ui.js` et affichés tels quels en anglais comme en japonais. */
         pluginsToggleFail: "Changement impossible : ",
         pluginsDeleteFail: "Suppression impossible : ",
@@ -73992,7 +74379,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiFooterNoKeyText: "L'assistant ne peut pas encore composer de maquette : les réglages de l'IA se font dans les Préférences de SuperPrint.",
         aiFooterNoKeyLink: "Ouvrir les Préférences, onglet IA →",
         saveExportTitle: "Exporter vers",
-        /* 🆕 v1.7.685 — LES DEUX NOUVEAUX FORMATS, DITS EN FRANÇAIS SIMPLE.
+        /* 🆕 v1.7.686 — LES DEUX NOUVEAUX FORMATS, DITS EN FRANÇAIS SIMPLE.
            Demande utilisateur : « SaveWord Aide, ça veut dire quoi ??? fais un
            wording simple clair. Idem pour EPS, Save Eps aide ???? ça veut rien
            dire… sois plus explicite ».
@@ -74233,7 +74620,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         underlineTitle: "Souligné — Sélectionnez du texte pour formater des mots individuels",
         formatSelectionHint: "💡 Double-cliquez le texte et sélectionnez des mots pour appliquer gras, italique, souligné par mot.",
         textAlignLabel: "Alignement",
-        /* 🎯 v1.7.685 — _SP_RANGEMENT_655 : la partie qui range Retrait, Formats,
+        /* 🎯 v1.7.687 — _SP_RANGEMENT_655 : la partie qui range Retrait, Formats,
            Espaces spéciaux, Glyphes, Vectoriser et Texte de substitution. */
         textElementsLabel: "Options de texte",
         frameOptionsLabel: "Options de bloc texte",
@@ -74287,7 +74674,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         specialSpacesHint: "Insère une espace typographique au curseur.",
         copySpacesLabel: "Copier dans le presse-papier :",
         narrowNbspBtn: "Fine insécable",
-        /* ⚠️ v1.7.685 — _SP_RANGEMENT_655 : CES DEUX CLÉS MANQUAIENT.
+        /* ⚠️ v1.7.687 — _SP_RANGEMENT_655 : CES DEUX CLÉS MANQUAIENT.
            Le balisage écrit `data-translate="nbspBtn"` et « thinNbspBtn », mais
            seules `narrowNbspBtn` et `nbspCopyBtn` existaient : le traducteur
            affichait donc la CLÉ ELLE-MÊME dans les deux boutons d'espaces
@@ -74456,10 +74843,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertXlsxEmpty: "Aucune donnée trouvée dans le fichier Excel",
         alertXlsxImportError: "Erreur import Excel :\n{0}",
         alertSlaInvalidXml: "Fichier .sla invalide (XML mal formé)",
-        /* 🆕 v1.7.685 — import Figma. */
+        /* 🆕 v1.7.686 — import Figma. */
         alertFigmaImportError: "Import Figma impossible : {0}",
         alertFigmaNotFigma: "Ce fichier JSON n'est pas un document Figma. Exportez-le depuis l'API Figma (GET /v1/files/:key) ou avec le greffon SuperPrint.",
-        /* 🆕 v1.7.685 — un .fig est un ZIP binaire, pas du JSON : on le dit et on donne
+        /* 🆕 v1.7.686 — un .fig est un ZIP binaire, pas du JSON : on le dit et on donne
            la marche à suivre exacte, au lieu de « JSON illisible ». */
         alertFigmaIsFigBinary: "Un fichier .fig est une archive binaire (fig-kiwi), pas du JSON : SuperPrint ne peut pas le lire directement.\n\nDeux façons d'obtenir le bon fichier :\n• Figma → clic droit sur le fichier → Copy link, puis API Figma GET /v1/files/:clé et enregistrez la réponse en .json ;\n• ou avec le greffon SuperPrint, qui exporte directement ce .json.",
         figmaImportDone: "Import Figma terminé : {0} page(s), {1} objet(s).",
@@ -74757,13 +75144,13 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 pluginsClearImage: "Remove the image",
         pluginsChooseImage: "Image",
         pluginsImageLoaded: "loaded",
-        /* 🆕 v1.7.685 — cf. le commentaire du dictionnaire français. */
+        /* 🆕 v1.7.686 — cf. le commentaire du dictionnaire français. */
         copy: "Copy",
         copied: "Copied",
         pluginsAddImage: "+ Image",
         pluginsNoImage: "No image",
         pluginsOpenTrap: "Open the plug-in",
-        /* 🆕 v1.7.685 — cf. le commentaire du dictionnaire français. */
+        /* 🆕 v1.7.686 — cf. le commentaire du dictionnaire français. */
         pluginsToggleFail: "Change failed: ",
         pluginsDeleteFail: "Uninstall failed: ",
         pluginsRunFail: "The plug-in failed: ",
@@ -75395,7 +75782,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         specialSpacesHint: "Insert a typographic space at cursor.",
         copySpacesLabel: "Copy to clipboard:",
         narrowNbspBtn: "Narrow NBSP",
-        /* ⚠️ v1.7.685 — clés manquantes (cf. commentaire du dictionnaire FR). */
+        /* ⚠️ v1.7.687 — clés manquantes (cf. commentaire du dictionnaire FR). */
         nbspBtn: "Non-breaking",
         thinNbspBtn: "Thin non-breaking",
         nbspCopyBtn: "NBSP",
@@ -75560,10 +75947,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertXlsxEmpty: "No data found in the Excel file",
         alertXlsxImportError: "Excel import error:\n{0}",
         alertSlaInvalidXml: "Invalid .sla file (malformed XML)",
-        /* 🆕 v1.7.685 — Figma import. */
+        /* 🆕 v1.7.686 — Figma import. */
         alertFigmaImportError: "Figma import failed: {0}",
         alertFigmaNotFigma: "This JSON file is not a Figma document. Export it from the Figma API (GET /v1/files/:key) or with the SuperPrint plugin.",
-        /* 🆕 v1.7.685 — a .fig is a binary archive, not JSON. */
+        /* 🆕 v1.7.686 — a .fig is a binary archive, not JSON. */
         alertFigmaIsFigBinary: "A .fig file is a binary archive (fig-kiwi), not JSON: SuperPrint cannot read it directly.\n\nTwo ways to get the right file:\n• Figma → right-click the file → Copy link, then Figma API GET /v1/files/:key and save the response as .json;\n• or with the SuperPrint plugin, which exports that .json directly.",
         figmaImportDone: "Figma import complete: {0} page(s), {1} object(s).",
         alertSlaNoDocument: "No DOCUMENT found in the .sla",
@@ -75860,13 +76247,13 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 pluginsClearImage: "画像を削除",
         pluginsChooseImage: "画像",
         pluginsImageLoaded: "読み込み済み",
-        /* 🆕 v1.7.685 — cf. le commentaire du dictionnaire français. */
+        /* 🆕 v1.7.686 — cf. le commentaire du dictionnaire français. */
         copy: "コピー",
         copied: "コピーしました",
         pluginsAddImage: "＋画像",
         pluginsNoImage: "画像がありません",
         pluginsOpenTrap: "プラグインを開く",
-        /* 🆕 v1.7.685 — cf. le commentaire du dictionnaire français. */
+        /* 🆕 v1.7.686 — cf. le commentaire du dictionnaire français. */
         pluginsToggleFail: "変更できません: ",
         pluginsDeleteFail: "アンインストールできません: ",
         pluginsRunFail: "プラグインが失敗しました: ",
@@ -76522,7 +76909,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         specialSpacesHint: "カーソル位置にタイポグラフィスペースを挿入。",
         copySpacesLabel: "クリップボードにコピー：",
         narrowNbspBtn: "狭い改行なしスペース",
-        /* ⚠️ v1.7.685 — clés manquantes (cf. commentaire du dictionnaire FR). */
+        /* ⚠️ v1.7.687 — clés manquantes (cf. commentaire du dictionnaire FR). */
         nbspBtn: "改行なし",
         thinNbspBtn: "細い改行なし",
         nbspCopyBtn: "改行なしスペース",
@@ -77312,7 +77699,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         if (hypSyl) hypSyl.textContent = translate('hyphenSyllable');
         var applyHyp = document.getElementById('applyHyphenNow');
         if (applyHyp) applyHyp.title = translate('applyHyphen');
-        /* Hints — ⚠️ v1.7.685 — _SP_RANGEMENT_655 : PLUS D'INDEX.
+        /* Hints — ⚠️ v1.7.687 — _SP_RANGEMENT_655 : PLUS D'INDEX.
            Ce bloc rangeait les phrases d'aide par POSITION (`i === 0`, `i === 1`…)
            à l'intérieur de la fiche typographie. Le rangement de la colonne a
            déplacé une aide et supprimé une autre : le décalage écrivait alors
@@ -77584,7 +77971,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
 
             // Ajouter l'event listener
             btn.addEventListener('click', () => {
-                /* 🆕 v1.7.685 — même fonction que les préférences : l'unité
+                /* 🆕 v1.7.686 — même fonction que les préférences : l'unité
                    choisie ici s'écrit aussi dans Format, Marges et Fond perdu. */
                 if (typeof window.spAppliquerUnite === 'function') {
                     window.spAppliquerUnite(unit);
@@ -77603,7 +77990,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 }
             });
         });
-        /* ⚠️ v1.7.685 — ON NE FORCE PLUS `currentUnit` ICI. Cette ligne posait
+        /* ⚠️ v1.7.687 — ON NE FORCE PLUS `currentUnit` ICI. Cette ligne posait
            `currentUnit = preferredUnit` à chaque appel (ouverture des préférences,
            changement de langue), et les trois langues partagent la même liste
            mm/cm/px : elle ne servait donc à rien, sauf à écraser une unité
@@ -77616,7 +78003,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     const settingsUnits = document.getElementById('settingsUnits');
     if (settingsUnits) {
         settingsUnits.innerHTML = '';
-        /* ⚠️ v1.7.685 — L'ÉTAT ACTIF SUIT `currentUnit`, PLUS L'INDEX 0. La
+        /* ⚠️ v1.7.687 — L'ÉTAT ACTIF SUIT `currentUnit`, PLUS L'INDEX 0. La
            reconstruction posait « actif » sur le premier bouton : changer de
            langue (ce qui reconstruit ces boutons) ou rouvrir les préférences
            proposait donc « Millimètres » alors que l'application était en
@@ -77739,7 +78126,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         }
     } catch (_) {}
     updateInterface();
-    /* 🆕 v1.7.685 — LES UNITÉS DE LA COLONNE DE GAUCHE NE SUIVENT PLUS LA LANGUE.
+    /* 🆕 v1.7.686 — LES UNITÉS DE LA COLONNE DE GAUCHE NE SUIVENT PLUS LA LANGUE.
        MESURE DU DÉFAUT (v1.7.411 avait déjà corrigé la LECTURE, pas l'ÉCRITURE) :
        en interface anglaise, `currentLanguage === 'en'` écrivait 8.27 × 11.69 et
        0.12 de fond perdu — des POUCES — tandis que les gestionnaires « change »
@@ -78497,7 +78884,6 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     // 🎯 v1.7.125 : option fond transparent (PNG uniquement)
     const pngBg = document.querySelector('input[name="pngBg"]:checked')?.value || 'white';
     const wantTransparent = (format === 'png' && pngBg === 'transparent');
-    if (typeof saveAllPages === 'function') saveAllPages();
     const exportCvs = canvases.filter(Boolean);
     if (exportCvs.length === 0) return;
 
@@ -78507,7 +78893,16 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         return await convertToGrayscale(dataUrl, fmt, 0.92);
     };
 
-    (async () => {
+    return (async () => {
+        // 🆕 v1.7.686 : même préparation que le PDF. Le PNG/JPG lit le canevas
+        //   vivant, mais une planche encore en loadFromJSON peut manquer à l'appel.
+        try {
+            if (typeof window.spPreparerDocumentPourExport === 'function') {
+                await window.spPreparerDocumentPourExport(20000);
+            } else if (typeof saveAllPages === 'function') {
+                saveAllPages(true);
+            }
+        } catch (_) {}
         const pageData = [];
         for (let i = 0; i < exportCvs.length; i++) {
             let d = _spRenderCanvasForImageExport(exportCvs[i], format, multiplier, { transparent: wantTransparent });
@@ -79762,7 +80157,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             }
             // Les boutons d'unités seront mis à jour par updateInterface()
         }
-        /* 🆕 v1.7.685 — L'UNITÉ MÉMORISÉE DOIT S'ÉCRIRE ICI, PAS SEULEMENT DANS
+        /* 🆕 v1.7.686 — L'UNITÉ MÉMORISÉE DOIT S'ÉCRIRE ICI, PAS SEULEMENT DANS
            LA COLONNE DE DROITE. MESURE : `setLanguage(savedLang)` est appelé
            AVANT ce bloc (ligne 77 240), donc l'interface venait d'être écrite en
            mm ; la restauration posait ensuite `currentUnit = 'cm'` sans jamais
@@ -85429,6 +85824,15 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                     fabric.Image.fromURL(dataUrl, (img) => {
                         const el = img.getElement();
                         fabricImage.setElement(el);
+                        /* _SP_IMAGE_REMPLACEE_686 : même règle qu'au bouton
+                           « remplacer » — le bitmap n'est plus celui du PDF importé,
+                           donc l'export ne doit pas ré-embarquer l'ancienne page
+                           (une vue 3D remplace bien l'image affichée). */
+                        try {
+                            if (typeof spOublierProvenanceImportPdf === 'function') {
+                                spOublierProvenanceImportPdf(fabricImage);
+                            }
+                        } catch (_) {}
                         fabricImage.dirty = true;
                         const c = fabricImage.canvas;
                         if (c) c.requestRenderAll();
@@ -85899,7 +86303,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 const matchExt = (f, exts) => exts.some(ext => lower(f).endsWith(ext));
                 const matchMime = (f, mimes) => mimes.some(m => (f.type || '').toLowerCase().includes(m));
 
-                /* 🆕 v1.7.685 — UN PLUG-IN DÉPOSÉ S'INSTALLE, OÙ QU'IL TOMBE.
+                /* 🆕 v1.7.686 — UN PLUG-IN DÉPOSÉ S'INSTALLE, OÙ QU'IL TOMBE.
                    ⚠️ MESURÉ : ce gestionnaire tourne en CAPTURE et coupe la
                    propagation. Sans cette route, déposer un `.plugin.js` tombait
                    dans « Format non supporté » — la bibliothèque de plug-ins ne
@@ -85914,7 +86318,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                     return;
                 }
 
-                /* 🆕 v1.7.685 — Et un fichier qui n'est PAS un plug-in, lâché SUR la
+                /* 🆕 v1.7.686 — Et un fichier qui n'est PAS un plug-in, lâché SUR la
                    bibliothèque ouverte, reçoit le refus explicite au lieu d'être
                    importé comme une image derrière la pop-in : c'est l'endroit où
                    l'utilisateur croit déposer un plug-in. */
@@ -85985,7 +86389,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 }
                 const slaFile = files.find(f => matchExt(f, ['.sla']));
                 if (slaFile) { e.preventDefault(); e.stopPropagation(); if (dispatchToInput(slaFile, 'importScribusInput', 'Document Scribus')) return; }
-                /* 🆕 v1.7.685 — un `.fig` déposé part vers l'import Figma, qui répond
+                /* 🆕 v1.7.686 — un `.fig` déposé part vers l'import Figma, qui répond
                    précisément (c'est une archive binaire, pas du JSON). Sans cette
                    ligne, le fichier tombait dans les gestionnaires d'images et
                    l'utilisateur ne recevait RIEN. */
@@ -91192,7 +91596,9 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
                            qu'UNE page : le clic REMPLACE la sélection au lieu de l'ajouter
                            (sinon on croit importer 3 pages alors qu'une seule sera posée). */
                         const _kindSel = document.querySelector('input[name="pdfImportKind"]:checked');
-                        if (_kindSel && _kindSel.value === 'image') {
+                        /* _SP_PDF_REMPLACER_687 : en mode remplacement on ne place
+                           qu'UNE page → le clic remplace la sélection. */
+                        if (window._spPdfRemplacement || (_kindSel && _kindSel.value === 'image')) {
                             document.querySelectorAll('.pdf-page-thumbnail').forEach(t => t.classList.remove('selected'));
                             thumbnailDiv.classList.add('selected');
                             selectedPDFPages = [pageNum];
@@ -91291,6 +91697,13 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
         window.closePDFImportModal = function(keepData = false) {
             const modal = document.getElementById('pdfImportModal');
             if (modal) modal.style.display = 'none';
+
+            /* _SP_PDF_REMPLACER_687 : fermer la pop-in ANNULE un remplacement en
+               cours (le bouton ✕, l'overlay et « Annuler » passent tous ici). */
+            if (window._spPdfRemplacement) {
+                window._spPdfRemplacement = null;
+                try { spModeRemplacementPdfUI(false); } catch (_) {}
+            }
             
             if (!keepData) {
                 // 💧 v1.7.91 : libération propre du worker / buffers pdf.js
@@ -91324,6 +91737,10 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
         
         // Confirmer l'import PDF
         window.confirmPDFImport = async function() {
+            /* _SP_PDF_REMPLACER_687 : en mode remplacement, la pop-in ne sert qu'à
+               choisir UNE page — aucune page du document n'est créée ni remplacée. */
+            if (window._spPdfRemplacement) { await spConfirmerRemplacementPdf(); return; }
+
             if (!currentPDFDocument) return;
             
             if (selectedPDFPages.length === 0) {
@@ -98830,8 +99247,15 @@ window.closeSaveModal = function() {
     if (modal) modal.style.display = 'none';
 };
 
-window.saveProjectLocal = function() {
-    saveAllPages();
+window.saveProjectLocal = async function() {
+    // 🆕 v1.7.686 : même préparation que le .sp (le .json est une sortie).
+    try {
+        if (typeof window.spPreparerDocumentPourExport === 'function') {
+            await window.spPreparerDocumentPourExport(20000);
+        } else {
+            saveAllPages(true);
+        }
+    } catch (_) {}
     const project = {
         version: '2.0',
         projectName: (window._spProjectName || '').trim(),
@@ -99222,7 +99646,12 @@ window.saveProjectWeb3 = async function() {
     if (statusEl) statusEl.textContent = 'Upload du fichier sur IPFS...';
 
     try {
-        saveAllPages();
+        // 🆕 v1.7.686 : la sortie IPFS lit pages[] — même préparation que le .sp.
+        if (typeof window.spPreparerDocumentPourExport === 'function') {
+            await window.spPreparerDocumentPourExport(20000);
+        } else {
+            saveAllPages(true);
+        }
 
         const project = {
             version: '2.0',
@@ -99421,7 +99850,7 @@ function _spApplyColorMode(mode) {
  * pageIndex: [{o, pos}] } — o = orientation ('vertical'|'horizontal'), pos =
  * position en mm DEPUIS LE BORD DU FORMAT.
  *
- * ⚠️ v1.7.685 — `depuisLeFormat` N'ÉTAIT JAMAIS ÉCRIT, ET CHAQUE OUVERTURE
+ * ⚠️ v1.7.687 — `depuisLeFormat` N'ÉTAIT JAMAIS ÉCRIT, ET CHAQUE OUVERTURE
  * DÉCALAIT LES REPÈRES. MESURÉ (banc d'aller-retour .sp) : un repère vertical à
  * 42,18 mm revenait à 39,36 mm après un enregistrement puis une réouverture, puis
  * à 36,54 mm au cycle suivant, puis 33,72 — soit −2,82 mm par cycle, sans fin.
@@ -99586,7 +100015,15 @@ window.saveProjectSP = function() {
     const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const defaut = (window._spProjectName || '').trim() ||
         ('superprint-' + pageFormat.width + 'x' + pageFormat.height + '-' + (pages || []).length + 'p-' + datePart);
-    const ecrire = function (nomFichier) {
+    const ecrire = async function (nomFichier) {
+        // 🆕 v1.7.686 : le .sp est une SORTIE. Sans cette attente, une planche en
+        //   loadFromJSON faisait avaler saveAllPages(true) et le fichier exporté
+        //   gardait l'image d'AVANT le remplacement (puis la réouverture la montrait).
+        try {
+            if (typeof window.spPreparerDocumentPourExport === 'function') {
+                await window.spPreparerDocumentPourExport(20000);
+            }
+        } catch (_) {}
         const spFile = window.saveProjectSP_toObject();
         const stats = (spFile && spFile.meta && spFile.meta.stats) || {};
         // Sérialiser avec indentation pour lisibilité
@@ -99722,7 +100159,7 @@ window.saveProjectSP_toObject = function() {
                 index: index,
                 label: page.label || `Page ${index + 1}`,
                 masterId: (pageMasterAssignments || {})[index] || null,
-                /* 🆕 v1.7.685 — LE FORMAT PROPRE À LA PAGE VOYAGE DANS LE .sp.
+                /* 🆕 v1.7.686 — LE FORMAT PROPRE À LA PAGE VOYAGE DANS LE .sp.
                    ⚠️ LA CLÉ N'EST ÉCRITE QUE SI LA PAGE EN A UN : un document ordinaire
                    produit donc EXACTEMENT le même JSON qu'avant, et les fichiers déjà
                    enregistrés n'ont pas de clé à gérer. */
@@ -99930,7 +100367,7 @@ function _spValidateProjectFile(spFile) {
     const format = spFile && spFile.document && spFile.document.format;
     const width = Number(format && format.width);
     const height = Number(format && format.height);
-    /* ⚠️ v1.7.685 — `page.objects` PEUT ARRIVER EN CHAÎNE.
+    /* ⚠️ v1.7.687 — `page.objects` PEUT ARRIVER EN CHAÎNE.
        Le filet de sécurité du Studio IA écrivait `JSON.stringify(calque)` dans
        `page.objects`. Cette fonction exigeait un TABLEAU : le document entier était
        donc rejeté, sans autre explication que « n'est pas un document SuperPrint
@@ -99955,7 +100392,7 @@ function _spValidateProjectFile(spFile) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   🆕 v1.7.685 — PONT POUR LES PLUG-INS
+   🆕 v1.7.686 — PONT POUR LES PLUG-INS
    ═══════════════════════════════════════════════════════════════════════════════
 
    `sp-plugins.js` a besoin de trois choses que `main.js` garde dans sa portée de
@@ -99972,7 +100409,7 @@ window.__SP_PLUGIN_HOST__ = {
         try { return (typeof getActiveCanvas === 'function') ? getActiveCanvas() : null; }
         catch (_) { return null; }
     },
-    /* 🆕 v1.7.685 — TOUS LES PLANS DE TRAVAIL, pour les plug-ins qui doivent
+    /* 🆕 v1.7.686 — TOUS LES PLANS DE TRAVAIL, pour les plug-ins qui doivent
        nettoyer leurs propres objets partout (un motif posé page 1 doit être
        remplacé, pas empilé, quand on change un réglage). Le tableau `canvases`
        vit dans la portée de ce module : on rend une COPIE, pour qu'un plug-in ne
@@ -100005,7 +100442,7 @@ window.__SP_PLUGIN_HOST__ = {
         try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
         try { if (typeof saveStateFromPages === 'function') saveStateFromPages(libelle || 'Plug-in'); } catch (_) {}
     },
-    /* 🆕 v1.7.685 — SYNCHRONISER SANS ÉCRIRE D'HISTORIQUE.
+    /* 🆕 v1.7.686 — SYNCHRONISER SANS ÉCRIRE D'HISTORIQUE.
        C'est la moitié utile de `apres`, et c'est exactement ce qu'il faut pour un
        APERÇU EN DIRECT : le plug-in Motif change la tuile à chaque mouvement de
        tirette. Empiler une entrée d'historique par mouvement rendrait Ctrl+Z
@@ -100017,7 +100454,7 @@ window.__SP_PLUGIN_HOST__ = {
     sync: function () {
         try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
     },
-    /* 🆕 v1.7.685 — LE SILENCE PENDANT L'APERÇU (voir _SP_APERCU_MUET_647).
+    /* 🆕 v1.7.686 — LE SILENCE PENDANT L'APERÇU (voir _SP_APERCU_MUET_647).
        `actif = true` l'installe, `false` le lève. L'appelant doit TOUJOURS lever dans
        un `finally` : un silence oublié figerait l'historique pour toute la session.
        On accepte aussi un nombre, pour imbriquer deux aperçus sans se marcher dessus. */
@@ -100358,7 +100795,7 @@ window.loadProjectSP = function(fileContent) {
 
         // ── Reconstruire les pages dans le format interne ──
         pages = (spFile.pages || []).map(spPage => {
-            /* 🆕 v1.7.685 — LE FORMAT PROPRE À LA PAGE (documents Figma multi-format).
+            /* 🆕 v1.7.686 — LE FORMAT PROPRE À LA PAGE (documents Figma multi-format).
                Absent de tous les fichiers existants : la page retombe alors sur le format
                du document, exactement comme avant. */
             const _pf = spPage && spPage.format;
@@ -100554,7 +100991,7 @@ window.loadProjectSP = function(fileContent) {
             // Notification
             const meta = spFile.meta || {};
             const stats = meta.stats || {};
-            /* ⚠️ v1.7.685 — LE COMPTE D'OBJETS ÉTAIT « ? » À L'IMPORT FIGMA : `meta.stats`
+            /* ⚠️ v1.7.687 — LE COMPTE D'OBJETS ÉTAIT « ? » À L'IMPORT FIGMA : `meta.stats`
                n'existe que dans les .sp écrits par l'application ; un document fabriqué
                par un import n'en a pas. On retombe donc sur le compte réel des pages,
                qui est toujours juste, plutôt que d'afficher un point d'interrogation. */
@@ -101288,8 +101725,11 @@ async function importPDFPagesV2(pageNumbers, recadrageMode = 'support', importMo
                             _spPdfImportMode: imgData.importMode,
                             _spPdfRecadrageMode: imgData.recadrageMode,
                             _spPdfContentType: imgData.contentType || 'raster',
-                            _spPdfArchiveKey: imgData.archiveKey || null
+                            _spPdfArchiveKey: imgData.archiveKey || null,
+                            _spPdfRasterW: img.width,
+                            _spPdfRasterH: img.height
                         });
+                        spMarquerProvenanceImportPdf(img);
 
                         img.setCoords();
                         targetCanvas.add(img);
@@ -101427,8 +101867,11 @@ async function _spImporterPdfEnBloc(pageNum) {
                 _spPdfImportMode: 'single',
                 _spPdfRecadrageMode: 'none',
                 _spPdfContentType: contentType,
-                _spPdfArchiveKey: _archiveKey
+                _spPdfArchiveKey: _archiveKey,
+                _spPdfRasterW: img.width,
+                _spPdfRasterH: img.height
             });
+            spMarquerProvenanceImportPdf(img);
             img.setCoords();
             targetCanvas.add(img);
             try { targetCanvas.setActiveObject(img); } catch (_) {}
@@ -105552,7 +105995,7 @@ function initObjectRightClickMenu() {
     function publierLargeur(px) {
         var app = $('mainApp');
         var v = (px || 0) + 'px';
-        /* ⚠️ v1.7.685 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
+        /* ⚠️ v1.7.687 — ON PUBLIE SUR :root, ET PLUS SEULEMENT SUR #mainApp.
            Les widgets flottants du bord droit — le zoom, l'étiquette de simulation
            CMJN, le panneau Rechercher & Remplacer — ne sont pas tous dans #mainApp :
            ceux qui sont posés sur <body> n'héritaient donc PAS de la variable et
@@ -105784,7 +106227,7 @@ function initObjectRightClickMenu() {
     /* « Cadres » : les seuls objets dont la taille se règle par `width`/`height` ET
        dont le rendu suit — un rectangle, y compris un rectangle à photo masquée (dont
        le motif se recalcule depuis la taille affichée).
-       ⚠️ v1.7.685 — LES IMAGES EN SONT RETIRÉES. Le commentaire disait « les rectangles
+       ⚠️ v1.7.687 — LES IMAGES EN SONT RETIRÉES. Le commentaire disait « les rectangles
        et les images » ; c'était l'erreur : `width`/`height` d'un `fabric.Image` sont les
        dimensions NATURELLES du fichier, pas une fenêtre réglable. Les y toucher
        étirait la photo et détruisait sa définition d'origine (mesuré : 1200 → 860 px
@@ -105792,7 +106235,7 @@ function initObjectRightClickMenu() {
        `estPhoto` et la branche d'échelle uniforme de `recomposerAuFormat`. */
     function estCadre(o) { return o.type === 'rect'; }
 
-    /* ⚠️ v1.7.685 — UNE PHOTO N'EST PAS UN CADRE, ET C'EST LE DÉFAUT LE PLUS VISIBLE
+    /* ⚠️ v1.7.687 — UNE PHOTO N'EST PAS UN CADRE, ET C'EST LE DÉFAUT LE PLUS VISIBLE
        DE CET OUTIL. MESURÉ, format 210 → 150 mm (largeur seule) sur une photo
        1200 × 800 : la photo ressortait en 172 × 160, soit un rapport 1,075 au lieu de
        1,500 — écrasée de 28 % en largeur. Le cercle, lui, ressortait en 87 × 121
@@ -105812,7 +106255,7 @@ function initObjectRightClickMenu() {
        échelle, et UNIFORMÉMENT. */
     function estPhoto(o) { return !!o && o.type === 'image'; }
 
-    /* ⚠️ v1.7.685 — LES FORMES ET LES GROUPES ÉTAIENT PUREMENT IGNORÉS, ET C'EST CE
+    /* ⚠️ v1.7.687 — LES FORMES ET LES GROUPES ÉTAIENT PUREMENT IGNORÉS, ET C'EST CE
        QUI « CASSAIT TOUT ». MESURÉ, page 1207 → 858 px de large (A4 paysage) : les deux
        blocs texte, le rectangle, l'image et le cadre photo suivaient ; le CERCLE, le
        TRIANGLE, le TRACÉ et le GROUPE restaient à leurs coordonnées d'origine (cercle
@@ -105945,7 +106388,7 @@ function initObjectRightClickMenu() {
             var repere = function (v, r) { return fpx + (v - fpx) * r; };
             objetsMaquette(cv).forEach(function (o) {
                 var texte = estTexte(o);
-                /* ⚠️ v1.7.685 — L'ORDRE DE CES DEUX LIGNES EST LE CORRECTIF.
+                /* ⚠️ v1.7.687 — L'ORDRE DE CES DEUX LIGNES EST LE CORRECTIF.
                    Une photo était rangée dans « cadre » : elle subissait donc
                    `width ×= rx` et `height ×= ry`, c'est-à-dire un étirement dès que
                    rx ≠ ry, ET la perte de ses dimensions naturelles. Elle est
@@ -105974,7 +106417,7 @@ function initObjectRightClickMenu() {
                        groupe peut déjà porter un `scaleX` non nul (import SVG, mise à
                        l'échelle manuelle) : l'écraser à la valeur du rapport
                        redimensionnerait l'objet une seconde fois depuis zéro.
-                       ⚠️ v1.7.685 — ET L'ÉCHELLE EST LA MÊME SUR LES DEUX AXES.
+                       ⚠️ v1.7.687 — ET L'ÉCHELLE EST LA MÊME SUR LES DEUX AXES.
                        Elle valait rx en X et ry en Y : MESURÉ, un cercle de 120 × 120
                        ressortait en 87 × 121 après un passage 210 → 150 mm, soit une
                        ellipse. Un cercle, un triangle ou un tracé n'ont pas de
@@ -106017,7 +106460,7 @@ function initObjectRightClickMenu() {
                     }
                     fait.cadres++;
                 } else if (photo) {
-                    /* ⚠️ v1.7.685 — UNE PHOTO SE RECOMPTE À PART DES FORMES. Elle
+                    /* ⚠️ v1.7.687 — UNE PHOTO SE RECOMPTE À PART DES FORMES. Elle
                        partage leur traitement (échelle uniforme) mais pas leur sens :
                        le compte rendu doit dire « 2 photo(s) » et non « 2 forme(s) »,
                        sinon on croit que les images n'ont pas été touchées. */
@@ -106052,7 +106495,7 @@ function initObjectRightClickMenu() {
         var changeTypo = typo.police || (typo.corps !== null && typo.corps !== undefined) ||
             (typo.interligne !== null && typo.interligne !== undefined) || typo.couleur ||
             (typo.alignement && typo.alignement !== '') ||
-            /* 🆕 v1.7.685 — les trois réglages de texte ajoutés à la trappe. */
+            /* 🆕 v1.7.686 — les trois réglages de texte ajoutés à la trappe. */
             (typo.interlettrage !== null && typo.interlettrage !== undefined) ||
             (typo.graisse !== null && typo.graisse !== undefined) ||
             (typo.styleTxt !== null && typo.styleTxt !== undefined);
@@ -106086,7 +106529,7 @@ function initObjectRightClickMenu() {
         });
 
         /* ── 4b. Recale sur la grille de colonnes ──
-           ⚠️ v1.7.685 — LES CADRES PHOTO SONT RECALÉS EUX AUSSI. La version précédente
+           ⚠️ v1.7.687 — LES CADRES PHOTO SONT RECALÉS EUX AUSSI. La version précédente
            ne parcourait que `blocs` (les blocs texte) : sur une maquette mêlant texte
            et photos, le texte venait se ranger dans les colonnes pendant que les photos
            restaient où elles étaient — le « recalage » désalignait la page au lieu de
@@ -106248,7 +106691,7 @@ function initObjectRightClickMenu() {
        produit : « Format recomposé (0 bloc(s), 0 cadre(s)) » alors que le bloc était là
        avant et après.
 
-       ⚠️ v1.7.685 — NI « AU MOINS UNE VUE », NI « TOUTES LES VUES » NE SUFFISENT : IL
+       ⚠️ v1.7.687 — NI « AU MOINS UNE VUE », NI « TOUTES LES VUES » NE SUFFISENT : IL
        FAUT QUE LES OBJETS SOIENT CHARGÉS. MESURÉ sur le gabarit « Fashion Magazine »
        (8 pages, 5 vues). Deux corrections successives, deux mesures :
          · ne tester que `vues().length` NON NUL → la première vue reconstruite
@@ -106331,7 +106774,7 @@ function initObjectRightClickMenu() {
                l'aller-retour. On attend une seconde fois, sur un état NEUF, puis on
                sauvegarde. `saveAllPages` ne prend aucune entrée d'historique. */
             attendreVues(function () {
-                /* ⚠️ v1.7.685 — `fait.photos` EST DANS LA CONDITION. Les photos sont
+                /* ⚠️ v1.7.687 — `fait.photos` EST DANS LA CONDITION. Les photos sont
                    désormais comptées à part des formes ; sans elles ici, un document
                    fait UNIQUEMENT de photos recomposées ne serait jamais sauvegardé,
                    et le rendu suivant rétablirait l'ancienne géométrie — exactement le
@@ -106603,7 +107046,7 @@ function initObjectRightClickMenu() {
         h += '</section>';
 
         /* GRILLE ET LIGNE DE BASE
-           🆕 v1.7.685 — demandé par l'utilisateur : « il y a plus de réglages live dans
+           🆕 v1.7.686 — demandé par l'utilisateur : « il y a plus de réglages live dans
            le studio IA, plus de tirettes ». Ces deux sections ne font pas semblant : elles
            pilotent les réglages NATIFS de SuperPrint, dont l'effet a été MESURÉ avant
            d'être exposé — afficher la grille fait passer la vue de 4 à 14 objets, et
@@ -106697,7 +107140,7 @@ function initObjectRightClickMenu() {
             police: val('mqPolice', ''), corps: nb(val('mqCorps', 0), 0),
             interligne: nb(val('mqInterligne', 0), 0), couleur: (nb(val('mqCorps', 0), 0) > 0 ? val('mqCouleurTexte', '') : ''),
             alignement: etat.alignement || '',
-            /* ⚠️ v1.7.685 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
+            /* ⚠️ v1.7.687 — CES TROIS-LÀ NE S'APPLIQUENT QUE SI ON Y A TOUCHÉ, et c'est
                une précaution, pas une coquetterie : `charSpacing`, `fontWeight` et
                `fontStyle` ont des valeurs par DÉFAUT parfaitement légitimes (0, normal,
                normal). Les lire sans condition ferait donc que « Refaire la maquette »
@@ -106752,7 +107195,7 @@ function initObjectRightClickMenu() {
         var corps = $('maquetteBody');
         if (corps) { corps.innerHTML = panneau(); corps.__mqRempli = true; brancher(); }
         if (typeof lireControles === 'function') lireControles();
-        /* ⚠️ v1.7.685 — UNE SEULE TRAPPE À LA FOIS, DANS LES DEUX SENS.
+        /* ⚠️ v1.7.687 — UNE SEULE TRAPPE À LA FOIS, DANS LES DEUX SENS.
            Depuis que Global Refactor s'ouvre depuis la bibliothèque de plug-ins, il
            peut s'ouvrir alors que la trappe d'un plug-in (motif vectoriel) est déjà
            là. Les deux occupent le MÊME bord droit : ouvertes ensemble elles prennent
@@ -107003,7 +107446,7 @@ function initObjectRightClickMenu() {
     }
 
     function installer() {
-        /* ⚠️ v1.7.685 — PLUS DE BOUTON `#maquetteToggle` À BRANCHER.
+        /* ⚠️ v1.7.687 — PLUS DE BOUTON `#maquetteToggle` À BRANCHER.
            L'outil est devenu un plug-in intégré (`plugins/global-refactor.plugin.js`)
            et a quitté la barre du haut ; c'est la bibliothèque de plug-ins qui en
            prend la porte d'entrée. Ce module ne garde donc que `window._spMaquette`,
