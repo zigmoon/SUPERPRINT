@@ -12,8 +12,8 @@
 |---|---|
 | Version app (affichée) | `1.7.693` |
 | Pastille du colophon (`index.html` **et** `price.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
-| Cache Service Worker (app) | `superprint-shell-v1.7.693-calques-glisser-tabulation` |
-| Cache Service Worker (racine) | `superprint-shell-v1.7.693-calques-glisser-tabulation` |
+| Cache Service Worker (app) | `superprint-shell-v1.7.693-nettete-cadres-oeil` |
+| Cache Service Worker (racine) | `superprint-shell-v1.7.693-nettete-cadres-oeil` |
 | Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261015-v687-polices-allegees` (JS) · `?v=20261015-v687-regles-20px-decales` (CSS) · `?v=20261015-v687-calque-encre` (module 3D) |
 | ⚠️ `fonts.css` — **empreinte SANS numéro de version** | `?v=20261015-v687-polices-allegees` |
 | Badge preview (`spVersionBadge`) | `v1.7.693` — 5 marqueurs : commentaire, `title` (`JS v692`), `data-sp-js="v692"`, `data-sp-sw="v1.7.687"`, texte |
