@@ -38084,7 +38084,39 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         try {
             const el = cv && cv.lowerCanvasEl;
             if (!el) return false;
-            const dens = (typeof cv.getRetinaScaling === 'function' ? cv.getRetinaScaling() : 1) || 1;
+            /* ═══ _SP_ZOOM_TOUS_691 — LA DENSITÉ EST CELLE DU BITMAP, PAS CELLE DU MOMENT ══
+               DÉFAUT MESURÉ, ET GRAVE : « ça ne zoome que le premier canvas ».
+               Document de 4 pages A4, zoom porté à 200 %. Mesuré dans le navigateur :
+                 · page 4 (la page courante) : bitmap 1836 × 2576, affichée 612 px → ×2 = 1224 px à l'écran ✔
+                 · pages 1 à 3 : bitmap 1102 × 1546, affichées 367 px → ×2 = 734 px à l'écran ✘
+               Les trois premières pages RÉTRÉCISSAIENT donc au lieu de grossir : 367 px au
+               lieu de 612. L'utilisateur ne voit qu'une page qui zoome, les autres
+               paraissent figées, et un format de travail chargé redevient illisible.
+
+               LA CAUSE EST UNE LECTURE DU MAUVAIS NOMBRE. `getRetinaScaling()` renvoie
+               `fabric.devicePixelRatio`, une valeur GLOBALE au moteur. Or le zoom ne
+               re-rasterise QUE la page courante (une haute résolution sur douze pages
+               ferait exploser la mémoire) : au moment de l'appel, cette globale vaut la
+               densité de la page courante (3), alors que le bitmap des autres pages a été
+               rastérisé à la densité précédente (1,8). Diviser 1102 par 3 donne 367 px :
+               la page est rétrécie du rapport 3 / 1,8.
+
+               LA DENSITÉ RÉELLE D'UN BITMAP SE CALCULE, ELLE NE SE LIT PAS AILLEURS :
+                   densité = largeur du bitmap / largeur logique du canvas
+               Elle est donc toujours juste, sans registre à tenir à jour, et insensible à
+               l'état global du moteur. C'est aussi ce qui rend l'affichage EXACTEMENT
+               aligné sur le bitmap, but premier de cette fonction (cf. _SP_NETTETE_637). */
+            const logiqueW = (Number(cv.width) > 0) ? Number(cv.width) : 0;
+            const logiqueH = (Number(cv.height) > 0) ? Number(cv.height) : 0;
+            let dens = 0;
+            if (logiqueW > 0 && logiqueH > 0) {
+                const dW = el.width / logiqueW;
+                const dH = el.height / logiqueH;
+                if (dW > 0 && dH > 0) dens = (dW + dH) / 2;
+            }
+            /* Repli : un canvas dont la largeur logique serait inutilisable garde
+               l'ancien calcul. On ne laisse jamais la taille affichée à NaN. */
+            if (!(dens > 0)) dens = (typeof cv.getRetinaScaling === 'function' ? cv.getRetinaScaling() : 1) || 1;
             const w = (el.width / dens), h = (el.height / dens);
             if (!(w > 0) || !(h > 0)) return false;
             const ws = w + 'px', hs = h + 'px';
@@ -38197,7 +38229,20 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
     function _spDensiteChangee() {
         const nouvelle = _spDensiteEcran();
-        const attendue = (zoomLevel <= 1) ? nouvelle : Math.min(8, nouvelle * zoomLevel);
+        /* ⚠️ _SP_ZOOM_TOUS_691 — LE MÊME PLAFOND QUE LE RESTE, PAS LA CONSTANTE 8.
+           Cette comparaison est la seule chose qui empêche le contrôle périodique
+           (une fois par seconde, cf. plus bas) de re-rasteriser TOUS les canvas.
+           Elle attendait `min(8, écran × zoom)`, valeur d'avant le budget de 48 Mpx.
+           Depuis que le plafond se calcule par planche et peut monter à 16, la densité
+           réellement appliquée sur un petit format dépassait 8 : l'attendu ne
+           correspondait donc plus JAMAIS au réel, et la surveillance re-rasterisait
+           toutes les planches chaque seconde, indéfiniment. On calcule l'attendu avec
+           la même fonction que l'application — deux formules pour un même nombre
+           finissent toujours par diverger. */
+        const _c = canvases[currentPageIndex];
+        const attendue = (zoomLevel <= 1)
+            ? nouvelle
+            : Math.min(_spPlafondDPR(_c && _c.width, _c && _c.height), nouvelle * zoomLevel);
         /* Rien a faire : la densite appliquee est deja la bonne. C'est CE test qui
            rend le controle periodique gratuit — il ne compare que deux nombres. */
         if (Math.abs(attendue - _lastAppliedZoomDPR) < 0.05) return;

@@ -45,6 +45,10 @@
 **/*.log
 **/.DS_Store
 superprint/sp213-local.zip
+# ⚠️ le miroir local ne doit JAMAIS recevoir de zip : c'est un dossier de sources.
+# Le 25/10/2026, une synchronisation trop large y a copie le paquet de 54 Mo et l'a
+# fait entrer dans un commit — deux exemplaires du meme binaire dans le depot.
+sp213-local/public/superprint/*.zip
 
 # Docs de debug / suivi interne (pas pour le repo public)
 superprint/ORGANISATION.md

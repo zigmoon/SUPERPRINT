@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.690`** — 26 octobre 2026
+> **Dernière version : `1.7.691`** — 25 octobre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,22 +10,22 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.690` |
+| Version app (affichée) | `1.7.691` |
 | Pastille du colophon (`index.html` **et** `price.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
-| Cache Service Worker (app) | `superprint-shell-v1.7.690-calques-shift-verrou-gabarit` |
-| Cache Service Worker (racine) | `superprint-shell-v1.7.690-calques-shift-verrou-gabarit` |
+| Cache Service Worker (app) | `superprint-shell-v1.7.691-zoom-tous-les-canvas` |
+| Cache Service Worker (racine) | `superprint-shell-v1.7.691-zoom-tous-les-canvas` |
 | Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261015-v687-polices-allegees` (JS) · `?v=20261015-v687-regles-20px-decales` (CSS) · `?v=20261015-v687-calque-encre` (module 3D) |
 | ⚠️ `fonts.css` — **empreinte SANS numéro de version** | `?v=20261015-v687-polices-allegees` |
-| Badge preview (`spVersionBadge`) | `v1.7.690` — 5 marqueurs : commentaire, `title` (`JS v690`), `data-sp-js="v690"`, `data-sp-sw="v1.7.687"`, texte |
-| Splash screen | `1.7.690` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.690` + `V 1.7.690 \| 10 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `app/index.html` **seulement**) | `1.7.690` — ⚠️ `landing.html` n'a **aucun** JSON-LD (c'est une page de redirection, son `v1.7.468` est une note de provenance) et `app/landing.html` **n'existe pas** |
-| Documentation (racine **et** `app/`) | `v1.7.690` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.690` |
-| `version.txt` | `1.7.690` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.690 (October 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.690` |
-| Lanceur npm (`superprint-npm/package.json`) | `1.0.119` (version **indépendante**, voir plus bas) |
+| Badge preview (`spVersionBadge`) | `v1.7.691` — 5 marqueurs : commentaire, `title` (`JS v691`), `data-sp-js="v691"`, `data-sp-sw="v1.7.687"`, texte |
+| Splash screen | `1.7.691` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.691` + `V 1.7.691 \| 10 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `app/index.html` **seulement**) | `1.7.691` — ⚠️ `landing.html` n'a **aucun** JSON-LD (c'est une page de redirection, son `v1.7.468` est une note de provenance) et `app/landing.html` **n'existe pas** |
+| Documentation (racine **et** `app/`) | `v1.7.691` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.691` |
+| `version.txt` | `1.7.691` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.691 (October 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.691` |
+| Lanceur npm (`superprint-npm/package.json`) | `1.0.119` (inchangé) (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
 > `app/landing.html`, `app/llms.txt` et `app/llms-full.txt` (tous en `1.7.404` jusqu'au
