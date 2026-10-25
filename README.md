@@ -27,8 +27,8 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.686-000000?style=flat-square">
-  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.117-CB3837?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.692-000000?style=flat-square">
+  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.119-CB3837?style=flat-square">
   <img alt="Desktop beta" src="https://img.shields.io/badge/desktop-Windows%20%7C%20macOS%20%7C%20Linux-F2B90B?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20spot%20inks-E1237B?style=flat-square">
@@ -60,9 +60,11 @@
 
 ## ✦ SuperPrint in one sentence
 
-**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, **spot inks**, master pages, linked text frames, fine typography) with an **AI layout studio** that turns a written brief into a print-ready, fully editable document.
+**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free to use, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, **spot inks**, master pages, linked text frames, fine typography) with an **AI layout studio** that turns a written brief into a print-ready, fully editable document.
 
 > Online or local, your documents stay **on your machine**. Nothing is sent anywhere unless you deliberately enable a cloud AI provider.
+
+> **Optional support.** The project is funded by an optional PayPal contribution — **13 € once**, or a **39 €/year subscription to the news**, renewed automatically until cancelled ([details](https://superprint.cc/price.html)). Use the software as long as you like: nothing in the editor is gated behind that subscription.
 
 ---
 
@@ -122,7 +124,7 @@ SuperPrint is not a single tool: it is a small **family of browser-based creativ
 - **Offset-ready output** — CMYK + ICC, spot inks from six built-in swatch books (**Toyo Color Finder, Focoltone, HKS, RAL, NCS, DIC**) plus your own **`.ase`** libraries, PDF/X-3, imposition, and a soft-proof preview.
 - **Typography that survives export** — vector PDF keeps text selectable and searchable. Hyphenation dictionaries ship for **French, English, German, Spanish and Italian**.
 - **100 % browser-based** — nothing to install for online use: Chrome, Firefox, Safari, Edge.
-- **No subscription, no account, no tracking** — open it and start composing.
+- **No account, no tracking** — open it and start composing. The support subscription on the price page is optional and never unlocks anything.
 - **Offline PWA** — installable as a desktop app, with an auto-save net in **IndexedDB**.
 - **AI that can stay local** — run Studio IA on cloud models, or entirely offline with WebLLM over WebGPU.
 - **Interoperability** — import the documents you already have; export print-ready files.
@@ -233,17 +235,19 @@ python -m http.server 8000 --directory superprint
 
 ## ✦ The repository
 
-The repository ships **the product only** — three folders, two build helpers and four root files. All development tooling (349 scripts, 281 logs, backups, test fixtures) lives outside the repository, in a `_dev/` folder that is git-ignored.
+The repository ships **the product only**. All development tooling (scripts, logs, backups, test fixtures) lives outside the repository, in a `_dev/` folder that is git-ignored. These counts are deliberately not written down: they drift every week, and a number that is wrong is worse than no number.
 
 | Path | Role | Tracked |
 |---|---|---|
 | `superprint/` | The complete web application: editor, landing, Studio IA, SuperTyPo, documentation, script API | ✅ |
 | `sp213-local/` | The local distribution (Vite + WebLLM) downloaded by the npm launcher | ✅ |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) | ✅ |
+| `superprint_ASTRO/` | Astro source of the site — the same pages, built with a factored `<head>`, shared components and external scripts; `tools/marketing/` holds the mail template and its builder | ✅ |
 | `superprint_desktop/` | The **Tauri 2** desktop packaging: one configuration per application, the bundling script, the Debian documentation files and the icon sets | ✅ |
+| `superprint_rust/` · `superprint_asm/` | The calculation core being rewritten in **Rust** (native + WebAssembly) and, in parallel, by hand in **WebAssembly Text**. Independent experiments: neither changes what is served in production | ✅ |
 | `.github/workflows/build-desktop.yml` | Builds the **21 installers** on GitHub runners (Windows, Linux, macOS Apple silicon and Intel) and publishes them to the `desktop-latest` release, then archives each version under its own `desktop-v<version>` tag | ✅ |
 | `tools/` | Two dependency-free helpers: `serve.mjs` (local static server) and `make-release-zip.mjs` | ✅ |
-| `README.md` · `CHANGELOG.md` · `release.html` · `.gitignore` | Documentation and release notes | ✅ |
+| `README.md` · `CHANGELOG.md` · `release.html` · `LICENSE` · `.gitignore` | Documentation, release notes and licence | ✅ |
 | `_dev/` | Development tooling, logs, backups, fixtures | ❌ ignored |
 
 ```bash
@@ -273,7 +277,7 @@ git log --oneline v1.7.400..v1.7.421      # what changed between two releases
 git diff v1.7.380 v1.7.421 --stat         # full diff between two
 ```
 
-`release.html` holds the **complete trilingual (FR / EN / JP) release notes** — **129 entries** covering the whole family (91 for SuperPrint, spanning `1.7.92` → `1.7.417`) alongside the team's other applications. It is also published at [app.zigmoon.com/release.html](https://app.zigmoon.com/release.html). `CHANGELOG.md` is the condensed English version.
+`release.html` holds the **complete trilingual (FR / EN / JP) release notes** for every version of the family — SuperPrint from `1.7.92` to `1.7.692`, plus the team's other applications. It is also published at [app.zigmoon.com/release.html](https://app.zigmoon.com/release.html). `CHANGELOG.md` is the condensed English version. (No entry count is written here on purpose: it drifts at every release, and a number that is wrong is worse than no number — `grep -c '<article class="release-block"' release.html` gives the truth.)
 
 ---
 

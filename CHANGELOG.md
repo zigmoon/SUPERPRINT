@@ -9,6 +9,125 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.692] — 2026-10-25
+
+_Un bloc texte ne passe plus en mode tabulation sans tabulation — et les calques se déplacent à la souris_
+
+> **Pourquoi cette version existe.** Deux retours utilisateur ; le premier décrit un défaut intermittent, donc mesuré avant d'être corrigé.
+
+### Fixed — le mode tabulation ne s'allume plus pour rien
+
+- Retour utilisateur : « parfois quand je sélectionne un bloc texte, celui-ci se met en mode tabulation alors qu'il n'y en a pas ».
+- **Mesuré** : un bloc portant `_spTabs = { active: true, stops: [] }` et dont le texte ne contient **aucune** tabulation fait dessiner la règle des taquets au-dessus de lui — 1 objet `_isTabRuler` créé, vérifié dans le navigateur — alors qu'il n'y a littéralement rien à justifier.
+- **Deux sources, toutes deux écrites dans le document** (d'où le « parfois » : cela dépendait de ce qu'on avait fait la veille). `insererTabulation()` activait les taquets **avant** de savoir si l'insertion avait réussi, et elle a un chemin de repli qui peut échouer ; le bouton « Effacer » vidait `stops` en laissant `active` à vrai.
+- **Correctif** : l'insertion mesure désormais son résultat et rend l'état d'avant si rien n'a été posé ; `modifier()` éteint le mode quand il était **déjà allumé** et qu'il ne reste ni taquet ni tabulation.
+- **Le garde-fou est volontairement étroit** : cocher « Taquets actifs sur le bloc » sur un bloc vierge fonctionne toujours (mesuré : la case reste cochée, `active` reste vrai), parce que c'est le geste qui permet ensuite de poser des taquets au clic sur la règle. Un bloc qui **a** un taquet, ou une vraie tabulation dans son texte, n'est jamais touché — les deux cas mesurés.
+- Les états résiduels déjà présents dans les fichiers existants sont nettoyés au chargement, en un seul point d'entrée (`addSpecialTextObjectsToCanvas`), comme les verrous de calque.
+
+### Added — glisser-déposer des calques dans la liste
+
+- Demande utilisateur : « dans l'option calque, je dois pouvoir déplacer les calques avec la souris en drag and drop ».
+- **Deux ordres qu'il ne faut pas confondre** : la liste est peinte du **haut vers le bas** (`getObjects().reverse()`) alors que la pile Fabric va du **bas vers le haut**. « Déposer après la ligne 2 » n'est donc pas « index 3 » ; la conversion est faite une fois, au même endroit.
+- Seuls les objets **montrés** par la liste sont réordonnés : marges, fond perdu, repères et filet de page gardent leur emplacement exact (mesuré : les objets de structure restent aux indices 4, 5 et 6 après un déplacement). Les objets visibles sont réaffectés aux emplacements qu'ils occupaient déjà, donc rien d'autre ne bouge.
+- Une **sélection multiple** se déplace en bloc et conserve son ordre relatif (mesuré sur deux calques sélectionnés).
+- Le glisser ne démarre qu'après **4 px** de déplacement : sans ce seuil, chaque clic de sélection réordonnerait la pile. Le clic qui suit le dépôt est avalé, sinon le calque déposé était re-sélectionné au passage.
+- Retour visuel : trait d'insertion cyan de 2 px à l'endroit exact du dépôt, ligne soulevée, curseur « grabbing ».
+- **Mesuré au vrai pointeur** : trait visible et positionné, ordre correctement permuté, **Ctrl+Z restaure exactement l'ordre précédent**, et l'ordre survit à `saveAllPages(true)` + `renderAllPages()`.
+
+---
+
+## [1.7.691] — 2026-10-25
+
+_Le zoom déplace toutes les pages, plus seulement celle qu'on édite_
+
+> **Pourquoi cette version existe.** Retour utilisateur : « ça zoom que le premier canvas à présent, cela doit zoomer l'ensemble des canvas ».
+
+### Fixed — toutes les planches se zooment ensemble
+
+- **Mesuré avant**, document de 4 pages A4 porté à 200 % : la page courante mesurait **1224 px** à l'écran (bitmap 1836 × 2576) ; les trois autres restaient à **367 px** et **rétrécissaient** donc quand on zoomait. Vu depuis la page 1, le symptôme est exactement « seul le premier canvas zoome ».
+- **Le zoom n'était pas en cause** : c'est un `transform: scale()` CSS sur le conteneur, tous les enfants suivent. Le défaut était **un nombre lu au mauvais endroit**. `spAjusterTailleAffichee()` — qui aligne la taille affichée d'un canvas sur son bitmap — divisait le bitmap par `getRetinaScaling()`, qui renvoie `fabric.devicePixelRatio`, une valeur **globale** au moteur. Or le zoom ne re-rasterise **que** la page courante (une haute résolution sur douze pages ferait exploser la mémoire) : la globale valait donc la densité de la page courante (3) alors que le bitmap des autres avait été rastérisé à la densité précédente (1,8) — 1102 ÷ 3 = 367 px au lieu de 612.
+- **La densité réelle d'un bitmap se calcule, elle ne se lit pas ailleurs** : `largeur du bitmap ÷ largeur logique du canvas`. Toujours juste, sans registre à tenir à jour, insensible à l'état global du moteur. L'ancienne lecture ne sert plus que de repli.
+- **Mesuré après**, largeur **et** hauteur identiques sur toutes les pages à chaque cran, rapport exactement égal au zoom demandé : 100 % → 612 px (×1,000) · 150 % → 918 (×1,500) · 175 % → 1071 (×1,749) · 200 % → 1224 (×2,000) · 250 % → 1531 (×2,500) · 300 % → 1837 (×3,000) · 400 % → 2449 (×4,000) · 450 % → 2755 (×4,500) · 500 % → 3061 (×5,000) · 75 % → 459 (×0,750) · 50 % → 86 · 25 % → 43 · 10 % → 17. Vérifié aussi sur un format 55 × 85 mm.
+
+### Fixed — la surveillance de densité ne re-rastérise plus toutes les planches chaque seconde
+
+- **Second défaut trouvé en mesurant, dans le même secteur** : la surveillance qui revalide la densité de l'écran une fois par seconde comparait la densité appliquée à la constante **8** en dur, reste d'avant le budget de 48 Mpx par page. Depuis que ce budget permet à une petite page d'atteindre 16, l'attendu ne correspondait plus **jamais** au réel : toutes les planches étaient re-rasterisées **chaque seconde, indéfiniment**.
+- Elle calcule désormais son attendu avec la même fonction que l'application — deux formules pour un même nombre finissent toujours par diverger. **Mesuré après : 0 re-rasterisation en 5 s d'inactivité à 450 %.**
+
+---
+## [1.7.690] — 2026-10-25
+
+_Calques : sélection multiple au Maj, cadenas, et la grille du gabarit_
+
+> **Pourquoi cette version existe.** Trois demandes d'un même retour utilisateur sur le panneau Calques et le mode gabarit.
+
+### Added — sélection multiple avec Maj
+
+- Demande : « pouvoir sélectionner plusieurs calques en même temps avec la touche shift ».
+- `Maj+clic` bascule un calque dans la sélection courante, un clic simple la remplace — la convention de Photoshop, Illustrator et InDesign.
+- **La sélection n'est pas tenue dans le panneau**, elle est relue du canevas (`getActiveObjects()`) : une suppression, un changement de page ou un Ctrl+Z ne peuvent pas laisser de liste fantôme. Le panneau est repeint **synchronement** par l'appel qui écrit la sélection (le rafraîchissement différé perdait des mises à jour).
+- Mesuré : 1 → 2 → 3 → 2 lignes allumées, identique au nombre d'objets réellement sélectionnés à chaque étape.
+
+### Added — cadenas par calque
+
+- Demande : « pouvoir verrouiller / déverrouiller des calques avec un petit cadenas placé à côté de la corbeille ».
+- Le cadenas est posé **avant** la corbeille : on demande souvent l'un, rarement l'autre, et une corbeille qu'on frôle efface un calque alors qu'un cadenas qu'on frôle ne casse rien. L'ordre suit le risque.
+- Le verrou pose `lockMovement*`, `lockScaling*`, `lockRotation`, `evented: false` et `hasControls: false`, et la marque `_spLocked` est **sérialisée** (`SP_CUSTOM_PROPS`) : sans cela le verrou disparaissait à la première sauvegarde. Elle est relue à chaque chargement de planche.
+- Un calque verrouillé reste saisissable **dans la liste** — c'est ce que fait InDesign — mais pas sur la page ; sa ligne passe en italique et se teinte.
+- Mesuré : verrou présent avant `saveAllPages(true)`, toujours présent après `renderAllPages()` (`evented: false`, `lockMovementX: true`), panneau cohérent après rechargement.
+- Deux défauts corrigés en mesurant : cliquer un calque verrouillé alors que deux objets étaient sélectionnés allumait **trois** lignes pour deux objets réels (la sélection du document est maintenant vidée) ; et au rechargement le panneau était peint **avant** la relecture des verrous, donc le cadenas s'affichait ouvert sur un calque verrouillé.
+
+### Fixed — la grille et les repères apparaissent sur la préview du gabarit
+
+- Demande : « en mode gabarit, lorsque je retouche ou je place des repères ou des grilles, les repères et les grilles doivent apparaître sur la préview du gabarit ».
+- `rebuildGridAll()` ne parcourait que `canvases`, les pages. Le canevas du gabarit en est volontairement absent (il ne doit être ni sérialisé ni reconstruit comme une page) : il était donc **littéralement invisible** pour cette fonction — page = 10 repères de grille, gabarit = 0. Il est désormais ajouté en tête quand l'édition de gabarit est ouverte, sans entrer dans `canvases`.
+- `spMasterEditEnregistrer()` écartait **tous** les `isManualGuide` : les repères techniques (marges, traits de coupe, filet de format) sont recalculés à l'affichage, c'est juste — mais un repère posé **à la main** sur le gabarit portait le même drapeau et disparaissait à l'enregistrement. `_isMasterGuide` sépare maintenant les deux.
+- Mesuré : grille 0 → 10 objets dès que « Show grid » est cochée, et 2 repères posés à la main survivent à Enregistrer puis Rouvrir (vertical à x = 403 px pour 50 mm, horizontal à y = 482 px pour 60 mm).
+
+---
+
+## [1.7.689] — 2026-10-25
+
+_Le zoom est net sur les petits formats, l'interface garde sa taille, et « ajouter une couleur » devient une vraie fenêtre_
+
+### Fixed — la page zoomée n'est plus pixellisée sur un petit format
+
+- Le bitmap est ré-rastérisé à `zoom × densité de l'écran`, et le code plafonnait cette densité à un **8 fixe**. Une page 55 × 85 mm poussée à 500 % sur un écran 2× en demande 10 : elle n'obtenait que 80 % des pixels, d'où le flou — une page A4 ne dépasse jamais 150 % et ne voyait jamais le plafond. C'est pourquoi **seuls les petits formats** paraissaient pixellisés.
+- Le plafond est maintenant dérivé d'un **budget de pixels par page** (48 Mpx) et de la limite des moteurs (16 384 px par côté) : la même petite page autorise 16×, une A4 reste vers 7×. Mesuré à 400 % sur un écran 1,5× : densité du bitmap 6, rapport de netteté 1,000.
+
+### Fixed — les graphismes de l'interface ne suivent plus le zoom
+
+- Demande : « contour de bloc texte, contour de page, fond perdu, repères, sélection, curseur… ils ne doivent pas suivre le zoom ».
+- Ils suivaient, parce que tout vit dans le conteneur mis à l'échelle. Chaque trait d'interface est désormais divisé par le zoom en coordonnées **document**, si bien que la multiplication du compositeur ramène une valeur constante à l'écran : filet de page mesuré à 0,375 px local × 4 = **1,500 px à l'écran**, bordure de sélection et poignées à `1/zoom` (poignée de 8 px → 2 px à 400 %), curseur de saisie de même, et fond perdu / traits de coupe / repères conservent leur épaisseur d'origine mémorisée une seule fois dans `_spTraitBase`, pour que des crans de zoom successifs ne les affinent pas jusqu'à disparition.
+- **Seuls les objets marqués comme interface sont touchés** : le trait de 1 px d'un utilisateur doit continuer de grossir avec le zoom, comme dans n'importe quel logiciel de PAO.
+
+### Fixed — la fenêtre « ajouter une couleur »
+
+- Le voile gris a disparu : il n'était pas cosmétique, la pipette échantillonne les pixels composites, donc un voile à 60 % teintait **toutes** les couleurs prélevées sur la page. La couche est transparente et en `pointer-events: none`, le panneau flotte avec une ombre légère à deux couches au lieu d'une tache de 60 px, et il se déplace par sa barre de titre (mesuré : 140 × 90 px suivent, et il se recentre à l'ouverture suivante).
+- Chaque carré de couleur ouvre désormais la **liste des nuanciers enregistrés** (nom + hexadécimal) au lieu du sélecteur système nu, avec « Autre couleur… » en repli pour une valeur absente du panneau. Vérifié par le chemin réel : une couleur créée avec le bouton Créer apparaît comme neuvième pastille du panneau.
+
+---
+
+## [1.7.688] — 2026-10-25
+
+_Six expositions légales fermées, et le plug-in « Google Fonts » supprimé_
+
+> **Pourquoi cette version existe.** Audit de conformité : six risques identifiés, six corrigés.
+
+### Removed — le plug-in Google Fonts
+
+- Il interrogeait `fonts.googleapis.com` à chaque aperçu de police, transmettant l'IP du visiteur à Google sans base légale — le contentieux le plus documenté en Europe depuis LG München I (20/01/2022, 3 O 17493/20).
+- Le fichier est supprimé, il n'est plus chargé, et une **purge au premier lancement** retire la copie qu'un utilisateur aurait installée à la main, avec son drapeau d'activation et ses données. Toutes les familles utilisées par l'interface étaient déjà hébergées dans `CSS/fonts.css`. Même traitement pour A7LAS (`css/fonts-local.css`) et pour app.zigmoon.com (`fonts-local.css`), qui appelaient encore Google.
+
+### Added — âge, renouvellement, e-mail marketing, DMCA, relecture de session
+
+- **Âge et renouvellement** : le logiciel ne demande ni compte ni âge ; le seul engagement durable est l'abonnement de soutien à 39 €/an, **reconduit automatiquement**. Un contrôle se place devant chaque lien d'abonnement récurrent : confirmation explicite d'avoir 18 ans, acceptation explicite des termes de reconduction, réponse « j'ai moins de 18 ans » proposée qui **bloque** le lien et enregistre le refus, et les termes de renouvellement imprimés **en permanence** sous le bouton au lieu d'être cachés derrière un clic.
+- **E-mail marketing** : `tools/marketing/` contient le modèle, la configuration et un constructeur qui **REFUSE** d'écrire un message tant que l'adresse postale est vide — le CAN-SPAM exige une adresse physique dans chaque message commercial, et un modèle qui se contenterait d'avertir laisserait partir du courrier non conforme. Il imprime les en-têtes `List-Unsubscribe` / `List-Unsubscribe-Post` que l'outil d'envoi doit porter. Une page publique `unsubscribe.html` sépare ce que le même mot recouvre : arrêter les e-mails, et résilier le mandat PayPal.
+- **Droit d'auteur** : `dmca.html` donne les six éléments d'une notification, la voie de la contre-notification et la procédure d'enregistrement d'un agent auprès du US Copyright Office, renouvellement triennal et piège des noms alternatifs compris. La page dit aussi clairement qu'il n'y a **aucun espace de publication** sur ce service — ni commentaire, ni forum, ni galerie, ni dépôt ouvert — donc aucun agent n'est requis aujourd'hui ; la procédure est documentée pour le jour où un tel espace ouvrirait, car il faudrait alors le faire **avant** la mise en ligne.
+- **Relecture de session** : aucune n'était installée ; la politique de confidentialité le dit désormais dans les trois langues et nomme les outils qui n'y seront jamais ajoutés — et l'affirmation est vérifiable, puisque le site ne charge aucun script tiers, aucun outil de mesure et aucun CDN de polices. La seule requête tierce restante (l'appel à l'API GitHub qui publie la dernière version) est déclarée dans la même politique, dans les trois langues, avec ce qu'elle transmet et pourquoi on peut la bloquer sans conséquence.
+- La mention légale gagne les sections 11 (abonnement, âge, résiliation), 12 (signalements) et 13 (acceptation) ; la politique de confidentialité gagne les sections polices, abonnement, âge et absence d'enregistrement de session. L'adresse postale de l'éditeur — **35 rue de Montaut, 45380 La Chapelle-Saint-Mesmin, France** — est publiée dans la mention légale des pages qui la portent, dans les trois langues.
+
+---
 ## [1.7.687] — 2026-10-22
 
 _L'image remplacée est celle qui s'exporte — et un PDF de remplacement laisse choisir sa page_
