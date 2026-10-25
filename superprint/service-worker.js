@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.691-zoom-tous-les-canvas';
+const CACHE_NAME = 'superprint-shell-v1.7.692-calques-glisser-tabulation';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

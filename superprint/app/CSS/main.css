@@ -2250,7 +2250,7 @@ textarea[data-fabric-hiddentextarea] {
 .format-btn { padding: 8px 8px; background: #f8f8f8; border: 1px solid #e0e0e0; cursor: pointer; text-align: center; font-size: 10px; transition: all 0.2s; }
 .format-btn:hover { background: #f0f0f0; }
 .format-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-.layers-panel { max-height: 240px; overflow-y: auto; }
+.layers-panel { max-height: 240px; overflow-y: auto; position: relative; }
 .layer-item { padding: 6px 8px; background: #f8f8f8; margin-bottom: 3px; cursor: pointer; font-size: 10px; display: flex; justify-content: space-between; align-items: center; }
 .layer-item:hover { background: #f0f0f0; }
 .layer-item.active { background: #1a1a1a; color: #fff; }
@@ -2263,6 +2263,26 @@ textarea[data-fabric-hiddentextarea] {
 .layer-item--locked { background: #fbf4f7; }
 .layer-item--locked.active { background: #2a2024; color: #fff; }
 .theme-dark .layer-item--locked { background: #241b1f; }
+/* 🆕 v1.7.692 — _SP_CALQUES_DND_692 : glisser-déposer d'un calque dans la liste.
+   La ligne soulevée s'efface un peu (on voit qu'elle a quitté sa place) et le
+   repère d'insertion dit EXACTEMENT où elle atterrira. Le repère est un trait de
+   2 px, pleine largeur, cyan de l'interface — assez visible pour être lu d'un
+   coup d'œil, assez fin pour ne pas masquer les noms des calques voisins. */
+.layer-item--dragging { opacity: 0.45; }
+body.sp-calques-dnd { cursor: grabbing; }
+body.sp-calques-dnd .layer-item { cursor: grabbing; }
+#spCalquesFente {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 2px;
+    margin-top: -1px;
+    background: #00aaff;
+    border-radius: 1px;
+    box-shadow: 0 0 0 1px rgba(0, 170, 255, 0.28);
+    pointer-events: none;
+    z-index: 20;
+}
 .overflow-indicator { width: 8px; height: 8px; background: #ff0000; border-radius: 2px; }
 .link-indicator { font-size: 9px; opacity: 0.7; }
 /* ✅ FIX TREMBLEMENT: Stabiliser la rightbar avec position fixe et sans scrollbar-gutter */

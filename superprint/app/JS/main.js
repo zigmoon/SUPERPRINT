@@ -9477,7 +9477,20 @@ window.spTestDiag = function () {
         var blocs = blocsTexte();
         blocs.forEach(function (obj) {
             var t = modele(obj);
+            var etaitActif = !!t.active;
             fn(t, obj);
+            /* 🆕 v1.7.692 — _SP_TAB_PROPRE_692 : ON NE LAISSE PAS UN BLOC « ACTIF » SANS RIEN À TABULER.
+               C'est le bouton « Effacer » qui fabriquait cet état : il vidait `stops` en laissant
+               `active` à vrai, si bien que la règle des taquets restait dessinée au-dessus d'un
+               bloc n'ayant plus ni taquet ni tabulation — exactement le symptôme rapporté
+               (« il se met en mode tabulation alors qu'il n'y en a pas »).
+               ⚠️ ON NE DÉSACTIVE QUE CE QUI ÉTAIT DÉJÀ ACTIF AVANT CE RÉGLAGE
+               (`etaitActif`). Sans cette distinction, cocher la case « Taquets actifs sur le
+               bloc » sur un bloc encore vierge serait annulé dans le même souffle — or c'est
+               précisément le geste qui permet de poser des taquets au clic sur la règle. */
+            if (etaitActif && t.active && t.stops.length === 0 && (obj.text || '').indexOf('\t') < 0) {
+                t.active = false;
+            }
             rafraichir(obj);
         });
         /* 🆕 v1.7.479 — la règle suit CHAQUE réglage : ajout, retrait, position,
@@ -10032,6 +10045,13 @@ window.spTestDiag = function () {
        ordinaire et n'avancerait à rien. */
     function insererTabulation(obj, c) {
         var t = modele(obj);
+        /* 🆕 v1.7.692 — _SP_TAB_PROPRE_692 : ON N'ACTIVE LES TAQUETS QUE SI LA TABULATION EST RÉELLEMENT POSÉE.
+           MESURÉ : l'activation était faite AVANT l'insertion, et l'insertion a un chemin de
+           repli qui peut échouer (sélection incohérente, `insertChars` absent). Un bloc
+           ressortait alors « en mode tabulation » — règle dessinée au-dessus de lui — sans la
+           moindre tabulation dans son texte, et l'état partait dans le fichier. On mesure donc
+           l'effet au lieu de le supposer : `active` n'est validé qu'après vérification. */
+        var etaitActif = !!t.active;
         var activeMaintenant = false;
         if (!t.active) {
             t.active = true;
@@ -10071,6 +10091,16 @@ window.spTestDiag = function () {
             /* Repli : rien n'a été inséré (chemin natif absent ou sélection incohérente).
                On cale la sélection du bloc sur le curseur, puis on réessaie. */
             try { obj.selectionStart = obj.selectionEnd = p0; obj.insertChars('\t'); } catch (_) {}
+        }
+        /* 🆕 v1.7.692 — _SP_TAB_PROPRE_692 : CONTRÔLE APRÈS COUP, ET RETOUR EN ARRIÈRE SI RIEN N'EST POSÉ.
+           Si aucune tabulation n'a pu être insérée, le bloc ne doit pas RESTER activé : c'est
+           cet état résiduel qui faisait apparaître la règle des taquets sur un bloc qui n'en
+           avait aucun (« il se met en mode tabulation alors qu'il n'y en a pas »). On rend
+           exactement l'état d'avant, sans rien laisser derrière. */
+        var _tabPosee = ((obj.text || '').indexOf('\t') >= 0);
+        if (!_tabPosee && !etaitActif) {
+            t.active = false;
+            activeMaintenant = false;
         }
         /* 🩹 Fabric ne déplace PAS le curseur dans insertChars (mesuré : 2 → 2 après
            insertion) : sans ce repositionnement, le caractère suivant partait AVANT
@@ -13584,6 +13614,20 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                le placer ici évite d'avoir à le rappeler aux quatre endroits, et donc
                d'en oublier un. Idempotent : sans objet verrouillé, il ne fait rien. */
             try { spAppliquerVerrousCalques(fabricCanvas); } catch (_) {}
+            /* 🆕 v1.7.692 — _SP_TAB_PROPRE_692 : AUCUN BLOC N'ARRIVE « EN MODE TABULATION » SANS TABULATION.
+               Retour utilisateur : « parfois quand je sélectionne un bloc texte, celui-ci se met en
+               mode tabulation alors qu'il n'y en a pas ».
+               MESURÉ : un bloc portant `_spTabs = { active: true, stops: [] }` et dont le texte ne
+               contient AUCUNE tabulation fait dessiner la règle des taquets au-dessus de lui
+               (1 objet `_isTabRuler` créé, vérifié dans le navigateur) — alors qu'il n'y a
+               littéralement rien à justifier. Cet état vient du bouton « Effacer » du panneau
+               (il vide les taquets mais laissait `active` à vrai) et d'une insertion de
+               tabulation qui avait échoué : l'un comme l'autre l'écrivait dans le document, et
+               le fichier rouvert le rapportait fidèlement.
+               On le corrige donc À L'ENTRÉE, une seule fois par planche chargée : un état
+               « actif » sans taquet ni tabulation est un résidu, pas une intention. Un bloc qui a
+               des taquets, ou une tabulation dans son texte, est respecté tel quel. */
+            try { spTabNettoyerEtatsResiduels(fabricCanvas); } catch (_) {}
             const bleedPx = mmToPx(bleed);
             let added = false;
 
@@ -32466,6 +32510,281 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         }
         window.spAppliquerVerrousCalques = spAppliquerVerrousCalques;
 
+        /* ═══════════════════════════════════════════════════════════════════════════
+           _SP_TAB_PROPRE_692 — UN BLOC N'EST « EN MODE TABULATION » QUE S'IL Y A
+           QUELQUE CHOSE À TABULER.
+           ═══════════════════════════════════════════════════════════════════════════
+           Retour utilisateur : « parfois quand je sélectionne un bloc texte, celui-ci se
+           met en mode tabulation alors qu'il n'y en a pas ».
+
+           MESURÉ dans le navigateur : un bloc portant `_spTabs = { active: true,
+           stops: [] }` dont le texte ne contient aucune tabulation fait bien dessiner
+           la règle des taquets (1 objet `_isTabRuler`) au-dessus de lui. La règle est
+           donc visible, en permanence, pour un bloc qui n'a ni taquet ni tabulation.
+
+           D'OÙ VIENT CET ÉTAT, ET CE N'EST PAS UN HASARD : le bouton « Effacer » du
+           panneau vide `stops` mais laissait `active` à vrai ; et `insererTabulation()`
+           activait les taquets AVANT de savoir si l'insertion avait réussi. Les deux
+           écrivaient l'état dans le document, que le fichier rouvert rapportait
+           fidèlement — d'où le « parfois » : cela dépend de ce qu'on a fait la veille.
+
+           LA RÈGLE EST UNE IMPLICATION, PAS UNE PRÉFÉRENCE : « actif » sans taquet ET
+           sans tabulation n'a aucun sens, puisque rien ne peut être justifié. On ne
+           touche donc qu'à ce cas exact. Un bloc qui a des taquets — même activés à la
+           main pour en poser de nouveaux au clic sur la règle — n'est jamais modifié. */
+        function spTabAEtatsResiduels(obj) {
+            try {
+                if (!obj || !obj._spTabs) return false;
+                var t = obj._spTabs;
+                if (!t.active) return false;
+                var aDesTaquets = !!(t.stops && t.stops.length);
+                var aUneTabulation = ((obj.text || '').indexOf('\t') >= 0);
+                return !aDesTaquets && !aUneTabulation;
+            } catch (_) { return false; }
+        }
+
+        function spTabNettoyerEtatsResiduels(canvas) {
+            if (!canvas || typeof canvas.getObjects !== 'function') return 0;
+            var n = 0;
+            try {
+                canvas.getObjects().forEach(function (o) {
+                    if (!spTabAEtatsResiduels(o)) return;
+                    o._spTabs.active = false;
+                    n++;
+                });
+            } catch (_) {}
+            return n;
+        }
+        window.spTabAEtatsResiduels = spTabAEtatsResiduels;
+        window.spTabNettoyerEtatsResiduels = spTabNettoyerEtatsResiduels;
+
+        /* ═══════════════════════════════════════════════════════════════════════════
+           _SP_CALQUES_DND_692 — DÉPLACER UN CALQUE À LA SOURIS DANS LA LISTE
+           ═══════════════════════════════════════════════════════════════════════════
+           Demande utilisateur : « dans l'option calque, je dois pouvoir déplacer les
+           calques avec la souris en drag and drop ».
+
+           DEUX ORDRES QU'IL NE FAUT PAS CONFONDRE, ET C'EST TOUT LE SUJET :
+             · la liste est peinte du PLUS HAUT au PLUS BAS (elle est construite sur
+               `getObjects().reverse()`) : la ligne 0 est l'objet du DESSUS ;
+             · le tableau de Fabric va du PLUS BAS au PLUS HAUT : l'index 0 est l'objet
+               du DESSOUS.
+           Déposer une ligne « après la ligne 2 » ne veut donc PAS dire « à l'index 3 ».
+           Toute la conversion est faite ici, une fois, et jamais à moitié.
+
+           TROIS RÈGLES DE TENUE, apprises des défauts voisins :
+             1. On ne réordonne QUE les objets visibles dans la liste. Les éléments de
+                structure (marges, fond perdu, repères, filet de page) gardent leur place
+                exacte dans la pile : les déplacer casserait l'affichage.
+             2. On n'écrit jamais `canvas._objects` en entier. On réaffecte les objets
+                visibles aux emplacements que les visibles occupaient déjà — les autres
+                ne bougent donc pas d'un pouce.
+             3. Une sélection multiple se déplace EN BLOC et garde son ordre relatif.
+
+           ⚠️ LE GLISSER NE SE DÉCLENCHE QU'APRÈS 4 px DE DÉPLACEMENT : sans ce seuil,
+           un simple clic (pour sélectionner) compterait comme un déplacement et
+           réordonnerait la pile à chaque sélection.
+           ═══════════════════════════════════════════════════════════════════════════ */
+        var _SP_DND_SEUIL = 4;
+        var _spDnd = null;
+
+        /* Les objets que la liste montre, dans l'ordre de la LISTE (haut → bas). */
+        function spCalquesListePanneau(canvas) {
+            var ac = canvas || getActiveCanvas();
+            if (!ac || typeof ac.getObjects !== 'function') return [];
+            return ac.getObjects().filter(function (obj) {
+                return obj &&
+                    !obj.isMargin && !obj.isBleed && !obj.isGuide && !obj.isManualGuide &&
+                    !obj.isTrimBox && !obj.isPageBorder && !obj._isSpreadMirror &&
+                    !obj._isChainBadge && !obj._isLinkArrow && !obj._isOverflowIndicator &&
+                    !obj.excludeFromExport;
+            }).reverse();
+        }
+
+        /* Applique un nouvel ordre (liste haut → bas) à la pile du canevas. */
+        function spCalquesAppliquerOrdre(nouvelOrdreListe, canvas) {
+            var ac = canvas || getActiveCanvas();
+            if (!ac || typeof ac.getObjects !== 'function') return false;
+            var tous = ac.getObjects().slice();
+            var visibles = spCalquesListePanneau(ac);        /* haut → bas */
+            if (visibles.length !== nouvelOrdreListe.length) return false;
+            /* Les emplacements occupés par les objets visibles, du bas vers le haut. */
+            var emplacements = [];
+            for (var i = 0; i < tous.length; i++) {
+                if (visibles.indexOf(tous[i]) >= 0) emplacements.push(i);
+            }
+            if (emplacements.length !== visibles.length) return false;
+            /* Liste (haut → bas) remise dans le sens de la pile (bas → haut). */
+            var ordrePile = nouvelOrdreListe.slice().reverse();
+            for (var k = 0; k < emplacements.length; k++) {
+                tous[emplacements[k]] = ordrePile[k];
+            }
+            /* Réécriture SUR PLACE : aucun objet n'entre ni ne sort, donc les crochets
+               _onObjectAdded/_onObjectRemoved de Fabric n'ont rien à faire ici. */
+            try {
+                var arr = ac._objects;
+                for (var j = 0; j < tous.length; j++) arr[j] = tous[j];
+            } catch (_) { return false; }
+            try { ac.requestRenderAll(); } catch (_) {}
+            return true;
+        }
+
+        /* Déplace les lignes `indices` (indices de LISTE) vers la fente `fente`
+           (0 = tout en haut, liste.length = tout en bas). Renvoie true si l'ordre a
+           réellement changé. */
+        function spCalquesDeplacerLignes(indices, fente, canvas) {
+            var ac = canvas || getActiveCanvas();
+            var liste = spCalquesListePanneau(ac);
+            if (!liste.length) return false;
+            var tries = indices.slice().sort(function (a, b) { return a - b; });
+            var pris = tries.map(function (i) { return liste[i]; }).filter(Boolean);
+            if (!pris.length) return false;
+            /* On retire les lignes déplacées, en mémorisant combien d'entre elles
+               étaient AVANT la fente : la fente se décale d'autant. */
+            var restants = [];
+            var avant = 0;
+            for (var i = 0; i < liste.length; i++) {
+                if (tries.indexOf(i) >= 0) { if (i < fente) avant++; }
+                else restants.push(liste[i]);
+            }
+            var cible = Math.max(0, Math.min(restants.length, fente - avant));
+            var nouveau = restants.slice(0, cible).concat(pris, restants.slice(cible));
+            var identique = nouveau.every(function (o, k) { return o === liste[k]; });
+            if (identique) return false;
+            return spCalquesAppliquerOrdre(nouveau, ac);
+        }
+
+        /* La fente sous le curseur : nombre de lignes dont le MILIEU est au-dessus de y. */
+        function spCalquesFenteSousY(y) {
+            var panel = document.getElementById('layersPanel');
+            if (!panel) return 0;
+            var lignes = panel.querySelectorAll('.layer-item');
+            var fente = 0;
+            for (var i = 0; i < lignes.length; i++) {
+                var r = lignes[i].getBoundingClientRect();
+                if (y > r.top + r.height / 2) fente = i + 1;
+            }
+            return fente;
+        }
+
+        function spCalquesAfficherFente(fente) {
+            var panel = document.getElementById('layersPanel');
+            if (!panel) return;
+            var repere = document.getElementById('spCalquesFente');
+            if (!repere) {
+                repere = document.createElement('div');
+                repere.id = 'spCalquesFente';
+                panel.appendChild(repere);
+            }
+            var lignes = panel.querySelectorAll('.layer-item');
+            var y = 0;
+            if (!lignes.length) y = 0;
+            else if (fente <= 0) y = lignes[0].offsetTop;
+            else if (fente >= lignes.length) {
+                var d = lignes[lignes.length - 1];
+                y = d.offsetTop + d.offsetHeight;
+            } else {
+                y = lignes[fente].offsetTop;
+            }
+            repere.style.top = Math.round(y) + 'px';
+            repere.style.display = 'block';
+        }
+
+        function spCalquesCacherFente() {
+            var repere = document.getElementById('spCalquesFente');
+            if (repere) repere.style.display = 'none';
+        }
+
+        function spCalquesFinirGlisser(applique) {
+            var d = _spDnd;
+            _spDnd = null;
+            if (!d) return;
+            spCalquesCacherFente();
+            try { d.ligne.classList.remove('layer-item--dragging'); } catch (_) {}
+            try { document.body.classList.remove('sp-calques-dnd'); } catch (_) {}
+            if (!applique) return;
+            var bouge = spCalquesDeplacerLignes(d.indices, d.fente, d.canvas);
+            if (bouge) {
+                /* Le glisser a bel et bien changé l'ordre : le clic qui suit le pointeur
+                   ne doit pas re-sélectionner la ligne (il annulerait la sensation). */
+                window._spCalquesDndVientDeGlisser = performance.now();
+                try { saveState('Ordre des calques'); } catch (_) {}
+                try { if (typeof updateLayersPanel === 'function') updateLayersPanel(); } catch (_) {}
+            }
+        }
+
+        /* Écouteurs posés UNE SEULE FOIS sur le document : le panneau est reconstruit à
+           chaque rafraîchissement (innerHTML = ''), des écouteurs par ligne seraient
+           orphelins à la première mise à jour. */
+        (function spCalquesCablerGlisser() {
+            if (window._spCalquesDndCable) return;
+            window._spCalquesDndCable = true;
+
+            document.addEventListener('pointerdown', function (e) {
+                try {
+                    if (e.button !== 0) return;
+                    var ligne = e.target && e.target.closest ? e.target.closest('#layersPanel .layer-item') : null;
+                    if (!ligne) return;
+                    /* Les boutons de la ligne (cadenas, corbeille) ne déplacent rien. */
+                    if (e.target.closest('button, input, a, [data-dnd-ignore]')) return;
+                    var panel = document.getElementById('layersPanel');
+                    var lignes = Array.prototype.slice.call(panel.querySelectorAll('.layer-item'));
+                    var index = lignes.indexOf(ligne);
+                    if (index < 0) return;
+                    var cv = getActiveCanvas();
+                    var liste = spCalquesListePanneau(cv);
+                    var obj = liste[index];
+                    if (!obj) return;
+                    /* Sélection multiple : on emporte toute la sélection si la ligne en fait
+                       partie. Sinon, on ne déplace que cette ligne. */
+                    var indices = [index];
+                    var sel = [];
+                    try { sel = (cv.getActiveObjects() || []); } catch (_) { sel = []; }
+                    if (sel.length > 1 && sel.indexOf(obj) >= 0) {
+                        indices = [];
+                        liste.forEach(function (o, i) { if (sel.indexOf(o) >= 0) indices.push(i); });
+                    }
+                    _spDnd = {
+                        canvas: cv, ligne: ligne, index: index, indices: indices,
+                        y0: e.clientY, actif: false, fente: index
+                    };
+                } catch (_) {}
+            }, true);
+
+            document.addEventListener('pointermove', function (e) {
+                var d = _spDnd;
+                if (!d) return;
+                try {
+                    if (!d.actif) {
+                        if (Math.abs(e.clientY - d.y0) < _SP_DND_SEUIL) return;
+                        d.actif = true;
+                        d.ligne.classList.add('layer-item--dragging');
+                        document.body.classList.add('sp-calques-dnd');
+                    }
+                    e.preventDefault();
+                    d.fente = spCalquesFenteSousY(e.clientY);
+                    spCalquesAfficherFente(d.fente);
+                } catch (_) {}
+            }, true);
+
+            document.addEventListener('pointerup', function () {
+                var d = _spDnd;
+                if (!d) return;
+                spCalquesFinirGlisser(!!d.actif);
+            }, true);
+
+            document.addEventListener('pointercancel', function () { spCalquesFinirGlisser(false); }, true);
+            /* Échap annule un glisser en cours (on ne réordonne rien). */
+            document.addEventListener('keydown', function (e) {
+                if (!_spDnd) return;
+                if (e.key === 'Escape') { e.preventDefault(); spCalquesFinirGlisser(false); }
+            }, true);
+        })();
+
+        window.spCalquesListePanneau = spCalquesListePanneau;
+        window.spCalquesDeplacerLignes = spCalquesDeplacerLignes;
+        window.spCalquesAppliquerOrdre = spCalquesAppliquerOrdre;
+
         function updateLayersPanel() {
     const panel = document.getElementById('layersPanel');
     panel.innerHTML = '';
@@ -32588,6 +32907,16 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         layerItem.appendChild(indicators);
         
         layerItem.addEventListener('click', (e) => {
+            /* 🆕 v1.7.692 — _SP_CALQUES_DND_692 : un glisser ne doit pas finir en clic.
+               Le relâchement du pointeur déclenche aussi un `click` : sans ce garde-fou,
+               déposer un calque le sélectionnait au passage, et la sélection qu'on venait
+               éventuellement de construire au Maj était perdue. */
+            try {
+                if (window._spCalquesDndVientDeGlisser && (performance.now() - window._spCalquesDndVientDeGlisser) < 400) {
+                    window._spCalquesDndVientDeGlisser = 0;
+                    return;
+                }
+            } catch (_) {}
             /* ═══ _SP_CALQUES_690 — SHIFT = AJOUTER / RETIRER DE LA SÉLECTION ═══════
                Le comportement attendu est celui d'un panneau de calques : sans Shift,
                on remplace la sélection ; avec Shift, on bascule l'élément cliqué dans
