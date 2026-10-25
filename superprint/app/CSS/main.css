@@ -2263,6 +2263,14 @@ textarea[data-fabric-hiddentextarea] {
 .layer-item--locked { background: #fbf4f7; }
 .layer-item--locked.active { background: #2a2024; color: #fff; }
 .theme-dark .layer-item--locked { background: #241b1f; }
+/* 🆕 _SP_OEIL_693 — un calque masqué s'estompe dans la liste.
+   L'œil du panneau dit l'état ; cette règle dit la CONSÉQUENCE : le calque n'est plus
+   dessiné. Deux signaux plutôt qu'un, parce que l'icône est petite et qu'un calque
+   masqué par mégarde est une panne silencieuse (« mon bloc a disparu »). */
+.layer-item--hidden > span:first-child { opacity: 0.42; }
+.layer-item--hidden { background: #fafafa; }
+.layer-item--hidden.active { background: #2b2b2b; color: #fff; }
+.theme-dark .layer-item--hidden { background: #1e1e1e; }
 /* 🆕 v1.7.692 — _SP_CALQUES_DND_692 : glisser-déposer d'un calque dans la liste.
    La ligne soulevée s'efface un peu (on voit qu'elle a quitté sa place) et le
    repère d'insertion dit EXACTEMENT où elle atterrira. Le repère est un trait de

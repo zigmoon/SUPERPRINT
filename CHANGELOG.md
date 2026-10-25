@@ -9,6 +9,40 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.693] — 2026-10-25
+
+_Le zoom ne pixellise plus, les cadres d'interface restent à 100 %, et les calques ont un œil_
+
+> **Pourquoi cette version existe.** Quatre points signalés d'un coup par un utilisateur professionnel. Le premier (« petit format 85 × 55 mm, zoom 300 % : textes et images pixellisés en version logiciel, pas en version web ») a été **mesuré dans l'application de bureau elle-même** — via le protocole DevTools de WebView2 — avant toute modification.
+
+### Fixed — la résolution augmente enfin avec le zoom
+
+- **Mesuré, bureau et navigateur, même document, même zoom** : les deux livraient exactement le même bitmap (1 160 × 778) pour une page affichée 774 × 597 px CSS sur un écran 1,5×. C'est-à-dire **un pixel de bitmap par pixel physique** : la résolution apparente ne progressait pas avec le zoom. Ce n'était donc ni un bug de plateforme ni le plafond (à 300 % le budget en autorisait 7,3 et on visait 4,5).
+- **Correctif** : au-delà de 100 %, le bitmap est suréchantillonné d'un facteur √z (plafonné par un budget de 4 Mpx, soit **moins** que ce que coûte une A4 à 300 % aujourd'hui). Mesuré sur le format signalé : densité 4,5 → **7,79** à 300 % (2,71 Mpx), 9,47 à 400–500 % (4,0 Mpx, borne atteinte). À 100 % rien ne change (1,5×, 0,10 Mpx).
+- La densité est calculée par **une seule formule**, `_spDensiteCible`, lue par les trois endroits qui en ont besoin : deux formules pour un même nombre finissaient par diverger, et c'est exactement ce qui provoquait les re-rasterisations à la seconde corrigées en 1.7.691.
+
+### Fixed — le clic ne tombe plus à côté sur un petit format zoomé
+
+- **Cause trouvée dans le moteur** : Fabric convertit un clic en coordonnées de document en divisant par `getRetinaScaling()`, qui lit `fabric.devicePixelRatio` — une valeur **globale**. Or la densité est **par planche** (seule la page courante est rastérisée au zoom). Sur toute autre planche, le diviseur était celui d'une autre page : le clic dérivait proportionnellement au zoom, et les blocs ne répondaient plus.
+- **Correctif** : chaque planche renvoie désormais **sa** densité réelle (bitmap / taille logique). Le produit se simplifie en `1 / zoom`, c'est-à-dire la seule valeur juste.
+- **Mesuré** : erreur de pointage ≤ 0,02 px à 100, 150, 300, 400 et 500 %, sur la page courante **et** sur une autre page, y compris après un aller-retour `toJSON` / `loadFromJSON` à 300 % sur un 85 × 55 mm — le scénario exact du signalement.
+- Effet de bord bienvenu : les caches d'objets (images) et les poignées de sélection sont eux aussi dimensionnés avec la densité de la planche qu'ils dessinent.
+
+### Fixed — les traits d'interface gardent leur épaisseur à l'écran
+
+- Demande utilisateur : « la mise en forme du bloc de texte doit rester à 100 %, pour le moment elle suit le zoom ».
+- Le cadre d'un bloc (`_spFrameStroke`) était déjà contre-divisé par l'échelle du bloc, mais pas par le zoom : à 300 % il mesurait 3 px d'écran et mangeait les glyphes du bord. **Mesuré** : épaisseur tracée 1,0 → 0,333 px de document à 300 %, soit 1 px CSS constant à l'écran.
+- Les **pointillés** des repères suivaient le zoom alors que leur épaisseur, non : un fond perdu en 5/5 mesurait 15/15 px d'écran à 300 %. Le motif est désormais contre-mis à l'échelle comme le trait (mesuré : 5/5 → 1,67/1,67 à 300 %).
+
+### Added — l'œil dans la liste des calques
+
+- Demande utilisateur : « ajouter l'icône œil à côté du cadenas pour voir quel calque je sélectionne ».
+- Un bouton œil / œil barré **avant** le cadenas (l'ordre de la ligne suit le risque : œil, cadenas, corbeille). Il bascule la propriété native `visible` de Fabric — déjà sérialisée dans le `.sp` et déjà respectée par le test de survol, donc rien à réinventer.
+- Un calque masqué s'estompe dans la liste : l'icône dit l'état, la ligne dit la conséquence.
+- Masquer retire le calque de la sélection (sinon ses poignées disparaîtraient et l'utilisateur croirait avoir perdu sa sélection). **Mesuré** : `visible` passé à faux puis à vrai, classe `layer-item--hidden` posée et retirée, état conservé après enregistrement/rechargement.
+
+---
+
 ## [1.7.692] — 2026-10-25
 
 _Un bloc texte ne passe plus en mode tabulation sans tabulation — et les calques se déplacent à la souris_

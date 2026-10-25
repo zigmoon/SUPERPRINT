@@ -4157,6 +4157,23 @@ function goToPage(pageIndex) {
                     if (!(_bw > 0) || !(_bh > 0)) return;
                     var _sc = (Math.abs(this.scaleX || 1) + Math.abs(this.scaleY || 1)) / 2;
                     if (!(_sc > 0)) _sc = 1;
+                    /* ═══ _SP_CADRE_100_693 — LE CADRE D'UN BLOC NE SUIT PAS LE ZOOM ═══
+                       Le zoom de l'application est un `transform: scale()` CSS posé sur
+                       le conteneur des planches : tout ce qui est PEINT dans le bitmap
+                       grandit avec lui, y compris ce trait. Or `_spFrameStroke` n'est pas
+                       un trait du document, c'est la mise en forme du bloc (le cadre qui
+                       dit « voilà les limites du bloc »). Signalé tel quel : « la mise en
+                       forme du bloc de texte doit rester à 100 %, pour le moment elle
+                       suit le zoom ». À 300 % le cadre mesurait donc 3 px d'écran et
+                       mangeait les glyphes du bord.
+                       L'échelle existe déjà pour le redimensionnement du bloc (`_sc`) ;
+                       on y ajoute le zoom affiché. Le produit vaut 1 à l'écran : le cadre
+                       garde son épaisseur, quelle que soit la main qui l'a posée. */
+                    var _z = 1;
+                    try {
+                        _z = (typeof window.spZoomActuel === 'function') ? Number(window.spZoomActuel()) : 1;
+                    } catch (_) { _z = 1; }
+                    if (!(_z > 0)) _z = 1;
                     /* 🆕 v1.7.599 — _SP_CADRE_COIN_599 : LE REPÈRE LOCAL N'EST PAS LE COIN.
                        Fabric a déjà translaté le contexte au CENTRE de la boîte :
                        calcTransformMatrix().e/f = left + (width + strokeWidth)/2 (idem en y).
@@ -4171,7 +4188,7 @@ function goToPage(pageIndex) {
                     var _oy = -(this.height + _sw) / 2;
                     try {
                         ctx.save();
-                        ctx.lineWidth = _w / _sc;
+                        ctx.lineWidth = _w / (_sc * _z);
                         ctx.lineJoin = 'miter';
                         ctx.strokeStyle = _c;
                         ctx.strokeRect(_ox, _oy, _bw, _bh);
@@ -32827,6 +32844,10 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         /* ⚠️ UN CALQUE VERROUILLÉ SE VOIT. Sans marque visuelle, l'utilisateur croit
            à une panne (« le bloc ne bouge plus ») alors qu'il a posé le cadenas. */
         if (obj._spLocked) layerItem.classList.add('layer-item--locked');
+        /* 🆕 _SP_OEIL_693 — un calque masqué se lit dans la LISTE, pas seulement sur la
+           planche : le nom s'estompe. Sans cette marque, « pourquoi mon bloc ne
+           répond-il plus ? » n'a aucune réponse visible dans le panneau. */
+        if (obj.visible === false) layerItem.classList.add('layer-item--hidden');
         
         let name = obj.type.charAt(0).toUpperCase() + obj.type.slice(1);
         if (obj.type === 'textbox') {
@@ -32862,6 +32883,57 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             indicators.appendChild(link);
         }
         
+        /* ═══ _SP_OEIL_693 — L'ŒIL, À CÔTÉ DU CADENAS ═══════════════════════════
+           Demande utilisateur : « dans la barre latérale de gauche, calques : ajouter
+           l'icône œil à côté du cadenas pour voir quel calque je sélectionne ».
+           Deux besoins derrière une seule icône, et il faut les deux :
+             · VOIR l'état — un calque masqué doit se reconnaître d'un coup d'œil dans
+               la liste, sans avoir à cliquer dessus ;
+             · POUVOIR LE CHANGER — masquer un calque sans le supprimer est le geste de
+               travail le plus courant sur un plan de montage (on isole un fond, on
+               vérifie un texte).
+           On s'appuie sur `visible`, propriété NATIVE de Fabric : elle est déjà
+           sérialisée dans le .sp et déjà respectée par le test de survol du canevas
+           (`_checkTarget` ignore les objets invisibles) — donc rien à réinventer, et
+           rien qui puisse diverger entre l'enregistrement et l'affichage.
+           ⚠️ L'ŒIL EST PLACÉ AVANT LE CADENAS, qui est lui-même avant la corbeille :
+           l'ordre suit le risque (un œil qu'on frôle ne change rien, un cadenas non
+           plus, une corbeille si). */
+        const eyeBtn = document.createElement('button');
+        const _oeilOuvert = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        const _oeilBarre = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+        const _visible = (obj.visible !== false);
+        eyeBtn.innerHTML = _visible ? _oeilOuvert : _oeilBarre;
+        eyeBtn.title = _visible ? 'Masquer ce calque' : 'Afficher ce calque';
+        eyeBtn.setAttribute('aria-label', eyeBtn.title);
+        eyeBtn.setAttribute('aria-pressed', _visible ? 'true' : 'false');
+        eyeBtn.style.cssText = 'background: transparent; border: none; cursor: pointer; padding: 2px 4px; display: flex; align-items: center; opacity: '
+            + (_visible ? '0.6' : '1') + '; transition: opacity 0.2s; color: '
+            + (_visible ? '#666' : '#b26a00') + ';';
+        eyeBtn.addEventListener('mouseenter', () => { eyeBtn.style.opacity = '1'; });
+        eyeBtn.addEventListener('mouseleave', () => { eyeBtn.style.opacity = (obj.visible !== false) ? '0.6' : '1'; });
+        eyeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();       // masquer n'est pas sélectionner
+            /* Un calque masqué reste dans la sélection du canevas : Fabric tolère un
+               objet invisible dans une ActiveSelection, mais ses poignées
+               disparaîtraient et l'utilisateur croirait avoir perdu la sélection. On
+               le retire donc de la sélection en même temps qu'on le masque. */
+            const devientVisible = (obj.visible === false);
+            obj.set('visible', devientVisible);
+            if (!devientVisible) {
+                try {
+                    if (activeCanvas.getActiveObjects().indexOf(obj) >= 0) {
+                        activeCanvas.discardActiveObject();
+                    }
+                } catch (_) {}
+            }
+            try { obj.setCoords(); } catch (_) {}
+            activeCanvas.requestRenderAll();
+            updateLayersPanel();          // synchrone : l'état de l'œil doit être exact
+            try { saveState(devientVisible ? 'Calque affiché' : 'Calque masqué'); } catch (_) {}
+        });
+        indicators.appendChild(eyeBtn);
+
         // 🆕 _SP_CALQUES_690 — CADENAS, puis corbeille. Le cadenas est AVANT la
         // corbeille : on demande souvent l'un, rarement l'autre, et une corbeille
         // qu'on frôle par erreur efface un calque — un cadenas qu'on frôle ne casse
@@ -38318,15 +38390,77 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     }
     window._spPlafondDPR = _spPlafondDPR;   // pour la sonde de vérification
 
+    /* ═══ _SP_SURECH_693 — LA DENSITÉ D'ÉCRAN N'EST PAS LA DENSITÉ DU BITMAP ═══
+       TROISIÈME SIGNALEMENT DU MÊME DÉFAUT : « petit format 85 × 55 mm, zoom 300 % :
+       les textes et les images sont pixellisés en version logiciel, ce qui ne se
+       produit pas en version web. » MESURÉ, dans l'application de bureau (WebView2,
+       via le protocole DevTools) ET dans le navigateur, même document, même zoom :
+       les deux livrent EXACTEMENT le même bitmap — 1 160 × 778 — pour une page
+       affichée 774 × 597 px CSS sur un écran 1,5×. C'est-à-dire UN pixel de bitmap
+       par pixel physique, ni plus ni moins.
+
+       CE N'ÉTAIT PAS LE PLAFOND (cf. _SP_PLAFOND_DPR_688) : à 300 % sur ce format la
+       densité demandée vaut 4,5 et le budget en autoriserait 7,3. On visait donc
+       VOLONTAIREMENT le strict 1:1, résolution qui ne progresse pas avec le zoom.
+       Un rendu 1:1 est le maximum qu'un écran puisse montrer, mais il ne donne jamais
+       le lissé d'un tracé vectoriel — alors que le même document, dans un contexte où
+       le canvas se trouve suréchantillonné, paraît nettement plus net. L'écart de
+       perception entre les deux versions vient de là, pas d'un bug de plateforme.
+
+       LA RÈGLE RETENUE : au-delà de 100 %, on rastérise PLUS fin que l'écran, d'un
+       facteur √z plafonné à 2, dans la limite d'un budget « netteté » de 16 Mpx par
+       planche — distinct du budget absolu de 48 Mpx, qui reste la limite dure. Le
+       moteur réduit ensuite ce surplus : un texte dessiné grand puis réduit est
+       visiblement plus net qu'un texte dessiné à la taille finale.
+
+       ⚠️ DEUX GARDE-FOUS, ET ILS COMPTENT AUTANT QUE LE GAIN :
+         · À 100 % RIEN NE CHANGE : aucune régression de mémoire sur le cas le plus
+           fréquent (une planche A4 à 100 % reste à 1,5× et 2 Mpx).
+         · LE BUDGET EST EXPRIMÉ EN PIXELS, PAS EN RAPPORT. Un facteur constant
+           ferait payer le suréchantillonnage au prorata de la page : sur une A4 à
+           200 % il doublerait la mémoire pour un gain que l'œil ne voit plus. On
+           plafonne donc le bitmap suréchantillonné à 4 Mpx — MOINS que ce que coûte
+           aujourd'hui une A4 à 300 % (4,7 Mpx). Sur un petit format, 4 Mpx laissent
+           toute la marge voulue : c'est là qu'on zoome, et c'est là que le gain se
+           voit. Sur une grande page, le budget est déjà consommé par le 1:1 et le
+           facteur retombe naturellement à 1.
+         · LE PLANCHER RESTE LE 1:1. Sur une grande page très zoomée, le budget passe
+           SOUS le 1:1 : on garde alors le 1:1 plutôt que de dégrader. Un
+           suréchantillonnage ne doit jamais rendre moins net que ce qu'on avait. */
+    const _SP_BUDGET_PX_SURECH = 4e6;    // 4 Mpx : plafond du bitmap suréchantillonné
+
+    /* LA SEULE FORMULE DE DENSITÉ DE L'APPLICATION. Trois endroits la lisent —
+       _updateCanvasDPRForZoom, _spAppliquerDensiteATous et la surveillance périodique
+       de _spDensiteChangee. Deux formules pour un même nombre finissent toujours par
+       diverger, et une divergence ici se paie en re-rasterisations à la seconde (c'est
+       exactement le défaut corrigé en 1.7.691). */
+    function _spDensiteCible(largeurCss, hauteurCss, base, zoom) {
+        const b = (Number.isFinite(base) && base > 0) ? base : 1;
+        const z = (Number.isFinite(zoom) && zoom > 0) ? zoom : 1;
+        const plafondAbsolu = _spPlafondDPR(largeurCss, hauteurCss);
+        if (!(z > 1)) return Math.min(plafondAbsolu, b);
+        const plancher = Math.min(plafondAbsolu, b * z);
+        const w = (Number.isFinite(largeurCss) && largeurCss > 0) ? largeurCss : 0;
+        const h = (Number.isFinite(hauteurCss) && hauteurCss > 0) ? hauteurCss : 0;
+        if (!w || !h) return plancher;
+        const pxPlancher = (w * plancher) * (h * plancher);
+        if (!(pxPlancher > 0)) return plancher;
+        /* √z : le gain d'un suréchantillonnage progresse comme la racine du rapport,
+           parce que l'erreur d'échantillonnage, elle, décroît linéairement. Au-delà de
+           √z le budget prend le relais. */
+        const facteur = Math.min(Math.sqrt(z), Math.sqrt(_SP_BUDGET_PX_SURECH / pxPlancher));
+        return Math.max(plancher, Math.min(plafondAbsolu, plancher * facteur));
+    }
+    window._spDensiteCible = _spDensiteCible;   // pour la sonde de vérification
+
     function _updateCanvasDPRForZoom(forcePageIndex) {
         // ✅ FIX TYPO ULTRA-NETTE : DPR proportionnel au zoom, plafond adaptatif
         // On n'applique la haute résolution qu'au canvas VISIBLE (1-2 max)
         // pour éviter l'explosion mémoire sur les documents multi-pages.
         const _cibleDpr = canvases[((typeof forcePageIndex === 'number') ? forcePageIndex : currentPageIndex)];
-        const maxDPR = _spPlafondDPR(_cibleDpr && _cibleDpr.width, _cibleDpr && _cibleDpr.height);
-        const effectiveDPR = (zoomLevel <= 1)
-            ? Math.min(maxDPR, _baseDPR)
-            : Math.min(maxDPR, _baseDPR * zoomLevel);
+        const effectiveDPR = _spDensiteCible(_cibleDpr && _cibleDpr.width,
+                                             _cibleDpr && _cibleDpr.height,
+                                             _baseDPR, zoomLevel);
 
         const targetPage = (typeof forcePageIndex === 'number') ? forcePageIndex : currentPageIndex;
         const dprChanged = Math.abs(effectiveDPR - _lastAppliedZoomDPR) > 0.05;
@@ -38409,6 +38543,24 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
        ON NE TOUCHE QUE LES PLANCHES (`canvases`). Les canvas d'éditeur (gabarit,
        planche-contact) utilisent volontairement une taille affichée différente de
        leur bitmap comme facteur de réduction : les aligner casserait leur échelle. */
+    /* ═══ _SP_RETINA_VRAIE_693 — LA DENSITÉ D'UN BITMAP SE CALCULE ═══════════════
+       Formule unique, partagée par l'ajustement de la taille affichée (ci-dessous) et
+       par le calcul du pointeur (cf. `getRetinaScaling` réécrit plus bas) :
+           densité = largeur du bitmap / largeur logique du canvas
+       Elle est toujours juste, sans registre à tenir à jour, et insensible à l'état
+       global du moteur (`fabric.devicePixelRatio`), qui ne décrit qu'UNE planche. */
+    function spDensiteReelleCanvas(cv) {
+        try {
+            const el = cv && cv.lowerCanvasEl;
+            const lw = Number(cv && cv.width), lh = Number(cv && cv.height);
+            if (!el || !(lw > 0) || !(lh > 0)) return 0;
+            const dW = el.width / lw, dH = el.height / lh;
+            if (!(dW > 0) || !(dH > 0)) return 0;
+            return (dW + dH) / 2;
+        } catch (_) { return 0; }
+    }
+    window.spDensiteReelleCanvas = spDensiteReelleCanvas;
+
     function spAjusterTailleAffichee(cv) {
         try {
             const el = cv && cv.lowerCanvasEl;
@@ -38435,17 +38587,43 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                Elle est donc toujours juste, sans registre à tenir à jour, et insensible à
                l'état global du moteur. C'est aussi ce qui rend l'affichage EXACTEMENT
                aligné sur le bitmap, but premier de cette fonction (cf. _SP_NETTETE_637). */
-            const logiqueW = (Number(cv.width) > 0) ? Number(cv.width) : 0;
-            const logiqueH = (Number(cv.height) > 0) ? Number(cv.height) : 0;
-            let dens = 0;
-            if (logiqueW > 0 && logiqueH > 0) {
-                const dW = el.width / logiqueW;
-                const dH = el.height / logiqueH;
-                if (dW > 0 && dH > 0) dens = (dW + dH) / 2;
+            /* _SP_ZOOM_TOUS_691 · _SP_RETINA_VRAIE_693 — une seule formule. */
+            let dens = spDensiteReelleCanvas(cv);
+            /* Repli : bitmap ou taille logique inutilisable (canvas d'éditeur pas
+               encore rastérisé). On lit alors la densité d'écran du moteur — et
+               JAMAIS `cv.getRetinaScaling()`, qui sera branché sur cette même formule
+               trois lignes plus bas : ce serait une récursion sans fin. */
+            if (!(dens > 0)) {
+                dens = (typeof fabric !== 'undefined' && fabric.devicePixelRatio > 0) ? fabric.devicePixelRatio : 1;
             }
-            /* Repli : un canvas dont la largeur logique serait inutilisable garde
-               l'ancien calcul. On ne laisse jamais la taille affichée à NaN. */
-            if (!(dens > 0)) dens = (typeof cv.getRetinaScaling === 'function' ? cv.getRetinaScaling() : 1) || 1;
+            /* ═══ _SP_RETINA_VRAIE_693 — LE POINTEUR AUSSI A BESOIN DE LA VRAIE DENSITÉ
+               Fabric convertit un clic en coordonnées de document ainsi (v5, getPointer) :
+                   x = (clientX − offset.left) / getRetinaScaling() × (bitmap / rect.width)
+               Or `getRetinaScaling()` lit `fabric.devicePixelRatio`, une valeur GLOBALE
+               au moteur, alors que la densité est PAR PLANCHE : le zoom ne re-rasterise
+               que la page courante. Sur toute autre planche le diviseur est donc celui
+               d'une autre page, et le clic tombe à côté — d'autant plus loin qu'on
+               zoome. C'est exactement le défaut signalé : « j'ouvre un .sp de petit
+               format, je zoome sur le format, et il y a un décalage entre le clic et
+               l'image ; le bloc de texte ne répond plus ».
+               En renvoyant la densité RÉELLE de CE canvas, le produit devient
+                   (bitmap / rect.width) / densité = 1 / zoom
+               c'est-à-dire la seule valeur juste, quel que soit l'état global.
+               Deux effets de bord, tous deux souhaitables : les caches d'objets (c'est
+               par cette valeur que `getTotalObjectScaling` dimensionne les images) et
+               les poignées de sélection (`drawControls`) utilisent enfin la densité de
+               la planche qu'ils dessinent.
+               ⚠️ ON NE TOUCHE PAS À `_initRetinaScaling` : Fabric y lit la globale
+               directement, donc remplacer `getRetinaScaling` ne peut pas réappliquer
+               une densité déjà appliquée (aucun emballement de la taille du bitmap). */
+            if (!cv._spRetinaVraie) {
+                cv._spRetinaVraie = true;
+                cv.getRetinaScaling = function () {
+                    const d = spDensiteReelleCanvas(this);
+                    if (d > 0) return d;
+                    return (typeof fabric !== 'undefined' && fabric.devicePixelRatio > 1) ? fabric.devicePixelRatio : 1;
+                };
+            }
             const w = (el.width / dens), h = (el.height / dens);
             if (!(w > 0) || !(h > 0)) return false;
             const ws = w + 'px', hs = h + 'px';
@@ -38493,11 +38671,9 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
            maintenant SON plafond (cf. _spPlafondDPR), calculé sur sa propre surface.
            On retient la densité de la page courante comme « densité appliquée »,
            parce que c'est elle que la comparaison de _spDensiteChangee surveille. */
-        const cible = (zoomLevel <= 1)
-            ? _baseDPR
-            : Math.min(_spPlafondDPR(canvases[currentPageIndex] && canvases[currentPageIndex].width,
-                                      canvases[currentPageIndex] && canvases[currentPageIndex].height),
-                       _baseDPR * zoomLevel);
+        const cible = _spDensiteCible(canvases[currentPageIndex] && canvases[currentPageIndex].width,
+                                      canvases[currentPageIndex] && canvases[currentPageIndex].height,
+                                      _baseDPR, zoomLevel);
         fabric.devicePixelRatio = cible;
         _lastAppliedZoomDPR = cible;
         _highDPRCanvasIndex = -1;      // plus aucune page n'est « celle en haute resolution »
@@ -38506,11 +38682,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 if (!c || !c.lowerCanvasEl) return;
                 try {
                     /* Le plafond est posé AVANT setDimensions : c'est getRetinaScaling()
-                       qui le lit au moment où le bitmap est redimensionné. */
-                    fabric.devicePixelRatio = Math.min(
-                        _spPlafondDPR(c.width, c.height),
-                        (zoomLevel <= 1) ? _baseDPR : _baseDPR * zoomLevel
-                    );
+                       qui le lit au moment où le bitmap est redimensionné. La formule est
+                       celle du reste de l'application (_SP_SURECH_693), sinon la
+                       surveillance périodique ne reconnaîtrait pas sa propre valeur. */
+                    fabric.devicePixelRatio = _spDensiteCible(c.width, c.height, _baseDPR, zoomLevel);
                     c.setDimensions({ width: c.width, height: c.height });
                     if (typeof spAjusterTailleAffichee === 'function') spAjusterTailleAffichee(c);
                     c.requestRenderAll();
@@ -38569,9 +38744,9 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
            la même fonction que l'application — deux formules pour un même nombre
            finissent toujours par diverger. */
         const _c = canvases[currentPageIndex];
-        const attendue = (zoomLevel <= 1)
-            ? nouvelle
-            : Math.min(_spPlafondDPR(_c && _c.width, _c && _c.height), nouvelle * zoomLevel);
+        /* MÊME FORMULE QUE L'APPLICATION (_SP_SURECH_693) : c'est ce qui rend ce
+           contrôle périodique gratuit — il ne compare que deux nombres. */
+        const attendue = _spDensiteCible(_c && _c.width, _c && _c.height, nouvelle, zoomLevel);
         /* Rien a faire : la densite appliquee est deja la bonne. C'est CE test qui
            rend le controle periodique gratuit — il ne compare que deux nombres. */
         if (Math.abs(attendue - _lastAppliedZoomDPR) < 0.05) return;
@@ -38697,6 +38872,25 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         if (typeof o._spTraitBase !== 'number') o._spTraitBase = base;
         const cible = base * inv;
         if (Math.abs((o.strokeWidth || 0) - cible) > 0.001) o.set('strokeWidth', cible);
+        /* ═══ _SP_CADRE_100_693 — LE POINTILLÉ D'UN REPÈRE SUIT LA MÊME RÈGLE ═════
+           L'épaisseur était contre-mise à l'échelle, le MOTIF ne l'était pas : un fond
+           perdu en pointillés 5/5 px de document mesurait 15/15 px d'écran à 300 %.
+           Le trait restait fin mais les tirets devenaient des barres — un repère
+           d'impression ne doit pas changer d'aspect quand on zoome, sinon il attire
+           l'œil autant qu'un élément du document.
+           La base est mémorisée une seule fois, comme pour l'épaisseur : sans cela,
+           chaque cran de zoom prendrait le motif déjà réduit comme nouvelle base. */
+        if (Array.isArray(o.strokeDashArray) && o.strokeDashArray.length) {
+            if (!Array.isArray(o._spPointilleBase)) o._spPointilleBase = o.strokeDashArray.slice();
+            const cibleP = o._spPointilleBase.map((v) => v * inv);
+            let change = cibleP.length !== o.strokeDashArray.length;
+            if (!change) {
+                for (let i = 0; i < cibleP.length; i++) {
+                    if (Math.abs((o.strokeDashArray[i] || 0) - cibleP[i]) > 0.001) { change = true; break; }
+                }
+            }
+            if (change) o.set('strokeDashArray', cibleP);
+        }
     }
 
     function spAppliquerEchelleUI() {

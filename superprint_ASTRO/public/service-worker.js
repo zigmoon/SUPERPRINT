@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.692-calques-glisser-tabulation';
+const CACHE_NAME = 'superprint-shell-v1.7.693-nettete-cadres-oeil';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
