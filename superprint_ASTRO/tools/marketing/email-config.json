@@ -1,0 +1,41 @@
+{
+  "_comment": "Réglages de l'e-mail « Nouveautés ». Le champ postal_address ne peut PAS rester vide : voir build-email.mjs. Une adresse postale physique est exigée par le CAN-SPAM Act (15 U.S.C. § 7704(a)(5)(A)(iii)) dans CHAQUE message commercial, et l'identification de l'expéditeur par l'art. L.34-5 du CPCE.",
+
+  "brand": "SuperPrint",
+  "site_url": "https://superprint.cc",
+  "unsubscribe_url": "https://superprint.cc/unsubscribe.html",
+
+  "postal_address": "35 rue de Montaut, 45380 La Chapelle-Saint-Mesmin, France",
+  "_postal_address_note": "Adresse de l'éditeur, publiée dans les mentions légales (index.html, faq.html, install.html, section 1) et reprise dans le pied de chaque e-mail. Elle est obligatoire : voir build-email.mjs.",
+
+  "editor": "Simon Dupont-Gellert",
+  "editor_legal_form": {
+    "fr": "entrepreneur individuel",
+    "en": "sole trader",
+    "ja": "個人事業主"
+  },
+
+  "unsubscribe_mail": "contact@superprint.cc",
+  "list_id": "nouveautes.superprint.cc",
+
+  "footer": {
+    "fr": {
+      "why": "Vous recevez ce message parce que vous avez souscrit à l'abonnement « Nouveautés » de SuperPrint.",
+      "unsub": "Se désabonner",
+      "unsub_hint": "Un clic, sans justification. Le logiciel SuperPrint reste gratuit et inchangé.",
+      "address_label": "Adresse de l'éditeur"
+    },
+    "en": {
+      "why": "You are receiving this message because you subscribed to the SuperPrint “What's new” plan.",
+      "unsub": "Unsubscribe",
+      "unsub_hint": "One click, no reason needed. The SuperPrint software stays free and unchanged.",
+      "address_label": "Publisher address"
+    },
+    "ja": {
+      "why": "SuperPrint の「最新情報」にお申し込みいただいたため、このメールをお送りしています。",
+      "unsub": "配信停止",
+      "unsub_hint": "ワンクリックで停止できます。理由は不要です。SuperPrint 本体は無料のまま変わりません。",
+      "address_label": "発行者の所在地"
+    }
+  }
+}

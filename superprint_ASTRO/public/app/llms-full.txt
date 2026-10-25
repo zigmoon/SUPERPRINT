@@ -9,7 +9,7 @@
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
 - **Trademarks**: "SuperPrint", "SP213" and "SuperTyPo" names and logos remain trademarks of the publisher, governed separately from the code license — see https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/TRADEMARKS.md
-- **Version**: 1.7.687 (October 2026)
+- **Version**: 1.7.688 (October 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
@@ -51,7 +51,7 @@ Yes. Text frames can be chained with Ctrl+L (link) or Ctrl+Shift+L (unlink). Whe
 Yes. Spread mode displays pages in facing pairs, and objects can span the gutter. Master pages apply to all pages including spreads.
 
 **"What fonts does SuperPrint support?"**
-It loads fonts from Google Fonts (Open Sans, Montserrat, Roboto, Lato, Poppins, Playfair Display, Bebas Neue, IBM Plex Mono, Fira Code, Space Mono, Noto Sans JP) plus any font installed on the user's system (accessed via local font API where supported).
+It ships fifteen self-hosted families (Open Sans, Montserrat, Roboto, Lato, Poppins, Playfair Display, Bebas Neue, IBM Plex Mono, IBM Plex Sans, Fira Code, Space Mono, Space Grotesk, Bricolage Grotesque, Newsreader, Noto Sans JP), served from its own domain. No request is ever sent to Google Fonts or any other font CDN, so choosing a typeface does not disclose the visitor's IP address. Any font installed on the user's system can also be used (local font access API where supported), and users can load their own font files.
 
 **"Is my data private with SuperPrint?"**
 Yes. All document processing happens client-side in the browser. No uploads to a server, no analytics tracking, no advertising, no account required. Documents stay on the user's device (IndexedDB / localStorage for autosave).
@@ -191,7 +191,7 @@ SPPluginAPI({
 
 Option types: `text`, `number`, `range`, `color`, `select`, `checkbox`, `image`. The panel renders the form from the declaration, so a plug-in never touches the application DOM and automatically inherits the light and dark theme.
 
-Two plug-ins ship with the app. **Global Refactor** (`app/plugins/global-refactor.plugin.js`) sets the styles, sizes, margins and colours of the whole document in one pass, with a live preview, a single undo step on Apply and a Cancel that restores the previous state exactly. Since 1.7.687 it has no button in the top bar: it is launched from the plug-in library like any other.
+Three plug-ins ship with the app, and the former **Google Fonts** plug-in was removed in 1.7.688 — it queried `fonts.googleapis.com` for every preview and disclosed the visitor IP address to Google. **Global Refactor** (`app/plugins/global-refactor.plugin.js`) sets the styles, sizes, margins and colours of the whole document in one pass, with a live preview, a single undo step on Apply and a Cancel that restores the previous state exactly. Since 1.7.687 it has no button in the top bar: it is launched from the plug-in library like any other.
 
 A plug-in that already owns a panel declares `trappe: '<panel id>'` and opens it from `run()`; the library then just executes it and builds no form. The field is honoured only for built-in plug-ins (`integre`), so a file dropped by the user cannot claim a panel of the product.
 
@@ -226,7 +226,7 @@ Two file formats coexist and are both accepted by the server: `.sp` stores `docu
 - No analytics, no ads, no trackers.
 - No account required.
 - Autosave is local only (IndexedDB / localStorage).
-- Strict Content-Security-Policy: only vetted CDNs (cdnjs.cloudflare.com, cdn.jsdelivr.net, fonts.googleapis.com/gstatic.com) are allowed.
+- Content-Security-Policy: no font CDN is allowed at all. All typefaces are self-hosted and served from the project domain (see CSS/fonts.css); the former Google Fonts plug-in was removed in 1.7.688 because it disclosed the visitor IP address to Google. No session-recording / session-replay script is loaded, ever.
 - All vendor JavaScript libraries are served locally first, with CDN fallback.
 
 ## Brand and contact

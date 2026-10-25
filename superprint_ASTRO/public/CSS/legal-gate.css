@@ -1,0 +1,201 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SUPERPRINT — CONTRÔLE D'ÂGE ET CONSENTEMENT D'ABONNEMENT
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   Feuille de style de JS/legal-gate.js. Elle n'habille que deux choses :
+
+     1. la fenêtre de contrôle posée devant le bouton « S'abonner » (39 €/an) ;
+     2. la mention de renouvellement affichée SOUS ce bouton.
+
+   ⚠️ AUCUNE COULEUR N'EST INVENTÉE ICI. Les valeurs reprennent les variables déjà
+   définies par les pages de tarif (--ink, --ink-soft, --line, --paper) avec une
+   valeur de repli lisible si la page ne les définit pas : la fenêtre doit rester
+   correcte sur price.html, sur une page générée par Astro et sur une page qui
+   n'aurait pas chargé le reste du thème.
+   ─────────────────────────────────────────────────────────────────────────────── */
+
+.sp-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(20, 18, 15, .58);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+.sp-gate.sp-gate--open { display: flex; }
+
+.sp-gate__box {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  padding: 26px 26px 20px;
+  background: var(--paper, #F7F3EC);
+  color: var(--ink, #1A1A1A);
+  border: 1px solid var(--line, rgba(26, 26, 26, .14));
+  border-radius: 4px;
+  box-shadow: 0 24px 60px rgba(20, 18, 15, .28);
+  font-family: var(--f-sans, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.sp-gate__kicker {
+  margin: 0 0 10px;
+  font-family: var(--f-mono, ui-monospace, Consolas, monospace);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-soft, #6B6459);
+}
+
+.sp-gate__title {
+  margin: 0 0 12px;
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.sp-gate__text { margin: 0 0 14px; color: var(--ink-soft, #4A453D); }
+.sp-gate__text strong { color: var(--ink, #1A1A1A); }
+
+.sp-gate__terms {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  background: rgba(26, 26, 26, .045);
+  border-left: 3px solid var(--magenta, #C2185B);
+  border-radius: 2px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink, #1A1A1A);
+}
+.sp-gate__terms b { font-weight: 700; }
+
+.sp-gate__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.sp-gate__check input {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  margin: 2px 0 0;
+  accent-color: var(--magenta, #C2185B);
+  cursor: pointer;
+}
+.sp-gate__check span { user-select: none; }
+
+.sp-gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.sp-gate__go,
+.sp-gate__no {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 11px 18px;
+  border-radius: 3px;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.sp-gate__go {
+  background: var(--ink, #1A1A1A);
+  color: var(--paper, #F7F3EC);
+  border-color: var(--ink, #1A1A1A);
+}
+.sp-gate__go[disabled] { opacity: .4; cursor: not-allowed; }
+.sp-gate__no {
+  background: transparent;
+  color: var(--ink, #1A1A1A);
+  border-color: var(--line, rgba(26, 26, 26, .22));
+}
+.sp-gate__go:hover:not([disabled]) { background: var(--magenta, #C2185B); border-color: var(--magenta, #C2185B); }
+.sp-gate__no:hover { border-color: var(--ink, #1A1A1A); }
+
+.sp-gate__err {
+  display: none;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  background: rgba(194, 24, 91, .08);
+  border-left: 3px solid var(--magenta, #C2185B);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.sp-gate__err.sp-gate__err--on { display: block; }
+
+/* « J'ai moins de 18 ans » : un refus doit être un choix visible, pas une case
+   qu'on oublie de cocher. Volontairement discret — c'est une sortie, pas une
+   invitation — mais toujours lisible et atteignable au clavier. */
+.sp-gate__under {
+  display: block;
+  margin: 2px 0 0;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft, #6B6459);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.sp-gate__under:hover { color: var(--magenta, #C2185B); }
+.sp-gate__under:focus-visible { outline: 2px solid var(--magenta, #C2185B); outline-offset: 2px; }
+
+.sp-gate__rc {
+  margin: 14px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-soft, #7A7367);
+}
+
+/* La mention de renouvellement, juste sous les boutons d'abonnement. */
+.sp-renew {
+  margin: 10px 0 0;
+  padding: 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-soft, #5A544A);
+}
+.sp-renew b { color: var(--ink, #1A1A1A); font-weight: 700; }
+
+html.theme-dark .sp-gate__box { background: #1B1B1B; color: #F2F2F2; border-color: rgba(255, 255, 255, .16); }
+html.theme-dark .sp-gate__text,
+html.theme-dark .sp-gate__kicker,
+html.theme-dark .sp-renew { color: #C9C4BA; }
+html.theme-dark .sp-gate__text strong,
+html.theme-dark .sp-renew b { color: #FFF; }
+html.theme-dark .sp-gate__terms { background: rgba(255, 255, 255, .07); color: #EDEAE4; }
+html.theme-dark .sp-gate__go { background: #F2F2F2; color: #111; border-color: #F2F2F2; }
+html.theme-dark .sp-gate__no { color: #F2F2F2; border-color: rgba(255, 255, 255, .3); }
+
+@media (max-width: 420px) {
+  .sp-gate__box { padding: 20px 18px 16px; }
+  .sp-gate__title { font-size: 17.5px; }
+  .sp-gate__actions { flex-direction: column; }
+  .sp-gate__go, .sp-gate__no { width: 100%; flex: 0 0 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-gate { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

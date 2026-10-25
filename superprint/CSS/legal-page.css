@@ -1,0 +1,113 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SUPERPRINT — FEUILLE DES PAGES JURIDIQUES AUTONOMES
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   Sert `dmca.html` et `unsubscribe.html`.
+
+   ⚠️ POURQUOI UNE FEUILLE SÉPARÉE, ET PAS main.css.
+   Ces deux pages doivent rester lisibles même si la feuille du site change, et
+   même si elle ne se charge pas : un ayant droit ou un abonné qui cherche la
+   procédure de retrait ne peut pas dépendre de la refonte graphique du produit.
+   Elles ne partagent donc que les valeurs de la charte, recopiées ici.
+
+   ⚠️ LES TROIS LANGUES SONT MASQUÉES PAR `html[lang]`, PAS PAR JAVASCRIPT.
+   Si le script ne s'exécute pas, la page affiche la langue déclarée par
+   `html lang` au lieu de n'afficher aucune des trois. C'est le seul repli
+   acceptable pour une page dont le contenu EST le message.
+   ─────────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --paper: #F7F3EC;
+  --ink: #1A1A1A;
+  --ink-soft: #56504A;
+  --line: rgba(26, 26, 26, .14);
+  --magenta: #C2185B;
+  --f-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-sans);
+  font-size: 15px;
+  line-height: 1.68;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 780px; margin: 0 auto; padding: 44px 22px 90px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 40px; }
+.top a.brand { font-weight: 800; letter-spacing: .02em; font-size: 15px; color: var(--ink); text-decoration: none; }
+.top a.brand span { color: var(--magenta); }
+.lang { display: flex; gap: 4px; }
+.lang button {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em;
+  padding: 6px 10px; border: 1px solid var(--line); background: transparent;
+  color: var(--ink-soft); cursor: pointer; border-radius: 2px;
+}
+.lang button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.kicker { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--magenta); margin: 0 0 14px; }
+h1 { font-size: 33px; line-height: 1.15; letter-spacing: -.02em; margin: 0 0 18px; font-weight: 800; }
+.lead { font-size: 16.5px; color: var(--ink-soft); margin: 0 0 34px; }
+
+h2 { font-size: 20px; letter-spacing: -.01em; margin: 44px 0 14px; font-weight: 700; padding-top: 18px; border-top: 1px solid var(--line); }
+h2:first-of-type { border-top: 0; padding-top: 0; margin-top: 34px; }
+h3 { font-size: 15.5px; margin: 26px 0 8px; font-weight: 700; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin: 0 0 8px; }
+a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--magenta); }
+code { font-family: var(--f-mono); font-size: 12.5px; background: rgba(26, 26, 26, .06); padding: 1px 5px; border-radius: 2px; }
+
+.card { border: 1px solid var(--line); border-left: 3px solid var(--magenta); padding: 16px 18px; margin: 0 0 20px; background: rgba(255, 255, 255, .45); }
+.card p:last-child { margin-bottom: 0; }
+.card--warn { border-left-color: var(--ink); }
+
+.steps { counter-reset: s; list-style: none; padding-left: 0; }
+.steps > li { counter-increment: s; position: relative; padding-left: 40px; margin-bottom: 18px; }
+.steps > li::before {
+  content: counter(s);
+  position: absolute; left: 0; top: 1px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--f-mono); font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.zone {
+  font-family: var(--f-mono); font-size: 13px; line-height: 1.7;
+  background: #fff; border: 1px dashed var(--line);
+  padding: 14px 16px; margin: 0 0 18px; white-space: pre-wrap;
+  overflow-x: auto;
+}
+.mail { font-family: var(--f-mono); font-size: 14px; font-weight: 700; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 46px; padding: 12px 22px; margin: 4px 8px 4px 0;
+  border-radius: 3px; border: 1px solid var(--ink);
+  background: var(--ink); color: var(--paper);
+  font-family: var(--f-sans); font-size: 14px; font-weight: 700;
+  text-decoration: none; cursor: pointer;
+}
+.btn:hover { background: var(--magenta); border-color: var(--magenta); color: #fff; }
+.btn--ghost { background: transparent; color: var(--ink); }
+.btn--ghost:hover { background: transparent; color: var(--magenta); border-color: var(--magenta); }
+
+.foot { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); }
+.foot a { color: var(--ink-soft); }
+
+html[lang="fr"] [data-lang]:not([data-lang="fr"]),
+html[lang="en"] [data-lang]:not([data-lang="en"]),
+html[lang="ja"] [data-lang]:not([data-lang="ja"]) { display: none; }
+
+@media (max-width: 520px) {
+  .wrap { padding: 30px 16px 70px; }
+  h1 { font-size: 26px; }
+  body { font-size: 14.5px; }
+}

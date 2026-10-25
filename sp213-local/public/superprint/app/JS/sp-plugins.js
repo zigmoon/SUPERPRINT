@@ -735,4 +735,35 @@
     desinstaller: desinstaller,
     recharger: function () { MANIFESTES = {}; chargerTous(); return liste(); }
   };
+
+  /* ══ v1.7.688 — PLUG-INS RETIRÉS DU PRODUIT ═════════════════════════════════
+     `google-fonts` interrogeait `fonts.googleapis.com` à chaque aperçu de police :
+     l'adresse IP du visiteur partait chez Google sans base légale. Le fichier a
+     été supprimé et n'est plus chargé, donc un NOUVEL utilisateur n'y a plus accès.
+
+     ⚠️ CELA NE SUFFIT PAS POUR UN UTILISATEUR EXISTANT.
+     `installerSource` range le code source d'un plug-in déposé à la main dans
+     `localStorage` (`sp_plugins_v1`) et le réexécute à chaque lancement. Quelqu'un
+     qui avait installé ce plug-in en fichier continue donc de vider son adresse IP
+     chez Google à chaque ouverture, sans que la mise à jour du produit ne change
+     rien. On purge : le code stocké, la préférence d'activation, et les données du
+     plug-in. Une seule fois, marqué par une clé — une purge qui se rejouerait à
+     chaque chargement effacerait une réinstallation volontaire ultérieure.
+
+     ⚠️ ON NE PURGE QUE CE QUI EST NOMMÉ ICI. Aucune heuristique : un plug-in
+     utilisateur qui n'est pas dans cette liste n'est jamais touché. */
+  var RETIRES = {
+    'google-fonts': 'requêtes vers fonts.googleapis.com (adresse IP transmise à Google)'
+  };
+  var CLE_PURGE = 'sp_plugins_purge_v1';
+  try {
+    var deja = localStorage.getItem(CLE_PURGE);
+    if (deja !== VERSION) {
+      Object.keys(RETIRES).forEach(function (id) {
+        try { desinstaller(id); } catch (_) {}
+      });
+      localStorage.setItem(CLE_PURGE, VERSION);
+      try { console.info('[SP-Plugin] plug-in(s) retiré(s) : ' + Object.keys(RETIRES).join(', ')); } catch (_) {}
+    }
+  } catch (_) {}
 })();

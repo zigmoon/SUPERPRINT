@@ -2161,14 +2161,14 @@ input, textarea, select, [contenteditable="true"], [contenteditable=""] {
     animation: spPageSlideOut 0.35s cubic-bezier(0.55, 0, 1, 0.45) forwards;
     pointer-events: none;
 }
-.page-wrapper.active-page .canvas-inner { box-shadow: 0 0 0 1.5px #00aaff, 0 4px 20px rgba(0,0,0,0.1); }
+.page-wrapper.active-page .canvas-inner { box-shadow: 0 0 0 calc(1.5px * var(--sp-zoom-inv, 1)) #00aaff, 0 4px 20px rgba(0,0,0,0.1); }
 .spread-wrapper { 
     display: flex; 
     gap: 0px; 
     position: relative;
     justify-content: center;
 }
-.spread-wrapper.active-page .canvas-inner { box-shadow: 0 0 0 1.5px #00aaff, 0 4px 20px rgba(0,0,0,0.1); }
+.spread-wrapper.active-page .canvas-inner { box-shadow: 0 0 0 calc(1.5px * var(--sp-zoom-inv, 1)) #00aaff, 0 4px 20px rgba(0,0,0,0.1); }
 .spread-center-line { position: absolute; background: rgba(0,0,0,0.15); pointer-events: none; z-index: 10; }
 .spread-center-line:before { content: ''; position: absolute; top: -5px; left: -2px; width: 5px; height: 5px; background: rgba(0,0,0,0.2); border-radius: 50%; }
 .spread-center-line:after { content: ''; position: absolute; bottom: -5px; left: -2px; width: 5px; height: 5px; background: rgba(0,0,0,0.2); border-radius: 50%; }
@@ -2254,6 +2254,15 @@ textarea[data-fabric-hiddentextarea] {
 .layer-item { padding: 6px 8px; background: #f8f8f8; margin-bottom: 3px; cursor: pointer; font-size: 10px; display: flex; justify-content: space-between; align-items: center; }
 .layer-item:hover { background: #f0f0f0; }
 .layer-item.active { background: #1a1a1a; color: #fff; }
+/* 🆕 _SP_CALQUES_690 — un calque verrouillé se voit.
+   Sans cette marque, « le bloc ne bouge plus » se lit comme une panne : l'utilisateur
+   ne pense pas au cadenas qu'il a posé trois minutes plus tôt. Le nom passe en
+   italique et le fond se teinte légèrement — deux signaux faibles qui ne gênent pas
+   la lecture de la liste. */
+.layer-item--locked > span:first-child { font-style: italic; opacity: 0.72; }
+.layer-item--locked { background: #fbf4f7; }
+.layer-item--locked.active { background: #2a2024; color: #fff; }
+.theme-dark .layer-item--locked { background: #241b1f; }
 .overflow-indicator { width: 8px; height: 8px; background: #ff0000; border-radius: 2px; }
 .link-indicator { font-size: 9px; opacity: 0.7; }
 /* ✅ FIX TREMBLEMENT: Stabiliser la rightbar avec position fixe et sans scrollbar-gutter */
@@ -4205,7 +4214,176 @@ html[lang="ja"] .login-logo, html[lang="ja"] .logo span { font-family: 'Noto San
 .theme-dark .swatch-add:hover { background: rgba(255,255,255,0.08); }
 
 /* ==================== SWATCH CREATOR MODAL ==================== */
-#swatchCreatorModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 20000; align-items: center; justify-content: center; }
+/* ─── _SP_NUANCIER_688 — FENÊTRE « AJOUTER UNE COULEUR » ET SA PALETTE ────────
+   Trois décisions à ne pas défaire :
+
+   1. LA COUCHE EST TRANSPARENTE ET TRANSVERSANTE (`pointer-events:none`).
+      Le voile opaque n'était pas décoratif : la pipette lit les pixels composés à
+      l'écran, donc un voile à 60 % noir faussait la couleur prélevée. Et si la
+      couche interceptait les clics, la pipette ne pourrait pas atteindre la page.
+      Seul `.sw-panel` reprend les événements.
+
+   2. L'OMBRE EST LÉGÈRE (deux couches, faible opacité). L'ancienne
+      `0 20px 60px rgba(0,0,0,0.3)` faisait une tache floue sous une fenêtre sans
+      fond : le panneau paraissait posé sur du vide.
+
+   3. LE PANNEAU EST DÉPLAÇABLE par `.sw-head`. En JS, on abandonne le centrage
+      flexbox au premier déplacement (cf. swRendreDeplacable) : un élément centré
+      ignore `left`/`top`. */
+#swatchCreatorModal.sw-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  pointer-events: none;
+}
+#swatchCreatorModal.sw-modal.is-open { display: flex; }
+
+#swatchCreatorModal .sw-panel {
+  pointer-events: auto;
+  box-sizing: border-box;
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 18px 22px 20px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+/* Une fois déplacée, la fenêtre devient une fenêtre flottante : elle ne doit plus
+   être recentrée par le flex du parent si la mise en page est recalculée. */
+#swatchCreatorModal .sw-panel.sw-panel--fleeting { position: fixed; }
+
+#swatchCreatorModal .sw-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  user-select: none;
+  touch-action: none;      /* sans quoi le glissement devient un défilement */
+}
+#swatchCreatorModal .sw-title { margin: 0; font-size: 17px; font-weight: 600; }
+#swatchCreatorModal .sw-close {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1;
+  color: #555;
+  cursor: pointer;
+}
+#swatchCreatorModal .sw-close:hover { background: rgba(0, 0, 0, 0.06); color: #000; }
+
+/* Pastille de couleur : c'est elle qui ouvre le nuancier. Le champ natif reste
+   dans le DOM (lu et écrit par le code existant) mais ne se voit plus. */
+#swatchCreatorModal .sw-color-row { display: flex; gap: 8px; align-items: center; }
+#swatchCreatorModal .sw-color { position: relative; flex: 0 0 auto; }
+#swatchCreatorModal .sw-color-btn {
+  display: block;
+  width: 60px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #d5d5d5;
+  border-radius: 6px;
+  background: #000;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+#swatchCreatorModal .sw-color-btn--sm { width: 48px; height: 36px; }
+#swatchCreatorModal .sw-color-btn:hover { border-color: #0d99ff; }
+#swatchCreatorModal .sw-color-btn:focus-visible { outline: 2px solid #0d99ff; outline-offset: 2px; }
+#swatchCreatorModal .sw-color-native {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* La palette elle-même : position fixe, donc indépendante du zoom de la page. */
+.sw-pop {
+  position: fixed;
+  z-index: 20001;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 190px;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.sw-pop[hidden] { display: none; }
+.sw-pop-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+  margin: 0 0 8px;
+}
+.sw-pop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 22px);
+  gap: 6px;
+  max-height: 168px;
+  overflow-y: auto;
+  margin: 0 0 10px;
+}
+.sw-pop-chip {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+.sw-pop-chip:hover { transform: scale(1.12); border-color: #0d99ff; }
+.sw-pop-chip:focus-visible { outline: 2px solid #0d99ff; outline-offset: 1px; }
+.sw-pop-empty { font-size: 12px; color: #8a8a8a; margin: 0 0 10px; }
+.sw-pop-more {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: transparent;
+  border-radius: 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: #333;
+}
+.sw-pop-more:hover { background: rgba(0, 0, 0, 0.05); }
+
+.theme-dark #swatchCreatorModal .sw-panel { background: #0f1114; border-color: rgba(255, 255, 255, 0.12); color: #eee; }
+.theme-dark #swatchCreatorModal .sw-title { color: #f2f2f2; }
+.theme-dark #swatchCreatorModal .sw-head { border-bottom-color: rgba(255, 255, 255, 0.12); }
+.theme-dark #swatchCreatorModal .sw-close { color: #ddd; border-color: rgba(255, 255, 255, 0.18); }
+.theme-dark .sw-pop { background: #14171b; border-color: rgba(255, 255, 255, 0.14); color: #eee; }
+.theme-dark .sw-pop-more { color: #eee; border-color: rgba(255, 255, 255, 0.2); }
+.theme-dark .sw-pop-more:hover { background: rgba(255, 255, 255, 0.08); }
+.theme-dark .sw-pop-title,
+.theme-dark .sw-pop-empty { color: #9a9a9a; }
+
+#swatchCreatorModal { display: none; position: fixed; inset: 0; z-index: 20000; align-items: center; justify-content: center; }
 /* 🛡️ 2026-08-31 — coins carrés + ombre save (pop-in normalisée) */
 #swatchCreatorModal .modal-body { background: #ffffff; border-radius: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; padding: 16px; border: none; }
 .theme-dark #swatchCreatorModal .modal-body { background: #0f1114; }

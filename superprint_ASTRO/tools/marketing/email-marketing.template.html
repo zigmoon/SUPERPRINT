@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════════════
+  SUPERPRINT — GABARIT D'E-MAIL « NOUVEAUTÉS »
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  Ce fichier n'est PAS envoyé tel quel : `build-email.mjs` remplit les marqueurs
+  {{…}} et REFUSE de produire un message si l'adresse postale est absente.
+
+  ⚠️ CE QUI EST OBLIGATOIRE EST DANS LE PIED, ET PAS AILLEURS.
+     · une adresse postale physique — CAN-SPAM 15 U.S.C. § 7704(a)(5)(A)(iii),
+       applicable dès qu'un destinataire peut être situé aux États-Unis ;
+     · un moyen de désabonnement clair et fonctionnel — même texte, § 7704(a)(3),
+       et art. L.34-5 du CPCE côté français ;
+     · l'identité de l'expéditeur — art. L.34-5 CPCE.
+     Ces trois éléments ne sont pas décoratifs : un message qui en manque un seul
+     est irrégulier, quelle que soit la qualité du contenu.
+
+  ⚠️ MISE EN PAGE EN TABLES ET STYLES EN LIGNE.
+     Outlook (moteur Word) ignore les feuilles de style, les flexbox et les
+     marges sur <body>. C'est laid à lire dans le code, c'est la seule façon que
+     le message s'affiche pareil chez tout le monde.
+  ───────────────────────────────────────────────────────────────────────────────
+-->
+<html lang="{{LANG}}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
+<title>{{TITLE}}</title>
+</head>
+<body style="margin:0;padding:0;background:#F2EEE7;">
+<!-- Pré-en-tête : la ligne que la boîte de réception montre après l'objet. -->
+<div style="display:none;font-size:1px;color:#F2EEE7;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">{{PREHEADER}}</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F2EEE7;padding:28px 12px;">
+  <tr>
+    <td align="center">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#F7F3EC;border:1px solid #DED6C8;">
+        <tr>
+          <td style="padding:22px 30px;border-bottom:1px solid #DED6C8;">
+            <a href="{{SITE_URL}}" style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:800;letter-spacing:.04em;color:#1A1A1A;text-decoration:none;">SUPER<span style="color:#C2185B;">PRINT</span></a>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:32px 30px 8px;">
+            <h1 style="margin:0 0 16px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:25px;line-height:1.25;letter-spacing:-.01em;font-weight:800;color:#1A1A1A;">{{TITLE}}</h1>
+            <p style="margin:0 0 18px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#4A453D;">{{INTRO}}</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 30px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.68;color:#1A1A1A;">
+            {{BODY}}
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:14px 30px 34px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background:#1A1A1A;">
+                  <a href="{{CTA_URL}}" style="display:inline-block;padding:13px 26px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#F7F3EC;text-decoration:none;">{{CTA_LABEL}}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ══════════════ PIED OBLIGATOIRE — NE RIEN RETIRER ══════════════ -->
+        <tr>
+          <td style="padding:22px 30px 26px;border-top:1px solid #DED6C8;background:#F1ECE2;">
+            <p style="margin:0 0 12px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#5B554C;">
+              {{WHY}}
+            </p>
+            <p style="margin:0 0 16px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#5B554C;">
+              <a href="{{UNSUB_URL}}" style="color:#1A1A1A;font-weight:700;text-decoration:underline;">{{UNSUB_LABEL}}</a>
+              &nbsp;·&nbsp;
+              <a href="mailto:{{UNSUB_MAIL}}?subject=Unsubscribe" style="color:#1A1A1A;text-decoration:underline;">{{UNSUB_MAIL}}</a>
+              <br>
+              <span style="color:#6D675D;">{{UNSUB_HINT}}</span>
+            </p>
+            <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11.5px;line-height:1.6;color:#6D675D;">
+              <strong style="color:#4A453D;">{{ADDRESS_LABEL}}</strong><br>
+              {{EDITOR}} — {{LEGAL_FORM}}<br>
+              {{POSTAL}}
+            </p>
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+        <tr>
+          <td align="center" style="padding:16px 30px 0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;line-height:1.6;color:#8A8378;">
+            © {{YEAR}} {{EDITOR}} · {{SITE_LABEL}} <a href="{{SITE_URL}}" style="color:#8A8378;text-decoration:underline;">superprint.cc</a>
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
+</body>
+</html>

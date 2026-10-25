@@ -9,7 +9,7 @@
    précachés changent, et c'est ce qui invalide le cache d'un utilisateur.
    Le contrôle `_dev/scripts/_make_zip_492.cjs` exige que ce nom contienne
    `version.txt` — ne pas repartir sur une numérotation parallèle. */
-const CACHE_NAME = 'superprint-shell-v1.7.687-page-pdf-remplacee';
+const CACHE_NAME = 'superprint-shell-v1.7.690-calques-shift-verrou-gabarit';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

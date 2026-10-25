@@ -415,5 +415,9 @@ const navNotes = "<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->"
 <Fragment set:html={"<!-- ⚠️ _SP_SOMMAIRE_708 — LE SCRIPT DU SOMMAIRE A ÉTÉ DÉPLACÉ VERS LA FAQ (voir faq.html).\n     La page Tarif n'a plus de barre de sommaire, donc plus rien à mesurer ni à suivre. -->"} />
 
 <script is:inline src="JS/versions-github.js?v=1.7.687" defer=""></script>
+
+<Fragment set:html={"<!-- 🆕 v1.7.688 — CONTRÔLE D'ÂGE, CONSENTEMENT ET TERMES DE RENOUVELLEMENT.\n     Le script se pose devant TOUT lien d'abonnement PayPal récurrent\n     (`billing/plans/subscribe`) : il demande l'âge, exige le consentement aux termes\n     de reconduction, puis affiche la mention de renouvellement juste sous le bouton.\n     Chargé APRÈS le script de la pop-in : il intercepte en PHASE DE CAPTURE, donc\n     avant elle — sans quoi la pop-in s'ouvrirait derrière la fenêtre de consentement.\n     Aucune requête réseau : tout est local au document. -->"} />
+<link rel="stylesheet" href="/CSS/legal-gate.css?v=20261024-v688-age-consent" />
+<script is:inline src="/JS/legal-gate.js?v=20261024-v688-age-consent" defer></script>
 </Fragment>
 </MarketingLayout>

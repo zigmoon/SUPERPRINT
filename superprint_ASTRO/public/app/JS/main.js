@@ -3099,6 +3099,13 @@ const SP_CUSTOM_PROPS = [
     '_isMasterItem',
     '_masterPageId',
     '_isMasterGuide',
+    /* 🆕 v1.7.690 — _SP_CALQUES_690 : LE VERROU D'UN CALQUE.
+       Sans cette ligne, le cadenas du panneau de calques était perdu au premier
+       enregistrement : les verrous Fabric (`lockMovementX`, `evented`…) ne sont pas
+       des propriétés que Fabric sérialise, et rien n'aurait dit au rechargement
+       quels objets étaient verrouillés. Un utilisateur qui rouvre son .sp retrouve
+       donc ses calques tels qu'il les a laissés. */
+    '_spLocked',
     /* 🆕 v1.7.533 — _SP_LIBERER_533 : élément RÉCUPÉRÉ d'un gabarit de page (clic droit →
        « Libérer le gabarit »). Devenu objet de la page, il porte cette marque qui empêche un
        nouveau coulage du gabarit d'en recréer un second par-dessus. */
@@ -13571,6 +13578,12 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
 
         function addSpecialTextObjectsToCanvas(fabricCanvas, pageIndex, position) {
             if (!fabricCanvas) return;
+            /* 🆕 _SP_CALQUES_690 — LES VERROUS SONT RELUS ICI.
+               C'est le point de passage commun à TOUS les chargements de planche
+               (createPageCanvas, loadSpreadContent, restauration de session, Ctrl+Z) :
+               le placer ici évite d'avoir à le rappeler aux quatre endroits, et donc
+               d'en oublier un. Idempotent : sans objet verrouillé, il ne fait rien. */
+            try { spAppliquerVerrousCalques(fabricCanvas); } catch (_) {}
             const bleedPx = mmToPx(bleed);
             let added = false;
 
@@ -15724,13 +15737,21 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 ctx.fillRect(_pbH * r, _pbV * r, this._pbPageW * r, this._pbPageH * r);
                 ctx.restore();
             };
-            // 🎨 Filet bleu APRÈS les objets → 1.5px fin
+            // 🎨 Filet bleu APRÈS les objets → épaisseur CONSTANTE à l'écran.
+            /* ⚠️ _SP_UI_ECHELLE_688 — LE FILET NE SUIT PLUS LE ZOOM.
+               `lw` est exprimé en pixels du BITMAP (le contexte vient d'être remis à
+               l'identité, donc 1 unité = 1 pixel physique). L'écran, lui, applique
+               ensuite le `transform: scale(z)` du conteneur : un trait de 1,5 px de
+               bitmap devenait donc 1,5 × z pixels à l'écran — 6 px à 400 %, une
+               bande bleue qui mange la page. On divise par z pour que le produit
+               retombe sur 1,5 px, quel que soit le zoom. */
             fabricCanvas.on('after:render', function() {
                 const wrapper = this._pbCanvasInner ? this._pbCanvasInner.closest('.page-wrapper, .spread-wrapper') : null;
                 if (!wrapper || !wrapper.classList.contains('active-page')) return;
                 const ctx = this.getContext();
                 const r = fabric.devicePixelRatio || window.devicePixelRatio || 1;
-                const lw = 1.5 * r; // Épaisseur 1.5px
+                const _z = (typeof window.spZoomActuel === 'function') ? (window.spZoomActuel() || 1) : 1;
+                const lw = 1.5 * r / (_z > 0 ? _z : 1); // 1.5 px À L'ÉCRAN, toujours
                 const _pbH = (this._pbPx || 0) * r, _pbV = (this._pbVPx || 0) * r;
                 const _cw = this._pbPageW * r, _ch = this._pbPageH * r;
                 ctx.save();
@@ -20058,9 +20079,14 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     centerLine.className = 'spread-center-line';
     centerLine.style.position = 'absolute';
     // 🛡 .canvas-inner reste page-size même avec pasteboard → pas d'offset à appliquer.
-    centerLine.style.left = `${(canvasWidth / 2) - 0.5}px`;
+    /* ⚠️ _SP_UI_ECHELLE_688 — LA PLIURE RESTE UN TRAIT DE 1 px À L'ÉCRAN.
+       Elle est posée en style inline dans le conteneur zoomé : à 400 %, un trait de
+       1 px devenait 4 px. On exprime donc largeur ET centrage en fonction de la
+       contre-échelle publiée par spAppliquerEchelleUI (--sp-zoom-inv). `left` doit
+       suivre : sans cela la pliure se décalerait d'un demi-pixel par cran de zoom. */
+    centerLine.style.left = `calc(${canvasWidth / 2}px - 0.5px * var(--sp-zoom-inv, 1))`;
     centerLine.style.top = `${bleedPx}px`;
-    centerLine.style.width = '1px';
+    centerLine.style.width = 'calc(1px * var(--sp-zoom-inv, 1))';
     centerLine.style.height = `${height}px`;
     centerLine.style.background = 'rgba(0,0,0,0.15)';
     centerLine.style.zIndex = '10';
@@ -20143,13 +20169,18 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 ctx.fillRect(_pbH * r, _pbV * r, this._pbPageW * r, this._pbPageH * r);
                 ctx.restore();
             };
-            // 🎨 Filet bleu APRÈS les objets → 1.5px fin
+            // 🎨 Filet bleu APRÈS les objets → épaisseur CONSTANTE à l'écran.
+            /* ⚠️ _SP_UI_ECHELLE_688 — même correction que pour la double page : `lw`
+               est en pixels de bitmap, l'écran applique ensuite transform: scale(z).
+               On divise par z pour que le filet reste à 1,5 px quel que soit le
+               zoom, au lieu de devenir une bande de 6 px à 400 %. */
             fabricCanvas.on('after:render', function() {
                 const wrapper = this._pbCanvasInner ? this._pbCanvasInner.closest('.page-wrapper, .spread-wrapper') : null;
                 if (!wrapper || !wrapper.classList.contains('active-page')) return;
                 const ctx = this.getContext();
                 const r = fabric.devicePixelRatio || window.devicePixelRatio || 1;
-                const lw = 1.5 * r;
+                const _z = (typeof window.spZoomActuel === 'function') ? (window.spZoomActuel() || 1) : 1;
+                const lw = 1.5 * r / (_z > 0 ? _z : 1);
                 const _pbH = (this._pbPx || 0) * r, _pbV = (this._pbVPx || 0) * r;
                 const _cw = this._pbPageW * r, _ch = this._pbPageH * r;
                 ctx.save();
@@ -20225,6 +20256,12 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         fabricCanvas.requestRenderAll();
         
         log(`Spread canvas créé pour pages ${leftIndex + 1}-${rightIndex + 1}`);
+        /* 🆕 _SP_UI_ECHELLE_688 — une planche créée PENDANT un zoom (on ajoute une
+           page à 300 %) arrive avec ses traits d'interface à leur épaisseur
+           nominale : ils seraient trois fois trop épais jusqu'au prochain cran de
+           zoom. On les recale tout de suite. L'appel est idempotent et sans effet
+           quand le zoom vaut 1. */
+        try { if (window.spAppliquerEchelleUI) window.spAppliquerEchelleUI(); } catch (_) {}
     }, delay);
         }
 
@@ -32206,6 +32243,229 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     saveState('Alignement');
         }
 
+        /* ═══════════════════════════════════════════════════════════════════════════
+           _SP_CALQUES_690 — SÉLECTION MULTIPLE ET VERROU DES CALQUES
+           ═══════════════════════════════════════════════════════════════════════════
+
+           Trois règles, et elles suffisent à rendre le panneau prévisible :
+
+           1. LA SÉLECTION VIT DANS LE CANEVAS, PAS DANS LE PANNEAU.
+              `applyLayersSelection()` est le SEUL endroit qui écrit la sélection, et
+              il écrit toujours par une `fabric.ActiveSelection`. Il n'existe donc
+              pas de second état à maintenir : un objet supprimé, une page changée ou
+              un Ctrl+Z ne peuvent pas laisser derrière eux une liste fantôme.
+
+           2. UN OBJET VERROUILLÉ NE PEUT PAS ENTRER DANS UNE SÉLECTION MULTIPLE.
+              Fabric déplacerait ses voisins en croyant le déplacer aussi ; le verrou
+              serait alors décoratif. On l'écarte explicitement, et le panneau le dit
+              (classe `layer-item--locked`).
+
+           3. LE VERROU PORTE SUR LE MOUVEMENT, PAS SUR L'EXISTENCE.
+              Un calque verrouillé reste visible, sélectionnable DEPUIS LE PANNEAU
+              (sinon on ne pourrait plus le déverrouiller), supprimable, et il
+              s'exporte normalement. Ce qu'on retire, c'est la prise : `evented:false`
+              le rend insaisissable à la souris sur la page, et les verrous Fabric
+              empêchent déplacement, mise à l'échelle et rotation.
+              ⚠️ `selectable` RESTE À TRUE — c'est ce qui autorise le clic depuis le
+              panneau. Le rendre non sélectionnable obligerait à le déverrouiller
+              depuis le DOM du panneau, ce qui ne marcherait plus après un rendu.
+           ═══════════════════════════════════════════════════════════════════════════ */
+
+        /* La sélection courante, lue au canevas actif. Renvoie toujours un tableau. */
+        function spCalquesSelection() {
+            const ac = getActiveCanvas();
+            if (!ac) return [];
+            try {
+                if (typeof ac.getActiveObjects === 'function') {
+                    const a = ac.getActiveObjects();
+                    if (a && a.length) return a.slice();
+                }
+                const un = ac.getActiveObject();
+                return un ? [un] : [];
+            } catch (_) { return []; }
+        }
+        window.spCalquesSelection = spCalquesSelection;
+
+        /* Écrit la sélection : un objet, plusieurs, ou rien. */
+        function spCalquesAppliquerSelection(liste) {
+            const ac = getActiveCanvas();
+            if (!ac) return;
+            const demandes = (liste || []).filter(function (o) {
+                return o && ac.getObjects().indexOf(o) >= 0;
+            });
+            /* ⚠️ UN CALQUE VERROUILLÉ N'ENTRE JAMAIS DANS UNE SÉLECTION.
+               Mêlé à d'autres objets, Fabric le déplacerait avec eux et le verrou
+               deviendrait décoratif. Seul, il n'a rien à faire dans une sélection non
+               plus : sa ligne se met en évidence par `_spCalqueVerrouilleVu`, qui ne
+               touche pas au document (cf. spSelectionnerCalque). Le filtre est donc
+               inconditionnel. */
+            const propres = demandes.filter(function (o) { return !o._spLocked; });
+            try {
+                /* ⚠️ ON VIDE AVANT DE RECRÉER. Sans `discardActiveObject`, l'ancienne
+                   ActiveSelection reste inscrite sur le canevas et ses membres sont
+                   retirés de l'affichage : mesuré dans ce dépôt (cf. le correctif de
+                   `_spRestaurerSelectionMultiple`), les objets disparaissaient de la
+                   scène au troisième clic. */
+                ac.discardActiveObject();
+                /* Une vraie sélection remplace la mise en évidence d'un calque
+                   verrouillé : la garder allumerait deux lignes pour une seule
+                   sélection. */
+                if (propres.length) window._spCalqueVerrouilleVu = null;
+                if (propres.length === 1) {
+                    ac.setActiveObject(propres[0]);
+                } else if (propres.length > 1) {
+                    ac.setActiveObject(new fabric.ActiveSelection(propres, { canvas: ac }));
+                }
+                ac.requestRenderAll();
+                /* ⚠️ LE PANNEAU EST RENDU ICI, SYNCHRONEMENT.
+                   Mesuré : en s'en remettant au rafraîchissement différé, les compteurs
+                   divergeaient — 3 objets sélectionnés sur la page, 2 lignes actives
+                   dans la liste. La cause est l'ordre des événements : `discardActiveObject()`
+                   fait peindre le panneau (sélection vide) par un premier chemin, puis le
+                   rAF déjà programmé consomme le jeton et le second rafraîchissement est
+                   ignoré. Rendre ici ferme la question : quand cette fonction retourne,
+                   la liste dit exactement ce que le canevas contient. */
+                try { if (typeof updateLayersPanel === 'function') updateLayersPanel(); } catch (_) {}
+            } catch (e) {
+                try { console.warn('[SP] sélection de calques :', e); } catch (_) {}
+            }
+        }
+        window.spCalquesAppliquerSelection = spCalquesAppliquerSelection;
+
+        /* Clic simple : remplace la sélection. */
+        function spSelectionnerCalque(obj) {
+            if (!obj) return;
+            /* ⚠️ UN CALQUE VERROUILLÉ SE SÉLECTIONNE DANS LA LISTE, PAS DANS LE DOCUMENT.
+               Voir la note de `spAppliquerVerrouAUnObjet` : Fabric rend une sélection
+               vide pour un objet non saisissable, et un gestionnaire du produit
+               l'écarte de toute façon. On garde donc une référence PUREMENT VISUELLE
+               (`_spCalqueVerrouilleVu`) qui ne sert qu'à peindre la ligne : elle ne
+               pilote aucune opération du document, donc elle ne peut pas diverger de
+               l'état réel. */
+            window._spCalqueVerrouilleVu = obj._spLocked ? obj : null;
+            if (obj._spLocked) {
+                /* On VIDE la sélection du document. Sans cela, cliquer un calque
+                   verrouillé alors que deux objets étaient sélectionnés allumait trois
+                   lignes pour deux objets réellement sélectionnés (mesuré). Ici la
+                   ligne allumée est la SEULE, et elle ne désigne aucune sélection
+                   réelle : c'est une mise en évidence, pas un état. */
+                const ac = getActiveCanvas();
+                if (ac) {
+                    try { ac.discardActiveObject(); ac.requestRenderAll(); } catch (_) {}
+                }
+                try { if (typeof updateLayersPanel === 'function') updateLayersPanel(); } catch (_) {}
+                return;
+            }
+            spCalquesAppliquerSelection([obj]);
+        }
+        window.spSelectionnerCalque = spSelectionnerCalque;
+
+        /* Shift+clic : bascule l'objet dans la sélection courante. */
+        function spBasculerCalqueDansSelection(obj) {
+            if (!obj) return;
+            /* La référence visuelle du calque verrouillé ne survit pas à une
+               sélection multiple : elle n'aurait plus de sens. */
+            window._spCalqueVerrouilleVu = null;
+            if (obj._spLocked) {
+                spSelectionnerCalque(obj);
+                try {
+                    if (typeof showChainToast === 'function') showChainToast('Calque verrouillé — déverrouillez-le pour le déplacer', 2200);
+                } catch (_) {}
+                return;
+            }
+            const sel = spCalquesSelection().filter(function (o) { return o !== obj; });
+            const dedans = spCalquesSelection().indexOf(obj) >= 0;
+            spCalquesAppliquerSelection(dedans ? sel : sel.concat([obj]));
+        }
+        window.spBasculerCalqueDansSelection = spBasculerCalqueDansSelection;
+
+        /* Le verrou lui-même. Appliqué à l'objet ET relu au chargement du document
+           (cf. spAppliquerVerrousCalques), sinon un calque verrouillé redeviendrait
+           mobile au premier rechargement du .sp. */
+        function spAppliquerVerrouAUnObjet(obj, verrou) {
+            if (!obj) return;
+            const v = !!verrou;
+            /* ⚠️ MESURÉ : `selectable: true` + `evented: false` NE SUFFIT PAS.
+               `setActiveObject()` sur un tel objet rend un `_activeObject` nul — un
+               gestionnaire du produit écarte les objets non saisissables, et la
+               sélection retombait à vide. Plutôt que d'aller combattre ce
+               gestionnaire, on suit la convention des logiciels de PAO : un calque
+               verrouillé n'est pas sélectionnable SUR LA PAGE, mais sa LIGNE l'est
+               dans le panneau (voir spSelectionnerCalque). C'est ce que fait
+               InDesign : la ligne se met en évidence, le document ne bouge pas. */
+            obj._spLocked = v;
+            try {
+                obj.set({
+                    selectable: !v,
+                    evented: !v,
+                    hasControls: !v,
+                    hasBorders: !v,
+                    lockMovementX: v,
+                    lockMovementY: v,
+                    lockScalingX: v,
+                    lockScalingY: v,
+                    lockRotation: v,
+                    hoverCursor: v ? 'not-allowed' : 'move'
+                });
+            } catch (_) {}
+        }
+        window.spAppliquerVerrouAUnObjet = spAppliquerVerrouAUnObjet;
+
+        function spBasculerVerrouCalque(obj) {
+            if (!obj) return;
+            const ac = getActiveCanvas();
+            const verrou = !obj._spLocked;
+            const selAvant = ac ? spCalquesSelection() : [];
+            spAppliquerVerrouAUnObjet(obj, verrou);
+            /* Le calque qu'on vient de verrouiller reste mis en évidence dans la
+               liste — on voit ce qu'on vient de faire. Mais SEULEMENT s'il n'y a pas
+               déjà une sélection plus large : mesuré, en verrouillant un calque alors
+               que deux autres étaient sélectionnés, trois lignes s'allumaient pour
+               deux objets réellement sélectionnés. Une mise en évidence qui ment sur
+               l'état du document ne vaut rien. */
+            window._spCalqueVerrouilleVu = (verrou && selAvant.length <= 1) ? obj : null;
+            /* Un objet qu'on verrouille sort de la sélection multiple : sinon la
+               sélection continuerait de le contenir et Fabric le déplacerait avec
+               les autres, ce qui nierait le verrou. */
+            if (verrou && ac) {
+                try {
+                    if (selAvant.length > 1 && selAvant.indexOf(obj) >= 0) {
+                        spCalquesAppliquerSelection(selAvant.filter(function (o) { return o !== obj; }));
+                    }
+                } catch (_) {}
+            }
+            try { if (ac) ac.requestRenderAll(); } catch (_) {}
+            try { debouncedUpdateLayersPanel(); } catch (_) {}
+            try { saveState(verrou ? 'Calque verrouillé' : 'Calque déverrouillé'); } catch (_) {}
+            try {
+                if (typeof showChainToast === 'function') {
+                    showChainToast(verrou ? '🔒 Calque verrouillé' : '🔓 Calque déverrouillé', 1600);
+                }
+            } catch (_) {}
+        }
+        window.spBasculerVerrouCalque = spBasculerVerrouCalque;
+
+        /* Relu APRÈS chaque chargement de planche : un objet sérialisé avec
+           `_spLocked: true` doit retrouver ses verrous Fabric — ils ne sont pas
+           écrits dans le .sp (ce sont des drapeaux d'interface, pas des propriétés
+           Fabric sérialisables telles quelles). */
+        function spAppliquerVerrousCalques(canvas) {
+            if (!canvas || typeof canvas.getObjects !== 'function') return;
+            try {
+                canvas.getObjects().forEach(function (o) {
+                    if (o && o._spLocked) spAppliquerVerrouAUnObjet(o, true);
+                });
+            } catch (_) {}
+            /* ⚠️ LE PANNEAU EST REFAIT APRÈS COUP. Mesuré : au rechargement d'un
+               document, la liste des calques était peinte AVANT que les verrous ne
+               soient relus — le calque verrouillé s'y affichait avec un cadenas
+               ouvert. L'objet était bien verrouillé (evented:false, lockMovementX),
+               mais l'icône disait le contraire, et c'est l'icône que l'utilisateur
+               croit. Le rafraîchissement part donc d'ici, une fois le verrou posé. */
+            try { if (typeof debouncedUpdateLayersPanel === 'function') debouncedUpdateLayersPanel(); } catch (_) {}
+        }
+        window.spAppliquerVerrousCalques = spAppliquerVerrousCalques;
+
         function updateLayersPanel() {
     const panel = document.getElementById('layersPanel');
     panel.innerHTML = '';
@@ -32231,9 +32491,23 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     objects.reverse().forEach((obj) => {
         const layerItem = document.createElement('div');
         layerItem.className = 'layer-item';
-        if (activeCanvas.getActiveObject() === obj) {
+        /* ═══ _SP_CALQUES_690 — SÉLECTION MULTIPLE ═══════════════════════════════
+           Demande utilisateur : « il faudrait pouvoir sélectionner plusieurs calques
+           en même temps avec la touche shift ».
+
+           ⚠️ L'ÉTAT DE SÉLECTION N'EST PAS TENU ICI. Il l'est par le canevas lui-même
+           (`getActiveObjects()` renvoie les membres d'une `ActiveSelection`). Une
+           liste tenue en parallèle aurait fini par diverger au premier chemin qui
+           change la sélection sans passer par le panneau — un clic sur la page, un
+           Ctrl+A, une restauration. On LIT donc le canevas, on ne le double pas. */
+        const _sel = (typeof activeCanvas.getActiveObjects === 'function')
+            ? activeCanvas.getActiveObjects() : [];
+        if ((_sel && _sel.indexOf(obj) >= 0) || window._spCalqueVerrouilleVu === obj) {
             layerItem.classList.add('active');
         }
+        /* ⚠️ UN CALQUE VERROUILLÉ SE VOIT. Sans marque visuelle, l'utilisateur croit
+           à une panne (« le bloc ne bouge plus ») alors qu'il a posé le cadenas. */
+        if (obj._spLocked) layerItem.classList.add('layer-item--locked');
         
         let name = obj.type.charAt(0).toUpperCase() + obj.type.slice(1);
         if (obj.type === 'textbox') {
@@ -32269,6 +32543,28 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             indicators.appendChild(link);
         }
         
+        // 🆕 _SP_CALQUES_690 — CADENAS, puis corbeille. Le cadenas est AVANT la
+        // corbeille : on demande souvent l'un, rarement l'autre, et une corbeille
+        // qu'on frôle par erreur efface un calque — un cadenas qu'on frôle ne casse
+        // rien. L'ordre suit donc le risque.
+        const lockBtn = document.createElement('button');
+        const _cadenasFerme = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+        const _cadenasOuvert = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
+        lockBtn.innerHTML = obj._spLocked ? _cadenasFerme : _cadenasOuvert;
+        lockBtn.title = obj._spLocked ? 'Déverrouiller ce calque' : 'Verrouiller ce calque';
+        lockBtn.setAttribute('aria-label', lockBtn.title);
+        lockBtn.setAttribute('aria-pressed', obj._spLocked ? 'true' : 'false');
+        lockBtn.style.cssText = 'background: transparent; border: none; cursor: pointer; padding: 2px 4px; display: flex; align-items: center; opacity: '
+            + (obj._spLocked ? '1' : '0.6') + '; transition: opacity 0.2s; color: '
+            + (obj._spLocked ? '#c2185b' : '#666') + ';';
+        lockBtn.addEventListener('mouseenter', () => { lockBtn.style.opacity = '1'; });
+        lockBtn.addEventListener('mouseleave', () => { lockBtn.style.opacity = obj._spLocked ? '1' : '0.6'; });
+        lockBtn.addEventListener('click', (e) => {
+            e.stopPropagation();       // ne pas changer la sélection en verrouillant
+            spBasculerVerrouCalque(obj);
+        });
+        indicators.appendChild(lockBtn);
+
         // Bouton supprimer (seulement pour éléments non-protégés)
         const deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
@@ -32291,9 +32587,15 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         
         layerItem.appendChild(indicators);
         
-        layerItem.addEventListener('click', () => {
-            activeCanvas.setActiveObject(obj);
-            activeCanvas.requestRenderAll();
+        layerItem.addEventListener('click', (e) => {
+            /* ═══ _SP_CALQUES_690 — SHIFT = AJOUTER / RETIRER DE LA SÉLECTION ═══════
+               Le comportement attendu est celui d'un panneau de calques : sans Shift,
+               on remplace la sélection ; avec Shift, on bascule l'élément cliqué dans
+               la sélection courante. C'est la convention de Photoshop, d'Illustrator
+               et de InDesign — un utilisateur qui a l'habitude de ces logiciels n'a
+               rien à réapprendre. */
+            if (e && e.shiftKey) spBasculerCalqueDansSelection(obj);
+            else spSelectionnerCalque(obj);
             debouncedUpdateLayersPanel();
             updateTransformPanel();
         });
@@ -37653,13 +37955,48 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
     let _highDPRCanvasIndex = -1;
 
+    /* ═══ _SP_PLAFOND_DPR_688 — LE PLAFOND DÉPEND DE LA TAILLE DE LA PAGE ═══════
+       Retour utilisateur mesuré : « avec un petit format (55 × 85 mm), quand je
+       zoome pour travailler dedans, la page est pixellisée ; ça ne le fait pas en
+       version web ». La cause n'est pas le zoom, c'est le PLAFOND.
+
+       L'ancien code avait un plafond FIXE de 8. Or la densité nécessaire au zoom z
+       sur un écran de densité d vaut d × z : à 500 % sur un écran 2×, il faudrait
+       10, et le plafond à 8 livrait 80 % des pixels — donc un rendu visiblement
+       mou. Ce seuil frappe d'autant plus tôt que la page est PETITE, parce que
+       c'est précisément sur un petit format qu'on zoome à 400–500 % pour lire un
+       corps de 6 pt. Un format A4 ne dépasse jamais 150 % : il ne voyait jamais le
+       plafond. D'où le symptôme « seulement sur les petits formats ».
+
+       Un plafond constant est le mauvais outil : ce qui coûte cher, ce n'est pas
+       le rapport d'agrandissement, c'est le NOMBRE DE PIXELS du bitmap. Une page
+       de 55 × 85 mm peut donc monter très haut sans rien coûter (231 × 344 px à
+       3 mm de fond perdu : 16× ne fait que 3,8 Mpx), alors qu'une A4 à 8× en fait
+       déjà 57 Mpx. On calcule donc le plafond À PARTIR DU BUDGET DE PIXELS de la
+       planche, avec deux garde-fous : un budget par page, et la limite dure des
+       moteurs de rendu (16 384 px par côté). */
+    const _SP_BUDGET_PX_PAGE = 48e6;      // 48 Mpx par planche : ~190 Mo de bitmap RGBA
+    const _SP_DPR_MAX_ABSOLU = 16;        // au-delà, le gain n'est plus perceptible
+    const _SP_COTE_MAX_CANVAS = 16384;    // limite des moteurs (Chrome, WebView2, WebKit)
+
+    function _spPlafondDPR(largeurCss, hauteurCss) {
+        const w = (Number.isFinite(largeurCss) && largeurCss > 0) ? largeurCss : 0;
+        const h = (Number.isFinite(hauteurCss) && hauteurCss > 0) ? hauteurCss : 0;
+        if (!w || !h) return _baseDPR;    // planche inconnue : on ne change rien
+        const parSurface = Math.sqrt(_SP_BUDGET_PX_PAGE / (w * h));
+        const parCote = _SP_COTE_MAX_CANVAS / Math.max(w, h);
+        return Math.max(1, Math.min(_SP_DPR_MAX_ABSOLU, parSurface, parCote));
+    }
+    window._spPlafondDPR = _spPlafondDPR;   // pour la sonde de vérification
+
     function _updateCanvasDPRForZoom(forcePageIndex) {
-        // ✅ FIX TYPO ULTRA-NETTE : DPR proportionnel au zoom, cap élevé
+        // ✅ FIX TYPO ULTRA-NETTE : DPR proportionnel au zoom, plafond adaptatif
         // On n'applique la haute résolution qu'au canvas VISIBLE (1-2 max)
         // pour éviter l'explosion mémoire sur les documents multi-pages.
-        const maxDPR = 8; // Permet un rendu net jusqu'à zoom 400% sur écran 2x (800% sur 1x)
+        const _cibleDpr = canvases[((typeof forcePageIndex === 'number') ? forcePageIndex : currentPageIndex)];
+        const maxDPR = _spPlafondDPR(_cibleDpr && _cibleDpr.width, _cibleDpr && _cibleDpr.height);
         const effectiveDPR = (zoomLevel <= 1)
-            ? _baseDPR
+            ? Math.min(maxDPR, _baseDPR)
             : Math.min(maxDPR, _baseDPR * zoomLevel);
 
         const targetPage = (typeof forcePageIndex === 'number') ? forcePageIndex : currentPageIndex;
@@ -37789,7 +38126,17 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
        re-rasterisees — pas seulement celle qu'on regarde — parce que les autres
        seront affichees a leur tour, a cette meme densite. */
     function _spAppliquerDensiteATous() {
-        const cible = (zoomLevel <= 1) ? _baseDPR : Math.min(8, _baseDPR * zoomLevel);
+        /* ⚠️ _SP_PLAFOND_DPR_688 — PLUS DE DENSITÉ UNIQUE POUR TOUTES LES PLANCHES.
+           Une densité commune obligeait à choisir entre « net sur la petite page »
+           et « pas d'explosion mémoire sur la grande ». Chaque planche reçoit
+           maintenant SON plafond (cf. _spPlafondDPR), calculé sur sa propre surface.
+           On retient la densité de la page courante comme « densité appliquée »,
+           parce que c'est elle que la comparaison de _spDensiteChangee surveille. */
+        const cible = (zoomLevel <= 1)
+            ? _baseDPR
+            : Math.min(_spPlafondDPR(canvases[currentPageIndex] && canvases[currentPageIndex].width,
+                                      canvases[currentPageIndex] && canvases[currentPageIndex].height),
+                       _baseDPR * zoomLevel);
         fabric.devicePixelRatio = cible;
         _lastAppliedZoomDPR = cible;
         _highDPRCanvasIndex = -1;      // plus aucune page n'est « celle en haute resolution »
@@ -37797,12 +38144,21 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             canvases.forEach((c) => {
                 if (!c || !c.lowerCanvasEl) return;
                 try {
+                    /* Le plafond est posé AVANT setDimensions : c'est getRetinaScaling()
+                       qui le lit au moment où le bitmap est redimensionné. */
+                    fabric.devicePixelRatio = Math.min(
+                        _spPlafondDPR(c.width, c.height),
+                        (zoomLevel <= 1) ? _baseDPR : _baseDPR * zoomLevel
+                    );
                     c.setDimensions({ width: c.width, height: c.height });
                     if (typeof spAjusterTailleAffichee === 'function') spAjusterTailleAffichee(c);
                     c.requestRenderAll();
                 } catch (_) {}
             });
         } catch (_) {}
+        /* On rend la main avec la densité de la planche courante : c'est celle que
+           liront les prochains rendus de CETTE planche. */
+        fabric.devicePixelRatio = cible;
         /* Meme precaution que dans _updateCanvasDPRForZoom : setDimensions peut
            ecraser la CSS inline du .canvas-container qui ancre la page dans le
            pasteboard. Sans elle : bord de page qui disparait, traits parasites. */
@@ -37905,6 +38261,122 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         }
     }
 
+    /* ═══ _SP_UI_ECHELLE_688 — LES GRAPHISMES D'INTERFACE NE SUIVENT PAS LE ZOOM ══
+       Demande utilisateur, mot pour mot : « lorsque l'on zoome des pages, que ce
+       soit en app web ou app logiciel, il faut que tous les graphismes de
+       l'interface (contour de bloc texte, contour de page, fond perdu, repères,
+       sélection de bloc texte, curseur…) conservent leur proportion à 100 %. Ils ne
+       doivent pas suivre le zoom. Leurs valeurs doivent rester fixes. »
+
+       POURQUOI ILS SUIVAIENT LE ZOOM. Le zoom de l'application n'est pas un zoom de
+       canevas : c'est un `transform: scale(z)` CSS posé sur `#pagesContainer`. Tout
+       ce qui est dessiné DANS ce conteneur est donc agrandi par le compositeur —
+       y compris les traits qui ne représentent rien du document : filet de page,
+       fond perdu, repères, bordures de sélection, poignées.
+
+       CE QUE FAIT CE BLOC. Il divise par z l'épaisseur en coordonnées DOCUMENT de
+       chaque trait d'interface. Le compositeur multiplie ensuite par z, donc le
+       produit vaut 1 : l'épaisseur à l'écran ne bouge plus. Trois familles :
+
+         1. les traits dessinés par l'application dans le contexte du canvas
+            (filet de page) : traités à leur point de dessin ;
+         2. les traits portés par des objets Fabric d'interface (fond perdu, traits
+            de coupe, repères) : leur `strokeWidth` est recalé ici, l'épaisseur
+            d'origine étant mémorisée une seule fois dans `_spTraitBase` ;
+         3. les traits dessinés par Fabric pour la sélection (bordure, poignées,
+            curseur de saisie) : ce sont des propriétés de prototype.
+
+       ⚠️ ON NE TOUCHE QU'À CE QUI EST MARQUÉ. Un trait du DOCUMENT de 1 px doit
+       rester à 1 px de document (donc grossir à l'écran, comme dans Illustrator) :
+       seuls les objets d'interface sont recalés. La liste des marques est explicite,
+       jamais devinée à partir d'une couleur ou d'un type — une heuristique
+       finirait par attraper le trait d'un utilisateur. */
+    const _SP_UI = {
+        filetPage: 1.5,      // px écran — filet bleu de la page active
+        poignee: 8,          // px écran — poignée de sélection (objets)
+        poigneeTexte: 6,     // px écran — poignée de sélection (texte)
+        curseur: 1           // px écran — curseur de saisie dans un texte
+    };
+
+    /* Un objet Fabric est « d'interface » s'il porte l'une de ces marques, posées
+       par le code de l'application (cf. isBleed, isTrimBox, isPage, _isMasterGuide). */
+    function _spEstObjetUI(o) {
+        return !!(o && (o.isBleed || o.isTrimBox || o.isPage || o.isMargin ||
+                        o.isCropMark || o._isMasterGuide || o._spUIObjet));
+    }
+
+    /* Réépaisseur récursive : un groupe (traits de coupe) porte ses traits dans
+       `_objects`, et un `set('strokeWidth')` sur le groupe ne les atteindrait pas. */
+    function _spAjusterTraitUI(o, inv) {
+        if (!o) return;
+        if (o.type === 'group' && Array.isArray(o._objects)) {
+            o._objects.forEach((c) => _spAjusterTraitUI(c, inv));
+            return;
+        }
+        const base = (typeof o._spTraitBase === 'number')
+            ? o._spTraitBase
+            : (typeof o.strokeWidth === 'number' ? o.strokeWidth : 0);
+        if (!(base > 0)) return;
+        /* ⚠️ L'ÉPAISSEUR D'ORIGINE EST MÉMORISÉE UNE SEULE FOIS. Sans ce garde-fou,
+           chaque cran de zoom prendrait la valeur déjà divisée comme nouvelle base
+           et l'affaiblirait cran après cran jusqu'à la disparition. */
+        if (typeof o._spTraitBase !== 'number') o._spTraitBase = base;
+        const cible = base * inv;
+        if (Math.abs((o.strokeWidth || 0) - cible) > 0.001) o.set('strokeWidth', cible);
+    }
+
+    function spAppliquerEchelleUI() {
+        const z = (Number.isFinite(zoomLevel) && zoomLevel > 0) ? zoomLevel : 1;
+        const inv = 1 / z;
+        window.spZoomInv = inv;     // publié : lu par le filet de page et par les CSS
+
+        /* — 3) Sélection Fabric : bordure, poignées, curseur — */
+        if (window.fabric) {
+            try {
+                fabric.Object.prototype.borderScaleFactor = inv;
+                fabric.Object.prototype.cornerSize = _SP_UI.poignee * inv;
+                if (fabric.Textbox) {
+                    fabric.Textbox.prototype.borderScaleFactor = inv;
+                    fabric.Textbox.prototype.cornerSize = _SP_UI.poigneeTexte * inv;
+                }
+                if (fabric.IText) {
+                    fabric.IText.prototype.borderScaleFactor = inv;
+                    fabric.IText.prototype.cornerSize = _SP_UI.poigneeTexte * inv;
+                    fabric.IText.prototype.cursorWidth = _SP_UI.curseur * inv;
+                }
+            } catch (_) {}
+        }
+
+        /* — 2) Objets d'interface des planches — */
+        try {
+            if (typeof canvases !== 'undefined' && canvases && canvases.forEach) {
+                canvases.forEach((c) => {
+                    if (!c || !c.getObjects) return;
+                    c.getObjects().forEach((o) => {
+                        if (_spEstObjetUI(o)) _spAjusterTraitUI(o, inv);
+                    });
+                });
+            }
+        } catch (_) {}
+
+        /* — Ligne de pliure (double page) : style inline, donc soumise au conteneur.
+             Elle lit la même contre-échelle que les autres traits. — */
+        try {
+            document.querySelectorAll('#pagesContainer .spread-center-line').forEach((el) => {
+                el.style.width = 'calc(1px * var(--sp-zoom-inv, 1))';
+            });
+        } catch (_) {}
+
+        /* La sélection vit sur le canvas supérieur : requestRenderAll suffit, il n'y
+           a rien à re-rasteriser. */
+        try {
+            if (typeof canvases !== 'undefined' && canvases && canvases.forEach) {
+                canvases.forEach((c) => { if (c && c.requestRenderAll) c.requestRenderAll(); });
+            }
+        } catch (_) {}
+    }
+    window.spAppliquerEchelleUI = spAppliquerEchelleUI;
+
     function applyZoom() {
         // ✅ Garde-fous: éviter %NaN% au démarrage
         normalizeZoomLevel();
@@ -37960,6 +38432,12 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
         // ✅ FIX TYPO FLOUE — mais en THROTTLE, pas en debounce : voir _spProgrammerDPR.
         _spProgrammerDPR();
+
+        /* 🆕 _SP_UI_ECHELLE_688 — LES TRAITS D'INTERFACE RESTENT À LEUR TAILLE.
+           Appelé ICI, et pas dans un écouteur séparé : `applyZoom()` est le seul
+           point d'entrée du zoom (boutons, molette, champ de saisie, ajustement),
+           donc le seul endroit où l'on est sûr de passer. */
+        try { spAppliquerEchelleUI(); } catch (_) {}
     }
 
     // ✅ Fix immédiat: forcer l'affichage 100% dès l'init
@@ -49514,6 +49992,18 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     function spSurPlanches(fn) {
         const gen = ++_spPlanchesGen;
         const immediates = [], differees = [];
+        /* 🆕 _SP_GABARIT_GRILLE_690 — LE GABARIT EST AUSSI UNE PLANCHE À PEINDRE.
+           Sans cette ligne, décocher « Afficher la grille » éteignait les pages mais
+           laissait la grille allumée sur le gabarit en cours d'édition : les deux
+           surfaces cessaient de dire la même chose. */
+        try {
+            const _enGabarit = (typeof window.spMasterEditActif === 'function')
+                ? window.spMasterEditActif()
+                : !!(window._spMasterEdit && window._spMasterEdit.canvas);
+            if (_enGabarit && window._spMasterEdit && window._spMasterEdit.canvas) {
+                immediates.push(window._spMasterEdit.canvas);
+            }
+        } catch (_) {}
         canvases.forEach(c => { if (!c) return; (spPlancheVisible(c) ? immediates : differees).push(c); });
         immediates.forEach(c => { try { fn(c); } catch (_) {} });
         if (!differees.length) { _spPlanchesAttente = null; return; }
@@ -49603,10 +50093,36 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
     function rebuildGridAll() {
         const settings = getGridSettings();
-        /* _SP_GRILLE_543 : les planches VISIBLES tout de suite, les autres à l'inactivité —
-           le clic ne paie plus le coût du document entier. */
+        /* ═══ _SP_GABARIT_GRILLE_690 — LA GRILLE EXISTE AUSSI SUR LE GABARIT ═══════
+           Demande utilisateur : « en mode gabarit, lorsque je retouche ou je place des
+           repères ou des grilles, les repères et les grilles doivent apparaître sur la
+           préview du gabarit ».
+
+           MESURÉ AVANT : `rebuildGridAll()` ne parcourait que `canvases` — le tableau
+           des planches du document. Le canevas du gabarit (`_activeMasterCanvas`) est
+           délibérément ABSENT de ce tableau (il ne doit être ni sérialisé ni reconstruit
+           comme une page). Il était donc, littéralement, invisible pour cette fonction :
+           page = 16 repères de grille, gabarit = 0, même après un appel explicite.
+
+           On ajoute le canevas du gabarit EN TÊTE quand l'édition de gabarit est
+           ouverte. Il est traité comme les autres (mêmes réglages, même rendu) mais il
+           n'entre pas dans `canvases` : l'invariant du document reste intact. */
+        const _planches = [];
+        try {
+            /* ⚠️ `window.spMasterEditActif` ET NON `spMasterEditActif` : cette fonction
+               vit dans une portée plus profonde du même fichier (celle des gabarits).
+               Un appel par nom aurait levé « is not defined » au premier rendu de
+               grille — c'est-à-dire à chaque démarrage. */
+            const _enGabarit = (typeof window.spMasterEditActif === 'function')
+                ? window.spMasterEditActif()
+                : !!(window._spMasterEdit && window._spMasterEdit.canvas);
+            if (_enGabarit) {
+                const _mc = window._spMasterEdit && window._spMasterEdit.canvas;
+                if (_mc && _planches.indexOf(_mc) < 0) _planches.push(_mc);
+            }
+        } catch (_) {}
         const immediates = [], differees = [];
-        canvases.forEach(c => {
+        _planches.concat(canvases || []).forEach(c => {
             if (!c) return;
             (spPlancheVisible(c) ? immediates : differees).push(c);
         });
@@ -55551,6 +56067,33 @@ https://superprint.app
     }
     
     canvas.add(line);
+    /* ═══ _SP_GABARIT_GRILLE_690 — UN REPÈRE POSÉ SUR LE GABARIT APPARTIENT AU GABARIT ═
+       Demande utilisateur : « en mode gabarit, les repères et les grilles doivent
+       apparaître sur la préview du gabarit ».
+
+       MESURÉ AVANT : un repère posé en mode gabarit s'affichait (il était bien ajouté
+       au canevas du gabarit), puis DISPARAISSAIT à l'enregistrement. La cause est un
+       filtre, pas un rendu : `spMasterEditEnregistrer()` écarte `isManualGuide`, au
+       même titre que les repères TECHNIQUES de l'application (marges, traits de coupe,
+       filet de format). Le repère était donc traité comme un repère système alors que
+       c'est un repère d'utilisateur — exactement ce que `_isMasterGuide` distingue.
+       On pose donc la marque à la création, quand le canevas est celui du gabarit.
+       C'est aussi ce qui fait apparaître le repère sur les pages qui portent le
+       gabarit (cf. addSpecialTextObjectsToCanvas, qui recopie les _isMasterGuide). */
+    try {
+        const _cvGabarit = (window._spMasterEdit && window._spMasterEdit.canvas) || null;
+        const _cvModalGabarit = (typeof window._activeMasterCanvas !== 'undefined') ? window._activeMasterCanvas : null;
+        if ((_cvGabarit && canvas === _cvGabarit) || (_cvModalGabarit && canvas === _cvModalGabarit)) {
+            line._isMasterGuide = true;
+            line.guideOrientation = (orientation === 'vertical') ? 'vertical' : 'horizontal';
+            /* Un repère de gabarit n'a pas besoin d'être déplaçable sur les pages :
+               il s'y affiche comme un guide de lecture, et le rendre saisissable
+               ferait croire qu'on peut le corriger page par page. */
+            line.selectable = false;
+            line.evented = false;
+            line.hoverCursor = 'default';
+        }
+    } catch (_) {}
     canvas.requestRenderAll();
         }
 
@@ -65882,6 +66425,18 @@ https://superprint.app
                        pour les pages) qui coule les colonnes et relance l'habillage. */
                     try { if (typeof window._spWrapReflowAll === 'function') window._spWrapReflowAll(c); } catch (_) {}
                     c.requestRenderAll();
+                    /* 🆕 _SP_GABARIT_GRILLE_690 — LA GRILLE DÉJÀ ACTIVE ARRIVE DANS LE GABARIT.
+                       Sans cet appel, entrer en édition de gabarit alors que la grille est
+                       cochée donnait une table NU : la grille n'était reconstruite qu'au
+                       prochain changement de réglage. On la pose ici, une fois le gabarit
+                       chargé — c'est-à-dire quand ses objets existent et que ses repères
+                       de marges sont en place. */
+                    try {
+                        if ((window._spGridVisible || window._spColonnesActives)
+                            && typeof window.rebuildGridAll === 'function') {
+                            window.rebuildGridAll();
+                        }
+                    } catch (_) {}
                 } catch (e) { console.warn('[spMasterEdit] finalisation:', e); }
             };
 
@@ -65989,7 +66544,16 @@ https://superprint.app
                        l'indicateur de débordement (un triangle) restait dans le gabarit et
                        réapparaissait sur les pages alimentées comme un « bloc en trop ».
                        Les repères UTILISATEUR du gabarit (_isMasterGuide) restent conservés. */
-                    if (o.isGuide || o.isManualGuide || o.isTrimBox || o.isBleed || o.isBleedMask || o._isSpreadMirror) return false;
+                    /* ⚠️ _SP_GABARIT_GRILLE_690 — LES REPÈRES D'UTILISATEUR DU GABARIT SONT CONSERVÉS.
+                       Ce filtre écarte les repères TECHNIQUES (marges, traits de coupe, filet
+                       de format) : c'est juste, ils sont recalculés à l'affichage. Il écartait
+                       aussi les repères posés À LA MAIN sur le gabarit, qui portent pourtant
+                       `isManualGuide` comme les autres — si bien qu'un repère placé en mode
+                       gabarit disparaissait au moment d'enregistrer. La marque `_isMasterGuide`
+                       est justement là pour les distinguer : on la respecte. */
+                    if (o.isGuide || o.isManualGuide || o.isTrimBox || o.isBleed || o.isBleedMask || o._isSpreadMirror) {
+                        if (!o._isMasterGuide) return false;
+                    }
                     if (o._isOverflowIndicator || o._isChainBadge || o._isLinkArrow || o._isTabRuler || o._isTabMark) return false;
                     if (o._isPageNumber) return false;
                     if (o.excludeFromExport === true && !o._isMasterGuide) return false;
@@ -66262,6 +66826,9 @@ https://superprint.app
                 guideOrientation: isVertical ? 'vertical' : 'horizontal'
             });
             mc.add(line);
+            /* 🆕 _SP_UI_ECHELLE_688 — un repère posé à 300 % doit naître fin, pas
+               épais de 3 px. On le recale immédiatement (idempotent à 100 %). */
+            try { if (window.spAppliquerEchelleUI) window.spAppliquerEchelleUI(); } catch (_) {}
             try { mc.bringToFront(line); } catch(_) {}
             mc.requestRenderAll();
         }
@@ -74806,6 +75373,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         filterGrayscale: "Noir & Blanc",
         filterSepia: "Sépia",
         addColor: "+ Ajouter couleur…",
+        swatchPickerTitle: "Nuancier",
+        swatchPickerEmpty: "Le nuancier est vide.",
+        swatchPickerMore: "Autre couleur…",
         // === Pathfinder ===
         pathUnite: "Union — Fusionner les formes",
         pathSubtract: "Soustraction — Retirer la forme du dessus",
@@ -75910,6 +76480,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         filterGrayscale: "Grayscale",
         filterSepia: "Sepia",
         addColor: "+ Add color…",
+        swatchPickerTitle: "Swatches",
+        swatchPickerEmpty: "The swatch panel is empty.",
+        swatchPickerMore: "Other colour…",
         // === Pathfinder ===
         pathUnite: "Unite — Merge shapes",
         pathSubtract: "Subtract — Remove front shape",
@@ -77037,6 +77610,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         filterGrayscale: "グレースケール",
         filterSepia: "セピア",
         addColor: "+ 色を追加…",
+        swatchPickerTitle: "スウォッチ",
+        swatchPickerEmpty: "スウォッチは空です。",
+        swatchPickerMore: "別の色…",
         // === Pathfinder ===
         pathUnite: "合体 — シェイプを結合",
         pathSubtract: "前面オブジェクトで型抜き",
@@ -79585,6 +80161,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
 
     updateSwatchPreview();
     modal.style.display = 'flex';
+    /* 🆕 _SP_NUANCIER_688 — chaque ouverture repart centrée (cf. swRecentrer) et
+       les pastilles reprennent les valeurs remises à zéro juste au-dessus. */
+    try { swRecentrer(); } catch (_) {}
+    try { swSynchroPastilles(); } catch (_) {}
         }
 
         function closeSwatchModal() {
@@ -79597,6 +80177,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     const cmykPreview = document.getElementById('swatchCMYKPreview');
     const cmykValues = document.getElementById('cmykValues');
     if (!preview) return;
+
+    /* _SP_NUANCIER_688 — les trois pastilles suivent les champs hex. Placer la
+       synchronisation ICI plutôt que dans chaque écouteur garantit qu'aucun chemin
+       (saisie, pipette, choix dans le nuancier, remise à zéro) ne l'oublie. */
+    try { swSynchroPastilles(); } catch (_) {}
 
     const activeType = document.querySelector('.swatch-type-btn.active')?.dataset.type || 'solid';
 
@@ -79711,6 +80296,262 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         }
 
         // Initialisation de la modale au chargement
+        /* ═══ _SP_NUANCIER_688 — LA FENÊTRE « AJOUTER UNE COULEUR » ═════════════════
+           Trois retours utilisateur, trois causes distinctes.
+
+           (1) « un fond gris apparaît et on ne peut pas déplacer la fenêtre ».
+               Le voile était un `background: rgba(0,0,0,0.6)` sur la couche
+               plein écran, et le panneau n'avait aucune prise : il était centré par
+               `align-items/justify-content`, donc immobile par construction.
+
+           (2) « le fond gris influence la couleur si on utilise la pipette ».
+               Ce n'est pas un défaut d'affichage, c'est un défaut de MESURE : la
+               pipette (API EyeDropper, ou le sélecteur natif de repli) lit les
+               pixels RÉELLEMENT composés à l'écran. Un voile noir à 60 % assombrit
+               tout ce qu'il recouvre ; la couleur prélevée sur la page était donc
+               la couleur de la page MÉLANGÉE au voile. On ne peut pas corriger ça
+               après coup : il faut que le voile n'existe pas pendant le prélèvement.
+               Le voile est donc supprimé (transparent) et la couche laisse passer
+               les clics — sans quoi elle intercepterait la pipette elle-même.
+
+           (3) « les couleurs enregistrées dans le nuancier doivent apparaître dans
+               les choix de couleur ».
+               Les trois champs de couleur étaient des `<input type="color">` nus :
+               leur unique choix possible est le sélecteur du système, qui ne connaît
+               pas le nuancier. Chaque pastille ouvre maintenant une palette qui
+               contient d'abord LES COULEURS DU NUANCIER, puis l'accès au sélecteur
+               système pour une valeur arbitraire.
+
+           ⚠️ LES `<input type="color">` SONT CONSERVÉS, mais masqués. Tout le code
+           existant (lecture de `.value`, écoute de `input`, remise à zéro à
+           l'ouverture) continue de fonctionner sans modification : on ajoute une
+           surface, on ne remplace pas le mécanisme. */
+        const SW_PALETTE = { ouvert: false, ancre: null, cible: null };
+
+        function swHexDe(swatch) {
+            const brut = String((swatch && (swatch.color || swatch.hex)) || '');
+            const m = brut.match(/#[0-9A-Fa-f]{3,8}/);
+            return m ? m[0] : null;
+        }
+
+        /* Repeint les trois pastilles depuis les champs hex : une seule source de
+           vérité, donc aucune désynchronisation possible entre la pastille, le
+           champ texte et le sélecteur natif. */
+        function swSynchroPastilles() {
+            const paires = [['solidColorBtn', 'solidColorHex'],
+                            ['gradColor1Btn', 'gradHex1'],
+                            ['gradColor2Btn', 'gradHex2']];
+            paires.forEach((paire) => {
+                const btn = document.getElementById(paire[0]);
+                const hex = document.getElementById(paire[1]);
+                if (!btn || !hex) return;
+                const v = hex.value || '#000000';
+                btn.style.background = v;
+                btn.setAttribute('data-hex', v);
+            });
+        }
+
+        function swFermerPalette() {
+            const pop = document.getElementById('swColorPop');
+            if (pop) { pop.hidden = true; pop.innerHTML = ''; }
+            SW_PALETTE.ouvert = false;
+            SW_PALETTE.ancre = null;
+            SW_PALETTE.cible = null;
+        }
+
+        /* Choisir une couleur : on écrit dans le champ hex ET dans le sélecteur
+           natif, puis on laisse les écouteurs existants faire le reste. Un seul
+           chemin d'écriture, donc un aperçu et une valeur CMYK toujours justes. */
+        function swChoisirCouleur(hex) {
+            const cible = SW_PALETTE.cible;
+            if (!cible) return;
+            const hexId = cible.hexId;
+            const champ = document.getElementById(hexId);
+            const natif = document.getElementById(cible.inputId);
+            if (champ) champ.value = hex;
+            if (natif) natif.value = hex;
+            /* `input` est l'événement qu'écoutent déjà les champs du nuancier :
+               l'aperçu, les valeurs CMJN et la pastille se mettent à jour. */
+            if (champ) { try { champ.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {} }
+            swSynchroPastilles();
+            swFermerPalette();
+        }
+
+        function swOuvrirPalette(ancre, inputId, hexId) {
+            const pop = document.getElementById('swColorPop');
+            if (!pop) return;
+            if (SW_PALETTE.ouvert && SW_PALETTE.ancre === ancre) { swFermerPalette(); return; }
+
+            SW_PALETTE.ouvert = true;
+            SW_PALETTE.ancre = ancre;
+            SW_PALETTE.cible = { inputId: inputId, hexId: hexId };
+            pop.innerHTML = '';
+
+            /* Les couleurs du nuancier, dans l'ordre où l'utilisateur les a rangées.
+               Les dégradés n'y entrent pas : ils ne s'écrivent pas dans un champ de
+               couleur unie (on prendrait un de leurs arrêts au hasard, ce qui serait
+               un mensonge sur ce que l'on choisit). */
+            const vus = Object.create(null);
+            const unies = (colorSwatches || []).filter((s) => {
+                if (!s || s.type === 'gradient') return false;
+                const h = swHexDe(s);
+                if (!h) return false;
+                const c = h.toLowerCase();
+                if (vus[c]) return false;
+                vus[c] = 1;
+                return true;
+            });
+
+            if (unies.length) {
+                const titre = document.createElement('div');
+                titre.className = 'sw-pop-title';
+                titre.textContent = translate('swatchPickerTitle') || 'Nuancier';
+                pop.appendChild(titre);
+
+                const grille = document.createElement('div');
+                grille.className = 'sw-pop-grid';
+                unies.forEach((s) => {
+                    const h = swHexDe(s);
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'sw-pop-chip';
+                    chip.style.background = s.color || s.hex || h;
+                    chip.title = (s.name || h) + ' — ' + h.toUpperCase();
+                    chip.setAttribute('aria-label', chip.title);
+                    chip.addEventListener('click', (e) => { e.stopPropagation(); swChoisirCouleur(h); });
+                    grille.appendChild(chip);
+                });
+                pop.appendChild(grille);
+            } else {
+                const vide = document.createElement('div');
+                vide.className = 'sw-pop-empty';
+                vide.textContent = translate('swatchPickerEmpty') || 'Le nuancier est vide.';
+                pop.appendChild(vide);
+            }
+
+            /* Toujours disponible : une valeur qui n'est pas au nuancier. C'est ce
+               que faisait la case avant, et le retirer aurait été une régression. */
+            const autre = document.createElement('button');
+            autre.type = 'button';
+            autre.className = 'sw-pop-more';
+            autre.textContent = translate('swatchPickerMore') || 'Autre couleur…';
+            autre.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const natif = document.getElementById(inputId);
+                swFermerPalette();
+                if (natif && natif.click) natif.click();
+            });
+            pop.appendChild(autre);
+
+            /* Placement : sous la pastille, aligné à gauche, et ramené dans la
+               fenêtre s'il déborde. `fixed` = indépendant du zoom de la page. */
+            pop.hidden = false;
+            const ra = ancre.getBoundingClientRect();
+            const rp = pop.getBoundingClientRect();
+            let left = ra.left;
+            let top = ra.bottom + 6;
+            if (left + rp.width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - rp.width - 8);
+            if (top + rp.height > window.innerHeight - 8) top = Math.max(8, ra.top - rp.height - 6);
+            pop.style.left = left + 'px';
+            pop.style.top = top + 'px';
+        }
+
+        /* Rend un panneau déplaçable par sa poignée. On abandonne le centrage par
+           flexbox au premier déplacement : sans cela, `left/top` n'auraient aucun
+           effet sur un élément centré. */
+        function swRendreDeplacable(panneau, poignee) {
+            if (!panneau || !poignee) return;
+            let dx = 0, dy = 0, depart = null, origine = null;
+            poignee.style.cursor = 'move';
+            poignee.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0) return;
+                if (e.target.closest('button')) return;   // la croix reste un bouton
+                const r = panneau.getBoundingClientRect();
+                depart = { x: e.clientX, y: e.clientY };
+                origine = { left: r.left, top: r.top };
+                dx = dy = 0;
+                /* On fige la position AVANT de passer en absolu, sinon le panneau
+                   saute : flexbox le recentrait au moment où l'on retire l'alignement. */
+                panneau.style.position = 'fixed';
+                panneau.style.margin = '0';
+                panneau.style.left = r.left + 'px';
+                panneau.style.top = r.top + 'px';
+                panneau.style.transform = 'none';
+                panneau.classList.add('sw-panel--fleeting');
+                try { poignee.setPointerCapture(e.pointerId); } catch (_) {}
+                e.preventDefault();
+            });
+            poignee.addEventListener('pointermove', (e) => {
+                if (!depart) return;
+                dx = e.clientX - depart.x;
+                dy = e.clientY - depart.y;
+                const l = Math.min(Math.max(4, origine.left + dx), window.innerWidth - panneau.offsetWidth - 4);
+                const t = Math.min(Math.max(4, origine.top + dy), window.innerHeight - 48);
+                panneau.style.left = l + 'px';
+                panneau.style.top = t + 'px';
+            });
+            const finir = (e) => {
+                if (!depart) return;
+                depart = null;
+                try { poignee.releasePointerCapture(e.pointerId); } catch (_) {}
+            };
+            poignee.addEventListener('pointerup', finir);
+            poignee.addEventListener('pointercancel', finir);
+        }
+
+        /* Remise au centre : la fenêtre garde la position où on l'a laissée TANT
+           QU'ELLE EST OUVERTE, mais chaque ouverture repart centrée. Sans cela, un
+           déplacement malencontreux rendrait la fenêtre invisible aux lancements
+           suivants, et il n'y aurait aucun moyen de la retrouver. */
+        function swRecentrer() {
+            const panneau = document.getElementById('swatchCreatorPanel');
+            if (!panneau) return;
+            panneau.classList.remove('sw-panel--fleeting');
+            panneau.style.position = '';
+            panneau.style.left = '';
+            panneau.style.top = '';
+            panneau.style.margin = '';
+            panneau.style.transform = '';
+        }
+
+        function initSwatchCreatorModalPalette() {
+            const paires = [['solidColorBtn', 'solidColorPicker', 'solidColorHex'],
+                            ['gradColor1Btn', 'gradColor1', 'gradHex1'],
+                            ['gradColor2Btn', 'gradColor2', 'gradHex2']];
+            /* ⚠️ LE LIBELLÉ D'ACCÈS SUIT LA LANGUE DE L'INTERFACE. Il est écrit ici et
+               non dans le HTML : un `aria-label` ne peut pas être traduit par le
+               mécanisme `data-lang`, qui ne masque que des éléments visibles. */
+            const libelle = translate('swatchPickerTitle') || 'Nuancier';
+            paires.forEach((p) => {
+                const btn = document.getElementById(p[0]);
+                if (!btn) return;
+                btn.setAttribute('aria-label', libelle);
+                btn.setAttribute('title', libelle);
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    swOuvrirPalette(btn, p[1], p[2]);
+                });
+            });
+
+            /* Fermeture : clic ailleurs, Échap, ou sortie de la fenêtre.
+               ⚠️ `pointerdown` en phase de CAPTURE, sinon le clic sur une pastille
+               refermerait la palette avant que la pastille ne reçoive son `click`. */
+            document.addEventListener('pointerdown', (e) => {
+                if (!SW_PALETTE.ouvert) return;
+                const pop = document.getElementById('swColorPop');
+                if (!pop) return;
+                if (pop.contains(e.target)) return;
+                if (SW_PALETTE.ancre && SW_PALETTE.ancre.contains(e.target)) return;
+                swFermerPalette();
+            }, true);
+            document.addEventListener('keydown', (e) => {
+                if (!SW_PALETTE.ouvert) return;
+                if (e.key === 'Escape') { e.stopPropagation(); swFermerPalette(); }
+            }, true);
+            window.addEventListener('resize', swFermerPalette);
+        }
+
         function initSwatchCreatorModal() {
     const modal = document.getElementById('swatchCreatorModal');
     if (!modal) return;
@@ -79788,6 +80629,17 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         if (e.target === modal) closeSwatchModal();
     });
     // Removed keydown listener - handled by main keyboard handler
+
+    /* 🆕 _SP_NUANCIER_688 — palette du nuancier, fenêtre déplaçable, et remise au
+       centre à chaque ouverture. `openAddSwatchModal` appelle swRecentrer(). */
+    try { initSwatchCreatorModalPalette(); } catch (_) {}
+    try {
+        swRendreDeplacable(document.getElementById('swatchCreatorPanel'),
+                           document.getElementById('swatchCreatorDrag'));
+        const fermer = document.getElementById('swatchCreatorClose');
+        if (fermer) fermer.addEventListener('click', closeSwatchModal);
+    } catch (_) {}
+    try { swSynchroPastilles(); } catch (_) {}
         }
 
         // ==================== ?? FILTERS WIDGET (Instagram-style) ====================
