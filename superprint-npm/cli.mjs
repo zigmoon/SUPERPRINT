@@ -25,57 +25,55 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
 //    version is invalid or older than the online version ».
 //    La version du paquet npm, elle, vit dans package.json.
-// 📌 Dernier plancher avancé : 1.7.687 — et c'est bien celui de la version
-//    DÉPLOYÉE, vérifié dans l'archive téléchargée, pas celle du dépôt.
+// 📌 Dernier plancher avancé : 1.7.692 — et c'est bien la version DÉPLOYÉE,
+//    vérifiée DANS l'archive téléchargée, pas celle du dépôt.
 //    ⚠️ RÈGLE APPRISE À LA DURE, ET QUI A DÉJÀ SERVI : on ne conclut pas une
-//    version sur une empreinte. Le 15/10/2026, « zip 1.7.617 en ligne (56 459 564
-//    octets, sha256 EAB82EEA…8B951) » était exact — pour le zip de la version
-//    PRÉCÉDENTE. Le fichier déployé avait été retéléchargé et HACHÉ, jamais OUVERT.
-//    LEÇON : on lit la version DANS l'archive.
+//    version sur une empreinte. Le 15/10/2026, « zip 1.7.617 en ligne » était
+//    exact — pour le zip de la version PRÉCÉDENTE : le fichier déployé avait été
+//    retéléchargé et HACHÉ, jamais OUVERT. LEÇON : on lit la version DANS l'archive.
 //    ⚠️ ET LA RÈGLE COMPLÉMENTAIRE, APPRISE LE 19/10/2026 : le script de bump
-//    remplace « 1.7.682 » partout, y compris DANS CE COMMENTAIRE. Il avait donc
-//    réécrit ce bloc en affirmant « version.txt = 1.7.683 — À JOUR » et « avancer
-//    le plancher est sûr », alors que RIEN n'était encore téléversé. Un plancher en
-//    avance ne se voit pas à la lecture : il casse `npx superprint` pour tout le
-//    monde (« downloaded version is invalid or older »). D'où la règle : après un
-//    bump, RELIRE ce bloc et le remettre sur les mesures réelles.
-//    ÉTAT MESURÉ le 23/10/2026 à 00 h 30, ET LE PLANCHER PEUT SUIVRE :
-//      · app.zigmoon.com/sp213-local.zip — la 1.7.687 : 56 803 895 octets.
-//        Pas une empreinte : le fichier a été RETÉLÉCHARGÉ et son sha256
-//        (a9a4ae23…62a919) est IDENTIQUE à celui du zip local, et `version.txt`
-//        vaut 1.7.687 DANS l'archive (CACHE_NAME : superprint-shell-v1.7.687-
-//        page-pdf-remplacee).
-//      · superprint.cc/version.txt = 1.7.687.
-//      · superprint.cc/app/index.html porte la 1.7.687 (splash, badge,
-//        `JS/main.js?v=20261023-v687-page-pdf-remplacee`), et `app/JS/main.js`
-//        est identique au fichier local au retour chariot près (sha256 LF
-//        9a1fa3a3… — 6 276 285 octets, pour 107 716 fins de ligne CRLF en moins).
-//      · les boutons « Télécharger » des pages index / price / faq / rock
-//        pointent la release `desktop-latest`, dont les 21 fichiers sont
-//        identiques, taille pour taille, à ceux de `desktop-v1.7.687` : macOS
-//        Intel 31,9 Mo, Windows 31,8 Mo, Linux .deb 31,9 Mo, AppImage 106,9 Mo.
-//      · npm `superprint@1.0.117` avait un plancher de 1.7.685 : juste tant que
-//        la 1.7.685 était servie, en retard depuis le téléversement.
-//    → le plancher passe donc à 1.7.687 DANS CE MÊME GESTE, maintenant que le
-//      zip ET le site sont en ligne. Un plancher égal à la version déployée est
-//      l'état visé : il refuse un zip plus ancien servi par erreur, sans jamais
-//      bloquer une version plus récente.
+//    remplace le numéro de version partout, y compris DANS CE COMMENTAIRE. Il avait
+//    donc réécrit ce bloc en affirmant « version.txt = 1.7.683 — À JOUR » et « avancer
+//    le plancher est sûr », alors que RIEN n'était téléversé. Un plancher en avance
+//    ne se voit pas à la lecture : il casse `npx superprint` pour tout le monde
+//    (« downloaded version is invalid or older »). D'où la règle : après un bump,
+//    RELIRE ce bloc et le remettre sur les mesures réelles. C'est pourquoi ce texte
+//    a été réécrit À LA MAIN le 25/10/2026, mesures en main.
+//    ÉTAT MESURÉ le 25/10/2026 à 18 h 50, ET LE PLANCHER PEUT SUIVRE :
+//      · app.zigmoon.com/sp213-local.zip — HTTP 200, Content-Length 56 865 091
+//        octets, Last-Modified « Sun, 25 Oct 2026 17:18:15 GMT ». Cette taille est
+//        EXACTEMENT celle du zip construit ici à 17 h 14 (sha256 1A62CE03…19456),
+//        dans lequel `public/superprint/version.txt` a été LU et vaut 1.7.692,
+//        avec CACHE_NAME = superprint-shell-v1.7.692-calques-glisser-tabulation.
+//      · superprint.cc/version.txt = 1.7.692.
+//      · superprint.cc/app/index.html porte la 1.7.692 : badge `data-sp-sw`,
+//        attribut title, et `JS/main.js?v=20261025-v692-calques-glisser-tabulation`.
+//      · superprint.cc/app/service-worker.js : CACHE_NAME =
+//        superprint-shell-v1.7.692-calques-glisser-tabulation.
+//      · la release `desktop-latest` porte « SuperPrint 1.7.692 » et ses
+//        21 fichiers ont tous été remplacés le 25/10 à 18 h 30 (heure locale),
+//        par une compilation partie de 4b135941 : les empreintes SHA-256 diffèrent
+//        de celles de la compilation précédente, donc les binaires sont bien neufs.
+//      · npm `superprint@1.0.118` avait un plancher de 1.7.687 : juste tant que
+//        la 1.7.687 était servie, en retard depuis ce téléversement.
+//    → le plancher passe donc à 1.7.692 DANS CE MÊME GESTE, maintenant que le zip
+//      ET le site sont en ligne. Un plancher égal à la version déployée est l'état
+//      visé : il refuse un zip plus ancien servi par erreur, sans jamais bloquer
+//      une version plus récente.
 //    ⚠️ RESTE EN RETARD, ET CE N'EST PAS LE PLANCHER : `release.html` sur
-//      app.zigmoon.com s'arrête à la 1.7.685 (aucune section 1.7.686 ni 1.7.687).
+//      app.zigmoon.com s'arrête à la 1.7.687 (mesuré : plus haute version citée
+//      1.7.687). Les cinq blocs 1.7.688 à 1.7.692 existent dans le dépôt depuis le
+//      25/10 ; il faut téléverser `release.html` pour que la page publique suive.
 //      Les notes de version sont en retard sur les fichiers, pas l'inverse.
 //    ⚠️ CE QUE FAIT RÉELLEMENT LE PLANCHER, dit exactement : `onlineVersion` est le
 //      MAXIMUM entre `version.txt` et cette constante. C'est donc `version.txt` qui
 //      déclenche les mises à jour, et le plancher qui REFUSE un zip trop ancien —
 //      utile précisément quand `version.txt` est en retard ou absent, ce qui s'est
-//      déjà produit (il était resté à 1.7.619 un jour de dépôt). Le laisser à
-//      1.7.629 reviendrait à accepter un zip de 1.7.629 alors que 53 livraisons
-//      ont eu lieu depuis : c'est ce refus-là qu'on met à jour.
-//    ⚠️ POURQUOI LE PLANCHER N'AVAIT PAS SUIVI 1.7.630 → 1.7.681 : ce n'est pas
-//      anodin. Un zip ancien servi par erreur aurait été ACCEPTÉ, et `npx superprint`
-//      aurait installé une version sans la visionneuse des captures, sans le menu de
-//      téléchargement refait et sans les neuf planches recadrées. Une garde ne sert
-//      que si elle est à jour.
-const MIN_APP_VERSION = '1.7.687';
+//      déjà produit (il était resté à 1.7.619 un jour de dépôt).
+//    ⚠️ POURQUOI LE PLANCHER DOIT SUIVRE CHAQUE LIVRAISON : un zip ancien servi par
+//      erreur serait ACCEPTÉ, et `npx superprint` installerait une version sans les
+//      correctifs du jour. Une garde ne sert que si elle est à jour.
+const MIN_APP_VERSION = '1.7.692';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');
