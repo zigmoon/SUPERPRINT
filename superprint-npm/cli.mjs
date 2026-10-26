@@ -25,7 +25,7 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
 //    version is invalid or older than the online version ».
 //    La version du paquet npm, elle, vit dans package.json.
-// 📌 Dernier plancher avancé : 1.7.692 — et c'est bien la version DÉPLOYÉE,
+// 📌 Dernier plancher avancé : 1.7.695 — et c'est bien la version DÉPLOYÉE,
 //    vérifiée DANS l'archive téléchargée, pas celle du dépôt.
 //    ⚠️ RÈGLE APPRISE À LA DURE, ET QUI A DÉJÀ SERVI : on ne conclut pas une
 //    version sur une empreinte. Le 15/10/2026, « zip 1.7.617 en ligne » était
@@ -39,32 +39,35 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    (« downloaded version is invalid or older »). D'où la règle : après un bump,
 //    RELIRE ce bloc et le remettre sur les mesures réelles. C'est pourquoi ce texte
 //    a été réécrit À LA MAIN le 25/10/2026, mesures en main.
-//    ÉTAT MESURÉ le 25/10/2026 à 18 h 50, ET LE PLANCHER PEUT SUIVRE :
-//      · app.zigmoon.com/sp213-local.zip — HTTP 200, Content-Length 56 865 091
-//        octets, Last-Modified « Sun, 25 Oct 2026 17:18:15 GMT ». Cette taille est
-//        EXACTEMENT celle du zip construit ici à 17 h 14 (sha256 1A62CE03…19456),
-//        dans lequel `public/superprint/version.txt` a été LU et vaut 1.7.692,
-//        avec CACHE_NAME = superprint-shell-v1.7.692-calques-glisser-tabulation.
-//      · superprint.cc/version.txt = 1.7.692.
-//      · superprint.cc/app/index.html porte la 1.7.692 : badge `data-sp-sw`,
-//        attribut title, et `JS/main.js?v=20261025-v692-calques-glisser-tabulation`.
+//    ÉTAT MESURÉ le 26/10/2026 à 21 h 35, ET LE PLANCHER PEUT SUIVRE :
+//      · app.zigmoon.com/sp213-local.zip — HTTP 200, Content-Length 56 869 320
+//        octets, Last-Modified « Mon, 26 Oct 2026 20:31:10 GMT ». sha256
+//        AF4A08A9…4A005B, IDENTIQUE au zip construit ici. Et l'archive a été
+//        OUVERTE, pas seulement hachée : `public/superprint/version.txt` vaut
+//        1.7.695, `app/JS/main.js` porte `_SP_POIGNEES_100_695` et
+//        `_SP_CADRE_100_695`, et CACHE_NAME =
+//        superprint-shell-v1.7.695-cadres-poignees-a-100.
+//      · superprint.cc/version.txt = 1.7.695.
+//      · superprint.cc/app/index.html porte la 1.7.695 : badge `data-sp-sw`,
+//        `data-sp-js="v695"`, et `JS/main.js?v=20261026-v695-cadres-poignees-a-100`
+//        (le CSS porte la même empreinte).
 //      · superprint.cc/app/service-worker.js : CACHE_NAME =
-//        superprint-shell-v1.7.692-calques-glisser-tabulation.
-//      · la release `desktop-latest` porte « SuperPrint 1.7.692 » et ses
-//        21 fichiers ont tous été remplacés le 25/10 à 18 h 30 (heure locale),
-//        par une compilation partie de 4b135941 : les empreintes SHA-256 diffèrent
-//        de celles de la compilation précédente, donc les binaires sont bien neufs.
-//      · npm `superprint@1.0.118` avait un plancher de 1.7.687 : juste tant que
-//        la 1.7.687 était servie, en retard depuis ce téléversement.
-//    → le plancher passe donc à 1.7.692 DANS CE MÊME GESTE, maintenant que le zip
+//        superprint-shell-v1.7.695-cadres-poignees-a-100.
+//      · la release `desktop-latest` porte « SuperPrint 1.7.695 » et ses
+//        21 fichiers ont été remplacés le 26/10 à 19 h 00 (heure locale), par une
+//        compilation partie de 14095c99 : contrôlés un par un (SHA-256 contre
+//        SHA256SUMS, PE/ar/koly, Info.plist 1.7.695, binaire arm64).
+//      · npm `superprint@1.0.119` avait un plancher de 1.7.692 : en retard de
+//        trois versions depuis ce téléversement.
+//    → le plancher passe donc à 1.7.695 DANS CE MÊME GESTE, maintenant que le zip
 //      ET le site sont en ligne. Un plancher égal à la version déployée est l'état
 //      visé : il refuse un zip plus ancien servi par erreur, sans jamais bloquer
 //      une version plus récente.
 //    ⚠️ RESTE EN RETARD, ET CE N'EST PAS LE PLANCHER : `release.html` sur
-//      app.zigmoon.com s'arrête à la 1.7.687 (mesuré : plus haute version citée
-//      1.7.687). Les cinq blocs 1.7.688 à 1.7.692 existent dans le dépôt depuis le
-//      25/10 ; il faut téléverser `release.html` pour que la page publique suive.
-//      Les notes de version sont en retard sur les fichiers, pas l'inverse.
+//      app.zigmoon.com n'a pas été re-téléversé avec la 1.7.695 ; ses blocs
+//      existent dans le dépôt. Il faut déposer `release.html` pour que la page
+//      publique suive. Les notes de version sont en retard sur les fichiers, pas
+//      l'inverse.
 //    ⚠️ CE QUE FAIT RÉELLEMENT LE PLANCHER, dit exactement : `onlineVersion` est le
 //      MAXIMUM entre `version.txt` et cette constante. C'est donc `version.txt` qui
 //      déclenche les mises à jour, et le plancher qui REFUSE un zip trop ancien —
@@ -73,7 +76,7 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    ⚠️ POURQUOI LE PLANCHER DOIT SUIVRE CHAQUE LIVRAISON : un zip ancien servi par
 //      erreur serait ACCEPTÉ, et `npx superprint` installerait une version sans les
 //      correctifs du jour. Une garde ne sert que si elle est à jour.
-const MIN_APP_VERSION = '1.7.692';
+const MIN_APP_VERSION = '1.7.695';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');
