@@ -27965,7 +27965,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 hasBorders: false,
                 _spUIObjet: true,
                 isOverflowIndicator: true,
-                _spUITailleBase: 9,
+                _spUITailleBase: 9,
                 shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.25)', blur: 2, offsetX: 0, offsetY: 1 })
             });
 
