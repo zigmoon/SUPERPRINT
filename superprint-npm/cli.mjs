@@ -25,7 +25,7 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
 //    version is invalid or older than the online version ».
 //    La version du paquet npm, elle, vit dans package.json.
-// 📌 Dernier plancher avancé : 1.7.695 — et c'est bien la version DÉPLOYÉE,
+// 📌 Dernier plancher avancé : 1.7.696 — et c'est bien la version DÉPLOYÉE,
 //    vérifiée DANS l'archive téléchargée, pas celle du dépôt.
 //    ⚠️ RÈGLE APPRISE À LA DURE, ET QUI A DÉJÀ SERVI : on ne conclut pas une
 //    version sur une empreinte. Le 15/10/2026, « zip 1.7.617 en ligne » était
@@ -39,35 +39,39 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    (« downloaded version is invalid or older »). D'où la règle : après un bump,
 //    RELIRE ce bloc et le remettre sur les mesures réelles. C'est pourquoi ce texte
 //    a été réécrit À LA MAIN le 25/10/2026, mesures en main.
-//    ÉTAT MESURÉ le 26/10/2026 à 21 h 35, ET LE PLANCHER PEUT SUIVRE :
-//      · app.zigmoon.com/sp213-local.zip — HTTP 200, Content-Length 56 869 320
-//        octets, Last-Modified « Mon, 26 Oct 2026 20:31:10 GMT ». sha256
-//        AF4A08A9…4A005B, IDENTIQUE au zip construit ici. Et l'archive a été
-//        OUVERTE, pas seulement hachée : `public/superprint/version.txt` vaut
-//        1.7.695, `app/JS/main.js` porte `_SP_POIGNEES_100_695` et
-//        `_SP_CADRE_100_695`, et CACHE_NAME =
-//        superprint-shell-v1.7.695-cadres-poignees-a-100.
-//      · superprint.cc/version.txt = 1.7.695.
-//      · superprint.cc/app/index.html porte la 1.7.695 : badge `data-sp-sw`,
-//        `data-sp-js="v695"`, et `JS/main.js?v=20261026-v695-cadres-poignees-a-100`
+//    ÉTAT MESURÉ le 26/10/2026 à 23 h 20, APRÈS le dépôt, ET LE PLANCHER SUIT :
+//      · superprint.cc/version.txt ........................ = 1.7.696
+//      · app.zigmoon.com/sp213-local.zip .................. HTTP 200, 56 872 090
+//        octets, Last-Modified « Mon, 26 Oct 2026 22:14:17 GMT », sha256
+//        cfb8a431…0311e1 — IDENTIQUE au zip construit ici. L'archive a été
+//        OUVERTE, pas seulement hachée : public/superprint/version.txt y vaut
+//        1.7.696, et app/JS/main.js y pèse 6 477 468 octets avec ZÉRO CR.
+//      · superprint.cc/app/index.html = 1.7.696 : badge data-sp-sw = v1.7.696,
+//        data-sp-js = v696, JS/main.js?v=20261026-v696-artefacts-alignes
 //        (le CSS porte la même empreinte).
 //      · superprint.cc/app/service-worker.js : CACHE_NAME =
-//        superprint-shell-v1.7.695-cadres-poignees-a-100.
-//      · la release `desktop-latest` porte « SuperPrint 1.7.695 » et ses
-//        21 fichiers ont été remplacés le 26/10 à 19 h 00 (heure locale), par une
-//        compilation partie de 14095c99 : contrôlés un par un (SHA-256 contre
-//        SHA256SUMS, PE/ar/koly, Info.plist 1.7.695, binaire arm64).
-//      · npm `superprint@1.0.119` avait un plancher de 1.7.692 : en retard de
-//        trois versions depuis ce téléversement.
-//    → le plancher passe donc à 1.7.695 DANS CE MÊME GESTE, maintenant que le zip
+//        superprint-shell-v1.7.696-artefacts-alignes.
+//      · superprint.cc/app/JS/main.js : sha256 4ed27359…a522fdb8, IDENTIQUE au
+//        dépôt, zéro CR — c'est la preuve binaire que l'écart d'un octet de la
+//        1.7.695 est bel et bien clos.
+//      · pages racine (index, price, faq, documentation, install, api) et
+//        app/documentation.html : toutes en 1.7.696.
+//      · release desktop-latest : « SuperPrint 1.7.696 », 21 fichiers remplacés
+//        le 26/10 à 21 h 02, compilation partie de 5d293542 — contrôlés un par
+//        un (SHA-256 contre SHA256SUMS, PE/ar/koly, Info.plist 1.7.696, .deb
+//        1.7.696 avec libwebkit2gtk-4.1-0). Archive figée : desktop-v1.7.696,
+//        22 fichiers dont SHA256SUMS.
+//      · npm superprint@1.0.120 avait un plancher de 1.7.695 : en retard d'une
+//        version depuis ce téléversement.
+//    → le plancher passe donc à 1.7.696 DANS CE MÊME GESTE, maintenant que le zip
 //      ET le site sont en ligne. Un plancher égal à la version déployée est l'état
 //      visé : il refuse un zip plus ancien servi par erreur, sans jamais bloquer
 //      une version plus récente.
-//    ⚠️ RESTE EN RETARD, ET CE N'EST PAS LE PLANCHER : `release.html` sur
-//      app.zigmoon.com n'a pas été re-téléversé avec la 1.7.695 ; ses blocs
-//      existent dans le dépôt. Il faut déposer `release.html` pour que la page
-//      publique suive. Les notes de version sont en retard sur les fichiers, pas
-//      l'inverse.
+//    ⚠️ RESTE EN RETARD, ET CE N'EST PAS LE PLANCHER : release.html sur
+//      app.zigmoon.com s'arrête à la 1.7.694 (329 blocs ; le dépôt en porte 331,
+//      avec 1.7.695 et 1.7.696). C'est un fichier à déposer SÉPARÉMENT : il ne
+//      suit pas le dossier superprint/. Les notes de version sont en retard sur
+//      les fichiers, pas l'inverse.
 //    ⚠️ CE QUE FAIT RÉELLEMENT LE PLANCHER, dit exactement : `onlineVersion` est le
 //      MAXIMUM entre `version.txt` et cette constante. C'est donc `version.txt` qui
 //      déclenche les mises à jour, et le plancher qui REFUSE un zip trop ancien —
@@ -76,7 +80,7 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    ⚠️ POURQUOI LE PLANCHER DOIT SUIVRE CHAQUE LIVRAISON : un zip ancien servi par
 //      erreur serait ACCEPTÉ, et `npx superprint` installerait une version sans les
 //      correctifs du jour. Une garde ne sert que si elle est à jour.
-const MIN_APP_VERSION = '1.7.695';
+const MIN_APP_VERSION = '1.7.696';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');
