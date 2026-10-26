@@ -9,6 +9,27 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.695] — 2026-10-26
+
+_Les cadres d'interface restent à 100 % — poignées, aperçus et repères compris_
+
+> **Pourquoi cette version existe.** La 1.7.693 avait bloqué le zoom sur le cadre de sélection et sur les traits des repères, mais les **poignées** (barres, coins, rotation, chaînage), l'**aperçu de bloc texte** et les **repères de chaînage** étaient encore dessinés en unités canvas : à 300 %, ils triplaient de taille. Mesuré sur un 85 × 55 mm à 300 % : 18 px de poignée de coin et 9 × 36 px de barre latérale, contre 6 px et 3 × 12 px à 100 %.
+
+### Fixed
+
+- **Poignées de sélection** (coins, côtés, rotation, chaînage) : tailles **et** distances divisées par le zoom affiché, constantes à l'écran. Vérifié à 100 % et à 300 % : 3 × 12, 12 × 3, 6 × 6 et Ø 10 dans les deux cas.
+- **Aperçu bleu pointillé du bloc texte** et tracé du stylo : épaisseur et motif restent à 100 % (2 px et 5/5, quel que soit le zoom).
+- **Flèche et pastille de chaînage**, **triangle de débordement** : taille et écart au bloc constants.
+- **Contour bleu temporaire du chaînage** : il ne s'exporte plus dans le `.sp` ni le `.json`, et `resetLinkMode` restaure le contour d'origine du bloc au lieu de l'effacer.
+- **`.sp` / `.json`** : aller-retour vérifié propriété par propriété (visibilité, verrou, contour de cadre, marges asymétriques, format propre à une page). Seul le `clipPath` des blocs texte est recréé au chargement par `applyTextboxClipPath` — comportement attendu, il n'est pas stocké dans le fichier.
+
+### Rebuild
+
+- Miroirs resynchronisés, site Astro reconstruit, `sp213-local` reconstruit, `sp213-local.zip` régénéré, front-end et installeurs de bureau **1.7.695**.
+- Cache du service worker : `superprint-shell-v1.7.695-cadres-poignees-a-100` ; empreintes `?v=20261026-v695-cadres-poignees-a-100`.
+
+---
+
 ## [1.7.694] — 2026-10-26
 
 _Les quatre retours, vérifiés à la mesure — et l'application de bureau remise à jour_

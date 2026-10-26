@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.694-retours-verifies-bureau-a-jour';
+const CACHE_NAME = 'superprint-shell-v1.7.695-cadres-poignees-a-100';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

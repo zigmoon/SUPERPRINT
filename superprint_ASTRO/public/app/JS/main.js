@@ -4852,15 +4852,38 @@ if (window._spGpuEnabled) {
         ctx.rect(x, y, largeur, hauteur);
     }
 
+    /* ═══ _SP_POIGNEES_100_695 — LES POIGNÉES NE SUIVENT PAS LE ZOOM ═══════════
+       MESURÉ AVANT : à 300 % sur un 85 × 55 mm, la poignée de coin dessinait
+       18 px d'écran au lieu de 6, et la barre latérale 9 × 36 au lieu de 3 × 12.
+       Le cadre de sélection, lui, restait à 1 px : l'utilisateur voyait donc un
+       contour fin et des poignées énormes — « la mise en forme du bloc de texte
+       suit le zoom ».
+       POURQUOI : le contexte de `drawControls` est mis à l'échelle de la densité
+       du bitmap (`getRetinaScaling`), pas du zoom. Une taille écrite en unités
+       canvas est donc multipliée par le zoom au moment où le compositeur agrandit
+       `#pagesContainer`. On divise par le zoom affiché, comme le fait déjà
+       `borderScaleFactor` pour le cadre : le produit vaut 1 à l'écran.
+       ⚠️ La valeur est lue À CHAQUE DESSIN, jamais mémorisée : le zoom peut
+       changer entre deux rendus, et une taille figée à la création redeviendrait
+       fausse au premier cran. */
+    function spInvZoomDessin() {
+        try {
+            const z = (typeof window.spZoomActuel === 'function') ? Number(window.spZoomActuel()) : 1;
+            return (Number.isFinite(z) && z > 0) ? (1 / z) : 1;
+        } catch (_) { return 1; }
+    }
+    try { window.spInvZoomDessin = spInvZoomDessin; } catch (_) {}
+
     // Poignée rectangulaire verticale pour gauche/droite (suit la rotation)
     function renderVerticalHandle(ctx, left, top, styleOverride, fabricObject) {
+        const inv = spInvZoomDessin();
         ctx.save();
         ctx.fillStyle = HANDLE_FILL;
         ctx.strokeStyle = HANDLE_STROKE;
-        ctx.lineWidth = HANDLE_STROKE_WIDTH;
+        ctx.lineWidth = HANDLE_STROKE_WIDTH * inv;
         ctx.shadowColor = 'rgba(0,0,0,0.15)';
-        ctx.shadowBlur = 2;
-        ctx.shadowOffsetY = 1;
+        ctx.shadowBlur = 2 * inv;
+        ctx.shadowOffsetY = 1 * inv;
 
         // 🛡️ FIX 2026-05-08 : tourner avec l'objet pour que la barre reste
         //   perpendiculaire au côté qu'elle redimensionne, même après rotation.
@@ -4868,10 +4891,10 @@ if (window._spGpuEnabled) {
         ctx.translate(left, top);
         ctx.rotate(ang);
 
-        const width = 3;
-        const height = 12;
+        const width = 3 * inv;
+        const height = 12 * inv;
         ctx.beginPath();
-        spTraceArrondi(ctx, -width / 2, -height / 2, width, height, 2);
+        spTraceArrondi(ctx, -width / 2, -height / 2, width, height, 2 * inv);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
@@ -4879,22 +4902,23 @@ if (window._spGpuEnabled) {
 
     // Poignée rectangulaire horizontale pour haut/bas (suit la rotation)
     function renderHorizontalHandle(ctx, left, top, styleOverride, fabricObject) {
+        const inv = spInvZoomDessin();
         ctx.save();
         ctx.fillStyle = HANDLE_FILL;
         ctx.strokeStyle = HANDLE_STROKE;
-        ctx.lineWidth = HANDLE_STROKE_WIDTH;
+        ctx.lineWidth = HANDLE_STROKE_WIDTH * inv;
         ctx.shadowColor = 'rgba(0,0,0,0.15)';
-        ctx.shadowBlur = 2;
-        ctx.shadowOffsetY = 1;
+        ctx.shadowBlur = 2 * inv;
+        ctx.shadowOffsetY = 1 * inv;
 
         const ang = _spHandleAngleRad(fabricObject);
         ctx.translate(left, top);
         ctx.rotate(ang);
 
-        const width = 12;
-        const height = 3;
+        const width = 12 * inv;
+        const height = 3 * inv;
         ctx.beginPath();
-        spTraceArrondi(ctx, -width / 2, -height / 2, width, height, 2);
+        spTraceArrondi(ctx, -width / 2, -height / 2, width, height, 2 * inv);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
@@ -4903,21 +4927,22 @@ if (window._spGpuEnabled) {
     // Poignée carrée pour les coins (le carré reste symétrique mais tourne pour
     // garder une orientation cohérente avec les barres latérales)
     function renderCornerHandle(ctx, left, top, styleOverride, fabricObject) {
+        const inv = spInvZoomDessin();
         ctx.save();
         ctx.fillStyle = HANDLE_FILL;
         ctx.strokeStyle = HANDLE_STROKE;
-        ctx.lineWidth = HANDLE_STROKE_WIDTH;
+        ctx.lineWidth = HANDLE_STROKE_WIDTH * inv;
         ctx.shadowColor = 'rgba(0,0,0,0.15)';
-        ctx.shadowBlur = 2;
-        ctx.shadowOffsetY = 1;
+        ctx.shadowBlur = 2 * inv;
+        ctx.shadowOffsetY = 1 * inv;
 
         const ang = _spHandleAngleRad(fabricObject);
         ctx.translate(left, top);
         ctx.rotate(ang);
 
-        const size = 6;
+        const size = 6 * inv;
         ctx.beginPath();
-        spTraceArrondi(ctx, -size / 2, -size / 2, size, size, 2);
+        spTraceArrondi(ctx, -size / 2, -size / 2, size, size, 2 * inv);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
@@ -5620,12 +5645,15 @@ if (window._spGpuEnabled) {
                 actionHandler: fabric.controlsUtils.rotationWithSnapping,
                 actionName: 'rotate',
                 render: function(ctx, left, top, styleOverride, fabricObject) {
+                    /* _SP_POIGNEES_100_695 — même règle que les autres poignées :
+                       le rayon et l'épaisseur sont divisés par le zoom affiché. */
+                    const inv = spInvZoomDessin();
                     ctx.save();
                     ctx.fillStyle = HANDLE_FILL;
                     ctx.strokeStyle = HANDLE_STROKE;
-                    ctx.lineWidth = HANDLE_STROKE_WIDTH;
+                    ctx.lineWidth = HANDLE_STROKE_WIDTH * inv;
                     ctx.beginPath();
-                    ctx.arc(left, top, 5, 0, Math.PI * 2);
+                    ctx.arc(left, top, 5 * inv, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.stroke();
                     ctx.restore();
@@ -24993,16 +25021,20 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     if (penPoints.length === 0) return;
     
     const lastPoint = penPoints[penPoints.length - 1];
+    const _invStylo695 = spInvZoomDessin();
     const previewLine = new fabric.Line(
         [lastPoint.x, lastPoint.y, pointer.x, pointer.y],
         {
             stroke: '#00aaff',
-            strokeWidth: 1,
-            strokeDashArray: [5, 5],
+            strokeWidth: 1 * _invStylo695,
+            strokeDashArray: [5 * _invStylo695, 5 * _invStylo695],
             selectable: false,
             evented: false,
             excludeFromExport: true,
             isPenPreviewLine: true,
+            _spUIObjet: true,
+            _spTraitBase: 1,
+            _spPointilleBase: [5, 5],
             opacity: 0.6
         }
     );
@@ -25630,6 +25662,13 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     simpleTextBoxStartPoint = { x: pointer.x, y: pointer.y };
     
     // Créer un rectangle de prévisualisation
+    /* ═══ _SP_CADRE_100_695 — LE CONTOUR DE PRÉVISUALISATION RESTE À 100 % ═════
+       C'est ce rectangle bleu pointillé que l'on voit en tirant un bloc texte :
+       à 300 % il mesurait 6 px d'épaisseur et des tirets de 15 px, alors que le
+       bloc qu'il annonce garde, lui, un cadre de 1 px. On le divise par le zoom
+       affiché dès sa création, et on mémorise ses valeurs de référence pour que
+       les changements de zoom suivants restent justes. */
+    const _invCadre695 = spInvZoomDessin();
     simpleTextBoxPreview = new fabric.Rect({
         left: pointer.x,
         top: pointer.y,
@@ -25637,11 +25676,14 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         height: 0,
         fill: 'rgba(0, 122, 255, 0.15)',
         stroke: '#007aff',
-        strokeWidth: 2,
-        strokeDashArray: [5, 5],
+        strokeWidth: 2 * _invCadre695,
+        strokeDashArray: [5 * _invCadre695, 5 * _invCadre695],
         selectable: false,
         evented: false,
-        excludeFromExport: true
+        excludeFromExport: true,
+        _spUIObjet: true,
+        _spTraitBase: 2,
+        _spPointilleBase: [5, 5]
     });
     canvas.add(simpleTextBoxPreview);
     canvas.requestRenderAll();
@@ -27887,7 +27929,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
 
             // ── Indicateur SUPER LIGHT : petit triangle rouge translucide
             //    en bas-droite du textbox, comme l'overset d'InDesign ──
-            const SIZE = 9;
+            /* _SP_CADRE_100_695 — repère d'interface : sa taille est divisée par le
+               zoom affiché, sinon il devient une pastille de 27 px à 300 %. */
+            const SIZE = 9 * spInvZoomDessin();
             /* 🆕 v1.7.560 — _SP_REPERE_SUIT_560 : rectangle MONDE (multi-sélection comprise). */
             const boundingRect = spRectMondeObjet(textbox);
             const indicatorLeft = boundingRect.left + boundingRect.width;
@@ -27919,6 +27963,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 excludeFromExport: true,
                 hasControls: false,
                 hasBorders: false,
+                _spUIObjet: true,
+                isOverflowIndicator: true,
+                _spUITailleBase: 9,
                 shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.25)', blur: 2, offsetX: 0, offsetY: 1 })
             });
 
@@ -30151,31 +30198,40 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             return true;
         },
         render: function(ctx, left, top) {
+            /* _SP_POIGNEES_100_695 — le bouton de chaînage est lui aussi un
+               graphisme d'interface : son rond, son liseré et les maillons sont
+               divisés par le zoom affiché, sinon il triple de taille à 300 %. */
+            const inv = spInvZoomDessin();
             ctx.save();
             // rond gris
             ctx.beginPath();
-            ctx.arc(left, top, 7, 0, Math.PI * 2);
+            ctx.arc(left, top, 7 * inv, 0, Math.PI * 2);
             ctx.fillStyle = '#666';
             ctx.fill();
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2 * inv;
             ctx.strokeStyle = '#fff';
             ctx.stroke();
             // chaîne simple (deux maillons)
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 1.5 * inv;
             ctx.strokeStyle = '#fff';
             ctx.beginPath();
-            ctx.arc(left - 2.5, top, 2.5, 0, Math.PI * 2);
+            ctx.arc(left - 2.5 * inv, top, 2.5 * inv, 0, Math.PI * 2);
             ctx.stroke();
             ctx.beginPath();
-            ctx.arc(left + 2.5, top, 2.5, 0, Math.PI * 2);
+            ctx.arc(left + 2.5 * inv, top, 2.5 * inv, 0, Math.PI * 2);
             ctx.stroke();
             ctx.beginPath();
-            ctx.moveTo(left, top - 2.5);
-            ctx.lineTo(left, top + 2.5);
+            ctx.moveTo(left, top - 2.5 * inv);
+            ctx.lineTo(left, top + 2.5 * inv);
             ctx.stroke();
             ctx.restore();
         }
     });
+    try {
+        const _invLien = spInvZoomDessin();
+        linkControl.offsetX = 14 * _invLien;
+        linkControl.offsetY = -14 * _invLien;
+    } catch (_) {}
 
     textObj.controls.link = linkControl;
     textObj._hasLinkControl = true;
@@ -33423,7 +33479,8 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             excludeFromExport: true,
             originX: 'left', originY: 'top',
             opacity: 0.92,
-            _isChainBadge: true
+            _isChainBadge: true,
+            _spUIObjet: true
         });
         tb._chainBadge = badge;
         canvas.add(badge);
@@ -33455,7 +33512,11 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         function positionChainBadge(tb) {
     if (!tb || !tb._chainBadge) return;
     const badge = tb._chainBadge;
-    badge.set({ left: tb.left - 4, top: tb.top - 18 });
+    /* _SP_CADRE_100_695 — la pastille est un repère d'interface : son écart au
+       bloc et sa taille sont divisés par le zoom, sinon elle flotte 54 px au-dessus
+       du bloc à 300 % et triple de surface. */
+    const inv = spInvZoomDessin();
+    badge.set({ left: tb.left - 4 * inv, top: tb.top - 18 * inv, scaleX: inv, scaleY: inv });
     badge.setCoords();
     if (tb.canvas) {
         tb.canvas.bringToFront(badge);
@@ -33523,23 +33584,27 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         const dy = dstObj.top;
 
         const strokeCol = 'rgba(13, 153, 255, 0.45)';
+        const _invLien695 = spInvZoomDessin();
 
         removeOldArrow();
 
         // Ligne pointillée
         const line = new fabric.Line([sx, sy, dx, dy], {
             stroke: strokeCol,
-            strokeWidth: 1.2,
-            strokeDashArray: [6, 4],
+            strokeWidth: 1.2 * _invLien695,
+            strokeDashArray: [6 * _invLien695, 4 * _invLien695],
             selectable: false,
             evented: false,
             excludeFromExport: true,
+            _spUIObjet: true,
+            _spTraitBase: 1.2,
+            _spPointilleBase: [6, 4],
             _isLinkArrow: true
         });
 
         // Petit triangle flèche au point d'arrivée
         const angle = Math.atan2(dy - sy, dx - sx);
-        const headSize = 6;
+        const headSize = 6 * _invLien695;
         const head = new fabric.Triangle({
             left: dx, top: dy,
             width: headSize, height: headSize,
@@ -33548,12 +33613,14 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             angle: (angle * 180 / Math.PI) + 90,
             originX: 'center', originY: 'center',
             selectable: false, evented: false,
-            excludeFromExport: true
+            excludeFromExport: true,
+            _spUIObjet: true,
+            _spUITailleBase: 6
         });
 
         const grp = new fabric.Group([line, head], {
             selectable: false, evented: false,
-            excludeFromExport: true, _isLinkArrow: true
+            excludeFromExport: true, _isLinkArrow: true, _spUIObjet: true
         });
         canvas.add(grp);
         canvas.sendToBack(grp);
@@ -34563,7 +34630,22 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         window.textLinkSourcePageIndex = currentPageIndex;
         
         // Bordure bleue temporaire pour montrer qu'il est sélectionné comme source
-        obj.set({ stroke: '#0D99FF', strokeWidth: 1.5, strokeDashArray: [6, 4] });
+        /* _SP_CADRE_100_695 — contour d'INTERFACE : on mémorise le contour réel du
+           bloc avant de le remplacer, pour qu'une annulation le restaure tel quel,
+           et on divise l'épaisseur et le motif par le zoom affiché. */
+        try {
+            if (!obj._spContourLiaison) {
+                obj._spContourLiaisonStroke = (obj.stroke == null ? null : obj.stroke);
+                obj._spContourLiaisonStrokeWidth = (typeof obj.strokeWidth === 'number' ? obj.strokeWidth : 0);
+                obj._spContourLiaisonDash = Array.isArray(obj.strokeDashArray) ? obj.strokeDashArray.slice() : null;
+            }
+            obj._spContourLiaison = true;
+            obj._spContourLiaisonEp = 1.5;
+            obj._spContourLiaisonMotif = [6, 4];
+            const _invLien = spInvZoomDessin();
+            obj.set({ stroke: '#0D99FF', strokeWidth: 1.5 * _invLien, strokeDashArray: [6 * _invLien, 4 * _invLien] });
+            try { if (typeof window.spAppliquerEchelleUI === 'function') window.spAppliquerEchelleUI(); } catch (_) {}
+        } catch (_) {}
         activeCanvas.requestRenderAll();
 
         showChainToast('🔗 1/2 — Bloc source sélectionné. Naviguez vers n\'importe quelle page, sélectionnez le bloc cible, puis ⌘L ou bouton Lier.', 6000);
@@ -34924,8 +35006,24 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     // pas le laisser visible/exporte si l'utilisateur enchaine ou annule.
     try {
         if (window.textLinkSourceBlock && typeof window.textLinkSourceBlock.set === 'function') {
-            window.textLinkSourceBlock.set({ stroke: null, strokeWidth: 0, strokeDashArray: null });
-            const c = window.textLinkSourceBlock.canvas;
+            const _o = window.textLinkSourceBlock;
+            /* _SP_CADRE_100_695 — on restaure le contour d'ORIGINE du bloc (il peut
+               en avoir un : filet de colonne, contour importé d'InDesign…). Remettre
+               systématiquement `null` effaçait ce trait au passage. */
+            _o.set({
+                stroke: (_o._spContourLiaisonStroke !== undefined) ? _o._spContourLiaisonStroke : null,
+                strokeWidth: (typeof _o._spContourLiaisonStrokeWidth === 'number') ? _o._spContourLiaisonStrokeWidth : 0,
+                strokeDashArray: Array.isArray(_o._spContourLiaisonDash) ? _o._spContourLiaisonDash.slice() : null
+            });
+            try {
+                delete _o._spContourLiaison;
+                delete _o._spContourLiaisonEp;
+                delete _o._spContourLiaisonMotif;
+                delete _o._spContourLiaisonStroke;
+                delete _o._spContourLiaisonStrokeWidth;
+                delete _o._spContourLiaisonDash;
+            } catch (_) {}
+            const c = _o.canvas;
             if (c && typeof c.requestRenderAll === 'function') c.requestRenderAll();
         }
     } catch (_) {}
@@ -38851,7 +38949,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
        par le code de l'application (cf. isBleed, isTrimBox, isPage, _isMasterGuide). */
     function _spEstObjetUI(o) {
         return !!(o && (o.isBleed || o.isTrimBox || o.isPage || o.isMargin ||
-                        o.isCropMark || o._isMasterGuide || o._spUIObjet));
+                        o.isCropMark || o._isMasterGuide || o._spUIObjet ||
+                        o._isLinkArrow || o._spContourLiaison || o.isOverflowIndicator));
     }
 
     /* Réépaisseur récursive : un groupe (traits de coupe) porte ses traits dans
@@ -38859,7 +38958,48 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     function _spAjusterTraitUI(o, inv) {
         if (!o) return;
         if (o.type === 'group' && Array.isArray(o._objects)) {
+            /* _SP_CADRE_100_695 — la pastille de chaînage est un groupe : on la
+               remet à l'échelle du zoom au lieu de toucher ses enfants un à un. */
+            if (o._isChainBadge) {
+                o.set({ scaleX: inv, scaleY: inv });
+                try { o.setCoords(); } catch (_) {}
+                return;
+            }
             o._objects.forEach((c) => _spAjusterTraitUI(c, inv));
+            return;
+        }
+        /* ═══ _SP_CADRE_100_695 — UNE TAILLE D'INTERFACE NE SUIT PAS LE ZOOM ═════
+           Un triangle d'overflow ou la tête d'une flèche de chaînage n'a pas de
+           trait à contre-mettre : c'est sa SURFACE qui doit rester constante. On
+           mémorise la taille de référence une seule fois (`_spUITailleBase`) et on
+           la divise par le zoom, exactement comme les épaisseurs. */
+        if (typeof o._spUITailleBase === 'number' && o._spUITailleBase > 0) {
+            const taille = o._spUITailleBase * inv;
+            if (Math.abs((o.width || 0) - taille) > 0.001 || Math.abs((o.height || 0) - taille) > 0.001) {
+                o.set({ width: taille, height: taille });
+                try { o.setCoords(); } catch (_) {}
+            }
+        }
+        /* ═══ _SP_CADRE_100_695 — LE CONTOUR TEMPORAIRE DU CHAÎNAGE ═════════════
+           `autoLinkTextBlocks` pose un contour bleu pointillé sur le bloc source.
+           C'est un repère d'interface, pas un trait du document : son épaisseur ET
+           son motif doivent rester à 100 %. On les recalcule ici à partir des
+           valeurs d'origine, sans passer par `_spTraitBase` (qui appartient au
+           document et que `resetLinkMode` doit pouvoir restaurer tel quel). */
+        if (o._spContourLiaison) {
+            const ep = (typeof o._spContourLiaisonEp === 'number' ? o._spContourLiaisonEp : 1.5) * inv;
+            const motif = Array.isArray(o._spContourLiaisonMotif)
+                ? o._spContourLiaisonMotif.map((v) => v * inv) : null;
+            if (Math.abs((o.strokeWidth || 0) - ep) > 0.001) o.set('strokeWidth', ep);
+            if (motif) {
+                let change = !Array.isArray(o.strokeDashArray) || o.strokeDashArray.length !== motif.length;
+                if (!change) {
+                    for (let i = 0; i < motif.length; i++) {
+                        if (Math.abs((o.strokeDashArray[i] || 0) - motif[i]) > 0.001) { change = true; break; }
+                    }
+                }
+                if (change) o.set('strokeDashArray', motif);
+            }
             return;
         }
         const base = (typeof o._spTraitBase === 'number')
@@ -38915,6 +39055,32 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             } catch (_) {}
         }
 
+        /* ═══ _SP_POIGNEES_100_695 — LES DISTANCES DES CONTRÔLES AUSSI ═════════
+           `offsetY` est une distance en unités canvas : à 300 %, la poignée de
+           rotation s'éloignait du bloc de 90 px d'écran au lieu de 30. Même règle
+           que les tailles : on divise par le zoom. Le bouton de chaînage porte ses
+           deux décalages sur l'instance de contrôle de chaque bloc. */
+        try {
+            if (fabric.Object && fabric.Object.prototype.controls && fabric.Object.prototype.controls.mtr) {
+                fabric.Object.prototype.controls.mtr.offsetY = -40 * inv;
+            }
+            if (fabric.Textbox && fabric.Textbox.prototype.controls && fabric.Textbox.prototype.controls.mtr) {
+                fabric.Textbox.prototype.controls.mtr.offsetY = -30 * inv;
+            }
+            if (typeof canvases !== 'undefined' && canvases && canvases.forEach) {
+                canvases.forEach((c) => {
+                    if (!c || !c.getObjects) return;
+                    c.getObjects().forEach((o) => {
+                        const lc = o && o.controls && o.controls.link;
+                        if (lc) {
+                            lc.offsetX = 14 * inv;
+                            lc.offsetY = -14 * inv;
+                        }
+                    });
+                });
+            }
+        } catch (_) {}
+
         /* — 2) Objets d'interface des planches — */
         try {
             if (typeof canvases !== 'undefined' && canvases && canvases.forEach) {
@@ -38922,6 +39088,12 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     if (!c || !c.getObjects) return;
                     c.getObjects().forEach((o) => {
                         if (_spEstObjetUI(o)) _spAjusterTraitUI(o, inv);
+                        /* La pastille de chaînage n'est pas un objet d'interface à
+                           elle seule : c'est un accessoire de son BLOC. On la replace
+                           ici pour que son écart au bloc reste constant. */
+                        if (o && o._chainBadge && typeof window.positionChainBadge === 'function') {
+                            try { window.positionChainBadge(o); } catch (_) {}
+                        }
                     });
                 });
             }
@@ -101477,6 +101649,42 @@ window.saveProjectSP = function() {
  * Utilisé par window.saveProjectSP (download) ET par JS/collab.js
  * (broadcast P2P du document complet via WebRTC).
  */
+/* ═══ _SP_CADRE_100_695 — UN REPÈRE D'INTERFACE NE S'EXPORTE JAMAIS ═════════
+   Le contour bleu du chaînage est un état de l'interface, pas un trait du
+   document. Si l'utilisateur enregistre pendant qu'il désigne le bloc source, on
+   remet le contour d'origine le temps de `saveAllPages`, puis on rétablit le
+   repère : le .sp et le .json ne contiennent que le document. */
+function _spSansContourLiaison(fn) {
+    const restaures = [];
+    try {
+        (canvases || []).forEach((c) => {
+            if (!c || !c.getObjects) return;
+            c.getObjects().forEach((o) => {
+                if (!o || !o._spContourLiaison) return;
+                restaures.push({
+                    o,
+                    stroke: o.stroke,
+                    strokeWidth: o.strokeWidth,
+                    strokeDashArray: Array.isArray(o.strokeDashArray) ? o.strokeDashArray.slice() : o.strokeDashArray
+                });
+                try {
+                    o.set({
+                        stroke: (o._spContourLiaisonStroke !== undefined) ? o._spContourLiaisonStroke : null,
+                        strokeWidth: (typeof o._spContourLiaisonStrokeWidth === 'number') ? o._spContourLiaisonStrokeWidth : 0,
+                        strokeDashArray: Array.isArray(o._spContourLiaisonDash) ? o._spContourLiaisonDash.slice() : null
+                    });
+                } catch (_) {}
+            });
+        });
+    } catch (_) {}
+    try { return fn(); }
+    finally {
+        restaures.forEach((r) => {
+            try { r.o.set({ stroke: r.stroke, strokeWidth: r.strokeWidth, strokeDashArray: r.strokeDashArray }); } catch (_) {}
+        });
+    }
+}
+
 window.saveProjectSP_toObject = function() {
     // 🛡️ FIX 2026-05-06 : force=true pour bypasser les guards
     // (_isRenderingAllPages / _isRestoringState / _isLoading). Sans ca, si
@@ -101486,7 +101694,8 @@ window.saveProjectSP_toObject = function() {
     /* 🛡️ v1.7.574 — même raison pour les folios : un numéro supprimé/déplacé juste avant
        la sauvegarde doit être relu ici, sinon le .sp réexporte la version par défaut. */
     try { _spCaptureFolioOverrides(); } catch(_) {}
-    saveAllPages(true);
+    try { _spSansContourLiaison(() => saveAllPages(true)); }
+    catch (_) { saveAllPages(true); }
     const now = new Date();
     const stats = _spCollectStats();
     return {
