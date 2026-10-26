@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.694-000000?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.695-000000?style=flat-square">
   <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.119-CB3837?style=flat-square">
   <img alt="Desktop beta" src="https://img.shields.io/badge/desktop-Windows%20%7C%20macOS%20%7C%20Linux-F2B90B?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
@@ -171,7 +171,7 @@ The Colour panel is a **list of colour libraries**, each one an accordion you op
 
 > ⚠️ **Beta.** The desktop builds are complete and usable, but still young. They are **free, without an account**, and they install alongside the browser version — nothing is replaced.
 
-**One installer per application** — 3 applications × 3 systems = **21 files**. Each build carries only its own application, so it downloads only what it needs: **SuperPrint 58 MB**, **Studio IA 9.8 MB**, **SuperTyPo 1 MB**. They all live under the versionless [`desktop-latest`](https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest) tag, which is why these links never go stale. Every version is also kept, frozen, under its own `desktop-v<version>` release — stable links for the current build, an archive for the ones before it.
+**One installer per application** — 3 applications × 3 systems = **21 files**. Each package carries **everything one of its own buttons can open** — the editor's two doors lead to Studio IA and SuperTyPo, so a package that held only one application would not be lighter, it would be broken. Download sizes: **SuperPrint 31.8 MB**, **Studio IA 31.8 MB**, **SuperTyPo 1.6 MB**. They all live under the versionless [`desktop-latest`](https://github.com/zigmoon/SUPERPRINT/releases/tag/desktop-latest) tag, which is why these links never go stale. Every version is also kept, frozen, under its own `desktop-v<version>` release — stable links for the current build, an archive for the ones before it.
 
 | System | SuperPrint | Studio IA | SuperTyPo |
 |---|---|---|---|
@@ -277,7 +277,7 @@ git log --oneline v1.7.400..v1.7.421      # what changed between two releases
 git diff v1.7.380 v1.7.421 --stat         # full diff between two
 ```
 
-`release.html` holds the **complete trilingual (FR / EN / JP) release notes** for every version of the family — SuperPrint from `1.7.92` to `1.7.694`, plus the team's other applications. It is also published at [app.zigmoon.com/release.html](https://app.zigmoon.com/release.html). `CHANGELOG.md` is the condensed English version. (No entry count is written here on purpose: it drifts at every release, and a number that is wrong is worse than no number — `grep -c '<article class="release-block"' release.html` gives the truth.)
+`release.html` holds the **complete trilingual (FR / EN / JP) release notes** for every version of the family — SuperPrint from `1.7.92` to `1.7.695`, plus the team's other applications. It is also published at [app.zigmoon.com/release.html](https://app.zigmoon.com/release.html). `CHANGELOG.md` is the condensed English version. (No entry count is written here on purpose: it drifts at every release, and a number that is wrong is worse than no number — `grep -c '<article class="release-block"' release.html` gives the truth.)
 
 ---
 

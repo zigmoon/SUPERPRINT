@@ -70,6 +70,11 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
 - `llms.txt` + `llms-full.txt` — ligne `- **Version**:` + nouveau billet (voir ci-dessus)
 - `documentation.html` — pastille `.version` + 2 pieds de page datés
 - `version.txt` — `X.Y.Z` (source de vérité pour le CLI npm)
+- `README.md` (**racine du dépôt**) — badge `app-X.Y.Z` **et** la borne haute citée
+  dans la section *Release notes* (« `1.7.92` to `X.Y.Z` »). Fichier **hors** de
+  `superprint/` : il n'est donc attrapé ni par le miroir ni par un bump qui ne
+  parcourt que les dossiers d'application — MESURÉ : oublié en 1.7.695, où le badge
+  annonçait encore `1.7.694` après la livraison.
 
 ### C. Studio SP213
 - `sp213-studio.html` — aucun numéro de version affiché, mais le fichier doit être **re-synchronisé** (copie locale). Il est ouvert depuis l'app avec `?v=…` (cache-busting) : voir `app/JS/main.js`.
