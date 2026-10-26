@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.695-000000?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.696-000000?style=flat-square">
   <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.120-CB3837?style=flat-square">
   <img alt="Desktop beta" src="https://img.shields.io/badge/desktop-Windows%20%7C%20macOS%20%7C%20Linux-F2B90B?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
@@ -277,7 +277,7 @@ git log --oneline v1.7.400..v1.7.421      # what changed between two releases
 git diff v1.7.380 v1.7.421 --stat         # full diff between two
 ```
 
-`release.html` holds the **complete trilingual (FR / EN / JP) release notes** for every version of the family — SuperPrint from `1.7.92` to `1.7.695`, plus the team's other applications. It is also published at [app.zigmoon.com/release.html](https://app.zigmoon.com/release.html). `CHANGELOG.md` is the condensed English version. (No entry count is written here on purpose: it drifts at every release, and a number that is wrong is worse than no number — `grep -c '<article class="release-block"' release.html` gives the truth.)
+`release.html` holds the **complete trilingual (FR / EN / JP) release notes** for every version of the family — SuperPrint from `1.7.92` to `1.7.696`, plus the team's other applications. It is also published at [app.zigmoon.com/release.html](https://app.zigmoon.com/release.html). `CHANGELOG.md` is the condensed English version. (No entry count is written here on purpose: it drifts at every release, and a number that is wrong is worse than no number — `grep -c '<article class="release-block"' release.html` gives the truth.)
 
 ---
 

@@ -9,6 +9,25 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.696] — 2026-10-26
+
+_Tous les fichiers livrés sont de nouveau le même fichier_
+
+> **Pourquoi cette version existe.** En comparant **octet par octet** le `main.js` servi par `superprint.cc` et celui du dépôt, un écart d'**un seul caractère** est apparu : un CR entre `9` et la virgule de `_spUITailleBase: 9,` (ligne 27968, triangle de débordement) — un résidu d'édition, pas du dépôt d'origine. Invisible pour JavaScript (c'est une espace), donc **aucun défaut d'exécution** ; mais le zip servi et les 21 installeurs en portaient la trace, ce qui cassait la **preuve binaire** sur laquelle ce projet s'appuie pour démontrer que site, miroirs et paquet sont un seul et même fichier.
+
+### Fixed
+
+- `main.js` nettoyé dans les **quatre** copies (source, `sp213-local`, `superprint_ASTRO/public`, front-end de bureau). Vérifié : sha256 `4ed27359…a522fdb8`, 6 477 468 octets, **zéro CR**, identique au fichier déjà servi par le site.
+
+### Rebuilt — toute la chaîne, pour que les artefacts cessent de diverger
+
+- Miroirs resynchronisés, site Astro reconstruit, `sp213-local` reconstruit, `sp213-local.zip` régénéré et vérifié, front-end de bureau réassemblé, **21 installeurs 1.7.696** (Windows NSIS + MSI, macOS Apple silicon + Intel, Linux AppImage + deb + rpm).
+- Cache Service Worker : `superprint-shell-v1.7.696-artefacts-alignes` ; empreintes `?v=20261026-v696-artefacts-alignes`.
+- ⚠️ **Le tag `desktop-v1.7.695` n'a pas été déplacé** : il désigne `14095c99`, antérieur au nettoyage. Relancer la CI sur ce tag aurait recompilé l'ancien code et réécrit des binaires déjà publiés sous une version qui n'aurait plus été la même. C'est pourquoi une version neuve a été ouverte.
+- Le plancher du lanceur npm reste à **1.7.695** : il est égal à la version alors déployée, et un plancher en retard n'a jamais bloqué personne.
+
+---
+
 ## [1.7.695] — 2026-10-26
 
 _Les cadres d'interface restent à 100 % — poignées, aperçus et repères compris_
