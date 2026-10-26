@@ -9,7 +9,32 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
-## [1.7.693] — 2026-10-25
+## [1.7.694] — 2026-10-26
+
+_Les quatre retours, vérifiés à la mesure — et l'application de bureau remise à jour_
+
+> **Pourquoi cette version existe.** Les quatre correctifs demandés (netteté au zoom, cadre de bloc à 100 %, clic exact après réouverture d'un `.sp`, œil des calques) sont dans la 1.7.693. Ils étaient pourtant toujours signalés comme absents — et la mesure explique pourquoi : **l'application de bureau installée sur la machine de l'utilisateur est la 1.7.620** (`%LOCALAPPDATA%\SuperPrint\superprint.exe`, 15/10/2026), soit 73 versions avant les correctifs. Le site, lui, venait seulement de recevoir la 1.7.693. Aucune ligne de code ne pouvait corriger cet écart : il fallait **republier** — installeurs, zip, site Astro, miroirs — et changer le nom du cache du service worker.
+
+### Vérifié — les quatre points, avec les nombres
+
+- **Netteté au zoom (85 × 55 mm, 300 %)** — même document, même zoom, navigateur **et** application de bureau (WebView2, protocole DevTools) : bitmap **2 010 × 1 347** pour une planche logique de 258 × 173, densité **7,79** (demandée 7,79), soit **1,73 pixel de bitmap par pixel physique**. Le bitmap est donc suréchantillonné, pas agrandi. La 1.7.620 livrait, elle, un bitmap à 1,5× agrandi 3× par le compositeur : c'est exactement la pixellisation décrite.
+- **Cadre de bloc à 100 %** — épaisseur tracée **0,333 px de document à 300 %**, mesurée à l'écran **1,34 px CSS à 100 %** et **1,54 px CSS à 300 %** (l'écart est l'arrondi antialiasé, pas une mise à l'échelle). Les pointillés des repères suivent la même règle (5/5 → 1,67/1,67).
+- **Clic exact après réouverture d'un `.sp`** — protocole réel : petit format, deux pages, export `.sp`, application neuve, `loadProjectSP`, molette Ctrl jusqu'à 300 %. Erreur de pointage **0,01 à 0,02 px de document**, dans les deux ordres (ouvrir puis zoomer, **zoomer puis ouvrir**), sélection par clic et édition du texte fonctionnelles, `getRetinaScaling` de la planche égal à sa densité réelle (7,79).
+- **Œil des calques** — bouton œil / œil barré avant le cadenas : `visible` bascule, la ligne prend `layer-item--hidden`, le titre passe de « Masquer » à « Afficher », et l'état **survit à l'enregistrement `.sp` puis à la réouverture** (`"visible": false` dans le fichier, relu tel quel).
+
+### Vérifié — `.sp` et `.json`, propriété par propriété
+
+- Aller-retour complet sur un document portant : contour de cadre (`_spFrameStroke` + épaisseur), calque masqué, calque verrouillé, marges asymétriques par côté (6/8/5/11), fond perdu de 4 mm, et **format propre à une page** (100 × 70 mm sur la page 2 d'un document 85 × 55).
+- Résultat : **aucun écart** sur le `.sp` ni sur le `.json` — formats, marges, fond perdu, positions, tailles, échelles, angles, opacités, visibilité, verrou, contour de cadre et format par page sont identiques après réouverture. Seule différence attendue : le `clipPath` des blocs texte, **posé au chargement** par `applyTextboxClipPath` (masque de débordement), et non stocké dans le fichier.
+
+### Rebuild — toute la chaîne
+
+- Miroirs resynchronisés (`sp213-local/public/superprint`, `superprint_ASTRO/public`), site Astro reconstruit, `sp213-local.zip` régénéré et contrôlé, installeurs de bureau **1.7.694** (SuperPrint, Studio IA, SuperTyPo ; NSIS + MSI).
+- Cache du service worker : `superprint-shell-v1.7.694-retours-verifies-bureau-a-jour` ; empreintes `?v=20261026-v694-retours-verifies-bureau-a-jour`.
+- ⚠️ **Toute application de bureau antérieure doit être réinstallée** : une application déjà installée ne se met pas à jour toute seule, et c'est la cause unique de l'écart « logiciel pixellisé / web net ».
+
+---
+
 
 _Le zoom ne pixellise plus, les cadres d'interface restent à 100 %, et les calques ont un œil_
 
