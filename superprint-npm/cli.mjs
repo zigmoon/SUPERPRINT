@@ -38,32 +38,43 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    ne se voit pas à la lecture : il casse `npx superprint` pour tout le monde
 //    (« downloaded version is invalid or older »). D'où la règle : après un bump,
 //    RELIRE ce bloc et le remettre sur les mesures réelles. C'est pourquoi ce texte
-//    a été réécrit À LA MAIN le 25/10/2026, mesures en main.
-//    ÉTAT MESURÉ le 26/10/2026 à 23 h 20, APRÈS le dépôt, ET LE PLANCHER SUIT :
-//      · superprint.cc/version.txt ........................ = 1.7.696
-//      · app.zigmoon.com/sp213-local.zip .................. HTTP 200, 56 872 090
-//        octets, Last-Modified « Mon, 26 Oct 2026 22:14:17 GMT », sha256
-//        cfb8a431…0311e1 — IDENTIQUE au zip construit ici. L'archive a été
+//    a été réécrit À LA MAIN le 27/10/2026, mesures en main.
+//    ÉTAT MESURÉ le 27/10/2026 à 2 h 30, APRÈS le dépôt, ET LE PLANCHER SUIT :
+//      · superprint.cc/version.txt ........................ = 1.7.697
+//        (Last-Modified « Tue, 27 Oct 2026 01:03:09 GMT »)
+//      · app.zigmoon.com/sp213-local.zip .................. HTTP 200, 56 881 718
+//        octets, Last-Modified « Tue, 27 Oct 2026 01:13:10 GMT », sha256
+//        6701b4f5…1ffa1f8 — IDENTIQUE au zip construit ici. L'archive a été
 //        OUVERTE, pas seulement hachée : public/superprint/version.txt y vaut
-//        1.7.696, et app/JS/main.js y pèse 6 477 468 octets avec ZÉRO CR.
-//      · superprint.cc/app/index.html = 1.7.696 : badge data-sp-sw = v1.7.696,
-//        data-sp-js = v696, JS/main.js?v=20261026-v696-artefacts-alignes
-//        (le CSS porte la même empreinte).
+//        1.7.697, app/JS/main.js y pèse 6 492 024 octets avec ZÉRO CR, et le
+//        correctif de signature du studio (passage direct) y est présent.
+//      · superprint.cc/app/index.html = 1.7.697 : data-sp-js = v697,
+//        JS/main.js?v=20261026-v697-theme-sombre-complet (le CSS porte la même
+//        empreinte), data-sp-sw = v1.7.697.
 //      · superprint.cc/app/service-worker.js : CACHE_NAME =
-//        superprint-shell-v1.7.696-artefacts-alignes.
-//      · superprint.cc/app/JS/main.js : sha256 4ed27359…a522fdb8, IDENTIQUE au
-//        dépôt, zéro CR — c'est la preuve binaire que l'écart d'un octet de la
-//        1.7.695 est bel et bien clos.
-//      · pages racine (index, price, faq, documentation, install, api) et
-//        app/documentation.html : toutes en 1.7.696.
-//      · release desktop-latest : « SuperPrint 1.7.696 », 21 fichiers remplacés
-//        le 26/10 à 21 h 02, compilation partie de 5d293542 — contrôlés un par
-//        un (SHA-256 contre SHA256SUMS, PE/ar/koly, Info.plist 1.7.696, .deb
-//        1.7.696 avec libwebkit2gtk-4.1-0). Archive figée : desktop-v1.7.696,
-//        22 fichiers dont SHA256SUMS.
-//      · npm superprint@1.0.120 avait un plancher de 1.7.695 : en retard d'une
+//        superprint-shell-v1.7.697-theme-sombre-complet.
+//      · superprint.cc/app/JS/main.js : 6 492 024 octets, sha256
+//        01df5154…ea4f4f, IDENTIQUE au dépôt, zéro CR.
+//      · superprint.cc/sp213-studio.html : IDENTIQUE au dépôt après normalisation
+//        des fins de ligne (le site sert du LF, le dépôt est en CRLF) — aucune
+//        divergence de contenu.
+//      · pages racine : index, price, faq, install et rock portent
+//        brand-ver = v1.7.697 ; documentation, api et app/documentation valent
+//        1.7.697 et sont OCTET POUR OCTET identiques au build local.
+//      · release desktop : 13/13 tâches réussies (run 40424029555). Archive figée
+//        desktop-v1.7.697 = 22 fichiers ; desktop-latest renommée « SuperPrint
+//        1.7.697 — desktop applications », 21 fichiers remplacés le 27/10 à
+//        00 h 12. Contrôlés UN PAR UN, pas au verdict de la CI : SHA-256 contre
+//        SHA256SUMS pour l'exe, le .deb et le .dmg ; PE « MZ » et
+//        FileVersion 1.7.697 ; .deb « !<arch> », Version 1.7.697, amd64,
+//        Depends libwebkit2gtk-4.1-0 + libgtk-3-0 ; .dmg à queue « koly »,
+//        Info.plist CFBundleShortVersionString 1.7.697, binaire arm64 signé
+//        AD-HOC (LC_CODE_SIGNATURE présent, aucun blob CMS — voir la question
+//        codesign : il DÉMARRE, mais Gatekeeper affiche « développeur non
+//        identifié »).
+//      · npm superprint@1.0.121 avait un plancher de 1.7.696 : en retard d'une
 //        version depuis ce téléversement.
-//    → le plancher passe donc à 1.7.696 DANS CE MÊME GESTE, maintenant que le zip
+//    → le plancher passe donc à 1.7.697 DANS CE MÊME GESTE, maintenant que le zip
 //      ET le site sont en ligne. Un plancher égal à la version déployée est l'état
 //      visé : il refuse un zip plus ancien servi par erreur, sans jamais bloquer
 //      une version plus récente.
@@ -71,7 +82,9 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //      app.zigmoon.com s'arrête à la 1.7.694 (329 blocs ; le dépôt en porte 332,
 //      avec 1.7.695, 1.7.696 et 1.7.697). C'est un fichier à déposer SÉPARÉMENT :
 //      il ne suit pas le dossier superprint/. Les notes de version sont en retard
-//      sur les fichiers, pas l'inverse.
+//      sur les fichiers, pas l'inverse. Vérifié le 27/10 : superprint.cc/release.html
+//      et superprint.cc/app/release.html répondent 404 — la seule copie servie est
+//      celle d'app.zigmoon.com.
 //    ⚠️ CE QUE FAIT RÉELLEMENT LE PLANCHER, dit exactement : `onlineVersion` est le
 //      MAXIMUM entre `version.txt` et cette constante. C'est donc `version.txt` qui
 //      déclenche les mises à jour, et le plancher qui REFUSE un zip trop ancien —
@@ -80,7 +93,7 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    ⚠️ POURQUOI LE PLANCHER DOIT SUIVRE CHAQUE LIVRAISON : un zip ancien servi par
 //      erreur serait ACCEPTÉ, et `npx superprint` installerait une version sans les
 //      correctifs du jour. Une garde ne sert que si elle est à jour.
-const MIN_APP_VERSION = '1.7.696';
+const MIN_APP_VERSION = '1.7.697';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');
