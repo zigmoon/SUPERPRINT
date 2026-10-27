@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.696 — Zigmoon
+         SuperPrint 1.7.697 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.696 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.697 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.696",
+          "softwareVersion": "1.7.697",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -712,7 +712,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20261026-v696-artefacts-alignes">
+    <link rel="stylesheet" href="CSS/main.css?v=20261026-v697-theme-sombre-complet">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1297,7 +1297,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.696</div>
+                <div class="splash-version">1.7.697</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1399,7 +1399,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.696</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.697</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1495,7 +1495,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.696 | 10 2026<br>
+                V 1.7.697 | 10 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1976,7 +1976,7 @@
                     <button class="btn btn-secondary" id="deleteLayer">✕</button>
                 </div>
                 <div class="btn-group" style="margin-top: 8px;">
-                    <button class="btn btn-secondary" id="clearAllLayers" title="Supprimer tous les calques (sauf structure)" style="background:#ddd;color:#333;font-weight:600;">Clear All</button>
+                    <button class="btn btn-secondary" id="clearAllLayers" title="Supprimer tous les calques (sauf structure)" style="background:var(--sp-bouton-neutre-fond, #ddd);color:var(--sp-bouton-neutre-encre, #333);font-weight:600;">Clear All</button>
                 </div>
                 <div class="input-group" style="margin-top: 12px;">
                     <label style="font-size: 8px;">Déplacer objet vers</label>
@@ -2086,7 +2086,7 @@
                          retrouve sa place, et les deux outils intégrés y tiennent
                          côte à côte. -->
                     <div id="spPluginsTopbar" role="toolbar" aria-label="Plug-ins actifs" style="pointer-events: auto; display: flex; align-items: center; gap: 2px;"></div>
-                    <button class="btn btn-square" id="openSearchTopBtn" title="Rechercher et remplacer (Ctrl+F)" aria-label="Rechercher et remplacer" onclick="openFindReplace(false)" style="pointer-events: auto; border: 0; color: #1a1a1a;">
+                    <button class="btn btn-square" id="openSearchTopBtn" title="Rechercher et remplacer (Ctrl+F)" aria-label="Rechercher et remplacer" onclick="openFindReplace(false)" style="pointer-events: auto; border: 0; color: var(--sp-texte-encre, #1a1a1a);">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="10.5" cy="10.5" r="6.5"></circle>
                             <line x1="15.4" y1="15.4" x2="20.5" y2="20.5"></line>
@@ -2300,12 +2300,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.696). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.697). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.696 — internal cache tag: JS v696 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.697 — internal cache tag: JS v697 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: calc(8px + var(--sp-regle-haut, 0px)); display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v696"
-                      data-sp-sw="v1.7.696">v1.7.696</span>
+                      data-sp-js="v697"
+                      data-sp-sw="v1.7.697">v1.7.697</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -5044,7 +5044,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.696 — 25 octobre 2026
+                        SuperPrint v1.7.697 — 25 octobre 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -5392,7 +5392,7 @@
                             </button>
                         </div>
                     </div>
-                    <div id="cheminDeFerGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; padding: 16px; background: #f8f8f8; border-radius: 4px; min-height: 300px; max-height: 500px; overflow-y: auto;">
+                    <div id="cheminDeFerGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; padding: 16px; background: var(--sp-fond-champ, #f8f8f8); border-radius: 4px; min-height: 300px; max-height: 500px; overflow-y: auto;">
                         <!-- Les miniatures de pages seront insérées ici -->
                     </div>
                 </div>
@@ -5596,7 +5596,7 @@
             <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px;">
                 <div class="modal-section">
                     <div class="modal-section-title" data-translate="impSectionOrder">Ordre des pages pour l'impression</div>
-                    <div style="background: #f8f8f8; padding: 16px; font-size: 10px; line-height: 1.6; margin-bottom: 16px;">
+                    <div style="background: var(--sp-fond-champ, #f8f8f8); padding: 16px; font-size: 10px; line-height: 1.6; margin-bottom: 16px;">
                         <strong><span data-translate="impBookletPrefix">Pour un livret de</span> <span id="impositionPageCount">0</span> <span data-translate="impBookletSuffix">pages :</span></strong><br>
                         <div id="impositionOrder" style="margin-top: 8px; font-family: 'IBM Plex Mono', monospace;"></div>
                     </div>
@@ -5783,7 +5783,7 @@
                         <input type="text" id="glyphsSearch" placeholder="ex: 00E9, é, eacute" style="width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
                     </div>
                 </div>
-                <div id="glyphsGrid" style="display: grid; gap: 2px; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); max-height: 50vh; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px; padding: 6px; background: #fafafa;"></div>
+                <div id="glyphsGrid" style="display: grid; gap: 2px; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); max-height: 50vh; overflow-y: auto; border: 1px solid var(--sp-bord-champ, #e0e0e0); border-radius: 6px; padding: 6px; background: var(--sp-fond-glyphes, #fafafa);"></div>
                 <div id="glyphsPreview" style="margin-top: 12px; display: flex; align-items: center; gap: 16px; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 6px; background: #fff; min-height: 52px;">
                     <div id="glyphsPreviewChar" style="font-size: 36px; line-height: 1; min-width: 44px; text-align: center;">—</div>
                     <div style="flex: 1;">
@@ -6990,7 +6990,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20261026-v696-artefacts-alignes" defer></script>
+    <script src="JS/main.js?v=20261026-v697-theme-sombre-complet" defer></script>
     <script src="JS/sp-export-designer.js?v=20261018-v687-eps-word" defer></script>
 <!-- ══ v1.7.687 — PLUG-INS ══
      ⚠️ CES TROIS SCRIPTS REPRENNENT L'EMPREINTE DE CACHE DE `main.js`.

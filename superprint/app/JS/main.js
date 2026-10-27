@@ -35391,8 +35391,14 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         pageDiv.className = 'imposition-page';
         pageDiv.textContent = pageNum;
         if (pageNum === 'Vide') {
-            pageDiv.style.background = '#f0f0f0';
-            pageDiv.style.color = '#999';
+            /* ⚠️ v1.7.697 — ces deux couleurs étaient écrites en ligne (#f0f0f0 /
+               #999) : une déclaration en ligne gagne contre `.theme-dark
+               .imposition-page`, donc la case « Vide » restait un rectangle blanc
+               dans la fenêtre d'imposition en thème sombre (mesuré :
+               rgb(240,240,240)). `var()` suit le thème, le repli est la valeur
+               claire d'origine. */
+            pageDiv.style.background = 'var(--sp-fond-vide, #f0f0f0)';
+            pageDiv.style.color = 'var(--sp-texte-vide, #999)';
         }
         viz.appendChild(pageDiv);
     });
@@ -39563,7 +39569,17 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             var zone = id('aiFooterActions') || (mic ? mic.parentNode : null);
             if (!zone) return false;
             var b = document.createElement('button');
-            b.type = 'button'; b.id = 'aiFooterKbBtn'; b.className = 'sp-kb-btn';
+            b.type = 'button'; b.id = 'aiFooterKbBtn';
+            /* ⚠️ v1.7.697 — LA CLASSE DU PIED DE L'IA MANQUAIT.
+               Le bouton n'était créé qu'avec `sp-kb-btn`, qui ne définit que
+               `position:relative` : il gardait donc le fond PAR DÉFAUT DU
+               NAVIGATEUR (mesuré : rgb(240,240,240), icône noire) au milieu du
+               pied de l'IA, qui est sombre dans LES DEUX thèmes
+               (rgba(26,26,26,0.97)). Ses deux voisins, `aiFooterAttachBtn` et
+               `aiFooterMicBtn`, portent `sp-foot-ic` et sont transparents.
+               On lui donne donc la même classe : plus de carré gris collé au
+               micro, et l'icône reprend la couleur du pied. */
+            b.className = 'sp-kb-btn sp-foot-ic';
             b.setAttribute('aria-pressed', 'false');
             b.setAttribute('title', L('Clavier typographique', 'Typographic keyboard', '文字キーボード'));
             b.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"></path></svg>';
@@ -54496,7 +54512,14 @@ https://superprint.app
         //   setStep(label, pct) / setPct(pct) pour piloter l'avancement.
         function _spCreatePdfLoader(opts) {
             opts = opts || {};
-            const dark = !!(document.body && document.body.classList.contains('theme-dark'));
+            /* ⚠️ v1.7.697 — LE THÈME EST POSÉ SUR <html>, PAS SUR <body>.
+               `document.documentElement.classList.toggle('theme-dark', …)` (voir
+               `spAppliquerTheme`) : ce test sur `body` était donc TOUJOURS faux, et
+               la carte de progression de l'export PDF restait blanche en thème
+               sombre — plein écran, pendant toute la génération. On interroge les
+               deux, comme le fait déjà `npSwitchTab` (`_npDark`). */
+            const dark = !!(document.documentElement.classList.contains('theme-dark')
+                || (document.body && document.body.classList.contains('theme-dark')));
             const P = dark
                 ? { cardBg: '#232327', text: '#eaeaea', sub: '#9a9aa2', line: 'rgba(255,255,255,0.1)', track: 'rgba(255,255,255,0.12)', fill: '#ffffff', pct: '#eaeaea' }
                 : { cardBg: '#ffffff', text: '#1a1a1a', sub: '#8a8a8a', line: 'rgba(0,0,0,0.1)', track: 'rgba(0,0,0,0.08)', fill: '#1a1a1a', pct: '#1a1a1a' };
@@ -65675,8 +65698,13 @@ https://superprint.app
         gridParent.insertBefore(masterPanel, grid);
     }
     // Construire le panneau gabarits
-    masterPanel.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;padding:8px 12px;background:#f0f4ff;border-radius:6px;border:1px solid #d0d8f0;';
-    masterPanel.innerHTML = '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#555;margin-right:4px;">Gabarits :</span>';
+    /* ⚠️ v1.7.697 — fond #f0f4ff écrit en ligne. `.theme-dark #cheminMasterPanel`
+       existait (main.css) mais perdait contre cet attribut `style` : le bandeau
+       restait bleu clair en thème sombre (mesuré : rgb(240,244,255)). Les jetons
+       règlent les deux thèmes d'un coup, et la règle CSS devenue inutile est
+       laissée telle quelle : elle ne s'applique plus, mais elle ne nuit pas. */
+    masterPanel.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;padding:8px 12px;background:var(--sp-gabarit-fond, #f0f4ff);border-radius:6px;border:1px solid var(--sp-gabarit-bord, #d0d8f0);';
+    masterPanel.innerHTML = '<span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--sp-gabarit-titre, #555);margin-right:4px;">Gabarits :</span>';
 
     // Afficher chaque gabarit existant
     Object.keys(masterPages).sort().forEach(letter => {
@@ -68068,7 +68096,7 @@ https://superprint.app
 
             const popup = document.createElement('div');
             popup.className = 'master-assign-popup';
-            popup.style.cssText = 'position:absolute;z-index:10000;background:#fff;border:1px solid #d0d0d0;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:6px 0;min-width:140px;font-size:12px;';
+            popup.style.cssText = 'position:absolute;z-index:10000;background:var(--sp-fond-popup, #fff);border:1px solid var(--sp-bord-popup, #d0d0d0);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:6px 0;min-width:140px;font-size:12px;';
 
             // Option "Aucun"
             const noneOpt = document.createElement('div');
@@ -68112,7 +68140,7 @@ https://superprint.app
             document.querySelectorAll('.master-assign-popup').forEach(e => e.remove());
             const popup = document.createElement('div');
             popup.className = 'master-assign-popup';
-            popup.style.cssText = 'position:absolute;z-index:10000;background:#fff;border:1px solid #d0d0d0;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:6px 0;min-width:180px;font-size:12px;';
+            popup.style.cssText = 'position:absolute;z-index:10000;background:var(--sp-fond-popup, #fff);border:1px solid var(--sp-bord-popup, #d0d0d0);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:6px 0;min-width:180px;font-size:12px;';
 
             // Titre
             const title = document.createElement('div');
@@ -69371,9 +69399,13 @@ function alignSelectedObjects(direction) {
     const gpuInfoEl = document.getElementById('gpuInfoDisplay');
     if (gpuInfoEl) {
         const gpuInfo = detectGPU();
+        /* ⚠️ v1.7.697 — le nom du GPU était écrit `color:#333` en ligne : en
+           thème sombre il s'affichait sur #121214, donc illisible (mesuré :
+           contraste 1.43). `var()` suit le thème, le repli garde l'aspect clair. */
+        const _gpuEncre = 'var(--sp-texte-encre, #333)';
         if (gpuInfo.supported) {
             gpuInfoEl.innerHTML = '<span style="color:#16a34a; font-weight:700;">' + translate('gpuDetected') + '</span>&nbsp;&nbsp;' +
-                '<span style="color:#333;">' + gpuInfo.name + '</span>';
+                '<span style="color:' + _gpuEncre + ';">' + gpuInfo.name + '</span>';
         } else {
             gpuInfoEl.innerHTML = '<span style="color:#ef4444; font-weight:700;">' + translate('gpuNotDetected') + '</span>&nbsp;&nbsp;' +
                 '<span style="color:#999;">' + translate('gpuNotAvailable') + '</span>';
@@ -75241,6 +75273,15 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // ========== SYSTÈME DE TRADUCTIONS ==========
         const translations = {
     fr: {
+        // v1.7.697 — clés qui manquaient aux trois paquets (voir _patch_699_i18n.cjs)
+        alertSelectTextFirst: "Sélectionnez d'abord un bloc de texte.",
+        cornerLinkToggle: "Lier/délier les coins",
+        cornerRadius: "Coins arrondis",
+        gpuInfoPlaceholder: "— Détection GPU en attente…",
+        localBadgeTitle: "Installation locale de SuperPrint — aucune donnée ne quitte votre machine",
+        pasteboardToggleTitle: "Afficher la zone de montage autour des pages",
+        spotTargetFillTitle: "Appliquer le Pantone au fond",
+        spotTargetStrokeTitle: "Appliquer le Pantone au contour",
         // Interface principale
         format: "Format",
         margins: "Marges (mm)",
@@ -76369,6 +76410,15 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     tableauInserer: "Insérer"
     },
     en: {
+        // v1.7.697 — keys missing from all three packs (see _patch_699_i18n.cjs)
+        alertSelectTextFirst: "Select a text block first.",
+        cornerLinkToggle: "Link/unlink corners",
+        cornerRadius: "Rounded corners",
+        gpuInfoPlaceholder: "— GPU detection pending…",
+        localBadgeTitle: "Local installation of SuperPrint — no data leaves your machine",
+        pasteboardToggleTitle: "Show pasteboard area around pages",
+        spotTargetFillTitle: "Apply the Pantone to the fill",
+        spotTargetStrokeTitle: "Apply the Pantone to the stroke",
         // Interface principale
         format: "Format",
         margins: "Margins (mm)",
@@ -77473,6 +77523,113 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Text</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bold</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Italic</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Underline</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Highlight selection</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Select all</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Tab (block being edited: inserts a tab; tab stops enabled if needed — default step 10 mm)</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Built-in Tab (move to the next field)</span><span class=\"sp-shortcut-keys\"><kbd>Option</kbd> + <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cross-block selection (chained text)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Click</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Editing</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Copy</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cut</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Paste</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Undo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo (alt.)</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Delete block / page</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Duplicate selection</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>Drag</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Objects & Layers</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Group</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Ungroup</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bring to front</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Send to back</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Link text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Unlink text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Quick Tools</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add text</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add image</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add rectangle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add circle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Pen tool</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Typography panel</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Files & Navigation</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Save</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Open file</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Export PDF</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Print / Export</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">New page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Previous page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2190</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Next page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2192</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Show/hide guides</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Imposition</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Zoom</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom in</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom out</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2212</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom 100%</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">On macOS, <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>\u2318 Cmd</kbd></div>"
     },
     ja: {
+        // v1.7.697 — 全パックに欠けていたキーと、日本語版に欠けていた 98 件 (see _patch_699_i18n.cjs)
+        alertSelectTextFirst: "先にテキストブロックを選択してください。",
+        cornerLinkToggle: "角のリンク/解除",
+        cornerRadius: "角の丸み",
+        gpuInfoPlaceholder: "— GPU を検出中…",
+        localBadgeTitle: "SuperPrint のローカル版です — データがこのマシンから出ることはありません",
+        pasteboardToggleTitle: "ページ周囲のペーストボードを表示",
+        spotTargetFillTitle: "Pantone を塗りに適用",
+        spotTargetStrokeTitle: "Pantone を線に適用",
+        in: "in",
+        alertPenToolUnavailable: "ペンツールを利用できません。ページを再読み込みしてください。",
+        alertPenMin2Points: "⚠️ パスを作成するには少なくとも 2 つのポイントが必要です。",
+        alertPenEditMode: "🔵 編集モードが有効になりました！\n\n➕ ポイントを追加し続けられます\n• Escape = 閉じずに終了\n➕ Enter = 閉じて終了\n➕ Delete = すべてキャンセル",
+        confirmCancelTrace: "🗑 現在のパスをキャンセルしますか？",
+        alertSelectImageToReplace: "置き換える画像を選択してください。",
+        alertCannotReplaceImage: "この画像は置き換えできません。",
+        alertNoImageToCrop: "トリミングする画像がありません。",
+        alertSelectImageToCrop: "トリミングする画像を選択してください。",
+        alertNoLayersToDelete: "このページに削除するレイヤーはありません",
+        alertAlreadyFirstPage: "すでに最初のページです",
+        alertSelectObjectToMove: "移動するオブジェクトを選択してください",
+        alertAlreadyLastPage: "すでに最後のページです",
+        alertProjectLoadSuccess: "プロジェクトを読み込みました！",
+        alertProjectLoadError: "プロジェクトの読み込みエラー",
+        alertJsonImportError: "JSON のインポートエラー",
+        alertTextImportError: "テキストのインポートエラー",
+        alertPdfImportModalNotFound: "エラー: showPDFImportModal が見つかりません。",
+        alertNoContentDetected: "内容が検出されませんでした",
+        alertMammothNotAvailable: "Mammoth ライブラリを利用できません",
+        alertXlsxNotAvailable: "Excel ライブラリ (SheetJS) を利用できません",
+        alertXlsxEmpty: "Excel ファイルにデータがありません",
+        alertXlsxImportError: "Excel インポートエラー:\n{0}",
+        alertSlaInvalidXml: "無効な .sla ファイルです (XML が壊れています)",
+        alertFigmaImportError: "Figma のインポートに失敗しました: {0}",
+        alertFigmaNotFigma: "この JSON ファイルは Figma ドキュメントではありません。Figma API (GET /v1/files/:key) から、または SuperPrint プラグインで書き出してください。",
+        alertFigmaIsFigBinary: ".fig ファイルはバイナリ形式 (fig-kiwi) であり、JSON ではありません。SuperPrint では直接読み込めません。\n\n正しいファイルを入手する方法は 2 つあります:\n• Figma → ファイルを右クリック → リンクをコピーし、Figma API GET /v1/files/:key の応答を .json として保存する;\n• または SuperPrint プラグインを使うと、その .json を直接書き出せます。",
+        figmaImportDone: "Figma のインポート完了: {0} ページ、{1} オブジェクト。",
+        alertSlaNoDocument: ".sla に DOCUMENT が見つかりません",
+        alertNoActiveCanvas: "アクティブなキャンバスがありません",
+        alertProvideZipOrIdml: ".zip または .idml ファイルを指定してください",
+        alertNoIdmlInZip: "ZIP に .idml ファイルがありません",
+        alertFontLoadError: "フォントの読み込みエラーです。ファイルが有効か確認してください。",
+        alertPdfExportError: "PDF の書き出し中にエラーが発生しました。詳細はコンソールを確認してください。",
+        alertKeepOnePage: "少なくとも 1 ページは残す必要があります。",
+        alertEnableDoublePageMode: "見開きを作成するには、まずメイン画面で「見開きページ」モードを有効にしてください。",
+        alertMaxMasterPages: "マスターページは最大 26 件 (A-Z) です。",
+        alertDistributeMin3: "分布配置を使うには少なくとも 3 つのオブジェクトを選択してください。両端のオブジェクトは位置を保ちます。",
+        alertTidyMin3: "整列には少なくとも 3 つのオブジェクトを選択してください。",
+        alertSelectObjectForColor: "色を適用するオブジェクトを選択してください。",
+        alertEnterColorName: "色の名前を入力してください。",
+        alertExampleCopied: "サンプルをクリップボードにコピーしました！",
+        alertEnterScript: "実行するスクリプトを入力してください",
+        alertIpfsInvalidHash: "IPFS ハッシュが無効です。",
+        alertWeb3OpenSuccess: "Web3 プロジェクトを開きました！",
+        alertEnterPinataKey: "Pinata API キーを入力してください。",
+        alertConfigSaved: "設定を保存しました。",
+        alertConfigurePinata: "Pinata API キーを設定してください。",
+        alertWeb3SaveOk: "プロジェクトを保存しました！",
+        confirmDeleteLocalSave: "この保存をローカル履歴から削除しますか？",
+        confirmResetDocument: "⚠️ 警告: 現在のドキュメントをすべて消去しようとしています。\n\n本当に白紙のページから始めますか？",
+        alertPathfinderNeedsTwoShapes: "⚠️ 操作が必要です: パスファインダーを使うには 2 つの図形が必要です。\n\n💡 解決方法: ボタンを押す前に、少なくとも 2 つのオブジェクトを選択してください (Shift + クリック)。",
+        alertPathfinderUnsupportedFormat: "⚠️ 未対応の形式です: パスファインダーはベクター図形でのみ動作します。\n\n💡 情報: 画像とテキストは結合も分割もできません。可能であればベクターに変換してください。",
+        alertSpFileLoadError: ".sp ファイルを読み込めません: {0}",
+        alertFormatInvalid: "無効な形式です",
+        alertCannotReadSpFile: ".sp ファイルを読み取れません",
+        alertScribusImportError: "Scribus インポートエラー: {0}",
+        alertScribusImportComplete: ".sla から {0} 個のオブジェクトをインポートしました ({1} ページ)",
+        alertIdmlImportError: "IDML インポートエラー: {0}",
+        alertIccLoaded: "ICC プロファイル「{0}」を読み込みました ({1} KB)",
+        alertFontLoaded: "フォント「{0}」を読み込みました。すぐに使えます！",
+        confirmDeleteMasterPage: "マスターページ {0} とそのすべての要素を削除しますか？",
+        confirmDeletePage: "ページ {0} を削除しますか？",
+        confirmDeleteStyle: "このスタイルを削除しますか？",
+        confirmDeleteSwatch: "スウォッチ「{0}」を削除しますか？",
+        alertSelectAnImage: "画像を選択してください",
+        confirmDeleteAllLayers: "このレイヤーの {0} 個のオブジェクトを削除しますか？",
+        alertPdfLoadError: "PDF の読み込みエラー: {0}",
+        alertPdfImportError: "PDF インポートエラー: {0}",
+        alertWordImportError: "Word インポートエラー: {0}",
+        alertWordImportSuccess: "{0} 個の段落をインポートしました",
+        confirmAdjustFormat: "PDF は {0} 形式 ({1}×{2} mm) のようです。\n現在のドキュメントは {3} です。\n\n形式を合わせますか？",
+        alertPdfPagesImported: "{0} ページの PDF をインポートしました",
+        alertPdfPagesImportError: "ページのインポートエラー: {0}",
+        alertPathfinderError: "パスファインダーエラー: {0}",
+        alertIpfsLoadError: "IPFS からの読み込みエラー: {0}",
+        alertIpfsUploadError: "IPFS アップロードエラー: {0}",
+        pdfExportMode: "モード",
+        pdfExportQuality: "品質",
+        yesLabel: "はい",
+        noLabel: "いいえ",
+        pdfExportCropMarks: "トンボ",
+        pdfExportColorBars: "カラーバー",
+        pdfExportSuccess: "PDF を書き出しました！",
+        pdfImposedOrder: "順序",
+        alertCannotDeleteStructure: "構造要素 (罫線、塗り足し、ガイド) は削除できません",
+        alertNoActiveCanvasHyphen: "アクティブなキャンバスがありません",
+        alertNoObjectSelected: "オブジェクトが選択されていません",
+        alertObjectNotText: "選択したオブジェクトはテキストではありません",
+        alertHyphenReRender: "再描画が完了しました！\nハイフンのダッシュを確認してください。",
+        alertImportComplete: "インポート完了 ({1} ページにわたる {0} ブロック)",
+        alertDocxImportError: "DOCX インポートエラー:\n{0}",
+        alertOdtImportError: "ODT インポートエラー:\n{0}",
+        alertSelectValidPdf: "有効な PDF ファイルを選択してください。",
+        alertSelectAtLeastOnePage: "インポートするページを少なくとも 1 つ選択してください。",
+        alertDocxOnlySupported: ".docx ファイル (Word 2007 以降) のみ対応しています。\n\n古い .doc ファイルは互換性がありません。",
+        alertMammothNotLoaded: "Mammoth.js ライブラリが読み込まれていません。",
+        alertPdfImportFinalError: "PDF インポートエラー: {0}",
         // Interface principale
         format: "フォーマット",
         margins: "マージン (mm)",
@@ -105088,7 +105245,10 @@ function initObjectRightClickMenu() {
     // Palette alignée sur l'identité SuperPrint (monochrome noir/blanc,
     // clair par défaut, sombre si theme-dark actif).
     const _spThemePalette = () => {
-        const dark = !!(document.body && document.body.classList.contains('theme-dark'));
+        // ⚠️ v1.7.697 — la classe est posée sur <html> : ce test sur `body` était
+        //    toujours faux, la palette restait claire en thème sombre.
+        const dark = !!(document.documentElement.classList.contains('theme-dark')
+            || (document.body && document.body.classList.contains('theme-dark')));
         return dark ? {
             bg: '#1c1c20', head: '#232327', line: 'rgba(255,255,255,0.08)', text: '#eaeaea',
             sub: '#8f8f96', field: '#141417', fieldBorder: 'rgba(255,255,255,0.12)',
@@ -105930,7 +106090,10 @@ function initObjectRightClickMenu() {
 
   // Palette de thème locale (l'originale vit dans un autre module).
   function palette() {
-    var dark = !!(document.body && document.body.classList.contains('theme-dark'));
+    // ⚠️ v1.7.697 — la classe est posée sur <html> : ce test sur `body` était
+    //    toujours faux, la palette restait claire en thème sombre.
+    var dark = !!(document.documentElement.classList.contains('theme-dark')
+      || (document.body && document.body.classList.contains('theme-dark')));
     return dark ? {
       bg: '#1c1c20', head: '#232327', line: 'rgba(255,255,255,0.08)', text: '#eaeaea',
       sub: '#8f8f96', field: '#141417', fieldBorder: 'rgba(255,255,255,0.12)',

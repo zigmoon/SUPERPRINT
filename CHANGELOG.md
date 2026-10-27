@@ -9,6 +9,41 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.697] — 2026-10-26
+
+_Le thème sombre atteint les panneaux pour lesquels il n'avait jamais été écrit, le japonais cesse d'afficher de l'anglais, et le Studio cesse de retraduire les documents qu'il devait laisser passer tels quels_
+
+> **Pourquoi cette version existe.** Trois relectures demandées — `.sp` / `.json` en import-export, `.sp` du Studio IA, thème sombre, trois langues. Chacune a été **mesurée** dans l'application, pas relue dans le code, et chacune a livré au moins un défaut que la lecture seule ne montrait pas.
+
+### Fixed — thème sombre
+
+- **Sept familles de composants n'avaient AUCUNE règle sombre.** Compté par famille dans `main.css` : `.fr-*` (Rechercher & Remplacer) 102 règles / **0** sombre, `.mobile-menu*` 41/0, `.mask-*` 17/0, `.vps-*` 13/0, `.pdf-page-*` 7/0, `.glyphs*` 43/0, `.login-*` 21/1. Ouvertes en thème sombre, elles affichaient une feuille blanche au milieu de l'écran. Toutes sont maintenant thématisées.
+- **La grille de glyphes de SuperTyPo était illisible.** Mesuré : `#glyphsGrid` sur **#fafafa** avec un texte clair — **1.15** de contraste, **95 cellules** concernées, et des survols `#e8e8e8 !important` qui empêchaient toute correction non-`!important`.
+- **Les composants construits en JavaScript échappaient au thème par construction.** `style.cssText = '… background:#f0f4ff'` gagne contre n'importe quelle règle `.theme-dark` : le bandeau « Gabarits » du chemin de fer restait **rgb(240,244,255)**, les cases « Vide » de l'imposition **#f0f0f0** avec un texte **#999** (contraste **1.13**), le résumé de l'imposition **#f8f8f8**, les menus de gabarit **#fff**. Ils lisent désormais des jetons `--sp-*` définis pour les deux thèmes — la valeur suit le thème sans qu'aucune règle ne les nomme.
+- **`document.body` au lieu de `document.documentElement`** dans trois fonctions : la classe `theme-dark` est posée sur `<html>`, donc `_spCreatePdfLoader`, `_spThemePalette` et `palette()` répondaient **toujours** « clair ». La carte plein écran de l'export PDF, la palette des styles de texte et sa pop-in restaient blanches en thème sombre.
+- **Boutons de pied de fenêtre génériques** : seules « Nouveau projet » et « Collaboration » avaient leur règle sombre ; « Imposition », « Chemin de fer » et « Import PDF » gardaient `.modal-btn-secondary` en **#f0f0f0**.
+- **Bouton « Clavier typographique » du pied de l'IA** : créé sans la classe `sp-foot-ic` de ses deux voisins, il gardait le fond **par défaut du navigateur** (`rgb(240,240,240)`) au milieu d'un pied sombre dans les deux thèmes.
+- **Icône « Rechercher et remplacer »** : `#openSearchTopBtn` portait `color:#1a1a1a` en ligne, donc un trait noir sur la barre sombre. Même correction pour « Clear All ».
+- **Le thème clair est vérifié inchangé**, valeur par valeur (huit mesures) : les jetons reprennent exactement les couleurs d'origine.
+
+### Fixed — traductions (FR / EN / JA)
+
+- **98 clés manquaient au paquet japonais** : toutes les pop-ins, alertes et confirmations (import PDF, Word, Excel, IDML, Scribus, Figma, IPFS, chemin de fer, gabarits). Le repli affichait l'anglais. Les trois paquets portent désormais **exactement les mêmes 1046 clés**.
+- **`alertSelectTextFirst` était appelée sans être définie nulle part** — et `translate()` renvoie la clé elle-même quand elle est absente, donc la valeur de repli n'était jamais atteinte : l'utilisateur lisait littéralement `alertSelectTextFirst`.
+- **Sept attributs `data-translate-title` nommaient des clés inexistantes** (`cornerLinkToggle`, `cornerRadius`, `gpuInfoPlaceholder`, `localBadgeTitle`, `pasteboardToggleTitle`, `spotTargetFillTitle`, `spotTargetStrokeTitle`) : ils affichaient leur propre nom, en libellé comme en infobulle.
+- Vérifié en chargeant l'application dans les trois langues : **aucune clé brute à l'écran**.
+
+### Fixed — Studio IA (`.sp`)
+
+- **La promesse du passage direct (`_SP_NATIF_637`) ne s'appliquait jamais.** La signature du document incluait l'identifiant de conversation, qui est **vide** quand `spRangerNatifs` s'exécute et attribué juste après par `initConversations()`. Mesuré avec le témoin du studio : `signatureIdentique: false` → `passageDirect: false` sur **les deux pages**, alors que leur empreinte était identique. Tous les objets étaient retraduits par les millimètres. La conversation sort de la signature (le magasin de natifs est en mémoire, remplacé à chaque import, et l'empreinte de page reste le seul juge).
+- **Le format propre à la page survit à l'aller-retour** app → Studio → app (il était réduit à `{ index, label, masterId, objects }` à la réexportation).
+
+### Vérifié sans changement
+
+- **`.sp` en import/export** et **`.json` en import/export**, testés par le vrai champ d'import et la vraie fonction d'export : format du document, nombre de pages, format par page et objets — conformes. ⚠️ La première version du test concluait à une perte du format dans le `.json` ; c'était le **fichier de test** qui l'omettait, pas l'application. Corrigé dans le test, pas dans le code.
+
+---
+
 ## [1.7.696] — 2026-10-26
 
 _Tous les fichiers livrés sont de nouveau le même fichier_

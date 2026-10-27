@@ -7224,3 +7224,202 @@ input[type=number] {
    voulu supprimer le filet de FORMATS — il tombe juste sous le titre « Options de
    texte » — mais il figure explicitement dans la liste demandée : c'est lui qui
    marque le début du contenu du soufflet. On garde donc les onze filets. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v1.7.697 — THÈME SOMBRE : LES PANNEAUX QU'IL N'ATTEIGNAIT PAS.
+
+   Demande utilisateur : « relis le thème en version sombre qu'on n'ait rien
+   oublié au niveau des icônes, des typo, etc. »
+
+   ⚠️ LA CAUSE N'ÉTAIT PAS UN OUBLI DE COULEUR, C'ÉTAIT UN OUBLI DE FAMILLE.
+   Une règle `.theme-dark` n'existe que si quelqu'un l'a écrite : la mesure
+   classe les composants par famille et compte les règles sombres qui les
+   nomment. Résultat avant ce correctif, sur `main.css` :
+
+       famille          règles totales   règles .theme-dark
+       .fr-*  (R&R)          102                 0
+       .mobile-menu*          41                 0
+       .mask-*                17                 0
+       .vps-*                 13                 0
+       .pdf-page-*             7                 0
+       .glyphs*               43                 0   (hors 2 survols)
+       .login-*               21                 1
+
+   Ces sept familles sont peintes sur du blanc ou du presque-blanc : ouvertes
+   en thème sombre, elles affichaient une feuille blanche au milieu de l'écran
+   (mesuré : Rechercher & Remplacer = #fff sur un fond #1a1a1a).
+
+   ⚠️ DEUXIÈME CAUSE, DISTINCTE : LE THÈME EST POSÉ SUR <html>. Trois fonctions
+   de main.js testaient `document.body.classList.contains('theme-dark')`, ce qui
+   est toujours faux — voir le commentaire à `_spCreatePdfLoader`. Le CSS, lui,
+   n'a pas ce défaut ; en revanche les composants construits en JavaScript avec
+   une couleur EN LIGNE (`style.cssText = '… background:#f0f4ff'`) échappent par
+   construction à toute règle `.theme-dark` : une déclaration en ligne gagne.
+   D'où les jetons `--sp-*` ci-dessous, que ces composants lisent désormais par
+   `var()` : la valeur change avec le thème sans qu'aucune règle ne les nomme.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Jetons de thème lisibles depuis les styles EN LIGNE ──
+   `:root` et `.theme-dark` désignent tous deux <html> : la valeur bascule sur
+   place, et un `var(--sp-fond-champ, #f8f8f8)` écrit dans un attribut `style`
+   ou dans un `cssText` suit le thème comme une règle de feuille. Le repli
+   (#f8f8f8…) est la valeur claire : si le jeton n'était pas défini, on
+   retrouve exactement l'aspect d'avant. */
+:root {
+    --sp-fond-champ: #f8f8f8;
+    --sp-bord-champ: #e0e0e0;
+    --sp-fond-glyphes: #fafafa;
+    --sp-fond-survol: #f0f0f0;
+    --sp-fond-vide: #f0f0f0;
+    --sp-texte-vide: #999;
+    --sp-texte-encre: #1a1a1a;
+    --sp-bouton-neutre-fond: #ddd;
+    --sp-bouton-neutre-encre: #333;
+    --sp-gabarit-fond: #f0f4ff;
+    --sp-gabarit-bord: #d0d8f0;
+    --sp-gabarit-titre: #555;
+    --sp-fond-popup: #fff;
+    --sp-bord-popup: #d0d0d0;
+}
+.theme-dark {
+    --sp-fond-champ: #232327;
+    --sp-bord-champ: #3a3a40;
+    --sp-fond-glyphes: #232327;
+    --sp-fond-survol: #2d2d33;
+    --sp-fond-vide: #1c1c20;
+    --sp-texte-vide: #7a7a82;
+    --sp-texte-encre: #eaeaea;
+    --sp-bouton-neutre-fond: #2d2d33;
+    --sp-bouton-neutre-encre: #d8d8d8;
+    --sp-gabarit-fond: #1a2233;
+    --sp-gabarit-bord: #2a3a55;
+    --sp-gabarit-titre: #aaa;
+    --sp-fond-popup: #2a2a2a;
+    --sp-bord-popup: #444;
+}
+
+/* ── RECHERCHER & REMPLACER (.fr-*) — la famille entière, jamais thématisée ── */
+.theme-dark .fr-panel {
+    background: #1e1e1e;
+    border-color: #3a3a40;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.62);
+}
+.theme-dark .fr-head { background: #232327; border-bottom-color: #333; }
+.theme-dark .fr-title { color: #eaeaea; }
+.theme-dark .fr-close { color: #8f8f96; }
+.theme-dark .fr-close:hover { background: #333; color: #fff; }
+.theme-dark .fr-label { color: #8f8f96; }
+.theme-dark .fr-count,
+.theme-dark .fr-status { color: #8f8f96; }
+.theme-dark .fr-input {
+    background: #141417;
+    border-color: #3a3a40;
+    color: #eaeaea;
+}
+.theme-dark .fr-input::placeholder { color: #6f6f76; }
+.theme-dark .fr-input:focus { border-color: #888; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.07); }
+.theme-dark .fr-btn {
+    background: #242428;
+    border-color: #3a3a40;
+    color: #d8d8d8;
+}
+.theme-dark .fr-btn:hover { background: #2d2d33; border-color: #55555c; color: #fff; }
+/* L'action principale s'INVERSE : blanche sur fond sombre, comme .btn-secondary.active. */
+.theme-dark .fr-btn-primary { background: #fff; border-color: #fff; color: #111; }
+.theme-dark .fr-btn-primary:hover { background: #ddd; border-color: #ddd; }
+.theme-dark .fr-chk { color: #d0d0d0; }
+.theme-dark .fr-chk input { accent-color: #fff; }
+.theme-dark .fr-char {
+    background: #242428;
+    border-color: #3a3a40;
+    color: #d8d8d8;
+}
+.theme-dark .fr-char:hover { background: #2d2d33; border-color: #55555c; color: #fff; }
+.theme-dark .fr-adv-toggle { border-top-color: #333; color: #b8b8c0; }
+.theme-dark .fr-adv-toggle:hover { color: #fff; }
+.theme-dark .fr-adv-sec + .fr-adv-sec { border-top-color: #333; }
+.theme-dark .fr-adv-titre { color: #8f8f96; }
+.theme-dark .fr-grip { color: #7a7a82; }
+
+/* ── GLYPHES / SUPER TYPO — les deux survols étaient en !important clair ──
+   ⚠️ `!important` CLAIR CONTRE RIEN : la règle d'origine est
+   `.glyphs-cell:hover { background: #e8e8e8 !important; }`. Elle gagne contre
+   toute règle sombre non `!important`, donc le correctif doit l'être aussi, et
+   avec un sélecteur plus fort pour l'emporter entre `!important`. */
+.theme-dark .glyphs-cell:hover { background: #2d2d33 !important; }
+.theme-dark .glyphs-cell:active { background: #3a3a44 !important; }
+.theme-dark #glyphsGrid::-webkit-scrollbar-thumb { background: #444; }
+
+/* ── MENU CONTEXTUEL DU MASQUE + PANNEAU DE POSITION ── */
+.theme-dark .mask-context-menu,
+.theme-dark .mask-position-panel {
+    background: #1e1e1e;
+    border-color: #3a3a40;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+.theme-dark .mask-menu-item { color: #d8d8d8; }
+.theme-dark .mask-menu-item:hover { background: rgba(255, 255, 255, 0.08); }
+.theme-dark .mask-menu-divider { background: rgba(255, 255, 255, 0.12); }
+.theme-dark .mask-position-submenu { background: #242428; }
+.theme-dark .mask-position-btn {
+    background: #242428;
+    border-color: #3a3a40;
+    color: #d8d8d8;
+}
+.theme-dark .mask-position-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: #777; }
+/* `.mask-position-btn.active` (orange #FF5722) reste : c'est un état, pas un fond. */
+
+/* ── VIGNETTES D'IMPORT PDF ── */
+.theme-dark .pdf-page-thumbnail { background: #232327; }
+.theme-dark .pdf-page-thumbnail:hover { border-color: #64b5f6; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55); }
+/* La vignette sélectionnée garde son bleu, assombri pour ne pas éblouir. */
+.theme-dark .pdf-page-thumbnail.selected { background: #16324a; border-color: #2196f3; }
+
+/* ── MENU MOBILE (41 règles, aucune sombre) ── */
+.theme-dark .mobile-menu { background: #1e1e1e; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6); }
+.theme-dark .mobile-menu-item { color: #d8d8d8; border-bottom-color: #2e2e33; }
+.theme-dark .mobile-menu-item:hover { background: #2a2a30; }
+.theme-dark .mobile-menu-item:active { background: #33333f; }
+
+/* ── ÉCRAN DE CONNEXION ──
+   Il n'avait qu'une règle sombre (sur `.login-input`), donc le logo restait
+   #1a1a1a sur un écran resté #fff : correct en clair, mais l'écran blanc
+   tranchait avec le reste de l'application en thème sombre. */
+.theme-dark .login-screen { background: #121214; }
+.theme-dark .login-logo { color: #eaeaea; }
+.theme-dark .login-input { border-color: #3a3a40; }
+.theme-dark .login-input:focus { border-color: #888; }
+.theme-dark .login-btn { background: #fff; color: #111; }
+.theme-dark .login-btn:hover { background: #ddd; }
+
+/* ── ONGLETS DE LA FENÊTRE « PROFIL DE SORTIE » (.vps-*) ──
+   Les règles d'origine sont sous `@media (max-width: …)` et en `!important` :
+   le correctif doit donc être en `!important` ET plus spécifique. */
+.theme-dark .vps-tab {
+    background: #232327 !important;
+    color: #d8d8d8 !important;
+    border-bottom-color: #3a3a40 !important;
+}
+.theme-dark .vps-tab:hover { background: #2d2d33 !important; }
+.theme-dark .vps-tab.vps-tab-active { background: #1c1c20 !important; color: #fff !important; }
+
+/* ── BOUTONS DE PIED DE FENÊTRE, GÉNÉRIQUES ──
+   Seules les fenêtres « Nouveau projet » et « Collaboration » avaient leur
+   règle sombre ; les autres (Imposition, Chemin de fer, Import PDF…) gardaient
+   le #f0f0f0 par défaut. Mesuré : le bouton « Fermer » de l'imposition sortait
+   en rgb(240,240,240) sur un fond sombre. */
+.theme-dark .modal-btn-secondary { background: #2a2a2a; color: #d8d8d8; }
+.theme-dark .modal-btn-secondary:hover { background: #363636; }
+.theme-dark .modal-btn-primary { background: #fff; color: #000; }
+.theme-dark .modal-btn-primary:hover { background: #ddd; }
+
+/* ── FILET DU CHEMIN DE FER ──
+   `#cheminDeFerGrid` reçoit son fond par un attribut `style` (voir index.html) :
+   il lit maintenant `--sp-fond-champ`, donc plus rien à écrire ici.
+   `.chemin-drop-end` n'avait en revanche aucune règle sombre. */
+.theme-dark .chemin-drop-end {
+    background: #232327;
+    border-color: #444;
+    color: #8f8f96;
+}
+.theme-dark .chemin-drop-end.active { background: #2a2a30; border-color: #888; color: #eaeaea; }

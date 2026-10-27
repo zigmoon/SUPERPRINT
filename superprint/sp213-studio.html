@@ -9116,7 +9116,27 @@ function spRtfLayoutInfo(src) {
 
   function spSignatureDoc() {
     try {
-      return [state.convActive || '', state.pageW, state.pageH, state.viewMode].join('|');
+      /* ⚠️ v1.7.697 — LA CONVERSATION NE FAIT PAS PARTIE DE L'IDENTITÉ DU DOCUMENT.
+         MESURÉ (témoin `window.__sp213Natifs()`, import `?from=sp` d'un .sp de deux
+         pages) :
+             signatureRangee  : « |210|297|single »            (convActive VIDE)
+             signatureCourante: « conv_1793058346881|210|297|single »
+             signatureIdentique: false
+             page 0 : rangée=true empreinteIdentique=true → passageDirect=FALSE
+             page 1 : rangée=true empreinteIdentique=true → passageDirect=FALSE
+         Autrement dit LE PASSAGE DIRECT NE S'APPLIQUAIT JAMAIS sur le chemin qui
+         compte : `spRangerNatifs` est appelé par `importFromSuperPrint` AVANT que
+         `initConversations()` n'attribue un identifiant de conversation. Les deux
+         pages étaient intactes, leur empreinte identique, et le studio les
+         retraduisait quand même par les millimètres — exactement ce que
+         `_SP_NATIF_637` promet d'éviter, et la cause du format de page perdu.
+         ⚠️ POURQUOI ON PEUT RETIRER `convActive` SANS DANGER : le magasin de natifs
+         vit EN MÉMOIRE (`spNatifsDoc`) et chaque import le remplace entièrement. Il
+         n'y a donc rien à invalider d'une conversation à l'autre, et l'empreinte de
+         la page reste le seul juge — c'est déjà ce que dit l'en-tête de
+         `spObjetsNatifs`. Deux documents distincts ne peuvent pas avoir la même
+         empreinte au caractère près. */
+      return [state.pageW, state.pageH, state.viewMode].join('|');
     } catch (_) { return ''; }
   }
 
@@ -9631,6 +9651,18 @@ function spRtfLayoutInfo(src) {
         return spVecteurVersElementImage(o, base);
       }).filter(Boolean);
       return { pageIndex: idx, elements, masterId: (spPage && spPage.masterId) ? spPage.masterId : null,
+        /* 🆕 v1.7.697 — LE FORMAT PROPRE À LA PAGE SURVIT À L'ALLER-RETOUR.
+           L'app écrit `format: { width, height }` sur la page quand elle a un format
+           différent du document (main.js, `saveProjectSP_toObject`). Ce champ n'était
+           lu nulle part ici : à la réexportation, `buildSPFile` ne pouvait pas le
+           rendre, et la page revenait au format du document — silencieusement, la
+           maquette se décalait. On le transporte tel quel, sans le normaliser.
+           ⚠️ `undefined` ET NON `null` : la clé disparaît alors du JSON pour un
+           document ordinaire, et le fichier exporté garde exactement sa forme
+           d'avant pour les 99 % de documents qui n'ont qu'un format. */
+        format: (spPage && spPage.format && Number(spPage.format.width) > 0 && Number(spPage.format.height) > 0)
+          ? { width: Number(spPage.format.width), height: Number(spPage.format.height) }
+          : undefined,
         /* _SP_NATIF_637 — LES OBJETS D'ORIGINE DE LA PAGE (cf. en-tête de
            spNatifsParDoc) : ils servent au retour, si l'IA n'a pas touché la page.
            Copie profonde : les objets Fabric ne doivent pas être retouchés par
@@ -29123,7 +29155,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
           const _midNat = (state.doc && state.doc.masters && state.doc.masters.assignments
             && state.doc.masters.assignments[p.pageIndex]) ? state.doc.masters.assignments[p.pageIndex] : null;
           return { index: p.pageIndex, label: p.label || ('Page ' + (p.pageIndex + 1)),
-            masterId: _midNat, objects: _natifs, _spNatif: true };
+            masterId: _midNat, objects: _natifs, _spNatif: true,
+            /* 🆕 v1.7.697 — le format propre à la page suit (cf. l'import, ~9633).
+               Il est lu sur la PAGE DU DOCUMENT, pas sur `p` : `p` est une page du
+               studio (des éléments), le format vit dans `state.doc.pages[i]`. */
+            format: (_docPageNat && _docPageNat.format && Number(_docPageNat.format.width) > 0 && Number(_docPageNat.format.height) > 0)
+              ? { width: Number(_docPageNat.format.width), height: Number(_docPageNat.format.height) }
+              : undefined };
         }
       } catch (_) {}
       try {
@@ -29300,8 +29338,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const spPagesFinal = (_toutesNatives ? spPages : spImposerPlanchesEnPages(spPages))
       /* ⚠️ ON RETIRE LE MARQUEUR INTERNE `_spNatif` : il ne doit pas apparaître dans
          le fichier remis à l'app. Le retrait est fait ICI, une seule fois, pour que
-         les deux régimes rendent exactement la même forme de page. */
-      .map(p => ({ index: p.index, label: p.label, masterId: p.masterId, objects: p.objects }));
+         les deux régimes rendent exactement la même forme de page.
+         🆕 v1.7.697 — `format` est le SEUL champ supplémentaire transporté, et il
+         n'est présent QUE si la page en avait un (cf. l'import). Une page recomposée
+         par l'IA n'en a pas : elle prend le format du document, ce qui est sa vraie
+         nature — le studio ne compose qu'à un seul format. */
+      .map(p => (p.format
+        ? { index: p.index, label: p.label, masterId: p.masterId, format: p.format, objects: p.objects }
+        : { index: p.index, label: p.label, masterId: p.masterId, objects: p.objects }));
     const _viewModeExport = _toutesNatives ? (state.viewMode === 'spread' ? 'spread' : 'single') : 'single';
 
     return {

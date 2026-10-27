@@ -106,24 +106,24 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.696`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `version.txt` | Version en ligne (`1.7.697`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 
 > 📦 Le zip est régénéré par **`node tools/make-release-zip.mjs`** (depuis la racine du repo : il crée `superprint/sp213-local.zip` puis contrôle le résultat). ⚠️ Le script est **suivi par git** — celui-ci et non un script de `_dev/`, qui est ignoré et n'existerait pas sur une autre machine. Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
-> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.696** — celui de la version **réellement déployée**, vérifié dans l'archive. Rappel de la mécanique : le CLI prend le **plus récent** des deux (`newestVersion(version.txt, MIN_APP_VERSION)`), donc un plancher **en retard** accepte tout ce qui est plus nouveau — il ne bloque personne ; un plancher **en avance**, lui, bloque tout le monde.
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.697** — celui de la version **réellement déployée**, vérifié dans l'archive. Rappel de la mécanique : le CLI prend le **plus récent** des deux (`newestVersion(version.txt, MIN_APP_VERSION)`), donc un plancher **en retard** accepte tout ce qui est plus nouveau — il ne bloque personne ; un plancher **en avance**, lui, bloque tout le monde.
 >
-> 📊 **ÉTAT EN LIGNE, MESURÉ LE 26/10/2026 à 23 h 20 — le téléversement de la 1.7.696 a eu lieu** :
-> `superprint.cc/version.txt` répond **`1.7.696`** ; `app.zigmoon.com/sp213-local.zip` sert
+> 📊 **ÉTAT EN LIGNE, MESURÉ LE 26/10/2026 à 23 h 20 — le téléversement de la 1.7.697 a eu lieu** :
+> `superprint.cc/version.txt` répond **`1.7.697`** ; `app.zigmoon.com/sp213-local.zip` sert
 > **56 872 090 octets**, `Last-Modified Mon, 26 Oct 2026 22:14:17 GMT`, sha256 `cfb8a431…0311e1`
 > **identique** à celui du zip local — et l'archive a été **ouverte**, pas seulement hachée :
-> `public/superprint/version.txt` y dit `1.7.696`, et `app/JS/main.js` y pèse **6 477 468 octets
-> avec zéro CR**. `superprint.cc/app/index.html` porte la 1.7.696 (`data-sp-sw` = `v1.7.696`,
-> `data-sp-js` = `v696`, `JS/main.js?v=20261026-v696-artefacts-alignes`) ; `app/service-worker.js` :
-> `CACHE_NAME = superprint-shell-v1.7.696-artefacts-alignes` ; les pages racine (index, price, faq,
-> documentation, install, api) et `app/documentation.html` sont toutes en 1.7.696. Le plancher peut
-> donc suivre : **1.7.696**.
+> `public/superprint/version.txt` y dit `1.7.697`, et `app/JS/main.js` y pèse **6 477 468 octets
+> avec zéro CR**. `superprint.cc/app/index.html` porte la 1.7.697 (`data-sp-sw` = `v1.7.697`,
+> `data-sp-js` = `v696`, `JS/main.js?v=20261026-v697-theme-sombre-complet`) ; `app/service-worker.js` :
+> `CACHE_NAME = superprint-shell-v1.7.697-theme-sombre-complet` ; les pages racine (index, price, faq,
+> documentation, install, api) et `app/documentation.html` sont toutes en 1.7.697. Le plancher peut
+> donc suivre : **1.7.697**.
 > <br>*(`sp213-studio.html` diffère du dépôt en taille mais **pas** en contenu : identique après
 > normalisation des fins de ligne — aucun écart réel.)*
 >
@@ -132,7 +132,7 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 > porte 331 — c'est un fichier à déposer séparément, il ne suit pas le dossier `superprint/`.
 > Pour npm : le registre est passé à **`latest = 1.0.120`**, publié le **26/10/2026 à 20:40:30 UTC**
 > (la 1.0.119 était du 25/10 à 18:45:55 UTC) — la publication annoncée plus haut a donc fini par
-> aboutir. Le présent paquet est préparé en **1.0.121** avec le plancher à 1.7.696 ; `npm publish`
+> aboutir. Le présent paquet est préparé en **1.0.121** avec le plancher à 1.7.697 ; `npm publish`
 > reste à faire (clé de sécurité WebAuthn + code de 16 chiffres, §3), `npm whoami` répondant
 > **401** sur cette machine.
 >
