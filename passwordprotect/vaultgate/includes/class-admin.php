@@ -661,7 +661,7 @@ wp vaultgate password 'a-new-long-passphrase'</code></pre>
 	 */
 	private function field_checkbox( string $key, string $label, bool $checked, string $description = '', bool $setting = true ): void {
 		$id   = 'vg-' . $key;
-		$name = $setting ? 'vaultgate[' . $key . ']' : $key;
+		$name = $setting ? 'vaultgate[' . $key . ']' : 'vaultgate_' . $key;
 		?>
 		<div class="vg-checkbox-field">
 			<input type="hidden" name="<?php echo esc_attr( $name ); ?>" value="0">

@@ -373,7 +373,8 @@ final class Guard {
 			 *
 			 * @param string $ip Detected IP.
 			 */
-			$ip = (string) apply_filters( 'vaultgate_client_ip', $ip );
+			$filtered = apply_filters( 'vaultgate_client_ip', $ip );
+			$ip       = is_string( $filtered ) ? $filtered : '';
 
 			$this->ip = filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '';
 		}

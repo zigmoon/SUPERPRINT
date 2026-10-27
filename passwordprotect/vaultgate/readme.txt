@@ -30,7 +30,7 @@ VaultGate protects a whole WordPress installation while it is being built or kep
 
 * Strictly escaped output, sanitised input, capability checks and nonces on every admin action.
 * Small, single-responsibility classes: settings, access rules, tokens, rate limiter, guard, admin, CLI.
-* 129 automated assertions ship in the `tests/` directory (unit tests plus a boot/render smoke test).
+* 130 automated assertions ship in the `tests/` directory (unit tests plus a boot/render smoke test).
 * French translation included (`fr_FR`), English source strings, `.pot` catalogue.
 * Uninstall cleanup is opt-in and multisite-aware.
 

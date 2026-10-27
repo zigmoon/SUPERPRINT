@@ -91,6 +91,7 @@ $admin_html = (string) ob_get_clean();
 vg_smoke_assert( str_contains( $admin_html, 'role="tablist"' ), 'admin tabs render' );
 vg_smoke_assert( str_contains( $admin_html, 'name="vaultgate[enabled]"' ), 'master switch renders' );
 vg_smoke_assert( str_contains( $admin_html, 'name="vaultgate_new_password"' ), 'password field renders' );
+vg_smoke_assert( str_contains( $admin_html, 'name="vaultgate_force_logout"' ), 'force-logout field renders with the expected name' );
 vg_smoke_assert( str_contains( $admin_html, 'name="vaultgate[ip_allowlist]"' ), 'IP allowlist renders' );
 vg_smoke_assert( str_contains( $admin_html, 'id="vg-clear-log"' ), 'clear-log form renders' );
 vg_smoke_assert( str_contains( $admin_html, 'id="vg-panel-activity"' ), 'activity panel renders' );

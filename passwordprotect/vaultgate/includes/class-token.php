@@ -40,10 +40,11 @@ final class Token {
 	 * Cookie name, filterable for unusual hosting setups.
 	 */
 	public static function cookie_name(): string {
-		$name = (string) apply_filters( 'vaultgate_cookie_name', self::COOKIE );
+		$name = apply_filters( 'vaultgate_cookie_name', self::COOKIE );
+		$name = is_string( $name ) ? $name : self::COOKIE;
 		$name = preg_replace( '/[^A-Za-z0-9_\-]/', '', $name );
 
-		return '' !== $name ? $name : self::COOKIE;
+		return is_string( $name ) && '' !== $name ? $name : self::COOKIE;
 	}
 
 	/**

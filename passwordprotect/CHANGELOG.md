@@ -18,7 +18,7 @@
 - Constante d’urgence `VAULTGATE_DISABLED` et filtres d’intégration.
 - Traduction française complète, catalogue `.pot`, fichier `.mo` compilé.
 - Nettoyage optionnel à la désinstallation, compatible multisite.
-- 129 assertions automatisées (tests unitaires + test de démarrage et de rendu).
+- 130 assertions automatisées (tests unitaires + test de démarrage et de rendu).
 
 ### Compatibilité
 
