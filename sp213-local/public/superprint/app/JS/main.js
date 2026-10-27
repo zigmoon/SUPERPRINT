@@ -10278,6 +10278,8 @@ window.spTestDiag = function () {
 
     function taquetSousLeCurseur(e) {
         if (_glisser) return null;
+        /* ⚠️ v1.7.698 — pas de saisie d'un taquet que l'on ne voit pas (voir `debutGlisser`). */
+        try { if (!regleEstVisible()) return null; } catch (_) {}
         var c = leCanvas();
         if (!c) return null;
         /* _SP_TAQUET_531_DEBUT — le bloc vient de la sélection, sinon de la règle affichée. */
@@ -10322,6 +10324,46 @@ window.spTestDiag = function () {
 
     function debutGlisser(e) {
         if (e.button !== undefined && e.button !== 0) return;
+        /* ═══════════════════════════════════════════════════════════════════════════
+           v1.7.698 — LA ZONE DE CLIC DES TAQUETS N'EXISTE QUE SI LA RÈGLE EST AFFICHÉE.
+           ═══════════════════════════════════════════════════════════════════════════
+           Retour utilisateur (27/10) : « de façon aléatoire, lorsque je clique sur un
+           bloc texte, parfois le bloc fait apparaître les repères de tabulation qui
+           sont censés n'apparaître que lorsque les tabulations sont sélectionnées.
+           Je travaille à 390 %. »
+
+           ⚠️ CE N'ÉTAIT PAS UN HASARD, ET CE N'ÉTAIT PAS UN DÉFAUT D'AFFICHAGE :
+           C'ÉTAIT LA SAISIE QUI CRÉAIT L'ÉTAT QU'ELLE AFFICHAIT ENSUITE.
+           `majRegleTab` ne dessine la règle que si `regleEstVisible()` est vrai. Mais
+           la SAISIE des taquets est câblée à part, en CAPTURE sur `upperCanvasEl`, et
+           `debutGlisser` ne consultait JAMAIS cette condition : `bandeSousLeCurseur()`
+           ne demande qu'un bloc texte SÉLECTIONNÉ et un point dans la bande. La zone
+           restait donc active alors que RIEN n'était dessiné.
+           Un appui dans cette zone invisible posait un taquet, écrivait
+           `_spTabs.active = true`, et c'est CETTE écriture qui faisait apparaître la
+           règle juste après — d'où le symptôme « le bloc fait apparaître les repères ».
+           Le « parfois » vient de là : il faut viser une bande qui n'a aucun repère.
+
+           MESURÉ, à 390 %, aucun mode tabulation, bloc texte sélectionné :
+               clic 40 px AU-DESSUS du bord haut   → 1 taquet posé, règle affichée
+               clic 20 px au-dessus / 8 px / dedans → rien (hors zone)
+           La zone fautive est asymétrique : la bande s'étend de `-8/zoom` px au-dessus
+           de son bord haut jusqu'à `REGLE_H + 2 = 19` px en dessous, et son bord haut
+           est à `REGLE_GAP = 9` px au-dessus du bloc — soit, à 390 %, une quarantaine
+           de pixels d'écran AU-DESSUS du bloc, sans le moindre trait pour le signaler.
+
+           ⚠️ POURQUOI LA GARDE EST ICI ET PAS SEULEMENT DANS `bandeSousLeCurseur` :
+           c'est ce point d'entrée qui écrit dans le document. Une garde posée plus bas
+           laisserait passer tout futur appelant. Elle est AUSSI posée dans les deux
+           fonctions de visée, pour que le curseur ↔ ne s'affiche pas non plus sur une
+           règle absente (voir `bandeSousLeCurseur` et `taquetSousLeCurseur`).
+
+           ⚠️ ET LA CONSOMMATION DE L'ÉVÉNEMENT N'EST PAS PERDUE : le commentaire plus
+           bas (« un appui sur la règle n'est jamais un appui dans le vide ») protège
+           une règle VISIBLE de la désélection. Ici la règle ne l'est pas : laisser
+           Fabric traiter le clic normalement est exactement ce qu'il faut, sinon un
+           clic au-dessus d'un bloc cesserait de le sélectionner. */
+        try { if (!regleEstVisible()) return; } catch (_) {}
         var hit = null;
         /* _SP_TAQUET_531_DEBUT — ON PRÉPARE LE TERRAIN AVANT DE TESTER LA SAISIE : la règle
            peut être en retard (zoom, sélection reconstruite, marques perdues) ; on repère
@@ -10522,6 +10564,11 @@ window.spTestDiag = function () {
     /* _SP_TAB_505_DEBUT — LE POINT EST-IL SUR LA BANDE (donc pas dans le texte) ?
        Renvoie la position en millimètres, aimantée au 1/2 mm comme le glisser. */
     function bandeSousLeCurseur(e) {
+        /* ⚠️ v1.7.698 — PAS DE VISÉE SANS RÈGLE AFFICHÉE (voir `debutGlisser`).
+           Sans cette garde, la bande restait « cliquable » alors qu'elle n'était pas
+           dessinée : un appui au-dessus du bloc posait un taquet, et ce taquet faisait
+           apparaître la règle — le défaut rapporté. */
+        try { if (!regleEstVisible()) return null; } catch (_) {}
         var c = leCanvas();
         if (!c) return null;
         var obj = blocsTexte()[0] || (_regle && _regle._spOwner) || null;
@@ -32610,9 +32657,30 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 if (!obj || !obj._spTabs) return false;
                 var t = obj._spTabs;
                 if (!t.active) return false;
-                var aDesTaquets = !!(t.stops && t.stops.length);
+                /* ═══════════════════════════════════════════════════════════════════════
+                   v1.7.698 — LA CONDITION ÉTAIT TROP ÉTROITE, ET LAISSAIT PASSER
+                   EXACTEMENT LE CAS QUI SE PRODUISAIT EN VRAI.
+
+                   v1.7.692 exigeait « aucun taquet ET aucune tabulation ». Or un clic
+                   accidentel sur la bande invisible (voir `debutGlisser`) posait
+                   TOUJOURS UN TAQUET : le bloc ressortait donc avec `active: true`
+                   ET `stops.length === 1`, ce qui satisfaisait la condition d'origine
+                   et restait « en mode tabulation » pour toujours, fichier compris.
+
+                   LE CRITÈRE QUI PORTE, C'EST LA TABULATION DANS LE TEXTE, PAS LES
+                   TAQUETS. Des taquets sans le moindre caractère `\t` ne peuvent rien
+                   aligner : la règle ne montre qu'une règle. On considère donc comme
+                   résidu tout `active` sans tabulation, même s'il reste des taquets —
+                   et on NE SUPPRIME PAS les taquets (c'est de la donnée posée par
+                   l'utilisateur, elle peut servir à préparer un alignement).
+
+                   ⚠️ CE QUI RESTE RESPECTÉ : un bloc dont le texte CONTIENT une
+                   tabulation garde son état — là, la règle dit quelque chose de vrai.
+                   Rouvrir le panneau Tabulation réaffiche la règle dans tous les cas,
+                   et la case « Taquets actifs sur le bloc » reste le geste explicite.
+                   ═══════════════════════════════════════════════════════════════════ */
                 var aUneTabulation = ((obj.text || '').indexOf('\t') >= 0);
-                return !aDesTaquets && !aUneTabulation;
+                return !aUneTabulation;
             } catch (_) { return false; }
         }
 
@@ -36142,7 +36210,26 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         return;
     }
 
-    if (cmdOrCtrl && (e.key === 'h' || e.key === 'H')) {
+    /* ⚠️ v1.7.698 — Ctrl+Shift+H SURLIGNE ; C'ÉTAIT LA RECHERCHE QUI S'OUVRAIT.
+       Le test ci-dessous (`e.key === 'h' || e.key === 'H'`) attrapait AUSSI
+       Ctrl+Shift+H, puisque Maj produit un « H » majuscule : le raccourci
+       annoncé dans l'interface (panneau Raccourcis), dans documentation.html
+       et dans llms-full.txt ouvrait Rechercher & Remplacer au lieu de
+       surligner. MESURÉ dans le navigateur, texte sélectionné : après
+       Ctrl+Shift+H, `#findReplacePanel` était affiché et `textBackgroundColor`
+       restait vide — le surlignage n'était jamais posé.
+       Le surlignage EXISTE pourtant déjà : c'est le bouton « Surlignage » de
+       la colonne de droite, qui appelle `applyTextStyleToSelection('highlight')`
+       (Fabric, `textBackgroundColor`, par caractère). On lui donne donc la
+       touche que la documentation promet, et le branchement de recherche est
+       réservé à Ctrl+H SANS Maj. */
+    if (cmdOrCtrl && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        try { applyTextStyleToSelection('highlight'); } catch (_) {}
+        return;
+    }
+
+    if (cmdOrCtrl && !e.shiftKey && (e.key === 'h' || e.key === 'H')) {
         e.preventDefault();
         openFindReplace(true);
         return;

@@ -9,6 +9,34 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.698] — 2026-10-27
+
+_Cliquer sur un bloc texte ne fait plus apparaître les repères de tabulation : la zone de clic de la règle n'existe que quand la règle est affichée_
+
+> **Pourquoi cette version existe.** Retour utilisateur : « de façon aléatoire, lorsque je clique sur un bloc texte, parfois le bloc fait apparaître les repères de tabulation qui sont censés n'apparaître que lorsque les tabulations sont sélectionnées. Je travaille à 390 %. » Le défaut a été **reproduit**, puis **corrigé à sa cause** — et non à l'affichage.
+
+### Fixed — la saisie des taquets créait l'état qu'elle affichait ensuite
+
+- **La zone de clic de la règle des taquets restait active alors que la règle n'était pas dessinée.** `majRegleTab` ne dessine la règle que si `regleEstVisible()` est vrai (panneau Tabulation fermé **et** `bloc._spTabs.active` faux → rien à l'écran). Mais la saisie est câblée à part, en capture sur `upperCanvasEl`, et `debutGlisser()` ne consultait **jamais** cette condition : `bandeSousLeCurseur()` ne demande qu'un bloc texte sélectionné et un point dans la bande. Un appui dans cette zone invisible posait un taquet, écrivait `_spTabs.active = true`, et **c'est cette écriture qui faisait apparaître la règle juste après**. D'où le « parfois » : il faut viser une bande qui n'a aucun repère.
+- **Mesuré à 390 %**, aucun mode tabulation, bloc texte sélectionné : un clic **40 px au-dessus du bord haut** du bloc posait 1 taquet et affichait la règle. La zone est asymétrique — de `-8/zoom` px au-dessus du bord de la bande jusqu'à `REGLE_H + 2 = 19` px en dessous, le bord de la bande étant à `REGLE_GAP = 9` px au-dessus du bloc — soit une quarantaine de pixels d'écran au-dessus du bloc, sans le moindre trait pour le signaler. À 100 %, la même zone n'existe presque pas : le zoom n'est pas la cause, il rend le défaut atteignable.
+- **Garde posée à trois endroits** : `debutGlisser` (le seul point qui écrit dans le document), `bandeSousLeCurseur` et `taquetSousLeCurseur` (pour que le curseur ↔ ne s'affiche pas non plus sur une règle absente). Quand la règle n'est pas affichée, l'événement n'est **pas** consommé : Fabric traite le clic normalement, donc un clic au-dessus d'un bloc continue de le sélectionner.
+- **Vérifié après correctif** : les six positions testées autour du bloc ne posent plus rien, **et** le panneau Tabulation ouvert, un clic sur la règle pose toujours un taquet et l'affiche — le correctif ne supprime pas la fonction.
+- **Scénario multi-page écarté par la mesure** : un bloc à taquets sur la page 1 ne fait dessiner aucune règle sur la page 2 (le module balaie tous les canevas à la recherche d'un objet actif ; on a vérifié qu'il ne fuit pas d'une planche à l'autre).
+
+### Fixed — les documents déjà abîmés sont soignés à l'ouverture
+
+- Le correctif ci-dessus empêche de **créer** l'état fautif ; il ne nettoie pas les fichiers qui le portent déjà, puisque les clics passés ont enregistré `_spTabs = { active: true, stops: [un taquet] }` dans les documents. Rouverts, ces blocs affichaient la règle à chaque sélection — le symptôme aurait donc continué.
+- **La condition de nettoyage de la 1.7.692 était trop étroite** : elle exigeait « aucun taquet **et** aucune tabulation ». Or un clic accidentel posait toujours **un** taquet, donc le bloc satisfaisait la condition et restait « en mode tabulation » pour toujours.
+- **Le bon critère est la tabulation dans le texte, pas les taquets** : des taquets sans le moindre caractère de tabulation ne peuvent rien aligner, la règle ne montre qu'une règle. Tout `active` sans tabulation est désormais traité comme un résidu — **les taquets sont conservés** (c'est de la donnée posée par l'utilisateur).
+- **Un bloc dont le texte contient une tabulation garde son état** : là, la règle dit quelque chose de vrai. Vérifié sur trois cas (1 taquet, 2 taquets, 1 taquet + tabulation).
+
+### Fixed — Ctrl+Shift+H surligne enfin
+
+- Le raccourci annoncé par l'interface, `documentation.html`, le panneau Raccourcis **et** `llms-full.txt` (« Highlight selection — Ctrl+Shift+H ») ouvrait **Rechercher & Remplacer** : le gestionnaire testait `e.key === 'h' || e.key === 'H'`, et Maj produit un « H ». Mesuré, texte sélectionné : après Ctrl+Shift+H, le panneau de recherche s'affichait et `textBackgroundColor` restait vide.
+- Le surlignage existait pourtant déjà (bouton « Surlignage » de la colonne de droite → `applyTextStyleToSelection('highlight')`, par caractère). Il reçoit la touche que la documentation promet ; la recherche est réservée à Ctrl+H **sans** Maj. Vérifié : 16 caractères surlignés en `#ffff00`, et le panneau de recherche ne s'ouvre plus.
+
+---
+
 ## [1.7.697] — 2026-10-26
 
 _Le thème sombre atteint les panneaux pour lesquels il n'avait jamais été écrit, le japonais cesse d'afficher de l'anglais, et le Studio cesse de retraduire les documents qu'il devait laisser passer tels quels_
