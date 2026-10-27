@@ -180,8 +180,8 @@ php -S 127.0.0.1:8450 tests/preview-router.php
 Résultat attendu :
 
 ```text
-106 passed, 0 failed
-20 passed, 0 failed
+109 passed, 0 failed
+21 passed, 0 failed
 ```
 
 ### Construire l’archive
