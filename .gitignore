@@ -17,10 +17,6 @@
 # Linux, que Windows ne peut pas fabriquer. Sans ce dossier dans le depot, il n'y
 # a pas de paquet macOS ni Linux a telecharger.
 !/.github/
-# VaultGate : extension WordPress autonome, livree avec son archive installable.
-# Dossier produit independant, hors de l'application SuperPrint.
-!/passwordprotect/
-!/passwordprotect/**
 
 # PDF-YZ a son propre depot : https://github.com/zigmoon/PDF-YZ
 # Il n'est volontairement PAS liste ici. Un sous-module avait ete essaye, mais il
@@ -45,9 +41,6 @@
 
 **/node_modules/
 **/dist/
-# L'archive installable de VaultGate est un livrable volontairement versionne.
-!/passwordprotect/dist/
-!/passwordprotect/dist/*.zip
 **/.vite/
 **/coverage/
 **/*.log
