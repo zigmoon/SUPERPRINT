@@ -408,12 +408,12 @@ final class Guard {
 	/**
 	 * Keeps search engines out while the gate is active.
 	 *
-	 * @param string $output Robots.txt content.
-	 * @param bool   $public Whether the site is public.
+	 * @param mixed $output Robots.txt content.
+	 * @param mixed $public Whether the site is public.
 	 */
-	public function filter_robots_txt( string $output, bool $public ): string {
+	public function filter_robots_txt( $output, $public ): string {
 		if ( ! $this->settings->is_enabled() ) {
-			return $output;
+			return is_string( $output ) ? $output : (string) $output;
 		}
 
 		return "User-agent: *\nDisallow: /\n";
