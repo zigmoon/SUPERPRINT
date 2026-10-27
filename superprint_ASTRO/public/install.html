@@ -278,6 +278,48 @@
   }
   .cmd-block:hover + .cmd-hint, .cmd-hint:hover { display: block; }
 
+  /* ─── Note macOS : PREMIER LANCEMENT D'UN .dmg NON SIGNÉ ───
+     ⚠️ ELLE N'APPARAÎT QUE SOUS L'ONGLET MACOS (voir `applyGkNote`). Un
+     visiteur Windows n'a rien à faire de cette procédure, et une note toujours
+     visible sur une page d'installation ressemble à un défaut du produit.
+     ⚠️ POURQUOI ELLE EXISTE : les installeurs .dmg ne sont signés que
+     AD-HOC (mesuré sur le binaire arm64 de la 1.7.697 : LC_CODE_SIGNATURE
+     présent, AUCUN blob CMS). L'application DÉMARRE donc, mais Gatekeeper
+     affiche « développeur non identifié » au premier lancement. Signer
+     vraiment impose l'Apple Developer Program (99 $/an) — décision prise de
+     ne pas le payer pour l'instant, donc on explique la manœuvre au lieu de
+     laisser l'utilisateur devant un dialogue qu'il ne comprend pas.
+     ⚠️ `hidden` EN ATTRIBUT ET PAS SEULEMENT EN CSS : si le script ne tourne
+     pas (page ouverte sans JS), la note reste invisible plutôt que de
+     s'afficher sans sa mise en forme. */
+  .gk-note {
+    margin-top: 14px; padding: 12px 14px;
+    background: var(--panel2, var(--code-bg)); border: 1px solid var(--code-border);
+    border-left: 3px solid var(--accent);
+    font-size: 12px; color: var(--muted); line-height: 1.55;
+  }
+  .gk-note[hidden] { display: none; }
+  .gk-note .gk-title {
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text); font-weight: 700; margin-bottom: 7px;
+  }
+  .gk-note p { margin: 0 0 8px; }
+  .gk-note p:last-of-type { margin-bottom: 10px; }
+  .gk-note b { color: var(--text); font-weight: 600; }
+  .gk-note code {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px;
+    color: var(--text); background: var(--code-bg); padding: 1px 5px;
+  }
+  .gk-note .gk-cmd-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    padding: 6px 6px 6px 10px;
+  }
+  .gk-note .gk-cmd-row code {
+    flex: 1; background: none; padding: 4px 0; white-space: nowrap;
+    overflow-x: auto; font-size: 11.5px;
+  }
+
   .or-sep { display: flex; align-items: center; gap: 14px; margin: 26px 0 20px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
   .or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
@@ -920,6 +962,38 @@ html[lang="ja"] .inline-ja { display: inline; }
       </div>
       <!-- Hint contextuel : masque par defaut, revele au survol de la barre. -->
       <span class="cmd-hint" id="installHint">PowerShell · npx.cmd contourne le blocage de scripts (ExecutionPolicy)</span>
+
+      <!-- ⚠️ macOS — LE .dmg N'EST PAS SIGNÉ PAR UN CERTIFICAT APPLE, ET ÇA SE DIT.
+           Mesuré sur le binaire arm64 de la 1.7.697 : LC_CODE_SIGNATURE présent
+           (signature ad-hoc posée par l'éditeur de liens), AUCUN blob CMS — donc
+           aucun certificat. Conséquence réelle : l'application DÉMARRE, mais
+           Gatekeeper affiche « développeur non identifié » au premier lancement.
+           Signer vraiment et notariser impose l'Apple Developer Program (99 $/an) :
+           ce n'est pas payé pour l'instant, on explique donc la manœuvre.
+           ⚠️ LA PROCÉDURE A CHANGÉ AVEC macOS 15 (Sequoia) : le clic droit → Ouvrir
+           ne suffit PLUS, il faut passer par Réglages Système → Confidentialité et
+           sécurité → « Ouvrir quand même ». Donner les deux, et dire laquelle
+           s'applique à quelle version, est la seule façon d'être utile aux deux.
+           ⚠️ `xattr -dr` EST L'AUTRE VOIE, en une ligne : elle retire le drapeau de
+           quarantaine, donc Gatekeeper n'inspecte même plus l'application. C'est la
+           seule des trois qui ne demande aucun clic dans un dialogue système — d'où
+           le bouton « copier », qui a besoin de `data-copy="gkCmd"` (cf. le
+           correctif du gestionnaire de copie dans le script).
+           ⚠️ LA NOTE NE CONCERNE PAS `npx superprint`, qui n'est pas téléchargé avec
+           un drapeau de quarantaine : c'est écrit dans le texte, sinon la note passe
+           pour un avertissement général sur le produit. -->
+      <div class="gk-note" id="gkNote" hidden>
+       <div class="gk-title" data-i18n="gkTitle">macOS · first launch</div>
+       <p data-i18n="gkBody" data-i18n-html="1">The <b>.dmg</b> installers are not signed with an Apple certificate yet, so macOS reports an unidentified developer the first time you open the app. <b>Once only</b>, pick one of these:</p>
+       <p data-i18n="gkSteps" data-i18n-html="1">• <b>macOS 14 or earlier</b>: right-click the app → <b>Open</b> → <b>Open</b>.<br>• <b>macOS 15 (Sequoia) and later</b>: right-click does not work any more — open System Settings → <b>Privacy &amp; Security</b>, scroll down, then <b>Open Anyway</b> and authenticate.<br>• <b>Or in Terminal</b>, which skips the dialog altogether:</p>
+       <div class="gk-cmd-row">
+        <code id="gkCmd">xattr -dr com.apple.quarantine /Applications/SuperPrint.app</code>
+        <button class="btn btn-copy" data-copy="gkCmd" title="Copy the command" aria-label="Copy the command" data-i18n-title="copyCmd" data-i18n-aria="copyCmd">
+         <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M15 5H6a1 1 0 0 0-1 1v9"/></svg>
+        </button>
+       </div>
+       <p data-i18n="gkScope" data-i18n-html="1">This affects the downloaded <b>.dmg</b> only — <code>npx superprint</code> is not concerned.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -1118,6 +1192,14 @@ html[lang="ja"] .inline-ja { display: inline; }
       installTitle: 'Install locally',
       installDesc: 'Copy-paste this line: it downloads, installs and launches SuperPrint.',
       copyCmd: 'Copy the command',
+      /* Note macOS : le .dmg n'est signé qu'en ad-hoc (aucun certificat Apple).
+         Les trois clés sont aussi dans fr et ja — les oublier laisserait la note
+         en anglais pour un visiteur français, exactement le défaut corrigé dans
+         l'application à la même version. */
+      gkTitle: 'macOS · first launch',
+      gkBody: 'The <b>.dmg</b> installers are not signed with an Apple developer certificate yet, so macOS reports an <b>unidentified developer</b> the first time you open the app. <b>Once only</b>, pick one of these:',
+      gkSteps: '• <b>macOS 14 or earlier</b>: right-click the app → <b>Open</b> → <b>Open</b>.<br>• <b>macOS 15 (Sequoia) and later</b>: right-click no longer works — open System Settings → <b>Privacy &amp; Security</b>, scroll down, then <b>Open Anyway</b> and authenticate.<br>• <b>Or in Terminal</b>, which skips the dialog altogether:',
+      gkScope: 'This concerns the downloaded <b>.dmg</b> only — <code>npx superprint</code> is not affected.',
       orLocal: 'or install locally',
       onlineLabel: 'Online',
       editorSub: 'No installation — runs in the browser',
@@ -1155,6 +1237,10 @@ html[lang="ja"] .inline-ja { display: inline; }
       installTitle: 'Installer en local',
       installDesc: 'Copiez-collez cette ligne : elle télécharge, installe puis lance SuperPrint.',
       copyCmd: 'Copier la commande',
+      gkTitle: 'macOS · premier lancement',
+      gkBody: 'Les installeurs <b>.dmg</b> ne portent pas encore de certificat développeur Apple : macOS signale un <b>développeur non identifié</b> au premier lancement. <b>Une seule fois</b>, choisissez l\'une de ces méthodes :',
+      gkSteps: '• <b>macOS 14 ou antérieur</b> : clic droit sur l\'application → <b>Ouvrir</b> → <b>Ouvrir</b>.<br>• <b>macOS 15 (Sequoia) et ultérieur</b> : le clic droit ne suffit plus — ouvrez Réglages Système → <b>Confidentialité et sécurité</b>, faites défiler, puis <b>Ouvrir quand même</b> et authentifiez-vous.<br>• <b>Ou en Terminal</b>, ce qui évite complètement le dialogue :',
+      gkScope: 'Cela ne concerne que le <b>.dmg</b> téléchargé — <code>npx superprint</code> n\'est pas touché.',
       orLocal: 'ou installer en local',
       onlineLabel: 'En ligne — aucune installation',
       editorSub: 'Aucune installation — fonctionne dans le navigateur',
@@ -1192,6 +1278,10 @@ html[lang="ja"] .inline-ja { display: inline; }
       installTitle: 'ローカルにインストール',
       installDesc: 'この行をコピー＆ペーストしてください：ダウンロード、インストール、起動まで行います。',
       copyCmd: 'コマンドをコピー',
+      gkTitle: 'macOS · 初回起動',
+      gkBody: '<b>.dmg</b> インストーラにはまだ Apple の開発者証明書が付いていません。そのため初回起動時に macOS が<b>「開発元を確認できません」</b>と表示します。<b>一度だけ</b>、次のいずれかを行ってください：',
+      gkSteps: '• <b>macOS 14 以前</b>：アプリを右クリック → <b>開く</b> → <b>開く</b>。<br>• <b>macOS 15（Sequoia）以降</b>：右クリックでは開けません。システム設定 → <b>プライバシーとセキュリティ</b> を開き、下へスクロールして <b>このまま開く</b> を押し、認証します。<br>• <b>またはターミナルで</b>（ダイアログ自体を回避できます）：',
+      gkScope: '対象はダウンロードした <b>.dmg</b> のみです — <code>npx superprint</code> は該当しません。',
       orLocal: 'またはローカルにインストール',
       onlineLabel: 'オンライン — インストール不要',
       editorSub: 'インストール不要 — ブラウザで動作',
@@ -1357,6 +1447,21 @@ html[lang="ja"] .inline-ja { display: inline; }
     var hints = INSTALL_HINTS[key] || {};
     $('installHint').textContent = hints[getHomeLang()] || hints.en || '';
     setOsIcon(key);
+    applyGkNote(key);
+  }
+
+  /* ⚠️ LA NOTE macOS N'EST AFFICHÉE QUE SOUS L'ONGLET MACOS.
+     Elle explique comment ouvrir un .dmg non signé par un certificat Apple (le
+     binaire arm64 porte une signature ad-hoc, aucun certificat : Gatekeeper
+     réclame une confirmation au premier lancement). Un visiteur Windows ou
+     Linux n'a rien à faire de cette procédure — la lui montrer ferait passer le
+     produit pour douteux, et noierait la seule information utile de la page.
+     ⚠️ `hidden` EST POSÉ EN ATTRIBUT dans le HTML : si ce script ne tourne pas,
+     la note reste invisible plutôt que de s'afficher sans son contexte. */
+  function applyGkNote(os) {
+    var note = document.getElementById('gkNote');
+    if (!note) return;
+    note.hidden = (os !== 'mac');
   }
 
   document.querySelectorAll('.cmd-tab').forEach(function (tab) {
@@ -1368,6 +1473,7 @@ html[lang="ja"] .inline-ja { display: inline; }
       var hints = INSTALL_HINTS[os] || {};
       $('installHint').textContent = hints[getHomeLang()] || hints.en || '';
       setOsIcon(os);
+      applyGkNote(os);
     });
   });
 
@@ -1376,7 +1482,16 @@ html[lang="ja"] .inline-ja { display: inline; }
 
   document.querySelectorAll('[data-copy]').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var text = $('installCmd').textContent.trim();
+      /* ⚠️ v1.7.697 — LE BOUTON COPIAIT TOUJOURS `installCmd`.
+         Le gestionnaire lisait `$('installCmd')` en dur, sans jamais regarder
+         l'attribut `data-copy` du bouton. Tant qu'il n'existait qu'un seul
+         bouton, personne ne pouvait le voir ; la note macOS en ajoute un
+         second (la commande `xattr`), qui aurait donc copié `npx superprint`
+         — un bouton qui copie autre chose que ce qu'il affiche. On lit
+         maintenant la cible dans l'attribut, avec `installCmd` en repli. */
+      var cible = btn.getAttribute('data-copy');
+      var source = (cible && $(cible)) || $('installCmd');
+      var text = source ? source.textContent.trim() : '';
       var oldHTML = btn.innerHTML;
       var done = function () {
         btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg>';
