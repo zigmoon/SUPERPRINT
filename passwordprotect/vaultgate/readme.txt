@@ -92,7 +92,7 @@ Yes. Settings are per site. Network activation is supported; uninstall cleanup r
 
 = Which PHP versions are supported? =
 
-PHP 8.2 and newer, including PHP 8.3, 8.4 and 8.5. The code uses typed properties, `match`-free straightforward control flow and no deprecated APIs.
+PHP 8.2 and newer, including PHP 8.3, 8.4 and 8.5. The code uses typed properties, straightforward control flow and no deprecated APIs. The included test suite is run under PHP 8.3 and PHP 8.5.
 
 = Is the gate page accessible? =
 

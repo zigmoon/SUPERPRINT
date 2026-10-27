@@ -7,7 +7,7 @@
 
 VaultGate verrouille **tout** un site WordPress derrière un mot de passe unique, le temps de le construire ou de le garder privé. La page de garde est autonome, accessible, sans dépendance externe, et se pilote entièrement depuis **Réglages → VaultGate**.
 
-> **Qualité et versions récentes.** Le code cible WordPress **6.5 → 7.1** (dernière version stable : 7.1.3 au 27/10/2026) et PHP **8.2 → 8.5** (dernière version stable : 8.5.12). Aucune API dépréciée, aucun build Composer/npm, aucune requête tierce. La suite fournie exécute **130 assertions** (unitaires + démarrage/rendu de l’extension) sous PHP 8.3, et le code n’utilise aucune fonction retirée ou dépréciée en 8.4/8.5.
+> **Qualité et versions récentes.** Le code cible WordPress **6.5 → 7.1** (dernière version stable : 7.1.3 au 27/10/2026) et PHP **8.2 → 8.5** (dernière version stable : 8.5.12). Aucune API dépréciée, aucun build Composer/npm, aucune requête tierce. La suite fournie exécute **130 assertions** (unitaires + démarrage/rendu de l’extension) sous **PHP 8.3.36 et PHP 8.5.12**, et le code n’utilise aucune fonction retirée ou dépréciée en 8.4/8.5.
 
 ---
 

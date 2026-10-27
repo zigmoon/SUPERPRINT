@@ -23,5 +23,5 @@
 ### Compatibilité
 
 - WordPress 6.5 à 7.1.
-- PHP 8.2 à 8.5.
+- PHP 8.2 à 8.5, tests exécutés sous PHP 8.3.36 et PHP 8.5.12.
 - Aucune dépendance Composer/npm, aucune ressource externe, aucun appel réseau.
