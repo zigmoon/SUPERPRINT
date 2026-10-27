@@ -578,7 +578,7 @@ final class Guard {
 	private function csp_nonce(): string {
 		try {
 			return base64_encode( random_bytes( 18 ) );
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return wp_generate_password( 24, false, false );
 		}
 	}

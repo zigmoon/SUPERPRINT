@@ -90,7 +90,7 @@ defined( 'ABSPATH' ) || exit;
 				</svg>
 			</button>
 
-			<div class="vg-hp" aria-hidden="true">
+			<div class="vg-hp" aria-hidden="true" inert>
 				<label for="vg-website"><?php esc_html_e( 'Website', 'vaultgate' ); ?></label>
 				<input id="vg-website" type="text" name="vaultgate_website" value="" tabindex="-1" autocomplete="off">
 			</div>
