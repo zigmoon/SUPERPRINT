@@ -68,10 +68,10 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //      visé : il refuse un zip plus ancien servi par erreur, sans jamais bloquer
 //      une version plus récente.
 //    ⚠️ RESTE EN RETARD, ET CE N'EST PAS LE PLANCHER : release.html sur
-//      app.zigmoon.com s'arrête à la 1.7.694 (329 blocs ; le dépôt en porte 331,
-//      avec 1.7.695 et 1.7.696). C'est un fichier à déposer SÉPARÉMENT : il ne
-//      suit pas le dossier superprint/. Les notes de version sont en retard sur
-//      les fichiers, pas l'inverse.
+//      app.zigmoon.com s'arrête à la 1.7.694 (329 blocs ; le dépôt en porte 332,
+//      avec 1.7.695, 1.7.696 et 1.7.697). C'est un fichier à déposer SÉPARÉMENT :
+//      il ne suit pas le dossier superprint/. Les notes de version sont en retard
+//      sur les fichiers, pas l'inverse.
 //    ⚠️ CE QUE FAIT RÉELLEMENT LE PLANCHER, dit exactement : `onlineVersion` est le
 //      MAXIMUM entre `version.txt` et cette constante. C'est donc `version.txt` qui
 //      déclenche les mises à jour, et le plancher qui REFUSE un zip trop ancien —
