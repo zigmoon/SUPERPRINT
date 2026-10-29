@@ -62,7 +62,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ0MkZDQkUxOTRFRDYxNjcKUldSblllMlU0Y3N2UkNwK1Q3ZXRFSzlmQ2RtQW5YUjg5SlFBakxydklCQklyVXlvdzBSckc0RWkK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDAxNTQ1QTBGNDc4ODM1N0YKUldSL05ZaEhEMXBVQVU2SlZJNjVuNU5vZFVWbTFuWUJpSlhDL2JKRDVqcThyQm92TU9ZQWc3VFMK"
     }
   }
 }
