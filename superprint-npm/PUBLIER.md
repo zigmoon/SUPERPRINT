@@ -34,7 +34,7 @@ npm login --auth-type=web
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.120** — mesuré le 29/10/2026 à 21 h 35 sur le registre ; les 1.0.121, 1.0.122 et 1.0.123 ont été préparées mais **n'ont jamais été publiées**, le présent paquet porte donc 1.0.124).
+C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.120** — mesuré le 29/10/2026 à 21 h 35 sur le registre ; les 1.0.121, 1.0.122 et 1.0.123 ont été préparées mais **n'ont jamais été publiées**, le présent paquet porte donc 1.0.125).
 
 > 🔑 **MESURÉ LE 15/10/2026 — LA PUBLICATION EXIGE UNE CLÉ DE SÉCURITÉ, ET UN CODE DE 16 CHIFFRES.**
 > Ce compte a une 2FA de type **clé de sécurité** (WebAuthn), **pas** un code TOTP à 6 chiffres : `npm publish`
@@ -106,26 +106,26 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.700`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `version.txt` | Version en ligne (`1.7.701`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 
 > 📦 Le zip est régénéré par **`node tools/make-release-zip.mjs`** (depuis la racine du repo : il crée `superprint/sp213-local.zip` puis contrôle le résultat). ⚠️ Le script est **suivi par git** — celui-ci et non un script de `_dev/`, qui est ignoré et n'existerait pas sur une autre machine. Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
-> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.700** — celui de la version **réellement déployée**, vérifié dans l'archive téléchargée. Rappel de la mécanique : le CLI prend le **plus récent** des deux (`newestVersion(version.txt, MIN_APP_VERSION)`), donc un plancher **en retard** accepte tout ce qui est plus nouveau — il ne bloque personne ; un plancher **en avance**, lui, bloque tout le monde.
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.701** — celui de la version **réellement déployée**, vérifié dans l'archive téléchargée. Rappel de la mécanique : le CLI prend le **plus récent** des deux (`newestVersion(version.txt, MIN_APP_VERSION)`), donc un plancher **en retard** accepte tout ce qui est plus nouveau — il ne bloque personne ; un plancher **en avance**, lui, bloque tout le monde.
 >
-> 📊 **ÉTAT RÉEL LE 29/10/2026 À 21 h 35 — LA 1.7.700 EST EN LIGNE, ET C'EST MESURÉ.**
-> `superprint.cc/version.txt` répond **`1.7.700`** ; `superprint.cc/app/index.html` porte
-> `data-sp-js="v700"` et `data-sp-sw="v1.7.700"` ; `superprint.cc/app/JS/main.js` fait
+> 📊 **ÉTAT RÉEL LE 29/10/2026 À 21 h 35 — LA 1.7.701 EST EN LIGNE, ET C'EST MESURÉ.**
+> `superprint.cc/version.txt` répond **`1.7.701`** ; `superprint.cc/app/index.html` porte
+> `data-sp-js="v701"` et `data-sp-sw="v1.7.701"` ; `superprint.cc/app/JS/main.js` fait
 > **6 517 006 octets**, sha256 `2FE94B24…56FAF40`, **identique au fichier du dépôt** ; et
 > `app.zigmoon.com/sp213-local.zip` sert **56 895 642 octets**, sha256 `9D3088FB…42D5C0A9`,
-> **identique au zip local**. L'archive dit `1.7.700` dans son `public/superprint/version.txt`,
+> **identique au zip local**. L'archive dit `1.7.701` dans son `public/superprint/version.txt`,
 > et son `app/JS/main.js` est le même fichier que la source : ce n'est pas une empreinte
 > supposée, c'est le même octet. Aucun `node_modules` dans l'archive.
-> **C'est cette mesure-là — et elle seule — qui autorise le plancher à 1.7.700.**
+> **C'est cette mesure-là — et elle seule — qui autorise le plancher à 1.7.701.**
 > ⚠️ **CE PARAGRAPHE EST RÉÉCRIT À LA MAIN À CHAQUE LIVRAISON.** Le script de bump remplace le
-> numéro de version partout, y compris dans cette prose : il venait encore d'écrire « LA 1.7.700 EST
-> EN LIGNE » alors que rien n'était déposé — et il l'a réécrite pour la 1.7.700 avant que la 1.7.700
+> numéro de version partout, y compris dans cette prose : il venait encore d'écrire « LA 1.7.701 EST
+> EN LIGNE » alors que rien n'était déposé — et il l'a réécrite pour la 1.7.701 avant que la 1.7.701
 > ne soit déposée. **Après chaque bump, relire ce bloc et le remettre sur des mesures réelles** —
 > c'est la seule partie du fichier que le script ne peut pas mesurer. (`cli.mjs` est dans la liste
 > d'exclusion du bump : ses mesures, elles, restent justes.)
@@ -137,20 +137,20 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 > Pour npm : **`latest = 1.0.120`**, et c'est la version la plus HAUTE du registre — les 1.0.121,
 > 1.0.122 et 1.0.123 ont été préparées localement mais **jamais publiées** (mesuré le 29/10/2026 à
 > 21 h 35 sur `registry.npmjs.org/superprint` : `versions` s'arrête à 1.0.120, `dist-tags.latest`
-> vaut 1.0.120). Le présent paquet est préparé en **1.0.124** avec le plancher à **1.7.700** —
+> vaut 1.0.120). Le présent paquet est préparé en **1.0.125** avec le plancher à **1.7.701** —
 > désormais **la version réellement en ligne ET réellement dans le zip**, voir la mesure ci-dessous.
 > Il est publiable **tel quel**. `npm publish` reste à faire (clé de sécurité WebAuthn + code de
 > 16 chiffres, §3), `npm whoami` répondant **401** sur cette machine.
 >
-> 📊 **ÉTAT EN LIGNE, MESURÉ LE 29/10/2026 à 21 h 35 — le téléversement de la 1.7.700 a eu lieu** :
-> `superprint.cc/version.txt` répond **`1.7.700`** ; `superprint.cc/app/index.html` porte
-> `data-sp-js="v700"` et `data-sp-sw="v1.7.700"` ; `superprint.cc/app/JS/main.js` fait
+> 📊 **ÉTAT EN LIGNE, MESURÉ LE 29/10/2026 à 21 h 35 — le téléversement de la 1.7.701 a eu lieu** :
+> `superprint.cc/version.txt` répond **`1.7.701`** ; `superprint.cc/app/index.html` porte
+> `data-sp-js="v701"` et `data-sp-sw="v1.7.701"` ; `superprint.cc/app/JS/main.js` fait
 > **6 517 006 octets**, sha256 `2FE94B24…56FAF40`, **identique** au fichier du dépôt ; et
 > `app.zigmoon.com/sp213-local.zip` sert **56 895 642 octets**, sha256 `9D3088FB…42D5C0A9`,
 > **identique** au zip local. Ce n'est donc pas une empreinte supposée : c'est le même fichier, et
-> `version.txt` dit `1.7.700` **DANS** l'archive. Le plancher peut donc suivre, et il suit :
-> **1.7.700**, publié avec `superprint@1.0.124`.
-> *(Avant cette mesure, le plancher était resté à 1.7.697 alors que la 1.7.699 et la 1.7.700
+> `version.txt` dit `1.7.701` **DANS** l'archive. Le plancher peut donc suivre, et il suit :
+> **1.7.701**, publié avec `superprint@1.0.125`.
+> *(Avant cette mesure, le plancher était resté à 1.7.697 alors que la 1.7.699 et la 1.7.701
 > étaient construites : c'était volontaire, une version préparée n'est pas une version servie.)*
 >
 > 📊 **ÉTAT EN LIGNE, MESURÉ LE 19/10/2026 à 21 h 45 — le téléversement a eu lieu** : `superprint.cc/version.txt` répond **`1.7.685`** (`Last-Modified 19:27:34 GMT`) ; `app.zigmoon.com/sp213-local.zip` sert **56 795 983 octets**, `Last-Modified 19:25:40 GMT`, et son sha256 (`8A9CFE8B…0C4406`) est **identique** à celui du zip local — ce n'est donc pas une empreinte supposée, c'est le même fichier, et `version.txt` dit `1.7.685` **DANS** l'archive. `superprint.cc/index.html` et `superprint.cc/app/index.html` portent la 1.7.685 (86 et 27 occurrences, aucune autre version vivante). Le plancher peut donc suivre : **1.7.685**, et `superprint@1.0.117` est publié avec.<br>*(La mesure du 17 h — « 1.7.682 partout, zip 1.7.683 prêt mais pas en ligne » — était exacte à l'instant où elle a été prise, et c'est précisément ce qu'il fallait : le plancher n'a pas bougé d'un cran tant que le téléversement n'avait pas eu lieu.)*

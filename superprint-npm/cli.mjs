@@ -93,17 +93,13 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    ⚠️ POURQUOI LE PLANCHER DOIT SUIVRE CHAQUE LIVRAISON : un zip ancien servi par
 //      erreur serait ACCEPTÉ, et `npx superprint` installerait une version sans les
 //      correctifs du jour. Une garde ne sert que si elle est à jour.
-//    ── 1.7.700 : LE PLANCHER SUIT ENFIN, ET LA MESURE LE JUSTIFIE ───────────
-//      Écrit À LA MAIN le 29/10/2026 à 21 h 35, APRÈS vérification en ligne :
-//        · superprint.cc/version.txt ................ = 1.7.700
-//        · superprint.cc/app/JS/main.js ............. = 6 517 006 o,
-//          sha256 2FE94B24…56FAF40, IDENTIQUE au fichier du dépôt ;
-//        · app.zigmoon.com/sp213-local.zip .......... = 56 895 642 o,
-//          sha256 9D3088FB…42D5C0A9, IDENTIQUE au zip local.
-//      Le zip servi contient donc le correctif, et son version.txt dit 1.7.700 :
-//      avancer le plancher ne casse plus personne. Avant cette mesure il était
-//      resté à 1.7.697 alors que les 1.7.699 et 1.7.700 étaient construites —
-//      volontairement : une version préparée n'est pas une version servie.
+//    ── 1.7.701 : LE PLANCHER NE BOUGE PAS ENCORE ────────────────────────────
+//      Écrit À LA MAIN le 29/10/2026. La 1.7.701 est construite (zip
+//      56 897 810 o, sha256 01186B4F…D53B7A6, dont le app/JS/main.js est
+//      IDENTIQUE au dépôt), mais RIEN n'est encore téléversé : version.txt en
+//      ligne répond 1.7.700. Le plancher reste donc à 1.7.700, qui est bien la
+//      version SERVIE — un plancher en avance casserait `npx superprint` pour
+//      tout le monde. Il passera à 1.7.701 après le dépôt du zip ET du site.
 const MIN_APP_VERSION = '1.7.700';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');

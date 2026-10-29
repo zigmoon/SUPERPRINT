@@ -9,6 +9,42 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.701] — 2026-10-29
+
+_Les applications de bureau se mettent à jour toutes seules — et les mini-jeux de la bande défilante cessent de mourir en silence sous 1025 px_
+
+> **Pourquoi cette version existe.** Deux manques distincts. D'un côté, un correctif publié sur le site n'atteignait **jamais** les binaires installés : il fallait retélécharger un installeur. De l'autre, un retour utilisateur du jour : « les mini-jeux Tetris ne semblent plus marcher, pas d'interaction souris ». Les deux ont été reproduits, mesurés, puis corrigés à leur cause.
+
+### Ajouté — mise à jour automatique des applications de bureau
+
+- **Un service worker ne pouvait pas résoudre cela.** Il ne gère que le cache d'une page : il ne peut ni remplacer un exécutable ni relancer un processus. D'où l'impression que les applications « restaient en retard » sur le site alors qu'elles étaient simplement figées à leur version d'installation.
+- **Le mécanisme retenu est celui prévu pour ça** : le plugin `updater` de Tauri. Au démarrage, cinq secondes après l'affichage de la fenêtre, l'application interroge un manifeste JSON ; si la version annoncée est supérieure, un **dialogue natif** propose « Installer / Plus tard » ; le paquet est téléchargé, sa **signature minisign** vérifiée contre la clé publique compilée dans le binaire, puis mis en place et l'application redémarre.
+- **Rien à héberger.** Les mises à jour sont déposées sur la release GitHub `desktop-latest`, celle que le site utilise déjà pour ses liens de téléchargement. Le workflow y publie **un manifeste par application** (`latest-superprint.json`, `latest-studio.json`, `latest-supertypo.json`) : trois produits partagent un numéro de version, pas un paquet.
+- **Tout se passe côté Rust.** La page web n'a **aucune** permission de mise à jour : même compromise, elle ne peut pas déclencher d'installation.
+- **La clé privée ne quitte pas son coffre.** Générée hors du dépôt (`~/.tauri`), elle ne vit que dans un secret GitHub ; la clé publique, elle, est dans `tauri.conf.json`. Le workflow **s'arrête en deux secondes** avec un message explicite si le secret manque, avant les dix minutes de compilation.
+- **Un manifeste incomplet fait échouer le build.** Si une seule plateforme manque, rien n'est écrit : un manifeste qui n'annoncerait que Windows laisserait macOS et Linux figés, et cela ne se verrait que des mois plus tard, chez l'utilisateur.
+- **Détail qui comptait :** les paquets macOS de mise à jour sont cherchés dans le dossier d'**une** plateforme, pas dans l'ensemble. Les deux images produisent un fichier portant le même nom (`SuperPrint.app.tar.gz`) — un `find` global aurait envoyé le binaire Apple Silicon à un Mac Intel, qui refuse de démarrer.
+
+### Fixed — les mini-jeux de la bande défilante
+
+- **Cause mesurée.** Dans `ticker-fx.js`, la garde de démarrage était `if (!fine || !large || calm) return;` avec `large = matchMedia('(min-width: 1025px)')`. Évaluée **une seule fois, au chargement**, elle faisait rendre la main au module **avant d'attacher le moindre écouteur** : plus de survol, plus de jeu, plus rien — définitivement, jusqu'au rechargement.
+- **Reproduit** : à 941 px de large, `large = false` et aucun jeu ne s'ouvre ; rechargé à 1440 px, tout fonctionne.
+- **Pourquoi cela arrive sans prévenir :** `innerWidth` dépend du **zoom du navigateur**. Un écran de 1280 px à 125 % ne fait plus que 1024 px en CSS, soit **un pixel sous le seuil**. Une fenêtre non maximisée suffit aussi. Aucun message : les mots restent inertes.
+- **Correctif** : le seuil demeure (un voile plein écran n'a pas de sens sur un téléphone), mais il est consulté **au moment du survol et au moment d'ouvrir**, et un redimensionnement réarme l'état. Élargir la fenêtre ou dézoomer suffit désormais, sans recharger.
+- **Vérifié** en rejouant le scénario exact : chargement à 941 px, puis élargissement à 1440 px **sans rechargement** → le plateau Tetris s'ouvre (504 × 504) et les flèches en modifient réellement les pixels.
+- **Empreinte de cache avancée** de `?v=mono20` à `?v=mono21` sur les sept pages : sans cela, les visiteurs déjà venus auraient gardé l'ancien fichier et le correctif serait resté invisible.
+
+### Pourquoi le numéro de version devait changer
+
+Le mécanisme de mise à jour vit **dans le binaire**, et Tauri ne propose une mise à jour que si la version annoncée est **strictement supérieure**. Republier des binaires sous le même numéro 1.7.700 aurait donné des applications interrogeant un manifeste disant « 1.7.700 » et concluant « je suis à jour » — **définitivement**.
+
+### Limites, dites franchement
+
+- **La première version équipée doit être installée une fois à la main.** Une application ne peut pas se mettre à jour si elle n'embarque pas déjà le mécanisme.
+- **Sous Linux, seul l'AppImage se met à jour.** Un `.deb` ou un `.rpm` appartient au gestionnaire de paquets du système ; le remplacer en douce serait une mauvaise manière. Ces utilisateurs restent en mise à jour manuelle.
+
+---
+
 ## [1.7.700] — 2026-10-29
 
 _Les boutons de photo restent à 100 %, l'image posée dans une forme garde toute sa résolution, et un filet de 1 pt reste 1 pt quand on étire le bloc_
