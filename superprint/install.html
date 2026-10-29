@@ -38,7 +38,7 @@
   "applicationSubCategory": "Desktop publishing",
   "operatingSystem": "Web browser (Chrome, Edge, Firefox, Safari)",
   "browserRequirements": "Requires JavaScript. WebGPU optional (local AI).",
-  "softwareVersion": "1.7.698",
+  "softwareVersion": "1.7.699",
   "releaseNotes": "Alpha version — features may change and defects may remain.",
   "inLanguage": ["en", "fr", "ja"],
   "isAccessibleForFree": true,
@@ -283,7 +283,7 @@
      visiteur Windows n'a rien à faire de cette procédure, et une note toujours
      visible sur une page d'installation ressemble à un défaut du produit.
      ⚠️ POURQUOI ELLE EXISTE : les installeurs .dmg ne sont signés que
-     AD-HOC (mesuré sur le binaire arm64 de la 1.7.698 : LC_CODE_SIGNATURE
+     AD-HOC (mesuré sur le binaire arm64 de la 1.7.699 : LC_CODE_SIGNATURE
      présent, AUCUN blob CMS). L'application DÉMARRE donc, mais Gatekeeper
      affiche « développeur non identifié » au premier lancement. Signer
      vraiment impose l'Apple Developer Program (99 $/an) — décision prise de
@@ -964,7 +964,7 @@ html[lang="ja"] .inline-ja { display: inline; }
       <span class="cmd-hint" id="installHint">PowerShell · npx.cmd contourne le blocage de scripts (ExecutionPolicy)</span>
 
       <!-- ⚠️ macOS — LE .dmg N'EST PAS SIGNÉ PAR UN CERTIFICAT APPLE, ET ÇA SE DIT.
-           Mesuré sur le binaire arm64 de la 1.7.698 : LC_CODE_SIGNATURE présent
+           Mesuré sur le binaire arm64 de la 1.7.699 : LC_CODE_SIGNATURE présent
            (signature ad-hoc posée par l'éditeur de liens), AUCUN blob CMS — donc
            aucun certificat. Conséquence réelle : l'application DÉMARRE, mais
            Gatekeeper affiche « développeur non identifié » au premier lancement.
@@ -1482,7 +1482,7 @@ html[lang="ja"] .inline-ja { display: inline; }
 
   document.querySelectorAll('[data-copy]').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      /* ⚠️ v1.7.698 — LE BOUTON COPIAIT TOUJOURS `installCmd`.
+      /* ⚠️ v1.7.699 — LE BOUTON COPIAIT TOUJOURS `installCmd`.
          Le gestionnaire lisait `$('installCmd')` en dur, sans jamais regarder
          l'attribut `data-copy` du bouton. Tant qu'il n'existait qu'un seul
          bouton, personne ne pouvait le voir ; la note macOS en ajoute un

@@ -9,6 +9,59 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.699] — 2026-10-29
+
+_Les exports PDF passent par un seul moteur : le même document donne le même fichier, que l'on coche CMJN ou RVB, traits de coupe ou non_
+
+> **Pourquoi cette version existe.** Retour utilisateur, reproduit à la mesure sur un document monté avec un gabarit pour avoir un contour identique sur toutes les pages : quatre exports du **même** fichier donnaient **quatre** résultats.
+> · HD + typo vectorielle + CMJN → le texte se décalait à droite, **le contour disparaissait** ;
+> · HD + typo vectorielle + RVB → le texte se décalait à droite, **le contour sortait décalé vers le haut** ;
+> · les deux + traits de coupe → le contour apparaissait **sans les coins arrondis**, avec des imperfections, le titre décalé et les chiffres **à la mauvaise taille**.
+> La cause n'était pas un bug isolé : c'étaient **deux moteurs d'export** qui se relayaient selon les cases cochées — le moteur natif pdf-lib pour « Format fini », le moteur jsPDF pour les traits de coupe.
+
+### Fixed — un seul moteur pour les pages simples
+
+- **Les pages simples passent désormais TOUJOURS par le moteur natif pdf-lib**, traits de coupe et barres colorimétriques compris. C'est la coexistence de deux moteurs qui produisait quatre géométries : chaque case cochée changeait de moteur, donc de calcul de position, de gestion des arrondis et de rendu du texte. Le mode « planches » (double page) reste sur le renderer jsPDF, seul capable de composer deux pages côte à côte.
+- **Le contour du gabarit disparaissait en CMJN.** Le chemin natif n'injectait pas les éléments de gabarit du tout en mode CMJN : mesuré, le PDF CMJN « Format fini » ne contenait **aucun** tracé de contour, alors que le même export en RVB le dessinait. L'exception CMJN est supprimée ; les gabarits sont injectés dans tous les modes couleur.
+- **Le contour sortait décalé de 3 mm vers le haut et la gauche en RVB « Format fini ».** Le gabarit était injecté dans le repère du format fini, puis les objets étaient décalés du fond perdu : le contour partait de 3 mm dans le mauvais sens. Le gabarit et les objets de page partagent maintenant **le même repère** — vérifié : contour à 10 mm du bord du format fini dans les quatre combinaisons, au dixième de millimètre.
+- **Les coins arrondis étaient perdus dès qu'on cochait les traits de coupe.** Le renderer jsPDF émettait quatre coins droits : il ne lisait jamais `rx`/`ry` d'un rectangle. Un contour 190 × 277 mm à `rx = 6 mm` sortait en angle vif, ce qui expliquait aussi les « imperfections » signalées. Le chemin hybride construit désormais le même contour arrondi que l'aperçu (quatre arcs d'un quart, transformés par la même règle de position, d'échelle et de rotation).
+- **Le fond de page blanc ne couvrait plus la marge des traits de coupe.** Avec des repères, la feuille peignait un aplat blanc **pleine page** (marge comprise) : dans le chemin jsPDF le fond restait cantonné à la zone de contenu. Le rectangle de fond suit désormais la zone de contenu, marge et bande de barre exclues.
+- **Les traits de coupe sortaient en « noir riche » après conversion CMJN** (89 / 78 / 62 / 97 %, soit 326 % d'encre) : le convertisseur ne réécrit que les opérateurs RVB, et un noir RVB devient un quadri surchargé. Ils sont écrits en **DeviceGray**, donc en noir pur, comme les repères du chemin historique.
+- **Barre colorimétrique et repères sont désormais dessinés en vectoriel** par le moteur natif, aux mêmes valeurs que l'ancien chemin (marge de 10 mm, décalage de 2,5 mm, longueur de 5 mm, trait de 0,08 mm ; bande de 10 mm en bas pour la barre de 3 mm).
+
+### Vérifié — l'export est comparé à l'APERÇU, pas seulement à lui-même
+
+Document de recette : 4 pages, gabarit portant un contour arrondi (190 × 277 mm, `rx = 6 mm`, trait de 8 px) et un titre centré, plus un corps de texte et une ligne de prix dont cinq caractères sont à 20 pt dans un bloc à 12 pt. Couleurs volontairement uniques pour que la mesure ne puisse pas confondre deux objets. On lit la position de l'encre dans le canevas de l'aperçu, puis dans le PDF, et on compare — en millimètres depuis le bord du format fini.
+
+| Repère | Aperçu | PDF RVB « fini » | PDF CMJN « fini » | Écart |
+|---|---|---|---|---|
+| Contour (encre), bord gauche | 9,94 | 10,00 | 10,00 | **0,06 mm** |
+| Contour (encre), bord droit | 202,65 | 202,82 | 202,82 | **0,17 mm** |
+| Contour (encre), haut | 9,94 | 10,00 | 10,00 | **0,06 mm** |
+| Contour (encre), bas | 289,71 | 289,82 | 289,82 | **0,11 mm** |
+| Titre (départ d'encre), x | 66,65 | 66,29 | 66,29 | 0,36 mm |
+| Corps de texte, x | 20,29 | 20,00 | 20,00 | 0,29 mm |
+
+- **Avec traits de coupe**, le contenu tombe exactement **+13 mm** sur les deux axes (10 mm de marge + 3 mm de fond perdu) : le contenu reste aligné sur les traits, comme le veut la norme. Aucune dérive.
+- **Les quatre pages** du document portent le contour au même endroit, au dixième de millimètre — c'était le cas d'usage même du gabarit.
+- **Les tailles de police sont identiques** sur les 4 pages des 4 exports : `30, 18, 12, 12, 12, 12, 20, 20, 20, 20, 20, 12, 12, 12` pt. Les cinq chiffres à 20 pt restent à 20 pt, quelle que soit la case cochée.
+- **RVB et CMJN donnent des positions identiques au centième de millimètre** (comparaison des opérateurs `Tm` et du tracé du contour, pas des pixels).
+
+### Vérifié — structure et non-régression
+
+- **Géométrie identique dans les quatre combinaisons** (RVB/CMJN × traits de coupe on/off), mesurée sur les flux de contenu décompressés : mêmes positions `Tm` au centième de point, mêmes tailles de police, contour identique.
+- **Contour présent partout**, y compris en CMJN sans traits de coupe — c'était le cas qui le faisait disparaître.
+- **Coins arrondis conservés** : contour à `rx = 6 mm` rendu en contrat avec ses quatre arcs.
+- **Planches non régressées** : le contour y sort arrondi lui aussi (38 segments d'arc mesurés), et la page reste au bon format (420 × 297 mm).
+- **N&B, fonds perdus, images** : formats de page conformes (210 × 297, 216 × 303, 236 × 323, 236 × 333 mm selon les options), image embarquée une seule fois (750 × 500 px), texte en vectoriel.
+
+### Livraison
+
+- Les trois copies de `main.js` (site, `sp213-local`, `superprint_ASTRO`) sont **identiques au bit près** — contrôle SHA-256.
+- Cache du service worker avancé (`superprint-shell-v1.7.699-exports-unifies`) et empreinte des modules mise à jour : sans cela, un navigateur déjà venu aurait servi l'ancien `main.js` et le correctif serait resté invisible.
+
+---
+
 ## [1.7.698] — 2026-10-27
 
 _Cliquer sur un bloc texte ne fait plus apparaître les repères de tabulation : la zone de clic de la règle n'existe que quand la règle est affichée_
