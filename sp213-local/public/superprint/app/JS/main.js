@@ -4874,6 +4874,62 @@ if (window._spGpuEnabled) {
     }
     try { window.spInvZoomDessin = spInvZoomDessin; } catch (_) {}
 
+    /* ═══ _SP_TRAITS_NON_ETIRES_700 — UN FILET DE 1 pt RESTE 1 pt ══════════════════
+       DÉFAUT MESURÉ (retour utilisateur du 29/10/2026) : « lorsque je prends un
+       rectangle et que je l'étire pour le mettre au bon format, le contour du bloc
+       suit l'étirement et devient plus épais suivant l'anamorphose ».
+       POURQUOI : Fabric ne modifie jamais `width`/`height` quand on tire une
+       poignée, il pose `scaleX`/`scaleY`. Par défaut (`strokeUniform: false`) le
+       contour subit la même échelle que le remplissage : un filet de 1 pt étiré ×3
+       sort à 3 pt dans le sens étiré, 1 pt dans l'autre. Deux blocs qui portent le
+       même filet n'ont alors plus le même trait, et le PDF hérite du défaut.
+       POURQUOI `strokeUniform` ET PAS UN CALCUL D'ÉPAISSEUR : c'est la propriété
+       Fabric prévue exactement pour ça (non-scaling-stroke). La géométrie suit
+       l'échelle, le trait garde la largeur déclarée. Les quatre moteurs d'export la
+       lisent DÉJÀ (`_spRenderComplexFabricObjectToPdfLib`, `_renderObjToPdfLib` et
+       `_drawVectorObjectToPdf`) : corriger l'aperçu aligne donc aussi le PDF.
+       ⚠️ Appliqué AUSSI à la réouverture d'un document : les fichiers déjà montés
+       gardent `strokeUniform: false` sérialisé, et un rectangle étiré s'y rouvrirait
+       avec son ancien contour épais. */
+    function spTraitNonEtire(obj) {
+        try {
+            if (!obj) return obj;
+            /* Les repères d'interface (règles, marges, fonds perdus, grilles, taquets)
+               ne sont pas du contenu : ils sont dessinés à l'échelle 1 et leur
+               épaisseur est déjà pilotée par `_spAjusterTraitUI` à chaque zoom.
+               Les normaliser ferait doublon avec ce mécanisme. */
+            if (obj.excludeFromExport || obj.isGuide || obj.isMargin || obj.isBleed ||
+                obj.isTrimBox || obj.isGridGuide || obj.isColumnGrid || obj._isTabRuler ||
+                obj.isBaselineGuide) return obj;
+            const sw = (typeof obj.strokeWidth === 'number') ? obj.strokeWidth : 0;
+            const st = obj.stroke;
+            const aUnTrait = sw > 0 && st !== null && st !== undefined && st !== '' && st !== 'transparent';
+            if (aUnTrait && obj.strokeUniform !== true) {
+                obj.set('strokeUniform', true);
+                obj.dirty = true;
+            }
+        } catch (_) {}
+        return obj;
+    }
+    function spNormaliserTraits(cible) {
+        if (!cible) return cible;
+        const objets = Array.isArray(cible) ? cible
+            : (typeof cible.getObjects === 'function') ? (cible.getObjects() || [])
+            : [cible];
+        for (let i = 0; i < objets.length; i++) {
+            const o = objets[i];
+            spTraitNonEtire(o);
+            try {
+                if (o && Array.isArray(o._objects) && o._objects.length) spNormaliserTraits(o._objects);
+            } catch (_) {}
+        }
+        return cible;
+    }
+    try {
+        window.spTraitNonEtire = spTraitNonEtire;
+        window.spNormaliserTraits = spNormaliserTraits;
+    } catch (_) {}
+
     // Poignée rectangulaire verticale pour gauche/droite (suit la rotation)
     function renderVerticalHandle(ctx, left, top, styleOverride, fabricObject) {
         const inv = spInvZoomDessin();
@@ -16031,6 +16087,12 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 // RESTAURER les patterns d'images dans les formes après chargement
                 restoreImageMasksAfterLoad(fabricCanvas);
 
+                /* _SP_TRAITS_NON_ETIRES_700 : un document déjà enregistré peut contenir
+                   `strokeUniform: false` (tous ceux d'avant cette version). Sans cette
+                   passe, un rectangle étiré se rouvrirait avec son contour épais, alors
+                   que le même rectangle recréé serait correct. On répare à l'ouverture. */
+                try { if (window.spNormaliserTraits) window.spNormaliserTraits(fabricCanvas); } catch (_) {}
+
                 /* 🆕 v1.7.686 — LES TABLEAUX SE REFORMENT APRÈS UNE RÉOUVERTURE.
                    `window.spTableau.restaurer` relit l'appartenance écrite par
                    `Textbox.toObject` (`_spTab`) et reconstruit le cadre et les gestes.
@@ -18070,6 +18132,12 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
 
     // ACTIVATION : Gestion automatique des nouveaux objets
     canvas.on('object:added', (e) => {
+        /* _SP_TRAITS_NON_ETIRES_700 — tout objet qui entre dans un plan de travail
+           (création, collage, duplication, bibliothèque, miroir de planche) reçoit la
+           règle du filet : sa largeur est une mesure, l'étirement ne la touche pas.
+           `spNormaliserTraits` descend aussi dans les groupes : un groupe collé ne
+           déclenche aucun événement pour ses membres. */
+        try { if (window.spNormaliserTraits) window.spNormaliserTraits(e.target); } catch (_) {}
         if (viewMode === 'spread' && e.target && !e.target._isTabRuler && !e.target.isMargin && !e.target.isBleed && !e.target.isGuide && !e.target._isSpreadMirror) {
             // Délai pour permettre à l'objet de se positionner
             setTimeout(() => {
@@ -24038,7 +24106,10 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         obj.set({
             fill: fillValue,
             stroke: strokeValue,
-            strokeWidth: window._blockStrokeNone ? 0 : _spW530
+            strokeWidth: window._blockStrokeNone ? 0 : _spW530,
+            /* _SP_TRAITS_NON_ETIRES_700 — le filet demandé est une MESURE, pas une
+               proportion : il ne doit pas suivre un étirement ultérieur du bloc. */
+            strokeUniform: !_spSansContour530
         });
     }
     
@@ -29381,13 +29452,18 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
 
         // Dessine le fond blanc arrondi commun aux boutons image (recadrer / remplacer),
         //   avec ombre douce + fin liseré, pour un rendu propre et lisible.
+        /* _SP_BOUTONS_100_700 : toutes les valeurs sont désormais PROPORTIONNELLES à
+           `size`. Les planchers en dur (`Math.max(2, …)` sur l'ombre, liseré à 1)
+           étaient calibrés pour un bouton de 24 unités ; à 350 % le bouton fait
+           6,9 unités et ces planchers produisaient une ombre et un liseré plus
+           épais que le bouton lui-même. */
         function _spDrawWhiteButtonBg(ctx, size, r) {
     const x = -size / 2, y = -size / 2, w = size, h = size;
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.28)';
-    ctx.shadowBlur = Math.max(2, Math.round(size * 0.28));
+    ctx.shadowBlur = size * 0.28;
     ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = Math.max(1, Math.round(size * 0.08));
+    ctx.shadowOffsetY = size * 0.08;
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + w - r, y);
@@ -29414,17 +29490,30 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     ctx.lineTo(x, y + r);
     ctx.quadraticCurveTo(x, y, x + r, y);
     ctx.closePath();
-    ctx.lineWidth = 1;
+    ctx.lineWidth = Math.max(0.3, size / 24);
     ctx.strokeStyle = 'rgba(0,0,0,0.12)';
     ctx.stroke();
         }
 
         function spRenderCropControl(ctx, left, top, _fabricObj, control) {
-    // Adapter la taille des boutons au zoom pour éviter des poignées énormes
-    const zoom = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
-    const invZoom = Math.min(1, 1 / zoom);  // Ne pas grossir au-delà de 1x
-    const size = Math.round(24 * invZoom);
-    const r = Math.round(7 * invZoom);
+    /* ═══ _SP_BOUTONS_100_700 — LES BOUTONS RESTENT À 100 % QUEL QUE SOIT LE ZOOM ═══
+       DÉFAUT MESURÉ (retour utilisateur du 29/10/2026) : « je travaille à plus de
+       300 % et les boutons de recadrage et de changement d'image sont zoomés aussi ».
+       Reproduit en console : `typeof zoomLevel` valait "object", PAS "number".
+       Dans cette portée, `zoomLevel` n'est pas la variable de zoom de l'appli mais
+       l'ÉLÉMENT `<input id="zoomLevel">` — JS résout un identifiant inconnu par un
+       accès nommé sur `window`, et un id de document y figure. Le test
+       `typeof zoomLevel === 'number'` était donc toujours faux, `zoom` valait 1,
+       et le bouton était dessiné à 24 px de canevas pour être ensuite agrandi ×3,5
+       par le zoom CSS du plan de travail.
+       Le zoom réel est publié par `applyZoom` sous `window.spZoomActuel` ; c'est la
+       MÊME source que les poignées de sélection (spInvZoomDessin). Une seule vérité,
+       donc plus de bouton qui grossit ni qui rétrécit.
+       Le plafond `Math.min(1, …)` est retiré : il faisait rétrécir les boutons
+       jusqu'à 6 px à l'écran quand on dézoomait à 25 %. */
+    const invZoom = (typeof spInvZoomDessin === 'function') ? spInvZoomDessin() : 1;
+    const size = 24 * invZoom;
+    const r = 7 * invZoom;
     ctx.save();
     ctx.translate(left, top);
 
@@ -29433,7 +29522,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
 
     // Icône recadrer (foncée, sur fond blanc)
     const ICON_COLOR = '#1e1e1e';
-    const iconSize = Math.round(14 * invZoom);
+    const iconSize = 14 * invZoom;
     const tinted = _spTintIcon(__spCropIconImg, ICON_COLOR, 'crop');
     if (tinted) {
         ctx.drawImage(tinted, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
@@ -29573,18 +29662,19 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     ctx.save();
     ctx.translate(left, top);
 
-    // Adapter la taille au zoom
-    const zoom = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
-    const invZoom = Math.min(1, 1 / zoom);
-    const size = Math.round(24 * invZoom);
-    const r = Math.round(7 * invZoom);
+    // Adapter la taille au zoom (même source de vérité que les poignées — voir
+    //  _SP_BOUTONS_100_700 dans spRenderCropControl : lire `zoomLevel` ici tombait
+    //  sur l'<input id="zoomLevel"> et ne valait donc jamais un nombre).
+    const invZoom = (typeof spInvZoomDessin === 'function') ? spInvZoomDessin() : 1;
+    const size = 24 * invZoom;
+    const r = 7 * invZoom;
 
     // Fond blanc arrondi (ombre + liseré)
     _spDrawWhiteButtonBg(ctx, size, r);
 
     // Icône remplacer (foncée, sur fond blanc)
     const ICON_COLOR = '#1e1e1e';
-    const iconSize = Math.round(14 * invZoom);
+    const iconSize = 14 * invZoom;
     const tinted = _spTintIcon(__spReplaceIconImg, ICON_COLOR, 'replace');
     if (tinted) {
         ctx.drawImage(tinted, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
@@ -29595,7 +29685,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         ctx.lineWidth = Math.max(1.3, 1.9 * s);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        const radius = Math.round(6 * s);
+        const radius = 6 * s;
         ctx.beginPath();
         ctx.arc(0, 0, radius, Math.PI * 0.30, Math.PI * 1.70, false);
         ctx.stroke();
@@ -31294,8 +31384,41 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     if (!patternSourceCanvas || typeof patternSourceCanvas.getContext !== 'function') {
         patternSourceCanvas = document.createElement('canvas');
     }
-    patternSourceCanvas.width = psw;
-    patternSourceCanvas.height = psh;
+
+    /* ═══ _SP_MASQUE_NET_700 — L'IMAGE DANS UNE FORME CESSE D'ÊTRE FLOUE ═══
+       DÉFAUT MESURÉ (retour utilisateur du 29/10/2026) : « je travaille à plus de
+       300 % et lorsque j'importe une image en cliquant 2× sur une forme (rectangle,
+       cercle…), l'image importée est floue » — alors qu'une image déposée par
+       glisser-déposer reste nette.
+       POURQUOI (ce n'est pas un réglage de lissage) : l'image dans une forme n'est
+       pas dessinée depuis la photo, elle est RECOPIÉE une fois pour toutes dans un
+       canvas hors écran de la taille de la forme en pixels CANEVAS (200 px de forme
+       → 200 px de bitmap), puis ce bitmap est posé comme motif. Le plan de travail
+       étant agrandi par un `transform: scale()` CSS, ce bitmap est ensuite étiré
+       ×3,5 : les contours de l'image bavent, alors que la photo source, elle,
+       contient bien plus de pixels. Une image directe reste nette parce que Fabric
+       la redessine depuis la source à chaque changement de densité — le motif, non.
+       CORRECTIF : le bitmap est fabriqué à la RÉSOLUTION DE LA PHOTO (facteur k),
+       et le motif est remis à l'échelle 1/k par `patternTransform` — donc la forme
+       ne bouge pas d'un pixel, elle gagne simplement tous les pixels disponibles.
+       Plafonds : k ≤ 6 et ≤ 8 Mpx par objet (≈ 32 Mo), pour qu'une photo de 6000 px
+       posée dans une vignette ne fasse pas tomber le navigateur. */
+    const _imgElBrut = (typeof imageObj.getElement === 'function') ? imageObj.getElement()
+        : (imageObj._element || imageObj._originalElement || imageObj);
+    const _scaleMotif = (typeof scale === 'number' && scale > 0) ? scale : 1;
+    // 1 / scale = nombre de pixels de la photo disponibles par pixel de canevas.
+    const _kPhoto = 1 / _scaleMotif;
+    // Plafond mémoire : k² × (psw × psh) ≤ 8 Mpx.
+    const _kMemoire = Math.sqrt(8000000 / Math.max(1, psw * psh));
+    const k = Math.max(1, Math.min(6, _kPhoto, _kMemoire));
+    const cw = Math.max(1, Math.round(psw * k));
+    const ch = Math.max(1, Math.round(psh * k));
+    // Facteurs réellement obtenus après arrondi (sinon la forme dérive de 1 px).
+    const kx = cw / psw;
+    const ky = ch / psh;
+
+    patternSourceCanvas.width = cw;
+    patternSourceCanvas.height = ch;
 
     // Activer l'antialiasing et le lissage pour la meilleure qualité
     const sourceEl = patternSourceCanvas;
@@ -31303,16 +31426,15 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, psw, psh);
+    ctx.clearRect(0, 0, cw, ch);
 
     if (shapeObj._maskBackgroundColor) {
         ctx.fillStyle = shapeObj._maskBackgroundColor;
-        ctx.fillRect(0, 0, psw, psh);
+        ctx.fillRect(0, 0, cw, ch);
     }
-    const imgEl = (typeof imageObj.getElement === 'function') ? imageObj.getElement()
-        : (imageObj._element || imageObj._originalElement || imageObj);
+    const imgEl = _imgElBrut;
     try {
-        ctx.drawImage(imgEl, offsetX, offsetY, scaledImgWidth, scaledImgHeight);
+        ctx.drawImage(imgEl, offsetX * kx, offsetY * ky, scaledImgWidth * kx, scaledImgHeight * ky);
     } catch (_) {}
 
     // Forcer la mise à jour en créant un NOUVEAU pattern
@@ -31320,7 +31442,10 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         source: sourceEl,
         repeat: 'no-repeat',
         offsetX: 0,
-        offsetY: 0
+        offsetY: 0,
+        // Le bitmap fait k fois la taille de la forme : on le remet à l'échelle
+        // pour que le motif couvre exactement la même surface qu'avant.
+        patternTransform: [1 / kx, 0, 0, 1 / ky, 0, 0]
     });
     
     // Mettre à jour la forme avec le nouveau pattern
@@ -31346,6 +31471,11 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     }
     
         }
+        /* _SP_MASQUE_NET_700 : la fonction est appelée par `window.recalculateMaskPattern`
+           depuis deux endroits (réouverture d'une page, recalcul de densité) — sans cette
+           publication, ces appels testaient `typeof window.recalculateMaskPattern` qui
+           valait "undefined" et ne faisaient donc RIEN, en silence. */
+        try { window.recalculateMaskPattern = recalculateMaskPattern; } catch (_) {}
         
         // Supprimer le panneau de positionnement
         function removeMaskPositionPanel() {

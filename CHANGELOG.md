@@ -9,6 +9,53 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.700] — 2026-10-29
+
+_Les boutons de photo restent à 100 %, l'image posée dans une forme garde toute sa résolution, et un filet de 1 pt reste 1 pt quand on étire le bloc_
+
+> **Pourquoi cette version existe.** Trois retours utilisateur du même jour, tous travaillés à plus de 300 % de zoom :
+> · « lorsque j'importe une image par glisser-déposer, celle-ci est nette mais les boutons de recadrage et de changement d'image sont zoomés aussi » ;
+> · « lorsque j'importe une image en cliquant 2× sur une forme (rectangle, cercle…), l'image importée est floue » ;
+> · « lorsque je prends un rectangle et que je l'étire, le contour du bloc suit l'étirement et devient plus épais suivant l'anamorphose ».
+> Les trois ont été **reproduits à la mesure**, puis corrigés à leur cause.
+
+### Fixed — les boutons de photo restent à 100 %
+
+- **Cause mesurée, et ce n'était pas un réglage de taille.** En console, `typeof zoomLevel` renvoyait **`"object"`**, pas `"number"`. Dans cette portée, `zoomLevel` n'est pas la variable de zoom de l'application : c'est l'élément **`<input id="zoomLevel">`** — un identifiant de document est accessible comme propriété de `window`, et JavaScript y retombe dès qu'un nom n'existe pas dans la portée courante. Le test `typeof zoomLevel === 'number'` était donc **toujours** faux, le zoom valait 1, et le bouton était dessiné à 24 px de canevas pour être ensuite agrandi par le zoom CSS du plan de travail.
+- **Un seul chiffre pour le zoom.** Les deux boutons lisent maintenant `spInvZoomDessin()`, la **même** source que les poignées de sélection, elle-même alimentée par `window.spZoomActuel()` (publié par `applyZoom`). Une seule vérité, donc plus d'écart possible entre le bouton et le reste de la sélection.
+- **Le plafond `Math.min(1, …)` est retiré** : il empêchait le bouton de grossir, donc le faisait rétrécir jusqu'à 6 px à l'écran quand on dézoomait à 25 %. Un bouton doit faire 24 px **dans les deux sens**.
+- **Ombre et liseré deviennent proportionnels.** Ils étaient calés sur un bouton de 24 unités avec des planchers en dur (`Math.max(2, …)`, liseré à 1) : à 350 % le bouton fait 6,9 unités, et l'ombre comme le liseré dépassaient le bouton.
+
+### Fixed — l'image posée dans une forme cesse d'être floue
+
+- **Ce n'était pas un réglage de lissage.** Une image déposée garde sa photo source et Fabric la redessine à chaque changement de densité ; une image **posée dans une forme** n'était, elle, recopiée **qu'une fois** dans un canvas hors écran **de la taille de la forme en pixels canevas** (200 px de forme → 200 px de bitmap), ce bitmap devenant le motif de remplissage. Agrandi ×3,5 par le zoom, il bavait — alors que la photo, elle, contient bien plus de pixels.
+- **Le bitmap est fabriqué à la résolution de la photo** (facteur `k`), et le motif est remis à l'échelle `1/k` par `patternTransform` : la forme ne bouge pas d'un pixel, elle gagne simplement les pixels disponibles. Plafonds : `k ≤ 6` et `≤ 8 Mpx` par objet (≈ 32 Mo), pour qu'une photo de 6000 px posée dans une vignette ne fasse pas tomber le navigateur.
+- **Un appel mort réparé au passage.** Deux endroits appelaient `window.recalculateMaskPattern`, fonction **jamais publiée** : le test `typeof window.recalculateMaskPattern === 'function'` valait `undefined` et les deux recalculs ne faisaient donc **rien, en silence** (notamment à la réouverture d'une page et au changement de densité d'écran). Elle est maintenant publiée.
+
+### Fixed — un filet ne suit plus l'étirement
+
+- **Cause.** Fabric ne modifie jamais `width`/`height` quand on tire une poignée : il pose `scaleX`/`scaleY`. Par défaut (`strokeUniform: false`), le contour subit la même échelle que le remplissage — un filet de 1 pt étiré ×3 sortait à 3 pt dans un sens et 1 pt dans l'autre. Deux blocs portant le même filet n'avaient donc plus le même trait.
+- **`strokeUniform: true`**, la propriété Fabric prévue exactement pour ça (non-scaling-stroke) : la géométrie suit l'échelle, le trait garde la largeur déclarée.
+- **Appliqué aux trois moments qui comptent** : à l'ajout de l'objet (création, collage, duplication, bibliothèque, miroirs de planche — groupes compris), au moment où le panneau applique un contour, et **à la réouverture d'un document** (les fichiers déjà montés portent `strokeUniform: false` en dur et se rouvriraient avec leur ancien contour épais).
+- **Les repères d'interface sont exclus** (règles, marges, fonds perdus, grilles, taquets) : ils sont dessinés à l'échelle 1 et leur épaisseur est déjà pilotée par `_spAjusterTraitUI` à chaque zoom.
+- **L'export suit, sans modification** : les trois moteurs lisaient déjà `strokeUniform` (`_renderObjToPdfLib`, `_spRenderComplexFabricObjectToPdfLib`, `_drawVectorObjectToPdf`). Corriger l'aperçu aligne donc aussi le PDF — c'était le risque de la correction inverse.
+
+### Vérifié — mesuré, pas constaté
+
+| Point | Avant | Après |
+|---|---|---|
+| Bouton de photo à 100 % / 350 % / 500 % (px écran) | 24 / **84** / **120** | **23,3 / 22,7 / 22,0** |
+| Bitmap de l'image dans une forme de 200 × 150 | 200 × 150 | **1200 × 900** (×6) |
+| Épaisseur d'un filet de 2 pt après étirement ×3 (vertical / horizontal) | **6** / 2 px | **2 / 2** px |
+
+- Les boutons sont mesurés en pixels **écran**, sur un canvas Fabric réel utilisant les mêmes fonctions de dessin et la même source de zoom que l'application, à trois zooms.
+- Le motif d'image conserve la géométrie : `patternTransform` = `[0.1667, 0, 0, 0.1667, 0, 0]`, et les quatre coins de la forme rendent exactement la couleur attendue (mélange 50/50 des rayures de 1 px de l'image source).
+- Le filet est mesuré sur le rendu raster de l'objet, par balayage perpendiculaire à chaque bord — pas sur la valeur déclarée.
+- Les trois copies de `main.js` (site, `sp213-local`, `superprint_ASTRO`) sont **identiques au bit près** — contrôle SHA-256, 6 517 006 octets, zéro `CR`.
+- Cache du service worker avancé (`superprint-shell-v1.7.700-filets-et-images`), empreinte des modules et `data-sp-js` mis à jour : sans cela, un navigateur déjà venu aurait servi l'ancien `main.js`.
+
+---
+
 ## [1.7.699] — 2026-10-29
 
 _Les exports PDF passent par un seul moteur : le même document donne le même fichier, que l'on coche CMJN ou RVB, traits de coupe ou non_

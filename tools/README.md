@@ -8,8 +8,9 @@ scripts tracked by this repository — everything else used during development l
 |---|---|
 | `serve.mjs` | Static server for local testing. `node tools/serve.mjs` serves `superprint/` on port 8080. No build step needed — the editor is plain HTML/CSS/JS. |
 | `make-release-zip.mjs` | Assembles `superprint/sp213-local.zip` from `sp213-local/`. That zip is the artefact published to `app.zigmoon.com` and downloaded by the npm launcher. It is **git-ignored** on purpose. |
+| `sync-documentgenerator.ps1` | Mirrors the LICRA document generator (`documentgenerator/`) into its deployment copy (`licra-loiret/documentgenerator/`). Diagnostic by default, `-Apply` to write. |
 
-Both scripts resolve the repository root from their own location, so they work from any
+Both **node** scripts resolve the repository root from their own location, so they work from any
 working directory and can be moved as a folder.
 
 ```bash
@@ -17,6 +18,21 @@ node tools/serve.mjs                  # http://127.0.0.1:8080/app/index.html
 node tools/serve.mjs superprint 9000  # custom folder and port
 node tools/make-release-zip.mjs       # rebuild superprint/sp213-local.zip
 ```
+
+### Synchronising the LICRA document generator
+
+`documentgenerator/` is the single source of truth; `licra-loiret/documentgenerator/` is
+only the deployment mirror of that same app inside the WordPress tree. Both were byte-for-byte
+identical (904 files, 15.8 MB), including `.venv/` and `.github/`, so an edit made on one side
+could silently stay invisible on the other. Never edit the mirror.
+
+```powershell
+pwsh -File tools/sync-documentgenerator.ps1          # diagnostic only, exit code 1 on drift
+pwsh -File tools/sync-documentgenerator.ps1 -Apply   # copy/delete, then verify again
+```
+
+`-Source` and `-Destination` override the defaults. Development artefacts (`.venv`,
+`.github`, `__pycache__`, `*.pdf`, `*.zip`, `*.log`) are neither copied nor deleted.
 
 ### Building `sp213-local/`
 

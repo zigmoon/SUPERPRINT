@@ -93,14 +93,12 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    ⚠️ POURQUOI LE PLANCHER DOIT SUIVRE CHAQUE LIVRAISON : un zip ancien servi par
 //      erreur serait ACCEPTÉ, et `npx superprint` installerait une version sans les
 //      correctifs du jour. Une garde ne sert que si elle est à jour.
-//    ── 1.7.699 : LE PLANCHER NE BOUGE PAS, ET C'EST VOLONTAIRE ──────────────
-//      Écrit À LA MAIN le 29/10/2026. La 1.7.699 est construite et contrôlée dans
-//      le dépôt (zip 56 889 938 o, sha256 6AF188EB…9DBD4F3, dont le
-//      app/JS/main.js est IDENTIQUE OCTET POUR OCTET à la source : sha256
-//      04FF20E6…4FEA8AD), mais RIEN n'a été téléversé : superprint.cc/version.txt
-//      répond encore 1.7.697. Avancer le plancher maintenant bloquerait tout le
-//      monde. Il passera à 1.7.699 après le dépôt du zip ET du site — et à ce
-//      moment-là seulement.
+//    ── 1.7.699 puis 1.7.700 : LE PLANCHER NE BOUGE PAS, ET C'EST VOLONTAIRE ──
+//      Écrit À LA MAIN le 29/10/2026. Les 1.7.699 et 1.7.700 sont construites et
+//      contrôlées dans le dépôt, mais RIEN n'a été téléversé :
+//      superprint.cc/version.txt répond encore 1.7.697. Avancer le plancher
+//      maintenant bloquerait tout le monde. Il passera à 1.7.700 après le dépôt
+//      du zip ET du site — et à ce moment-là seulement.
 const MIN_APP_VERSION = '1.7.697';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
