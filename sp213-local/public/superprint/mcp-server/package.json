@@ -1,6 +1,6 @@
 {
   "name": "superprint-mcp",
-  "version": "1.7.698",
+  "version": "1.7.699",
   "private": true,
   "type": "module",
   "description": "Serveur MCP pour SuperPrint — lire, convertir, créer et motifier des documents .sp depuis Claude ou tout client MCP.",

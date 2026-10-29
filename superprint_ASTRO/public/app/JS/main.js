@@ -55055,15 +55055,9 @@ https://superprint.app
         _spLoaderApi.setStep((currentLanguage === 'en' ? 'Loading fonts & assets…' : (currentLanguage === 'ja' ? 'フォントとアセットを読み込み中…' : 'Chargement des polices & ressources…')), 8);
 
         // ✏️ v1.7.213 : Si typographie vectorielle cochée → rendu natif pdf-lib
-        // Les planches RVB/N&B doivent rester sur le renderer spread. Le chemin
-        // natif ci-dessous construit uniquement des pages simples et ne dessine
-        // ni traits de coupe ni barres colorimétriques : ces options restent sur
-        // le renderer hybride jsPDF, y compris en CMJN.
-        // 🎯 v1.7.335 « Format fini » : quand l'utilisateur veut le format de
-        //   création sans fond perdu ni repères (finishedFormat, défaut), on
-        //   passe par le chemin natif pdf-lib qui sait produire une page à
-        //   EXACTEMENT pageFormat W×H (sans bleed) — cf. _exportSimplePdfLib.
-        const _finishedRequested = !!options.finishedFormat && !options.includeBleed && !options.cropMarks && !options.colorBars && options.pagesMode !== 'spread';
+        // Les planches restent sur le renderer spread (deux pages côte à côte).
+        // 🎯 v1.7.699 : les pages simples passent TOUTES par le chemin natif,
+        //   y compris traits de coupe et barres colorimétriques (v. plus bas).
         // 🆕 v1.7.416 — LES PLANCHES NE PASSENT PLUS JAMAIS PAR LE CHEMIN NATIF.
         //   MESURE DU DEFAUT : la condition ci-dessous excluait seulement
         //   « planches + couleur differente du CMJN ». En Planches + CMJN,
@@ -55073,22 +55067,23 @@ https://superprint.app
         //   identique a l'export « Format fini » a 3 octets pres — au lieu de
         //   3 planches 366x266. Le renderer de planches (jsPDF) produit les
         //   deux pages cote a cote, les traits de coupe ET la conversion CMJN.
+        /* 🆕 v1.7.699 — UN SEUL MOTEUR POUR TOUTES LES PAGES SIMPLES.
+           MESURE DU DÉFAUT SIGNALÉ (document de gabarit identique sur toutes les pages) :
+             · « Format fini » + CMJN            → le contour du gabarit DISPARAISSAIT ;
+             · « Format fini » + RVB             → le contour sortait décalé de 3 mm ;
+             · les deux + traits de coupe        → chemin jsPDF : coins arrondis PERDUS
+               (rectangle à quatre coins droits), contenu repositionné autrement.
+           La cause n'était pas un bug isolé mais la COEXISTENCE de deux moteurs : le
+           natif pdf-lib (format fini / typo vectorielle) et l'hybride jsPDF (traits de
+           coupe, barres, planches). Chaque option changeait de moteur, donc de géométrie.
+           Les pages simples passent désormais TOUJOURS par le moteur natif — traits de
+           coupe et barres colorimétriques y sont dessinés en vectoriel. Le mode
+           « planches » (double page) reste sur le renderer jsPDF : il compose deux pages
+           côte à côte, ce que ce moteur-ci ne fait pas. */
         const _spUseSimpleNative = window.PDFLib
-            // 🆕 v1.7.417 — LE NOIR & BLANC PASSE AUSSI PAR LE CHEMIN VECTORIEL.
-            //   MESURE DU DEFAUT : l'exclusion ci-dessous forcait le N&B sur le
-            //   raster jsPDF — page ENTIERE + fond blanc convertis en pixels ->
-            //   779 Ko pour 4 pages la ou le RVB equivalent (meme document, meme
-            //   qualite) pesait ~200 Ko. Le N&B n'a aucune raison d'etre plus
-            //   lourd : ses couleurs sont grisees a la volee (surcharge de
-            //   PDFLib.rgb) et ses images passent par convertToGrayscale.
-            //   Les traits de coupe et reperes colorimetriques, eux, excluent
-            //   toujours le chemin natif (lignes ci-dessous) : un N&B
-            //   « imprimerie » reste donc raster, avec l'alerte documentee.
-            && options.pagesMode !== 'spread'
-            && !options.cropMarks && !options.colorBars
-            && (_finishedRequested || options.vectorTypography);
+            && options.pagesMode !== 'spread';
         if (_spUseSimpleNative) {
-            console.log('[confirmExport] ➜ Chemin NATIF pdf-lib (finishedFormat=' + !!options.finishedFormat + ', vectorTypography=' + !!options.vectorTypography + ')');
+            console.log('[confirmExport] ➜ Chemin NATIF pdf-lib (finishedFormat=' + !!options.finishedFormat + ', vectorTypography=' + !!options.vectorTypography + ', cropMarks=' + !!options.cropMarks + ', colorBars=' + !!options.colorBars + ')');
             _spLoaderApi.setStep((currentLanguage === 'en' ? 'Building vector PDF…' : (currentLanguage === 'ja' ? 'ベクターPDFを構築中…' : 'Construction du PDF vectoriel…')), 15);
             try {
                 await _exportSimplePdfLib(options, _spExportLoader, _spLoaderApi);
@@ -58412,8 +58407,29 @@ https://superprint.app
             //   SAUF quand « Format fini » est demandé (finishedFormat, défaut) sans
             //   option imprimerie → la page fait exactement pageFormat W×H.
             var hasBleed = !_finishedOnly && (bleedMm > 0);
-            var sheetW = pageW + (hasBleed ? bleedMm * 2 : 0);
-            var sheetH = pageH + (hasBleed ? bleedMm * 2 : 0);
+            /* 🆕 v1.7.699 — TRAITS DE COUPE ET BARRES DANS LE MOTEUR NATIF.
+               MESURE DU DÉFAUT (document gabarit, « Format fini » + typo vectorielle) :
+                 · CMJN, sans traits → le contour du gabarit DISPARAISSAIT (le moteur natif
+                   n'injectait pas les gabarits en CMJN) ;
+                 · RVB, sans traits  → le contour sortait décalé de 3 mm vers le haut/gauche
+                   (gabarit injecté en coordonnées format fini PUIS décalé du fond perdu) ;
+                 · avec traits       → export confié au moteur jsPDF, qui dessinait le
+                   rectangle arrondi en QUATRE COINS DROITS et repositionnait les blocs
+                   texte autrement.
+               Les deux moteurs ne peuvent pas rester d'accord sur tout : les pages simples
+               passent désormais TOUTES par ce moteur-ci, traits de coupe et barres
+               colorimétriques compris. Géométrie reprise À L'IDENTIQUE du chemin jsPDF
+               (marge 10 mm, décalage 2,5 mm, longueur 5 mm, trait 0,08 mm ; bande de
+               10 mm en bas pour la barre de 3 mm). */
+            var _spCM = (window.SP_CROP_STD || { margeMm: 10, decalageMm: 2.5, longueurMm: 5 });
+            var _cropMarksOn = !!(options && options.cropMarks);
+            var _colorBarsOn = !!(options && options.colorBars);
+            var _extraSpaceMm = _cropMarksOn ? _spCM.margeMm : 0;      // marge des traits, chaque côté
+            var _extraBarMm = _colorBarsOn ? 10 : 0;                  // bande de la barre, en bas
+            var _contentW = pageW + (hasBleed ? bleedMm * 2 : 0);
+            var _contentH = pageH + (hasBleed ? bleedMm * 2 : 0);
+            var sheetW = _contentW + (_extraSpaceMm * 2);
+            var sheetH = _contentH + (_extraSpaceMm * 2) + _extraBarMm;
 
             for (var pi = 0; pi < pages.length; pi++) {
                 _spStep((currentLanguage === 'en' ? 'Building vector page ' : (currentLanguage === 'ja' ? 'ベクターページを構築中 ' : 'Construction de la page vectorielle ')) + (pi + 1) + '/' + pages.length + '…', 15 + Math.round((pi / Math.max(1, pages.length)) * 65));
@@ -58446,14 +58462,13 @@ https://superprint.app
                     });
                 });
 
-                // Les coordonnées des gabarits sont exprimées hors bleed : les
-                // injecter dans le même repère que les objets de page. Le CMJN
-                // conserve volontairement son comportement historique.
-                // 🎯 v1.7.335 « Format fini » : injecter les gabarits SANS fond
-                //   perdu (ils se placent alors dans le repère format fini).
-                if (!options || options.colorMode !== 'cmyk') {
-                    try { await injectMasterItemsForExport(tmpCanvas, pi, { includeBleed: !_finishedOnly }); } catch (_) {}
-                }
+                // 🎯 Les coordonnées des gabarits sont exprimées HORS fond perdu :
+                //   on les place dans le repère du canevas (+ bleed) pour qu'ils
+                //   suivent EXACTEMENT le même décalage que les objets de page.
+                //   ⚠️ v1.7.699 : plus d'exception CMJN (elle faisait disparaître le
+                //   contour du gabarit) et plus de « includeBleed » conditionnel
+                //   (en format fini le gabarit était décalé de 3 mm de trop).
+                try { await injectMasterItemsForExport(tmpCanvas, pi, { includeBleed: true }); } catch (_) {}
 
                 var objects = tmpCanvas.getObjects().filter(function(o) {
                     return o && o.visible !== false;
@@ -58551,8 +58566,10 @@ https://superprint.app
                 var _fpPdf = _spFormatDePage(pi);
                 pageW = _fpPdf.width;
                 pageH = _fpPdf.height;
-                sheetW = pageW + (hasBleed ? bleedMm * 2 : 0);
-                sheetH = pageH + (hasBleed ? bleedMm * 2 : 0);
+                _contentW = pageW + (hasBleed ? bleedMm * 2 : 0);
+                _contentH = pageH + (hasBleed ? bleedMm * 2 : 0);
+                sheetW = _contentW + (_extraSpaceMm * 2);
+                sheetH = _contentH + (_extraSpaceMm * 2) + _extraBarMm;
 
                 var swPt = sheetW * mmToPt;
                 var shPt = sheetH * mmToPt;
@@ -58560,9 +58577,15 @@ https://superprint.app
 
                 // Fond de page (v1.7.415 — Priorite 1 : suit le choix
                 //   « Fond de page » ; en mode Transparent on ne peint rien).
+                // ⚠️ v1.7.699 : on peint la ZONE DE CONTENU, pas la feuille entière —
+                //   sinon les traits de coupe flottaient sur un aplat blanc opaque au
+                //   lieu de rester sur la page comme dans le chemin jsPDF.
                 if ((typeof window.spExportPaintOpaqueBackground !== 'function' || window.spExportPaintOpaqueBackground())) {
                     page.drawRectangle({
-                        x: 0, y: 0, width: swPt, height: shPt,
+                        x: _extraSpaceMm * mmToPt,
+                        y: shPt - ((_extraSpaceMm + _contentH) * mmToPt),
+                        width: _contentW * mmToPt,
+                        height: _contentH * mmToPt,
                         color: PDFLib.rgb(1, 1, 1)
                     });
                 }
@@ -58582,15 +58605,17 @@ https://superprint.app
                 //   Les objets sont déjà enregistrés dans le repère du canvas éditeur
                 //   (fond perdu INCLUS) : seul le recadrage « Format fini » ci-dessous
                 //   doit retirer le fond perdu.
-                var offsetX = 0;
-                var offsetY = 0;
+                // 🆕 v1.7.699 — on ajoute la marge des traits de coupe (et rien d'autre :
+                //   la bande de la barre colorimétrique est en BAS, elle ne décale pas).
+                var offsetX = mmToPx(_extraSpaceMm);
+                var offsetY = mmToPx(_extraSpaceMm);
                 // 🎯 v1.7.335 « Format fini » : la page fait pageW×pageH (sans fond
                 //   perdu) mais les objets sont stockés dans le repère du canvas
                 //   éditeur qui inclut le bleed → on les ramène au format fini en
                 //   soustrayant bleedPx (bord du format = bord du canvas + bleed).
                 if (!hasBleed && _finishedOnly) {
-                    offsetX = -bleedPx;
-                    offsetY = -bleedPx;
+                    offsetX -= bleedPx;
+                    offsetY -= bleedPx;
                 }
 
                 // Ajuster les coordonnées des objets pour le bleed
@@ -58686,6 +58711,75 @@ https://superprint.app
                     } catch(e) {
                         console.warn('[pdf-lib] render failed', objects[i].type, e);
                     }
+                }
+
+                /* 🆕 v1.7.699 — TRAITS DE COUPE ET BARRE COLORIMÉTRIQUE, EN VECTORIEL.
+                   Mêmes valeurs que le chemin jsPDF (SP_CROP_STD : marge 10 mm,
+                   décalage 2,5 mm, longueur 5 mm, épaisseur 0,08 mm) et même barre
+                   de 3 mm dans la bande basse de 10 mm. */
+                try {
+                    var _bMm = hasBleed ? bleedMm : 0;
+                    var _mmToPt2 = mmToPt;
+                    var _pagePtH = page.getHeight();
+                    var _yDe = function (mmDepuisHaut) { return _pagePtH - (mmDepuisHaut * _mmToPt2); };
+                    if (_cropMarksOn) {
+                        var _x0 = _extraSpaceMm + _bMm;
+                        var _y0 = _extraSpaceMm + _bMm;
+                        var _x1 = _x0 + pageW;
+                        var _y1 = _y0 + pageH;
+                        var _off = _spCM.decalageMm, _len = _spCM.longueurMm;
+                        var _segsMm = [
+                            [_x0 - _off - _len, _y0, _x0 - _off, _y0],
+                            [_x0, _y0 - _off - _len, _x0, _y0 - _off],
+                            [_x1 + _off, _y0, _x1 + _off + _len, _y0],
+                            [_x1, _y0 - _off - _len, _x1, _y0 - _off],
+                            [_x0 - _off - _len, _y1, _x0 - _off, _y1],
+                            [_x0, _y1 + _off, _x0, _y1 + _off + _len],
+                            [_x1 + _off, _y1, _x1 + _off + _len, _y1],
+                            [_x1, _y1 + _off, _x1, _y1 + _off + _len]
+                        ];
+                        for (var _ci2 = 0; _ci2 < _segsMm.length; _ci2++) {
+                            var _sg = _segsMm[_ci2];
+                            try {
+                                page.drawLine({
+                                    start: { x: _sg[0] * _mmToPt2, y: _yDe(_sg[1]) },
+                                    end: { x: _sg[2] * _mmToPt2, y: _yDe(_sg[3]) },
+                                    thickness: 0.08 * _mmToPt2,
+                                    /* ⚠️ DeviceGray, pas RGB : le convertisseur CMJN ne réécrit
+                                       que rg/RG ; un noir RVB devenait un noir riche
+                                       (89/78/62/97 %, 326 % d'encre) sur les traits de coupe.
+                                       En gris, le trait reste du noir pur, comme avant. */
+                                    color: PDFLib.grayscale(0)
+                                });
+                            } catch (_) {}
+                        }
+                    }
+                    if (_colorBarsOn) {
+                        var _barH = 3;
+                        var _barTopMm = _extraSpaceMm + _contentH + 3;
+                        var _barXmm = _extraSpaceMm + _bMm;
+                        var _barColors = (options && options.colorMode === 'cmyk')
+                            ? ['#00AEEF', '#EC008C', '#FFF200', '#000000', '#2E3192', '#00A651', '#ED1C24']
+                            : ['#00FFFF', '#FF00FF', '#FFFF00', '#000000', '#00FF00', '#FF0000', '#0000FF'];
+                        var _barWmm = pageW / _barColors.length;
+                        for (var _bi2 = 0; _bi2 < _barColors.length; _bi2++) {
+                            var _hex = String(_barColors[_bi2]).replace('#', '');
+                            var _r2 = parseInt(_hex.slice(0, 2), 16) / 255;
+                            var _g2 = parseInt(_hex.slice(2, 4), 16) / 255;
+                            var _b2 = parseInt(_hex.slice(4, 6), 16) / 255;
+                            try {
+                                page.drawRectangle({
+                                    x: (_barXmm + _bi2 * _barWmm) * _mmToPt2,
+                                    y: _yDe(_barTopMm + _barH),
+                                    width: _barWmm * _mmToPt2,
+                                    height: _barH * _mmToPt2,
+                                    color: PDFLib.rgb(_r2, _g2, _b2)
+                                });
+                            } catch (_) {}
+                        }
+                    }
+                } catch (eMarks) {
+                    console.warn('[pdf-lib] traits de coupe / barre :', eMarks);
                 }
 
 
@@ -63739,8 +63833,49 @@ https://superprint.app
 
                 const t = obj.type;
                 if (t === 'rect') {
-                    const corners = _rectCornersMm(obj, pdfOffsetX, pdfOffsetY);
-                    _drawClosedPolygonMm(pdf, corners, styleInfo.style);
+                    /* 🆕 v1.7.699 — COINS ARRONDIS DANS LE CHEMIN HYBRIDE (planches).
+                       MESURE DU DÉFAUT : un cadre de gabarit 190×277 mm à rx=6 mm sortait
+                       ici en QUATRE COINS DROITS (le tracé ne lisait jamais rx/ry), alors
+                       que l'aperçu et le moteur natif arrondissent. On construit le même
+                       contour arrondi que Fabric (quatre arcs d'un quart, N segments) et
+                       on le transforme avec la MÊME règle que les coins droits
+                       (origine, échelle, rotation), pour que les deux moteurs coïncident. */
+                    const _rxR = Number(obj.rx) || 0;
+                    const _ryR = Number(obj.ry) || _rxR;
+                    if (_rxR > 0.01 || _ryR > 0.01) {
+                        const w = (obj.width || 0) * (obj.scaleX || 1);
+                        const h = (obj.height || 0) * (obj.scaleY || 1);
+                        const ox = (obj.originX === 'center') ? -w / 2 : (obj.originX === 'right') ? -w : 0;
+                        const oy = (obj.originY === 'center') ? -h / 2 : (obj.originY === 'bottom') ? -h : 0;
+                        // Rayons locaux (bornés à la demi-taille), puis mis à l'échelle
+                        // avec le rectangle — même géométrie que la boîte.
+                        const rx = Math.min(_rxR, (obj.width || 0) / 2) * (obj.scaleX || 1);
+                        const ry = Math.min(_ryR, (obj.height || 0) / 2) * (obj.scaleY || 1);
+                        const angle = ((obj.angle || 0) * Math.PI) / 180;
+                        const cosA = Math.cos(angle), sinA = Math.sin(angle);
+                        const cx_px = obj.left || 0, cy_px = obj.top || 0;
+                        const N = 8;
+                        const pts = [];
+                        const push = (lx, ly) => {
+                            const rxp = lx * cosA - ly * sinA + cx_px;
+                            const ryp = lx * sinA + ly * cosA + cy_px;
+                            pts.push([pdfOffsetX + pxToMm(rxp), pdfOffsetY + pxToMm(ryp)]);
+                        };
+                        const arc = (ccx, ccy, a0, a1) => {
+                            for (let s = 0; s <= N; s++) {
+                                const a = a0 + (a1 - a0) * (s / N);
+                                push(ccx + Math.cos(a) * rx, ccy + Math.sin(a) * ry);
+                            }
+                        };
+                        arc(ox + rx, oy + ry, Math.PI, Math.PI * 1.5);
+                        arc(ox + w - rx, oy + ry, Math.PI * 1.5, Math.PI * 2);
+                        arc(ox + w - rx, oy + h - ry, 0, Math.PI * 0.5);
+                        arc(ox + rx, oy + h - ry, Math.PI * 0.5, Math.PI);
+                        _drawClosedPolygonMm(pdf, pts, styleInfo.style);
+                    } else {
+                        const corners = _rectCornersMm(obj, pdfOffsetX, pdfOffsetY);
+                        _drawClosedPolygonMm(pdf, corners, styleInfo.style);
+                    }
                 } else if (t === 'circle' || t === 'ellipse') {
                     const rx_px = (obj.rx || obj.radius || 0) * (obj.scaleX || 1);
                     const ry_px = (obj.ry || obj.radius || 0) * (obj.scaleY || 1);
