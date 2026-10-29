@@ -145,6 +145,25 @@ jobs:
         working-directory: superprint_desktop
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
+      # ── CLÉ DE SIGNATURE : LE CONTRÔLE PASSE AVANT LES DIX MINUTES ───────────
+      #
+      # `createUpdaterArtifacts` (voir src-tauri/tauri.conf.json) oblige Tauri à
+      # SIGNER chaque paquet de mise à jour. Sans la clé, la compilation s'arrête
+      # — mais au bout des trois applications et des quatre plateformes, avec un
+      # message qui parle de « signing key » sans dire où la mettre. Ce contrôle
+      # échoue en deux secondes, et dit exactement quoi faire.
+      - name: Clé de signature présente
+        shell: bash
+        env:
+          CLE: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          set -eu
+          if [ -z "${CLE:-}" ]; then
+            echo "::error::Le secret TAURI_SIGNING_PRIVATE_KEY est VIDE. Sans lui, les paquets de mise à jour ne peuvent pas être signés et la compilation échoue. À faire une fois : dépôt → Settings → Secrets and variables → Actions → New repository secret, nom TAURI_SIGNING_PRIVATE_KEY, valeur = contenu du fichier superprint-updater.key ; puis un second secret TAURI_SIGNING_PRIVATE_KEY_PASSWORD = son mot de passe. Les deux fichiers sont dans ~/.tauri sur la machine de production."
+            exit 1
+          fi
+          echo "clé de signature présente (${#CLE} caractères)"
+
       # L'assemblage de la bonne application est le travail de
       # `beforeBuildCommand`, déclaré dans chaque surcouche — il s'exécute donc
       # ici, et il refuse de compiler si une surcouche ne désigne pas la même
@@ -154,6 +173,12 @@ jobs:
       # La publication est le travail du job « publier », plus bas.
       - name: Compiler
         uses: tauri-apps/tauri-action@v1
+        env:
+          # Tauri signe chaque paquet de mise à jour avec cette clé. Elle ne
+          # quitte jamais le runner, et n'est jamais écrite dans un fichier du
+          # dépôt : elle est passée par variable d'environnement.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: superprint_desktop
           args: >-
@@ -293,6 +318,27 @@ jobs:
             printf '%-11s %-24s -> %s\n' "$1" "$2" "$3"
           }
 
+          # Les paquets de MISE À JOUR (voir src-tauri/src/maj.rs). Ils sont
+          # cherchés dans le dossier d'UNE plateforme précise, et non dans
+          # `paquets` entier : les deux images macOS produisent un fichier qui
+          # porte le MÊME nom (`SuperPrint.app.tar.gz`), et un `find` global
+          # prendrait l'une pour l'autre — le Mac Intel recevrait alors le
+          # binaire Apple Silicon, qui refuse de démarrer.
+          copier_sys() {  # application  systeme  motif_source  nom_stable
+            dossier="paquets/paquets-$1-$2"
+            if [ ! -d "$dossier" ]; then
+              echo "MANQUANT : le dossier $dossier n'existe pas" >&2
+              exit 1
+            fi
+            trouve=$(find "$dossier" -iname "$3" -type f | head -n 1 || true)
+            if [ -z "$trouve" ]; then
+              echo "MANQUANT : $1/$2 / $3" >&2
+              exit 1
+            fi
+            cp "$trouve" "$out/$4"
+            printf '%-11s %-30s -> %s\n' "$1/$2" "$3" "$4"
+          }
+
           for app in superprint studio supertypo; do
             case "$app" in
               superprint) nom='SuperPrint' ;;
@@ -307,10 +353,40 @@ jobs:
             copier "$app" '*_amd64.AppImage'  "$nom-Linux-x86_64.AppImage"
             copier "$app" '*_amd64.deb'       "$nom-Linux-x86_64.deb"
             copier "$app" '*.x86_64.rpm'      "$nom-Linux-x86_64.rpm"
+
+            # ── MISE À JOUR AUTOMATIQUE ─────────────────────────────────────
+            # Trois formats seulement : NSIS sous Windows, `.app.tar.gz` sous
+            # macOS, AppImage sous Linux. Le MSI, le `.deb` et le `.rpm` ne sont
+            # pas des paquets de mise à jour — ce sont les formats d'installation
+            # initiale, et Tauri ne sait pas les appliquer tout seul.
+            copier_sys "$app" Windows     '*_x64-setup.exe.sig' "$nom-Windows-x64-setup.exe.sig"
+            copier_sys "$app" Linux       '*.AppImage.sig'      "$nom-Linux-x86_64.AppImage.sig"
+            copier_sys "$app" macOS-ARM   '*.app.tar.gz'        "$nom-macOS-AppleSilicon.app.tar.gz"
+            copier_sys "$app" macOS-ARM   '*.app.tar.gz.sig'    "$nom-macOS-AppleSilicon.app.tar.gz.sig"
+            copier_sys "$app" macOS-Intel '*.app.tar.gz'        "$nom-macOS-Intel.app.tar.gz"
+            copier_sys "$app" macOS-Intel '*.app.tar.gz.sig'    "$nom-macOS-Intel.app.tar.gz.sig"
           done
 
           echo
           ls -lh "$out"
+
+      # ── MANIFESTES DE MISE À JOUR ───────────────────────────────────────────
+      #
+      # Le plugin `updater` ne lit pas une page : il lit un JSON qui annonce, par
+      # plateforme, l'URL du paquet et la SIGNATURE de ce paquet. Sans ce
+      # fichier, une application installée ne trouve rien et reste figée — ce
+      # qui était exactement le défaut d'origine.
+      #
+      # Un manifeste par application : même numéro de version, mais trois
+      # produits et trois paquets distincts. Le script échoue si une plateforme
+      # manque (voir scripts/make-updater-manifest.mjs).
+      - name: Manifestes de mise à jour
+        run: |
+          set -eu
+          version="$(tr -d ' \r\n' < superprint/version.txt)"
+          node superprint_desktop/scripts/make-updater-manifest.mjs \
+            --dossier livraison \
+            --version "$version"
 
       - name: Publier la version « desktop-latest »
         env:

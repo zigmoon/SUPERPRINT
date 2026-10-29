@@ -378,6 +378,112 @@ qui n'est pas le leur.
 > étape n'existent plus en binaire. Leur code source reste accessible par le
 > tag correspondant.
 
+## Mise à jour automatique
+
+Les applications se mettent à jour **toutes seules**, sans que l'utilisateur
+retélécharge un installeur. C'est le pendant, côté binaire, du service worker du
+site — un service worker ne peut pas remplacer un exécutable, d'où un mécanisme
+distinct.
+
+### Où sont déposées les mises à jour
+
+Sur la **release GitHub `desktop-latest`** du dépôt, celle que le site utilise
+déjà pour ses liens de téléchargement. Rien à héberger, rien à payer : les
+binaires y sont déposés par `.github/workflows/build-desktop.yml`.
+
+À côté des installeurs, le workflow publie **un manifeste par application** :
+
+| Fichier | Interrogé par |
+|---|---|
+| `latest-superprint.json` | SuperPrint |
+| `latest-studio.json` | Studio IA |
+| `latest-supertypo.json` | SuperTyPo |
+
+Trois manifestes et non un seul : les trois applications portent le même numéro
+de version, mais ce sont trois produits avec trois paquets différents. Chaque
+surcouche (`src-tauri/apps/<app>.json`) déclare l'adresse du sien.
+
+Un manifeste annonce, **par plateforme**, l'URL du paquet et la **signature** de
+ce paquet. Le format est celui de Tauri : `windows-x86_64`, `darwin-aarch64`,
+`darwin-x86_64`, `linux-x86_64`.
+
+```json
+{
+  "version": "1.7.701",
+  "notes": "SuperPrint 1.7.701 — notes : https://superprint.cc/release.html",
+  "pub_date": "2026-10-30T09:12:44.000Z",
+  "platforms": {
+    "windows-x86_64": { "signature": "…", "url": "…/SuperPrint-Windows-x64-setup.exe" },
+    "darwin-aarch64": { "signature": "…", "url": "…/SuperPrint-macOS-AppleSilicon.app.tar.gz" },
+    "darwin-x86_64":  { "signature": "…", "url": "…/SuperPrint-macOS-Intel.app.tar.gz" },
+    "linux-x86_64":   { "signature": "…", "url": "…/SuperPrint-Linux-x86_64.AppImage" }
+  }
+}
+```
+
+### Comment cela fonctionne
+
+1. Au démarrage, cinq secondes après l'affichage de la fenêtre, `src/maj.rs`
+   interroge le manifeste de l'application.
+2. Si la version annoncée est supérieure, un **dialogue natif** propose
+   d'installer, avec un bouton « Plus tard ». Rien n'est imposé.
+3. Le paquet est téléchargé, sa signature est vérifiée contre la clé publique
+   inscrite dans `tauri.conf.json`, puis il est mis en place et l'application
+   redémarre.
+
+Tout se passe **côté Rust**. La page web n'a aucune permission de mise à jour :
+même compromise, elle ne peut pas déclencher d'installation.
+
+### Les deux secrets à poser une fois
+
+La clé privée signe chaque paquet ; sans elle Tauri refuse de compiler (le
+workflow s'arrête en deux secondes avec un message explicite, avant les dix
+minutes de compilation).
+
+| Secret GitHub | Contenu |
+|---|---|
+| `TAURI_SIGNING_PRIVATE_KEY` | le contenu du fichier `superprint-updater.key` |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | son mot de passe |
+
+Dépôt → **Settings** → **Secrets and variables** → **Actions** → *New repository
+secret*.
+
+> 🔴 **La clé privée ne se perd pas.** Elle vit dans `~/.tauri/superprint-updater.key`,
+> hors du dépôt, et n'est jamais commitée. Si elle est perdue, les applications
+> déjà installées **refuseront** toutes les mises à jour suivantes : il faudrait
+> publier une version avec une nouvelle clé publique, que les utilisateurs
+> installeraient **une fois à la main**. Gardez-en une copie hors de cette
+> machine (gestionnaire de mots de passe, coffre).
+
+La clé publique, elle, est dans `tauri.conf.json` : elle est publique par
+construction, et c'est elle qui permet à une application de reconnaître un paquet
+légitime.
+
+### Deux limites, dites franchement
+
+- **La première version équipée doit être installée à la main.** Une application
+  ne peut pas se mettre à jour si elle n'embarque pas déjà ce mécanisme. À partir
+  de la version qui l'introduit, les suivantes sont automatiques.
+- **Sous Linux, seul l'AppImage se met à jour.** Une installation `.deb` ou
+  `.rpm` appartient au gestionnaire de paquets du système ; la remplacer en
+  douce serait une mauvaise manière. Ces utilisateurs restent en mise à jour
+  manuelle, et `install.html` le dit.
+
+### Éprouver le mécanisme sans publier
+
+```bash
+# 1. Contrôler que le manifeste se construit à partir des fichiers d'un dossier
+node superprint_desktop/scripts/make-updater-manifest.mjs \
+  --dossier livraison --version 1.7.701
+
+# 2. Vérifier l'URL annoncée dans un manifeste publié
+curl -sL https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/latest-superprint.json
+```
+
+Le script échoue si **une seule** plateforme manque : un manifeste qui
+n'annoncerait que Windows laisserait macOS et Linux figés, et cela ne se verrait
+que des mois plus tard, chez l'utilisateur.
+
 ## Signer
 
 Les paquets publiés ne sont **pas signés**. macOS affichera donc un avertissement

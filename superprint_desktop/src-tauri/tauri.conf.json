@@ -36,6 +36,7 @@
     "publisher": "Zigmoon",
     "homepage": "https://superprint.cc",
     "licenseFile": "../LICENSE",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/superprint/32x32.png",
       "icons/superprint/128x128.png",
@@ -57,6 +58,11 @@
         "depends": [],
         "section": "graphics"
       }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ0MkZDQkUxOTRFRDYxNjcKUldSblllMlU0Y3N2UkNwK1Q3ZXRFSzlmQ2RtQW5YUjg5SlFBakxydklCQklyVXlvdzBSckc0RWkK"
     }
   }
 }

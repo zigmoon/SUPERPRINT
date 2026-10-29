@@ -66,5 +66,12 @@
         "Resources/TRADEMARKS.md": "../TRADEMARKS.md"
       }
     }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/latest-studio.json"
+      ]
+    }
   }
 }
