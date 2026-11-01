@@ -9,6 +9,48 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.702] — 2026-11-01
+
+_Quatre défauts d'édition corrigés à leur cause : bloc texte, couleur des lettres, groupement, et les repères du tracé au zoom_
+
+> **Pourquoi cette version existe.** Quatre retours d'utilisateur, quatre symptômes différents, et dans les quatre cas une cause mesurée qui n'était pas celle qu'on croyait. Aucun n'a été corrigé par une garde : chacun a été reproduit dans l'application réelle avant d'être touché.
+
+### Corrigé — le bloc texte ne naissait pas sur un document chargé
+
+- **Symptôme.** « Lorsqu'il y a plusieurs objets superposés et que je souhaite ajouter un bloc de texte, l'outil sélection de bloc prend le dessus » : le rectangle bleu pointillé s'affichait pendant le glisser, puis rien — aucun bloc, et c'était l'objet du dessous qui se retrouvait sélectionné.
+- **Cause mesurée** (pile d'appels relevée dans l'application) : pendant le tracé, la sélection Fabric déclenchait `activateToolButtonFromSelection()` → `setActiveToolButton()`, dont la première ligne annulait le mode dessin. Le geste était donc interrompu **au milieu**, `skipTargetFind` était remis à `false`, et le lasso maison du `mouse:up` construisait ensuite une `ActiveSelection` des objets survolés qui écrasait la sélection du nouveau bloc. Le défaut n'apparaissait que sur un document déjà rempli — c'est pourquoi il semblait lié aux objets superposés.
+- **Correctif.** La synchronisation des boutons ne touche plus à l'outil en cours ; un drapeau explicite (« outil texte armé ») protège la phase de tracé ; le lasso est ignoré pendant le dessin ; le bloc créé est explicitement remonté au premier plan (`bringToFront`), comme demandé.
+- **Vérifié** : sur un document à 13 objets, un glisser par-dessus un bloc sélectionné crée le bloc, le laisse sélectionné, **dernier objet de contenu** de la pile, sans aucun mode sélection déclenché. Deux gestes consécutifs fonctionnent.
+
+### Corrigé — la couleur des lettres cessait de s'appliquer
+
+- **Symptôme.** « J'ouvre un document déjà créé et, au bout d'un certain temps, je ne peux plus changer la couleur des lettres. »
+- **Cause mesurée.** Le sélecteur « Couleur » du panneau Typographie ne modifiait que `obj.fill`. Or dès qu'une plage de caractères porte une couleur de remplacement (`styles[ligne][car].fill`), **ce sont les styles par caractère qui gagnent** : `obj.fill` était bien écrit, mais aucune lettre ne changeait à l'écran. Reproduction : 6 caractères en `#ff0000`, puis couleur du bloc en `#0000ff` → `obj.fill` = `#0000ff`, `getSelectionStyles(0,1)[0].fill` = `#ff0000`. Le nombre de plages augmentant avec le travail (contour, nuancier, sélection partielle, import), le blocage apparaissait « au bout d'un certain temps ».
+- **Correctif.** Deux règles, comme dans une PAO : des caractères sont sélectionnés pendant l'édition → la couleur va à la sélection (`setSelectionStyles`) ; sinon → les `fill` par caractère sont retirés (les autres styles — contour, graisse, italique — sont conservés) et la couleur du bloc fait autorité. La couleur s'applique aussi à chaque bloc texte d'une multi-sélection.
+- **Vérifié** : `styles` passe de 6 overrides à `{}`, `obj.fill` suit, et les changements répétés continuent de fonctionner ; une sélection partielle ne colore qu'elle-même.
+
+### Corrigé — grouper / dégrouper ne marchait qu'une fois
+
+- **Symptôme.** « Lorsque je groupe et dégroupe des éléments, je ne peux pas le faire une deuxième fois. »
+- **Cause mesurée.** Les écouteurs de sélection du bouton étaient posés **une seule fois**, sur les canvas présents au premier `DOMContentLoaded`. Or ouvrir ou créer un document **rebâtit les canvas** : les nouveaux n'avaient plus aucun écouteur. Le bouton restait donc sur l'état laissé par la dernière action — désactivé après un dégroupement — et le second groupement était impossible. Reproduit à l'identique : grouper (OK) → dégrouper (OK) → bouton `disabled`, plus rien.
+- **Correctif.** Liaison idempotente sur chaque canvas (y compris reconstruits), rafraîchissement au relâchement de souris et au clavier, contrôle périodique comparé à une signature (aucune réécriture DOM inutile), et l'action est décidée **au clic** d'après la sélection réelle au lieu d'un mode mémorisé.
+- **Vérifié** : trois cycles complets grouper → dégrouper → grouper, bouton réactivé à chaque nouvelle sélection.
+
+### Corrigé — les repères du tracé à 300 %
+
+- **Symptôme.** « Lorsque je zoome à 300 %, les tracés doivent rester à 100 % (plume, crayon…) et l'option “modifier le tracé” du clic droit. »
+- **Cause mesurée, en deux temps.**
+  - `Modifier le tracé` : le calque de poignées ajoutait la position du canvas à un `getBoundingClientRect()` déjà agrandi — 1ʳᵉ ancre attendue à x = −18, dessinée à x = −217. La signature de placement ne contenait pas la taille affichée, donc un changement de zoom ne replaçait rien.
+  - Plume / crayon : les aides étaient dimensionnées en unités **document** (ancre de rayon 6 → 18 px d'écran à 300 %, corps 9 → 27 px), et les tolérances de clic suivaient la même pente.
+- **Correctif.** L'échelle réellement appliquée (`rect.width / largeur logique`, l'inverse exact de ce que fait `getPointer` de Fabric) divise désormais toutes les aides et les tolérances ; le calque de « Modifier le tracé » s'aligne sur la même mesure, et sa signature inclut la taille affichée. ⚠️ On ne divise **pas** par `zoomLevel` : le zoom combine un `transform` et une re-rasterisation, et le transform retombe à 1 pendant la re-rasterisation.
+- **Vérifié à 300 %** : ancre de plume à 6 px d'écran, trait 2 px, libellé 9 px ; poignées de « Modifier le tracé » à 3 px de leur position attendue (l'offset du trait, multiplié par le zoom) ; **le tracé lui-même garde son épaisseur de document** (2 pt), plume comme crayon, ce qui est le comportement d'un document.
+
+### Empreinte de cache
+
+`?v=20261101-v702-outil-texte-couleurs-groupes-trace` sur `JS/main.js`, `CSS/main.css` **et** `JS/simple-pen-tool.js`, `CACHE_NAME` du service worker avancé : sans cela, les postes déjà ouverts auraient gardé l'ancien `main.js` et les quatre correctifs seraient restés invisibles.
+
+---
+
 ## [1.7.701] — 2026-10-29
 
 _Les applications de bureau se mettent à jour toutes seules — et les mini-jeux de la bande défilante cessent de mourir en silence sous 1025 px_

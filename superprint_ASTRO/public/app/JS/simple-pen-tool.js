@@ -19,6 +19,46 @@
     const HANDLE_COLOR     = '#0088ff';
     const HANDLE_FILL      = '#ffffff';
 
+    /* ═══ _SP_TRACE_ZOOM_701 — LES AIDES DE DESSIN RESTENT À 100 % ══════════════
+       MESURÉ à 300 % : une ancre de plume (rayon 6) dessinait 18 px d'écran, son
+       trait 2 en faisait 6, et le numéro de point (corps 9) sortait à 27 px —
+       alors que les autres repères d'interface de l'application restent, eux, à
+       leur taille (cf. _SP_UI_ECHELLE_688 / _SP_POIGNEES_100_695).
+       Le zoom est un `transform: scale()` CSS : tout ce qui est posé en
+       coordonnées DOCUMENT est agrandi par le compositeur. On divise donc par
+       l'échelle RÉELLEMENT appliquée les tailles des aides (ancres, poignées,
+       guide, étiquettes) et les tolérances de clic — jamais l'épaisseur du tracé
+       lui-même, qui est du contenu et doit rester à sa valeur de document.
+       ⚠️ L'ÉCHELLE SE MESURE, ELLE NE SE DÉDUIT PAS DE `zoomLevel` : le zoom de
+       l'application combine un `transform` sur le conteneur ET une re-rasterisation
+       du bitmap ; pendant la re-rasterisation le `transform` retombe à 1 alors que
+       `zoomLevel` vaut encore 3. Diviser par `zoomLevel` aurait alors dessiné des
+       ancres trois fois trop petites. `rect.width / largeur logique` est juste dans
+       les deux états — c'est exactement l'inverse de ce que fait `getPointer` de
+       Fabric pour convertir un clic, donc les cotes à l'écran sont constantes.
+       La valeur est lue à CHAQUE dessin : une échelle mémorisée redeviendrait
+       fausse au premier cran. */
+    function _invZoomUI() {
+        try {
+            var cv = _canvas || (typeof window.getActiveCanvas === 'function' ? window.getActiveCanvas() : null);
+            if (cv) {
+                var el = cv.upperCanvasEl || cv.lowerCanvasEl;
+                var lw = (typeof cv.getWidth === 'function') ? cv.getWidth() : 0;
+                if (el && lw > 0) {
+                    var r = el.getBoundingClientRect();
+                    if (r && r.width > 0) {
+                        var s = r.width / lw;
+                        if (isFinite(s) && s > 0) return 1 / s;
+                    }
+                }
+            }
+        } catch (_) { /* repli ci-dessous */ }
+        try {
+            var z = (typeof window.spZoomActuel === 'function') ? Number(window.spZoomActuel()) : 1;
+            return (isFinite(z) && z > 0) ? (1 / z) : 1;
+        } catch (_) { return 1; }
+    }
+
     // ── Mode ──────────────────────────────────────────────────
     const MODE_DRAW = 'draw';      // Placement de nouveaux points
     const MODE_EDIT = 'edit';      // Édition des ancres/poignées existantes
@@ -236,7 +276,8 @@
      */
     function _hitTest(ptr) {
         let best = null;
-        let bestDist = HIT_RADIUS;
+        // _SP_TRACE_ZOOM_701 : tolérance exprimée en pixels ÉCRAN.
+        let bestDist = HIT_RADIUS * _invZoomUI();
 
         for (let i = 0; i < _points.length; i++) {
             const pt = _points[i];
@@ -341,8 +382,10 @@
         }
         const len = Math.hypot(dx, dy) || 1;
         const ux = dx / len, uy = dy / len;
-        pt.hOutX =  ux * DEFAULT_HANDLE_LEN;
-        pt.hOutY =  uy * DEFAULT_HANDLE_LEN;
+        // _SP_TRACE_ZOOM_701 : une poignée de 30 px à l'écran, quel que soit le zoom.
+        const _hl = DEFAULT_HANDLE_LEN * _invZoomUI();
+        pt.hOutX =  ux * _hl;
+        pt.hOutY =  uy * _hl;
         pt.hInX  = -pt.hOutX;
         pt.hInY  = -pt.hOutY;
     }
@@ -400,7 +443,8 @@
                 return;
             }
             // Clic dans le vide → essayer d'insérer un nouveau point sur un segment
-            const seg = _findSegmentNear(ptr, SEGMENT_HIT_DIST);
+            // _SP_TRACE_ZOOM_701 : tolérance de 6 px ÉCRAN.
+            const seg = _findSegmentNear(ptr, SEGMENT_HIT_DIST * _invZoomUI());
             if (seg) {
                 const newPt = { x: seg.point.x, y: seg.point.y, hInX: 0, hInY: 0, hOutX: 0, hOutY: 0 };
                 _points.splice(seg.insertIndex, 0, newPt);
@@ -431,7 +475,8 @@
         // 1) Fermer le tracé ? (clic sur le premier point)
         if (_points.length > 2) {
             const fp = _points[0];
-            if (_dist(ptr, fp) < CLOSE_THRESHOLD) {
+            // _SP_TRACE_ZOOM_701 : 14 px ÉCRAN de tolérance pour fermer le tracé.
+            if (_dist(ptr, fp) < CLOSE_THRESHOLD * _invZoomUI()) {
                 _dragType = 'closing';
                 _dragging = true;
                 return;
@@ -512,7 +557,7 @@
 
         // ── MODE ÉDITION : nouveau point en drag ──
         if (_dragType === 'newpoint' && _currentPt) {
-            if (_dist(ptr, _downPos) > CURVE_THRESHOLD) {
+            if (_dist(ptr, _downPos) > CURVE_THRESHOLD * _invZoomUI()) {
                 _currentPt.hOutX =  dx;  _currentPt.hOutY =  dy;
                 _currentPt.hInX  = -dx;  _currentPt.hInY  = -dy;
             }
@@ -533,7 +578,8 @@
         }
 
         if (_currentPt) {
-            if (_dist(ptr, _downPos) > CURVE_THRESHOLD) {
+            // _SP_TRACE_ZOOM_701 : seuil de création de courbe exprimé en px ÉCRAN.
+            if (_dist(ptr, _downPos) > CURVE_THRESHOLD * _invZoomUI()) {
                 if (_altPressed) {
                     // Alt+drag : seulement la poignée de sortie
                     _currentPt.hOutX = dx; _currentPt.hOutY = dy;
@@ -570,7 +616,7 @@
         // ── Ajout d'un nouveau point (draw ou edit/extend) ──
         if (_currentPt) {
             const ptr = _canvas.getPointer(opt.e);
-            if (_dist(ptr, _downPos) <= CURVE_THRESHOLD) {
+            if (_dist(ptr, _downPos) <= CURVE_THRESHOLD * _invZoomUI()) {
                 // Simple clic → corner
                 _currentPt.hInX = _currentPt.hInY = _currentPt.hOutX = _currentPt.hOutY = 0;
             }
@@ -764,6 +810,10 @@
         const strokeCol = _getStrokeColor();
         const strokeW   = _getStrokeWidth();
         const isClosed  = _closed || (_dragType === 'closing');
+        /* _SP_TRACE_ZOOM_701 : toutes les AIDES ci-dessous sont dimensionnées en
+           pixels écran (donc divisées par le zoom) ; seul `strokeW` — l'aperçu du
+           tracé lui-même — reste en unités de document. */
+        const _iz = _invZoomUI();
 
         // ── 1) Path preview ──
         const dStr = _buildSVG(all, isClosed);
@@ -785,19 +835,20 @@
         if (cursorPt && !pendingPt && all.length > 0 && _mode === MODE_DRAW && !isClosed) {
             const last = all[all.length - 1];
             const guide = new fabric.Line([last.x, last.y, cursorPt.x, cursorPt.y], {
-                stroke: PREVIEW_COLOR, strokeWidth: 1,
-                strokeDashArray: [6, 4], opacity: 0.5,
+                stroke: PREVIEW_COLOR, strokeWidth: 1 * _iz,
+                strokeDashArray: [6 * _iz, 4 * _iz], opacity: 0.5,
                 selectable: false, evented: false, excludeFromExport: true
             });
             guide.__isGuide = true;
             _canvas.add(guide); _tempObjects.push(guide);
 
             // Close indicator
-            if (_points.length > 2 && _dist(cursorPt, _points[0]) < CLOSE_THRESHOLD * 1.5) {
+            if (_points.length > 2 && _dist(cursorPt, _points[0]) < CLOSE_THRESHOLD * 1.5 * _iz) {
                 const fp = _points[0];
+                const _r12 = 12 * _iz;
                 _addTemp(new fabric.Circle({
-                    left: fp.x - 12, top: fp.y - 12, radius: 12,
-                    fill: 'rgba(0,136,255,0.12)', stroke: ANCHOR_FIRST, strokeWidth: 2,
+                    left: fp.x - _r12, top: fp.y - _r12, radius: _r12,
+                    fill: 'rgba(0,136,255,0.12)', stroke: ANCHOR_FIRST, strokeWidth: 2 * _iz,
                     selectable: false, evented: false, excludeFromExport: true
                 }));
             }
@@ -815,19 +866,20 @@
             const isSelected = (i === _selectedIndex);
             const aFill = isSelected ? ANCHOR_SELECTED : (isFirst ? ANCHOR_FIRST : ANCHOR_FILL);
             const aStroke = isSelected ? ANCHOR_SELECTED : PREVIEW_COLOR;
+            const _ar = ANCHOR_RADIUS * _iz;
             _addTemp(new fabric.Circle({
-                left: pt.x - ANCHOR_RADIUS, top: pt.y - ANCHOR_RADIUS,
-                radius: ANCHOR_RADIUS,
-                fill: aFill, stroke: aStroke, strokeWidth: isSelected ? 2.5 : 2,
+                left: pt.x - _ar, top: pt.y - _ar,
+                radius: _ar,
+                fill: aFill, stroke: aStroke, strokeWidth: (isSelected ? 2.5 : 2) * _iz,
                 selectable: false, evented: false, excludeFromExport: true
             }));
 
             // Numéro du point (1-indexed) à côté de l'ancre
             try {
                 _addTemp(new fabric.Text(String(i + 1), {
-                    left: pt.x + ANCHOR_RADIUS + 3,
-                    top:  pt.y - ANCHOR_RADIUS - 12,
-                    fontSize: 9, fill: PREVIEW_COLOR,
+                    left: pt.x + _ar + 3 * _iz,
+                    top:  pt.y - _ar - 12 * _iz,
+                    fontSize: 9 * _iz, fill: PREVIEW_COLOR,
                     fontFamily: 'system-ui, sans-serif',
                     selectable: false, evented: false,
                     excludeFromExport: true, opacity: 0.85
@@ -842,8 +894,8 @@
             const label = `${all.length} pt${all.length>1?'s':''} ${modeLabel}${isClosed?' ○':' —'}`;
             try {
                 _addTemp(new fabric.Text(label, {
-                    left: lastPt.x + 14, top: lastPt.y - 10,
-                    fontSize: 10, fill: PREVIEW_COLOR,
+                    left: lastPt.x + 14 * _iz, top: lastPt.y - 10 * _iz,
+                    fontSize: 10 * _iz, fill: PREVIEW_COLOR,
                     fontFamily: 'system-ui, sans-serif',
                     selectable: false, evented: false,
                     excludeFromExport: true, opacity: 0.65
@@ -860,18 +912,21 @@
         if (hx === 0 && hy === 0) return;
 
         const ex = pt.x + hx, ey = pt.y + hy;
+        // _SP_TRACE_ZOOM_701 : poignée et lien dimensionnés en px ÉCRAN.
+        const _iz = _invZoomUI();
+        const _hr = HANDLE_RADIUS * _iz;
 
         // Line from anchor to handle
         _addTemp(new fabric.Line([pt.x, pt.y, ex, ey], {
-            stroke: HANDLE_COLOR, strokeWidth: 1, opacity: 0.7,
+            stroke: HANDLE_COLOR, strokeWidth: 1 * _iz, opacity: 0.7,
             selectable: false, evented: false, excludeFromExport: true
         }));
 
         // Handle dot (diamond shape for visibility)
         _addTemp(new fabric.Circle({
-            left: ex - HANDLE_RADIUS, top: ey - HANDLE_RADIUS,
-            radius: HANDLE_RADIUS,
-            fill: HANDLE_FILL, stroke: HANDLE_COLOR, strokeWidth: 1.5,
+            left: ex - _hr, top: ey - _hr,
+            radius: _hr,
+            fill: HANDLE_FILL, stroke: HANDLE_COLOR, strokeWidth: 1.5 * _iz,
             selectable: false, evented: false, excludeFromExport: true
         }));
     }

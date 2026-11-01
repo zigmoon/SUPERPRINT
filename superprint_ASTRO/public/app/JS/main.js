@@ -16446,7 +16446,13 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
 
         
         if (!target) {
-            if (!canvas.selection) canvas.selection = true;
+            /* _SP_OUTIL_TEXTE_701 — ON NE RALLUME PAS LA SÉLECTION PENDANT LE TRACÉ.
+               L'outil bloc texte pose `selection = false` exprès. Ce test le
+               rétablissait dès le premier clic dans le vide : le geste SUIVANT
+               laissait alors Fabric ouvrir son propre lasso (marquee) par-dessus le
+               tracé, et les objets du dessous reprenaient la main — le défaut
+               signalé. Le verrou n'est levé que par l'outil lui-même. */
+            if (!canvas.selection && window._spTextToolArmed !== true) canvas.selection = true;
             /* 🆕 v1.7.686 — FILET DE SÉCURITÉ DU DRAPEAU DE TRANSFORMATION.
                Un relâchement hors du canevas n'atteint pas `mouse:up` : le drapeau
                posé par `before:transform` resterait alors à `true` et le lasso
@@ -17573,7 +17579,14 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         // Permet de sélectionner les blocs texte même si le clipPath perturbe la détection native
         const _skipBoxSelect = canvas.__spSkipBoxSelect;
         canvas.__spSkipBoxSelect = false;
-        if (canvas.__spSelectionStart && !canvas.isDrawingMode && !_skipBoxSelect && !canvas.__spGesteTransformation) {
+        /* _SP_OUTIL_TEXTE_701 — LE LASSO NE DOUBLE PLUS L'OUTIL TEXTE.
+           `isDrawingSimpleTextBox` est vrai du mouse:down au mouse:up, et le
+           gestionnaire de lasso est enregistré AVANT celui du bloc texte : sans ce
+           test, il construisait une `ActiveSelection` des objets survolés juste
+           après la création du bloc, écrasait la sélection du nouveau bloc et
+           donnait l'impression que « l'outil sélection avait pris le dessus ». */
+        if (canvas.__spSelectionStart && !canvas.isDrawingMode && !isDrawingSimpleTextBox
+            && !_skipBoxSelect && !canvas.__spGesteTransformation) {
             try {
                 const p1 = canvas.__spSelectionStart;
                 const p2 = canvas.getPointer(e.e);
@@ -25557,8 +25570,18 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
 
         // Fonction utilitaire pour gérer l'état actif des boutons d'outils
         function setActiveToolButton(toolId, keepActive = false) {
-    // 🍏 Safari : si on change d'outil pendant un dessin de bloc texte, nettoyer
-    if (toolId !== 'addText' && isDrawingSimpleTextBox) {
+    /* _SP_OUTIL_TEXTE_701 — LA SYNCHRO DES BOUTONS N'INTERROMPT PLUS L'OUTIL TEXTE.
+       DÉFAUT MESURÉ (pile d'appels relevée dans l'application) : pendant le tracé
+       d'un bloc texte, la sélection Fabric déclenche
+       `activateToolButtonFromSelection()` → `setActiveToolButton()` → cette ligne
+       annulait le dessin en cours. Résultat : aucun bloc créé, le rectangle du
+       dessous sélectionné, et `skipTargetFind` remis à false — exactement
+       « l'outil sélection de bloc prend le dessus ».
+       On n'annule donc plus que sur demande EXPLICITE d'un AUTRE outil : `toolId`
+       réellement fourni, différent de 'addText', et seulement si l'outil texte est
+       armé ou en cours de tracé. Les appels de synchronisation (`null`) sont sans
+       effet sur l'outil courant. */
+    if (toolId && toolId !== 'addText' && (isDrawingSimpleTextBox || window._spTextToolArmed === true)) {
         finishDrawingSimpleTextBoxSafe();
     }
     
@@ -25586,6 +25609,11 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
 
         // Fonction pour activer le bouton d'outil basé sur l'objet sélectionné
         function activateToolButtonFromSelection(obj) {
+    /* _SP_OUTIL_TEXTE_701 — TANT QUE L'OUTIL TEXTE EST ARMÉ, LA SÉLECTION NE
+       REPREND PAS LA MAIN. C'est ce chemin (appelé à chaque sélection) qui
+       interrompait le tracé d'un bloc texte : il ne doit plus toucher aux boutons
+       d'outils pendant cette phase. */
+    if (window._spTextToolArmed === true) return;
     if (!obj) {
         setActiveToolButton(null);
         return;
@@ -25657,10 +25685,65 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             }
         } catch (_) {}
         try { isDrawingSimpleTextBox = false; simpleTextBoxStartPoint = null; } catch (_) {}
+        try { window._spTextToolArmed = false; } catch (_) {}
         try { setActiveToolButton(null); } catch (_) {}
         try { var _b2 = document.getElementById('addText'); if (_b2) _b2.classList.remove('active'); } catch (_) {}
     }
     window._spCancelTextDrawingTool = spCancelTextDrawingTool;
+
+    /* _SP_OUTIL_TEXTE_701 — UN AUTRE OUTIL ANNULE L'OUTIL TEXTE, SANS EXCEPTION.
+       Les créateurs d'objets (rectangle, cercle, étoile, import…) ne passent PAS
+       par `setActiveToolButton()` : ils ajoutent leur objet et repartent. Avant le
+       correctif, c'était la synchro des boutons — déclenchée par la sélection du
+       nouvel objet — qui annulait incidemment l'outil texte. Comme cette synchro
+       ne doit plus toucher à l'outil courant, on annule ici, explicitement, au
+       PREMIER clic sur un bouton d'outil ou un élément de sous-menu (hors le
+       bouton Texte lui-même, qui doit rester un simple interrupteur).
+       Capture : l'annulation précède le gestionnaire de l'outil choisi, donc
+       `skipTargetFind` est déjà revenu à false quand l'objet est créé.
+       ⚠️ LISTE EXPLICITE, ET PAS `.btn-tool` EN ENTIER : cette classe habille aussi
+       les boutons « Agrandir » des deux barres latérales, qui ne sont pas des
+       outils — armer la plume puis replier une barre n'a aucune raison d'annuler
+       le tracé en cours. */
+    document.addEventListener('click', function (e) {
+        if (window._spTextToolArmed !== true) return;
+        const t = e.target;
+        if (!t || typeof t.closest !== 'function') return;
+        const bouton = t.closest('.dropdown-item, #penTool, #penToolItem, #pencilTool, ' +
+            '#importToggle, #shapesToggle, #chainToggle, #addImage, #importSVG, #importPDF, #importWord');
+        if (!bouton) return;
+        if (bouton.id === 'addText') return;
+        try { spCancelTextDrawingTool(); } catch (_) {}
+    }, true);
+
+    /* _SP_OUTIL_TEXTE_701 — FILET DE COHÉRENCE DE L'OUTIL TEXTE.
+       `skipTargetFind = true` est un verrou : tant qu'il est posé, plus rien n'est
+       sélectionnable sur la planche (c'est le défaut historique « le clic droit ne
+       fait plus rien »). Or l'outil peut être armé alors qu'un objet arrive par un
+       chemin qui ne passe par AUCUN bouton d'outil : dépôt depuis la bibliothèque
+       d'assets, glisser-déposer de fichier, collage, annulation… Dans ce cas la
+       sélection du nouvel objet est refusée (ou pire, le verrou reste) et
+       l'utilisateur se retrouve avec un curseur en croix qui ne répond plus.
+       Un état armé n'est légitime que s'il est COHÉRENT : aucune sélection active
+       (on en vide une en armant) et le verrou réellement posé. Trois fois par
+       seconde, on vérifie ces deux faits ; s'ils ne tiennent plus, l'outil se
+       désarme tout seul. Le test est un booléen par planche, donc gratuit. */
+    (function spInstallerSurveillanceOutilTexte() {
+        try { if (window._spTextToolWatchId) clearInterval(window._spTextToolWatchId); } catch (_) {}
+        window._spTextToolWatchId = setInterval(function () {
+            if (window._spTextToolArmed !== true || isDrawingSimpleTextBox) return;
+            let intrus = false;
+            try {
+                if (typeof canvases !== 'undefined' && Array.isArray(canvases)) {
+                    intrus = canvases.some(function (c) { return !!(c && c.getActiveObject && c.getActiveObject()); });
+                }
+            } catch (_) {}
+            const cv = (typeof getActiveCanvas === 'function') ? getActiveCanvas() : null;
+            if (!cv || cv.skipTargetFind !== true || intrus) {
+                try { spCancelTextDrawingTool(); } catch (_) {}
+            }
+        }, 350);
+    })();
 
     function addText() {
     // 🍏 Safari : si déjà en mode dessin, un 2e clic sur le bouton annule
@@ -25678,7 +25761,10 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         return;
     }
     
-    setActiveToolButton('addText', true); // Garder actif pendant le dessin
+    /* _SP_OUTIL_TEXTE_701 — l'outil reste ARMÉ jusqu'à la création du bloc ou son
+       annulation. C'est ce drapeau qui empêche la synchro des boutons (déclenchée
+       par les sélections Fabric) d'interrompre le tracé. */
+    try { window._spTextToolArmed = true; } catch (_) {}
     
     // Désélectionner tous les objets
     canvases.forEach(c => {
@@ -25686,6 +25772,13 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             c.discardActiveObject();
         }
     });
+
+    /* _SP_OUTIL_TEXTE_701 — L'ÉTAT VISUEL EST POSÉ APRÈS LA DÉSÉLECTION.
+       `discardActiveObject()` émet « selection:cleared », dont un écouteur remet
+       tous les boutons à zéro : placé avant, l'état actif du bouton Texte était
+       effacé dans la même foulée et l'outil paraissait dormant alors qu'il était
+       bel et bien armé. */
+    setActiveToolButton('addText', true); // Garder actif pendant le dessin
     
     const activeCanvas = getActiveCanvas();
     if (!activeCanvas) return;
@@ -25726,6 +25819,11 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         
         // 🍏 Safari : nettoyage sécurisé (appelé aussi par le safety net document mouseup)
         function finishDrawingSimpleTextBoxSafe() {
+    /* _SP_OUTIL_TEXTE_701 — quel que soit le chemin d'arrêt (création, annulation,
+       changement d'outil), l'outil texte n'est plus armé. Placé AVANT le retour
+       anticipé : sinon un appel alors qu'aucun tracé n'est en cours laissait le
+       drapeau armé et bloquait la synchro des boutons indéfiniment. */
+    try { window._spTextToolArmed = false; } catch (_) {}
     if (!isDrawingSimpleTextBox) return;
     
     // Trouver le canvas actif
@@ -27657,6 +27755,13 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     
     // Ajouter le texte au canvas
     activeCanvas.add(text);
+    /* _SP_OUTIL_TEXTE_701 — UN BLOC TEXTE POSÉ ARRIVE TOUJOURS AU PREMIER PLAN.
+       Demande utilisateur explicite : « lorsque je pose un bloc de texte, il doit
+       toujours se positionner au premier plan ». `add()` empile normalement en
+       haut, mais un document dense peut avoir des objets réinsérés au-dessus
+       (fonds de page, miroirs de planche) : on force donc l'ordre, comme le fait
+       déjà la création d'un groupe. */
+    try { if (typeof activeCanvas.bringToFront === 'function') activeCanvas.bringToFront(text); } catch (_) {}
     activeCanvas.setActiveObject(text);
 
     // Ne pas entrer en édition automatiquement: on veut voir les poignées immédiatement.
@@ -38009,6 +38114,12 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     // via le raccourci 'V', ou par programme via window.__spActivateSelectTool().
     {
         const activateSelectTool = () => {
+            /* _SP_OUTIL_TEXTE_701 — L'OUTIL « BLOC TEXTE » EST ANNULÉ ICI AUSSI.
+               Sans cela, revenir à la flèche pendant que l'outil texte est armé
+               laissait `skipTargetFind = true` et les écouteurs de dessin en place :
+               la sélection ne répondait plus (le défaut était masqué avant, parce
+               que n'importe quel changement de bouton annulait l'outil texte). */
+            try { if (typeof window._spCancelTextDrawingTool === 'function') window._spCancelTextDrawingTool(); } catch(_) {}
             // 1) Désactiver plume si active
             try { if (typeof penToolActive !== 'undefined' && penToolActive && typeof deactivatePenTool === 'function') deactivatePenTool(); } catch(_) {}
             // 2) Désactiver crayon si actif
@@ -42685,6 +42796,47 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         }
     });
 
+    /* ═══ _SP_COULEUR_LETTRES_701 — LA COULEUR DU TEXTE NE RESTE PLUS BLOQUÉE ═══
+       DÉFAUT MESURÉ dans l'application : dès qu'une plage de caractères porte une
+       couleur de remplacement (`styles[ligne][car].fill` — posée par le contour,
+       un nuancier, une couleur appliquée à une sélection partielle, ou un import),
+       `obj.fill` NE PEINT PLUS CES CARACTÈRES : ce sont les styles par caractère
+       qui gagnent. Le sélecteur « Couleur » du panneau Typographie ne modifiait
+       que `obj.fill` → les lettres semblaient ne plus pouvoir changer de couleur,
+       alors que la valeur du bloc, elle, changeait bien.
+       Reproduction (mesure) : 6 caractères en #ff0000, puis couleur du bloc en
+       #0000ff → `obj.fill` = #0000ff mais `getSelectionStyles(0,1)[0].fill`
+       restait #ff0000 : aucune lettre ne changeait à l'écran.
+       Deux règles désormais, comme dans une PAO :
+         • des caractères SONT sélectionnés pendant l'édition → la couleur va à la
+           sélection (`setSelectionStyles`) ;
+         • sinon → la couleur du bloc fait autorité : on retire les `fill` par
+           caractère, en conservant les autres styles (contour, graisse…). */
+    (function spInstallerEffacementFillParCaractere() {
+        if (typeof window._spEffacerFillParCaractere === 'function') return;
+        window._spEffacerFillParCaractere = function (tb) {
+            if (!tb || !tb.styles || typeof tb.styles !== 'object') return false;
+            let touche = false;
+            try {
+                Object.keys(tb.styles).forEach(function (lk) {
+                    const ligne = tb.styles[lk];
+                    if (!ligne || typeof ligne !== 'object') return;
+                    Object.keys(ligne).forEach(function (ck) {
+                        const cs = ligne[ck];
+                        if (!cs || typeof cs !== 'object') return;
+                        if (Object.prototype.hasOwnProperty.call(cs, 'fill')) {
+                            delete cs.fill;
+                            touche = true;
+                        }
+                        if (Object.keys(cs).length === 0) delete ligne[ck];
+                    });
+                    if (Object.keys(ligne).length === 0) delete tb.styles[lk];
+                });
+            } catch (_) { return false; }
+            return touche;
+        };
+    })();
+
     document.getElementById('textFill').addEventListener('change', function() {
         const activeCanvas = getActiveCanvas();
         if (!activeCanvas) return;
@@ -42711,17 +42863,44 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             }
             
             const color = this.value;
-            obj.set('fill', color);
+            /* _SP_COULEUR_LETTRES_701 : on cible les blocs TEXTE réellement
+               sélectionnés (y compris dans une multi-sélection), jamais un groupe
+               ou une sélection multiple elle-même — `set()` sur une activeSelection
+               ne propage pas `fill`. */
+            let blocs = [];
+            try {
+                if (typeof window._spBlocsTexteSelection === 'function') blocs = window._spBlocsTexteSelection(obj) || [];
+            } catch (_) { blocs = []; }
+            if (!blocs.length) blocs = [obj];
 
-            // 🆕 v1.7.176 — Pour les IText avec path, cacher le path après modif
-            if (obj.path) {
-                obj.path.set({ visible: false, opacity: 0, fill: 'transparent', stroke: 'transparent', strokeWidth: 0 });
-            }
-            
+            blocs.forEach(function (tb) {
+                if (!tb) return;
+                const selPartielle = (typeof window._spSelCarTexte === 'function')
+                    ? window._spSelCarTexte(tb)
+                    : (tb.isEditing === true && tb.selectionEnd > tb.selectionStart);
+                if (selPartielle && typeof tb.setSelectionStyles === 'function') {
+                    tb.setSelectionStyles({ fill: color }, tb.selectionStart, tb.selectionEnd);
+                } else {
+                    try { window._spEffacerFillParCaractere(tb); } catch (_) {}
+                    tb.set('fill', color);
+                }
+                tb.dirty = true;
+                try { if (typeof tb._clearCache === 'function') tb._clearCache(); } catch (_) {}
+
+                // 🆕 v1.7.176 — Pour les IText avec path, cacher le path après modif
+                if (tb.path) {
+                    tb.path.set({ visible: false, opacity: 0, fill: 'transparent', stroke: 'transparent', strokeWidth: 0 });
+                }
+                if (tb.canvas) tb.canvas.requestRenderAll();
+            });
+
             // Rendre le canvas qui contient l'objet
             if (obj.canvas) {
                 obj.canvas.requestRenderAll();
             }
+            // Le panneau doit refléter la couleur réellement appliquée (sinon la
+            // surveillance de sélection réaffichait l'ancienne valeur).
+            try { if (typeof updateTransformPanel === 'function') updateTransformPanel(); } catch (_) {}
             
             saveState('Couleur texte modifiée');
         }
@@ -86099,18 +86278,43 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     const groupIconGroup = document.getElementById('groupToggleIconGroup');
     const groupIconUngroup = document.getElementById('groupToggleIconUngroup');
     let _groupToggleMode = 'group'; // 'group' | 'ungroup'
+    let _groupStateSig = '';
     function updateGroupButtonsState() {
-        const canvas = getActiveCanvas();
-        if (!canvas) return;
+        /* _SP_GROUPE_701 — l'état est lu sur le canvas qui PORTE réellement la
+           sélection. `getActiveCanvas()` peut désigner la page courante alors que
+           la sélection vit sur une autre planche : le bouton restait alors
+           désactivé alors qu'un groupe était bien sélectionné. */
+        let canvas = getActiveCanvas();
+        try {
+            if (!canvas || !canvas.getActiveObject()) {
+                const _autre = (typeof canvases !== 'undefined' && Array.isArray(canvases))
+                    ? canvases.find(c => c && c.getActiveObject && c.getActiveObject())
+                    : null;
+                if (_autre) canvas = _autre;
+            }
+        } catch (_) {}
+        if (!canvas) {
+            if (groupToggle && !groupToggle.disabled) groupToggle.disabled = true;
+            _groupStateSig = 'none';
+            return;
+        }
         const sel = canvas.getActiveObject();
         const canGroup = (() => {
             if (!sel) return false;
-            if (sel.type === 'activeSelection') {
-                return sel._objects && sel._objects.length > 1;
+            if (sel.type === 'activeSelection' || sel.type === 'ActiveSelection') {
+                return !!(sel._objects && sel._objects.length > 1);
             }
             return false;
         })();
-        const canUngroup = (() => sel && (sel.type === 'group' || sel.type === 'Group'))();
+        const canUngroup = (() => !!(sel && (sel.type === 'group' || sel.type === 'Group')))();
+        /* _SP_GROUPE_701 — RAFRAÎCHISSEMENT IDEMPOTENT : sans cette signature,
+           l'appel périodique de sécurité réécrivait le DOM en boucle. Certaines
+           sélections (dédoublement d'un groupe au double-clic, `toActiveSelection`,
+           restauration d'historique) ne passent par AUCUN événement Fabric : le
+           contrôle périodique est le seul filet qui les rattrape. */
+        const sig = (sel ? String(sel.type) : '-') + '|' + (canGroup ? 1 : 0) + '|' + (canUngroup ? 1 : 0);
+        if (sig === _groupStateSig) return;
+        _groupStateSig = sig;
         // 🛡️ v1.7.284 : bouton toggle unique Grouper/Dégrouper
         if (groupToggle) {
             const showUngroup = canUngroup && !canGroup;
@@ -86124,22 +86328,76 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             groupToggle.setAttribute('aria-label', showUngroup ? 'Dégrouper' : 'Grouper');
         }
     }
+    try { window._spUpdateGroupButtonsState = updateGroupButtonsState; } catch (_) {}
 
-    // Update state on selection changes
-    canvases.forEach(c => {
-        c.on('selection:created', () => {
-            updateGroupButtonsState();
-            updateTextFrameUI();
-        });
-        c.on('selection:updated', () => {
-            updateGroupButtonsState();
-            updateTextFrameUI();
-        });
-        c.on('selection:cleared', () => {
-            updateGroupButtonsState();
-            updateTextFrameUI();
-        });
-    });
+    /* ═══ _SP_GROUPE_701 — LE BOUTON GROUPE SURVIT AUX RECONSTRUCTIONS ═══════════
+       DÉFAUT MESURÉ (application réelle) : les écouteurs de sélection étaient posés
+       UNE fois sur les canvas présents au `DOMContentLoaded`. Or l'ouverture ou la
+       création d'un document REBÂTIT les canvas : les nouveaux n'avaient plus aucun
+       écouteur. Le bouton restait alors sur l'état laissé par la dernière action —
+       désactivé après un dégroupement — et il était impossible de grouper une
+       deuxième fois. Reproduction : grouper (OK), dégrouper (OK), re-sélectionner
+       deux objets → bouton `disabled`, plus aucun groupement possible.
+       Correctif : liaison IDEMPOTENTE sur chaque canvas + rafraîchissement au
+       relâchement de souris / au clavier (une sélection se termine toujours par
+       l'un des deux), et surveillance légère pour les canvas reconstruits. */
+    function spBindGroupStateOnCanvas(c) {
+        if (!c || c.__spGroupStateBound) return;
+        c.__spGroupStateBound = true;
+        const refresh = () => {
+            try { updateGroupButtonsState(); } catch (_) {}
+            try { updateTextFrameUI(); } catch (_) {}
+        };
+        c.on('selection:created', refresh);
+        c.on('selection:updated', refresh);
+        c.on('selection:cleared', refresh);
+    }
+    function spBindGroupStateToutes() {
+        try {
+            if (typeof canvases !== 'undefined' && Array.isArray(canvases)) canvases.forEach(spBindGroupStateOnCanvas);
+        } catch (_) {}
+    }
+    spBindGroupStateToutes();
+
+    // Filet DOM : la sélection est terminée au relâchement (souris) ou au clavier.
+    // Le setTimeout(0) laisse Fabric — et le lasso de l'application — terminer
+    // d'abord, pour lire l'état définitif.
+    (function spInstallerRafraichissementGroupe() {
+        let prevu = false;
+        const rafraichir = () => {
+            if (prevu) return;
+            prevu = true;
+            setTimeout(() => {
+                prevu = false;
+                /* _SP_GROUPE_701 — PAS DE TEST `document.hidden` ICI. Un relâchement
+                   de souris ou une touche ne peuvent pas arriver dans un onglet caché ;
+                   en revanche l'application elle-même peut être pilotée alors que le
+                   document est masqué (iframe, onglet en arrière-plan, outil de test),
+                   et le bouton restait alors définitivement périmé. */
+                spBindGroupStateToutes();
+                try { updateGroupButtonsState(); } catch (_) {}
+            }, 0);
+        };
+        document.addEventListener('mouseup', rafraichir, true);
+        document.addEventListener('keyup', rafraichir, true);
+        try {
+            if (window._spGroupStateTimerId) clearInterval(window._spGroupStateTimerId);
+        } catch (_) {}
+        // Les canvas peuvent être reconstruits (ouverture de document, nouvelle page) :
+        // la liaison est idempotente, donc ce contrôle ne coûte qu'un booléen. Il
+        // rafraîchit aussi l'état du bouton, seul filet pour les sélections créées
+        // SANS événement Fabric (dédoublement d'un groupe, `toActiveSelection`,
+        // restauration d'historique) — l'écriture DOM est sautée si rien n'a changé.
+        /* _SP_GROUPE_701 — la liaison est IDEMPOTENTE et l'état est comparé à une
+           signature : ce contrôle ne coûte donc presque rien, même dans un onglet
+           en arrière-plan. On ne le conditionne plus à `document.hidden`, car un
+           document reconstruit dans un onglet masqué laissait le bouton périmé pour
+           toute la session. */
+        window._spGroupStateTimerId = setInterval(() => {
+            spBindGroupStateToutes();
+            try { updateGroupButtonsState(); } catch (_) {}
+        }, 600);
+    })();
 
     // 🛡️ v1.7.284 : bouton toggle unique — groupe ou dégroupe selon le contexte
     if (groupToggle) {
@@ -86147,8 +86405,14 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             const canvas = getActiveCanvas();
             if (!canvas) return;
             const sel = canvas.getActiveObject();
+            /* _SP_GROUPE_701 — L'ACTION EST DÉCIDÉE ICI, PAS PAR UN MODE MÉMORISÉ.
+               Un état vieilli (bouton resté sur « Grouper ») pouvait faire exécuter
+               la mauvaise branche ; on lit la sélection réelle au moment du clic. */
+            const estGroupe = !!(sel && (sel.type === 'group' || sel.type === 'Group'));
+            const estMulti = !!(sel && (sel.type === 'activeSelection' || sel.type === 'ActiveSelection')
+                && sel._objects && sel._objects.length > 1);
             // Mode Dégrouper : un groupe est sélectionné
-            if (_groupToggleMode === 'ungroup' && sel && (sel.type === 'group' || sel.type === 'Group')) {
+            if (estGroupe) {
                 // ✨ FIX: Utiliser toActiveSelection().toGroup() pour un dégroupement fiable
                 const items = sel._objects.slice();
                 const groupLeft = sel.left;
@@ -86182,7 +86446,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 return;
             }
             // Mode Grouper : plusieurs objets sélectionnés
-            if (sel && sel.type === 'activeSelection' && sel._objects && sel._objects.length > 1) {
+            if (estMulti) {
                 const group = sel.toGroup();
                 // 🛡️ v1.7.285 : le groupe doit TOUJOURS remonter au premier plan
                 // (sinon il disparaît derrière les fonds de page dans les docs denses).
@@ -86192,7 +86456,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 debouncedUpdateLayersPanel();
                 saveState('Grouper');
                 updateGroupButtonsState();
+                return;
             }
+            /* _SP_GROUPE_701 — ni groupe ni multi-sélection : on remet simplement
+               l'état du bouton à jour (au lieu de ne rien faire en silence). */
+            updateGroupButtonsState();
         });
     }
 
@@ -107464,12 +107732,25 @@ function initObjectRightClickMenu() {
         return { x: p.x, y: p.y };
     }
 
+    /* ══ _SP_TRACE_ZOOM_701 — LE CALQUE D'ÉDITION SUIT LE ZOOM RÉEL ═════════════
+       DÉFAUT MESURÉ à 300 % : les poignées de « Modifier le tracé » restaient à
+       leur position de 100 % (relevé : 1re ancre attendue à x = −18, dessinée à
+       x = −217). Le zoom de l'application est un `transform: scale()` CSS sur le
+       conteneur : `getBoundingClientRect()` renvoie donc une taille AGRANDIE,
+       alors que `p` est en pixels logiques du canvas. Il manquait le facteur
+       d'échelle (r.width / largeur logique) — le même que celui qu'utilise déjà
+       Fabric dans `getPointer`. On le calcule ici, à chaque placement (jamais
+       mémorisé : le zoom peut changer entre deux images). */
     function sceneVersEcran(pta) {
         var vt = S.canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
         var p = fabric.util.transformPoint({ x: pta.x, y: pta.y }, vt);
         var el = S.canvas.upperCanvasEl || S.canvas.lowerCanvasEl;
         var r = el.getBoundingClientRect();
-        return { x: p.x + r.left, y: p.y + r.top };
+        var lw = (typeof S.canvas.getWidth === 'function') ? S.canvas.getWidth() : 0;
+        var lh = (typeof S.canvas.getHeight === 'function') ? S.canvas.getHeight() : 0;
+        var sx = (lw > 0 && r.width > 0) ? (r.width / lw) : 1;
+        var sy = (lh > 0 && r.height > 0) ? (r.height / lh) : 1;
+        return { x: r.left + p.x * sx, y: r.top + p.y * sy };
     }
 
     function ecranVersScene(ev) {
@@ -107625,7 +107906,11 @@ function initObjectRightClickMenu() {
         var vt = S.canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
         var el = (S.canvas.upperCanvasEl || S.canvas.lowerCanvasEl);
         var r = el.getBoundingClientRect();
+        /* _SP_TRACE_ZOOM_701 — la taille AFFICHÉE fait partie de la signature :
+           sans elle, un changement de zoom qui ne déplace pas le coin du canvas
+           ne déclenchait aucun replacement des poignées. */
         return [vt[0], vt[1], vt[2], vt[3], vt[4], vt[5], Math.round(r.left), Math.round(r.top),
+            Math.round(r.width), Math.round(r.height),
             Math.round((o.left || 0) * 100), Math.round((o.top || 0) * 100),
         (o.path ? o.path.length : 0), (o.pathOffset ? o.pathOffset.x.toFixed(1) + ',' + o.pathOffset.y.toFixed(1) : '')].join('|');
     }

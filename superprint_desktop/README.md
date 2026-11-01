@@ -409,8 +409,8 @@ ce paquet. Le format est celui de Tauri : `windows-x86_64`, `darwin-aarch64`,
 
 ```json
 {
-  "version": "1.7.701",
-  "notes": "SuperPrint 1.7.701 — notes : https://superprint.cc/release.html",
+  "version": "1.7.702",
+  "notes": "SuperPrint 1.7.702 — notes : https://superprint.cc/release.html",
   "pub_date": "2026-10-30T09:12:44.000Z",
   "platforms": {
     "windows-x86_64": { "signature": "…", "url": "…/SuperPrint-Windows-x64-setup.exe" },
@@ -474,7 +474,7 @@ légitime.
 ```bash
 # 1. Contrôler que le manifeste se construit à partir des fichiers d'un dossier
 node superprint_desktop/scripts/make-updater-manifest.mjs \
-  --dossier livraison --version 1.7.701
+  --dossier livraison --version 1.7.702
 
 # 2. Vérifier l'URL annoncée dans un manifeste publié
 curl -sL https://github.com/zigmoon/SUPERPRINT/releases/download/desktop-latest/latest-superprint.json
