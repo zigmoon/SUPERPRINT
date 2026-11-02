@@ -93,15 +93,16 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    ⚠️ POURQUOI LE PLANCHER DOIT SUIVRE CHAQUE LIVRAISON : un zip ancien servi par
 //      erreur serait ACCEPTÉ, et `npx superprint` installerait une version sans les
 //      correctifs du jour. Une garde ne sert que si elle est à jour.
-//    ── 1.7.702 : LE PLANCHER PASSE À LA VERSION SERVIE ──────────────────────
-//      Écrit À LA MAIN le 02/11/2026, après mesure : `superprint.cc/version.txt`
-//      en ligne répond **1.7.702**, et `app.zigmoon.com/sp213-local.zip` sert
-//      **56 911 131 o** — exactement le zip 1.7.702 construit ici. La version
-//      SERVIE est donc bien la 1.7.702 : le plancher peut la suivre sans priver
-//      personne de `npx superprint`. Il s'arrête à 1.7.702 et non à 1.7.703 :
-//      la 1.7.703 est construite (zip 56 913 773 o) mais pas encore téléversée,
-//      et un plancher en avance casserait l'installation pour tout le monde.
-const MIN_APP_VERSION = '1.7.702';
+//    ── 1.7.703 : LE PLANCHER SUIT LA VERSION SERVIE ─────────────────────────
+//      Écrit À LA MAIN le 02/11/2026, après mesure du dépôt utilisateur :
+//      `superprint.cc/version.txt` répond **1.7.703**, et
+//      `app.zigmoon.com/sp213-local.zip` sert **56 913 773 o**
+//      (`Last-Modified Mon, 02 Nov 2026 00:37:11 GMT`) dont le sha256
+//      `B7385D7F…10EB62C` est **identique** à celui du zip construit ici : ce
+//      n'est pas une taille qui ressemble, c'est le même fichier. La 1.7.703 est
+//      donc bien ce que tout le monde reçoit, le plancher peut la suivre — et il
+//      doit : une garde en retard accepterait un zip ancien servi par erreur.
+const MIN_APP_VERSION = '1.7.703';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');
