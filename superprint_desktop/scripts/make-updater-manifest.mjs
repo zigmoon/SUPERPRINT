@@ -19,7 +19,7 @@
  * plus tard, chez l'utilisateur. Un échec de build se voit tout de suite.
  *
  * Usage :
- *   node scripts/make-updater-manifest.mjs --dossier livraison --version 1.7.702
+ *   node scripts/make-updater-manifest.mjs --dossier livraison --version 1.7.703
  */
 
 import fs from 'node:fs';

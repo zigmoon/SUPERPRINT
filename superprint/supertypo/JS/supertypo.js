@@ -2377,6 +2377,7 @@
     const newGlyphs = [];
     // .notdef + espace d'abord
     const glyphsToWrite = ST.glyphs.slice();
+    const nomsVus = new Set();
     // Garde les glyphes sans contours (espaces etc.)
     for (const g of glyphsToWrite) {
       const path = g.contours && g.contours.length ? contoursToOpentypePath(g.contours) : new O.Path();
@@ -2384,8 +2385,25 @@
       if (unicode == null && g.char) {
         try { unicode = g.char.codePointAt(0); } catch (e) { unicode = null; }
       }
+      let nom = g.name || 'glyph' + newGlyphs.length;
+      // 🆕 opentype.js réserve U+0000 au glyphe nommé exactement « .null » et
+      // refuse tout autre nom : `The unicode value "0" is reserved…`. Or beaucoup
+      // de polices réelles portent ce glyphe sous le nom « NULL », ou sans nom du
+      // tout (Lato, Roboto, Poppins, Open Sans, Playfair… : 43 des 79 polices du
+      // dépôt) — l'export entier échouait donc sur ces fichiers. On garde le
+      // glyphe, on retire seulement son entrée cmap. « undefined » et non « null » :
+      // null écrirait un cmap 0 et le défaut reviendrait au réimport.
+      if (unicode === 0 && nom !== '.null') unicode = undefined;
+      // 🆕 Noms uniques : la table post indexe les glyphes par nom. Les polices
+      // sans noms (post v3) donnaient 362 glyphes appelés « glyph » (Roboto).
+      if (nomsVus.has(nom)) {
+        let k = 2;
+        while (nomsVus.has(nom + '.' + k)) k++;
+        nom = nom + '.' + k;
+      }
+      nomsVus.add(nom);
       const ng = new O.Glyph({
-        name: g.name || 'glyph' + newGlyphs.length,
+        name: nom,
         unicode,
         advanceWidth: Math.round(g.advanceWidth),
         path
@@ -2400,8 +2418,12 @@
       const bu = b.unicode == null ? -1 : b.unicode;
       return au - bu;
     });
-    // Assurer que .notdef existe
-    if (!newGlyphs.length || newGlyphs[0].name !== '.notdef') {
+    // 🆕 .notdef en position 0 : s'il existe déjà dans la police on le remonte
+    // (son contour est conservé) au lieu d'en fabriquer un second, vide et
+    // homonyme ; on n'en crée un que s'il manque vraiment.
+    const iNotdef = newGlyphs.findIndex(g => g.name === '.notdef');
+    if (iNotdef > 0) newGlyphs.unshift(newGlyphs.splice(iNotdef, 1)[0]);
+    else if (iNotdef < 0) {
       newGlyphs.unshift(new O.Glyph({ name: '.notdef', unicode: 0, advanceWidth: ST.upem / 2, path: new O.Path() }));
     }
     const newFont = new O.Font({

@@ -34,7 +34,7 @@ npm login --auth-type=web
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.120** — mesuré le 29/10/2026 à 21 h 35 sur le registre ; les 1.0.121, 1.0.122 et 1.0.123 ont été préparées mais **n'ont jamais été publiées**, le présent paquet porte donc 1.0.125).
+C'est tout. Le package `superprint` est en ligne (dernière version **mesurée** sur le registre : **1.0.120**, le 29/10/2026 à 21 h 35 ; les 1.0.121 à 1.0.123 ont été préparées mais **n'ont jamais été publiées**, et le registre n'a pas pu être relu depuis — `npm whoami` répond **401** sur cette machine). Le présent paquet porte **1.0.126**, avec le plancher avancé à **1.7.702**, la version réellement servie.
 
 > 🔑 **MESURÉ LE 15/10/2026 — LA PUBLICATION EXIGE UNE CLÉ DE SÉCURITÉ, ET UN CODE DE 16 CHIFFRES.**
 > Ce compte a une 2FA de type **clé de sécurité** (WebAuthn), **pas** un code TOTP à 6 chiffres : `npm publish`
@@ -112,16 +112,16 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 
 > 📦 Le zip est régénéré par **`node tools/make-release-zip.mjs`** (depuis la racine du repo : il crée `superprint/sp213-local.zip` puis contrôle le résultat). ⚠️ Le script est **suivi par git** — celui-ci et non un script de `_dev/`, qui est ignoré et n'existerait pas sur une autre machine. Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
-> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.700** (ligne 103 de `cli.mjs`) — il est **en retard** sur ce qui est servi (1.7.701), ce qui ne bloque personne. Rappel de la mécanique : le CLI prend le **plus récent** des deux (`newestVersion(version.txt, MIN_APP_VERSION)`), donc un plancher **en retard** accepte tout ce qui est plus nouveau — il ne bloque personne ; un plancher **en avance**, lui, bloque tout le monde.
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.702** (ligne 104 de `cli.mjs`) — c'est exactement la version **servie**, donc personne n'est bloqué. Rappel de la mécanique : le CLI prend le **plus récent** des deux (`newestVersion(version.txt, MIN_APP_VERSION)`), donc un plancher **en retard** accepte tout ce qui est plus nouveau — il ne bloque personne ; un plancher **en avance**, lui, bloque tout le monde.
 >
-> 📊 **ÉTAT MESURÉ LE 1er NOVEMBRE 2026 À 0 h 30 — LA 1.7.702 EST CONSTRUITE, RIEN N'EST TÉLÉVERSÉ.**
-> **En ligne (mesuré) :** `superprint.cc/version.txt` répond **`1.7.701`** (`Last-Modified 29 Oct 2026 21:53:19 GMT`) ; `superprint.cc/app/index.html` porte `data-sp-js="v701"` et `data-sp-sw="v1.7.701"` ; `app.zigmoon.com/sp213-local.zip` sert **56 897 810 octets** (`Last-Modified 30 Oct 2026 18:46:28 GMT`).
-> **Dans le dépôt (mesuré, archive OUVERTE et non seulement hachée) :** `sp213-local.zip` fait **56 908 842 octets**, sha256 `9419e058…1a60fbf6` ; son `public/superprint/version.txt` **dit `1.7.702` DANS l'archive** ; son `app/JS/main.js` pèse **6 535 915 octets**, sha256 `49faa35b…8d6cd87d`, et c'est **le même octet** que `superprint/app/JS/main.js` ; son `app/JS/simple-pen-tool.js` fait **53 823 octets**, sha256 `acf8ff0c…7a7374b4`. Aucun `node_modules`, aucun `dist` dans l'archive.
-> **Conséquence : le plancher ne bouge pas tant que le zip et `version.txt` ne sont pas sur le FTP.** L'avancer à 1.7.702 maintenant casserait `npx superprint` pour tout le monde.
+> 📊 **ÉTAT MESURÉ LE 2 NOVEMBRE 2026 À 0 h 45 — LA 1.7.702 EST EN LIGNE, LA 1.7.703 EST CONSTRUITE MAIS PAS TÉLÉVERSÉE.**
+> **En ligne (mesuré) :** `superprint.cc/version.txt` répond **`1.7.702`** ; `app.zigmoon.com/sp213-local.zip` sert **56 911 131 octets** (`Last-Modified Sun, 01 Nov 2026 23:22:19 GMT`) — exactement le zip 1.7.702 construit dans ce dépôt, donc le dépôt utilisateur a bien eu lieu.
+> **Dans le dépôt (mesuré, archive OUVERTE et non seulement hachée) :** `sp213-local.zip` fait **56 913 773 octets**, sha256 `B7385D7F…10EB62C` ; son `public/superprint/version.txt` **dit `1.7.703` DANS l'archive** ; son `app/JS/main.js` pèse **6 535 915 octets**, sha256 `49faa35b…8d6cd87d`, **le même octet** que `superprint/app/JS/main.js` ; son `app/JS/simple-pen-tool.js` fait **53 823 octets** (sha256 `acf8ff0c…7a7374b4`) et son `supertypo/JS/supertypo.js` **146 326 octets** (sha256 `680a7edb…f291d951`), tous deux **identiques au dépôt**. Aucun `node_modules`, aucun `dist` dans l'archive. `superprint_ASTRO/dist` est bâti et porte `version.txt = 1.7.703`.
+> **Conséquence : le plancher est à 1.7.702, et il n'ira pas à 1.7.703 tant que ce zip n'est pas sur le FTP.** L'avancer maintenant casserait `npx superprint` pour tout le monde.
 > ⚠️ **CE PARAGRAPHE EST RÉÉCRIT À LA MAIN À CHAQUE LIVRAISON.** Le script de bump remplace le
-> numéro de version partout, y compris dans cette prose : il venait encore d'écrire « LA 1.7.702 EST
-> EN LIGNE » alors que rien n'était déposé — et il l'a réécrite pour la 1.7.702 avant que la 1.7.702
-> ne soit déposée. **Après chaque bump, relire ce bloc et le remettre sur des mesures réelles** —
+> numéro de version partout, y compris dans cette prose : il venait encore d'écrire « la 1.7.703 est
+> construite, rien n'est téléversé » en y laissant les chiffres de la 1.7.702 (version.txt 1.7.701,
+> zip 56 897 810 o). **Après chaque bump, relire ce bloc et le remettre sur des mesures réelles** —
 > c'est la seule partie du fichier que le script ne peut pas mesurer. (`cli.mjs` est dans la liste
 > d'exclusion du bump : ses mesures, elles, restent justes.)
 >
@@ -129,19 +129,19 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 > s'arrête à la **1.7.694** (273 blocs mesurés le 29/10/2026 à 21 h 35 ; le dépôt en porte **279**,
 > avec 695 à 700) — c'est un fichier à déposer séparément, il ne suit pas le dossier `superprint/`.
 > Les notes de version sont en retard sur les fichiers, pas l'inverse.
-> Pour npm : **`latest = 1.0.120`**, et c'est la version la plus HAUTE du registre — les 1.0.121,
-> 1.0.122 et 1.0.123 ont été préparées localement mais **jamais publiées** (mesuré le 29/10/2026 à
-> 21 h 35 sur `registry.npmjs.org/superprint` : `versions` s'arrête à 1.0.120, `dist-tags.latest`
-> vaut 1.0.120). Le présent paquet est préparé en **1.0.125** avec le plancher resté à **1.7.700** :
-> il est publiable **tel quel**, et il servira la 1.7.702 dès qu'elle sera sur le FTP (le CLI compare
-> `version.txt` et le plancher, et prend le plus récent). `npm publish` reste à faire (clé de sécurité
-> WebAuthn + code de 16 chiffres, §3), `npm whoami` répondant **401** sur cette machine.
+> Pour npm : **`latest = 1.0.125`** d'après le dépôt local, les 1.0.121 à 1.0.123 ayant été préparées
+> localement sans être publiées (vérifié sur `registry.npmjs.org/superprint` le 29/10/2026 à 21 h 35 :
+> `versions` s'arrêtait à 1.0.120) — le registre n'a **pas** pu être relu ici, `npm whoami` répondant
+> **401** sur cette machine. Le présent paquet est préparé en **1.0.126** avec le plancher avancé à
+> **1.7.702**, la version réellement servie : il est publiable **tel quel**. `npm publish` reste à
+> faire (clé de sécurité WebAuthn + code de 16 chiffres, §3).
 >
-> 📊 **ÉTAT EN LIGNE, MESURÉ LE 1er NOVEMBRE 2026 à 0 h 30 — la 1.7.702 n'est PAS déposée** :
-> `superprint.cc/version.txt` répond **`1.7.701`**, `superprint.cc/app/index.html` porte
-> `data-sp-js="v701"` et `data-sp-sw="v1.7.701"`, et `app.zigmoon.com/sp213-local.zip` sert
-> **56 897 810 octets** — c'est le zip de la 1.7.701, pas celui-ci (56 908 842 octets).
-> Le téléversement est donc **le prochain geste**, avant tout bump du plancher.
+> 📊 **ÉTAT EN LIGNE, MESURÉ LE 2 NOVEMBRE 2026 À 0 h 45 — la 1.7.703 n'est PAS déposée** :
+> `superprint.cc/version.txt` répond **`1.7.702`**, et `app.zigmoon.com/sp213-local.zip` sert
+> **56 911 131 octets** — c'est le zip de la 1.7.702, pas celui-ci (**56 913 773 octets**).
+> Le téléversement du zip 1.7.703 et du `version.txt` 1.7.703 est donc **le prochain geste**, suivi du
+> redéploiement de `superprint_ASTRO/dist` (qui porte la correction SuperTyPo), **et seulement ensuite**
+> le plancher pourra passer à 1.7.703.
 > *(Leçon conservée : une version préparée n'est pas une version servie. Le plancher était déjà resté
 > à 1.7.697 alors que la 1.7.699 était construite — c'était volontaire, et c'est ce qui a évité une
 > coupure de `npx superprint`.)*

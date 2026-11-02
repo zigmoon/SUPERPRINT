@@ -9,7 +9,43 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
-## [1.7.702] — 2026-11-01
+## [1.7.703] — 2026-11-02
+
+_L'export d'une typo modifiée n'échoue plus sur les polices qui portent un glyphe en U+0000 — et l'export ne peut plus produire de glyphes homonymes_
+
+> **Pourquoi cette version existe.** « Au moment d'exporter une typo modifiée : *The unicode value "0" is reserved for the glyph name ".null" and cannot be used by any other glyph.* » Un message d'une bibliothèque tierce, un export entier qui s'arrête, et aucune indication du glyphe en cause. Reproduit dans l'application, mesuré sur les 79 polices livrées avec le dépôt, corrigé à la source, puis vérifié à l'aller-retour (export → réimport → export).
+
+### Corrigé — l'export SuperTyPo refusait 43 polices sur 79
+
+- **Symptôme.** Charger la police, toucher un caractère, cliquer **Export** : un toast rouge *Export error: The unicode value "0" is reserved for the glyph name ".null" and cannot be used by any other glyph.*, et aucun fichier produit.
+- **Cause mesurée** (pile d'appels relevée dans l'application) : `buildFontFromGlyphs()` (`supertypo.js`) reconstruit chaque glyphe avec `new opentype.Glyph({ name, unicode, … })`. Or `opentype.js` réserve la valeur **0** au glyphe nommé exactement `.null` : `bindConstructorValues` force `unicode = 0` pour `.null`, `unicode = undefined` pour `.notdef`, puis **lève une exception** si `unicode === 0` avec un autre nom. Beaucoup de polices réelles publient une entrée cmap `U+0000` dont le glyphe s'appelle `NULL` (Lato, Open Sans, Poppins, Playfair Display…) ou n'a pas de nom du tout (Roboto, dont la table `post` est en version 3 — l'application le nommait alors `glyph`). Un seul glyphe de ce type suffisait à faire échouer l'export de la police entière.
+- **Correctif.** Le glyphe est conservé (contour, avance, nom) ; seule son **entrée cmap** est retirée, car `U+0000` est un caractère de contrôle qu'aucun texte ne peut utiliser. La valeur neutre est `undefined` et **non** `null` : mesuré, `null` faisait écrire un cmap `0` et le défaut revenait au réimport — l'aller-retour aurait donc été cassé une deuxième fois.
+- **Vérifié, dans l'application** : Lato exporte 224 glyphes pour 224 noms distincts, glyphe 0 = `.notdef`, 214 entrées cmap (215 avant : exactement l'entrée `U+0000` retirée), le glyphe `NULL` conservé avec `unicodes: []` ; réimport puis second export : OK. Roboto : 364 glyphes, 364 noms, 0 doublon.
+- **Vérifié, sur tout le dépôt** : 79 polices sur 79 exportent et se relisent sans anomalie (glyphe 0 = `.notdef`, aucun nom en double, aucune entrée `U+0000` illégale). Les polices qui possèdent un vrai `.null` (IBM Plex Mono) gardent leur cmap `0`, ce qui est légal et attendu.
+
+### Corrigé — l'export produisait des glyphes homonymes
+
+- **Cause mesurée.** Le nom de repli valait `g.name || 'glyph' + position`, et les polices sans noms (table `post` v3, cas de toute la famille Roboto) donnaient **362 glyphes appelés `glyph`** : la table `post` du fichier exporté indexe les glyphes par nom, un tel fichier était donc inexploitable. Mesuré : 9 polices du dépôt concernées, 364 glyphes pour **2 noms distincts**.
+- **Correctif.** Les noms sont rendus uniques à la construction (`glyph`, `glyph.2`, `glyph.3`…).
+- **Vérifié** : Roboto exporte 364 glyphes pour 364 noms distincts, 0 doublon.
+
+### Corrigé — le `.notdef` était parfois dupliqué
+
+- **Cause mesurée.** La garantie « glyphe 0 = `.notdef` » testait seulement l'indice 0 après tri : si la police possédait déjà un `.notdef` placé ailleurs, un **second** `.notdef` vide et homonyme était ajouté devant, et le vrai — avec son contour — restait plus loin.
+- **Correctif.** Un `.notdef` existant est remonté en position 0 avec son contour ; un `.notdef` vide n'est créé que s'il manque réellement.
+- **Vérifié** : les 79 polices se relisent avec le glyphe 0 nommé `.notdef`, sans doublon.
+
+### Corrigé — le site publiait SuperTyPo sans suivre les correctifs
+
+- **Cause mesurée.** Le script de synchronisation des miroirs ne connaissait pas la paire `superprint/supertypo` → `superprint_ASTRO/public/supertypo`, alors que le site sert bien cette page sous `/supertypo/`. Un correctif de l'éditeur de caractères atteignait donc le zip npm **et pas le site** (les deux arbres étaient identiques avant cette livraison, puis ont divergé).
+- **Correctif.** La paire est déclarée dans la synchronisation ; les deux copies sont désormais identiques à l'octet.
+- **Cache.** L'empreinte `supertypo.js?v=39` change, et la page est servie en réseau d'abord : aucun poste ne peut rester sur l'ancien fichier.
+
+### Note — nom de famille des polices exportées
+
+- Le nom **complet** de la police d'origine (« Lato Regular ») est écrit comme *famille* et `Regular` comme *style* : chaque aller-retour ajoute donc « Regular » au nom (mesuré : `Lato-Regular.ttf` → réimport → `Lato-Regular-Regular.ttf`). Ce point **n'est pas corrigé dans cette version** : il change les métadonnées des fichiers produits, et la décision de le faire reste à prendre. Rien n'est cassé — le fichier s'ouvre et s'installe.
+
+
 
 _Quatre défauts d'édition corrigés à leur cause : bloc texte, couleur des lettres, groupement, et les repères du tracé au zoom_
 

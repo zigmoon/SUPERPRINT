@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.702-outil-texte-couleurs-groupes-trace';
+const CACHE_NAME = 'superprint-shell-v1.7.703-export-typo-unicode-null';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
