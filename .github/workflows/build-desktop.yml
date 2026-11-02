@@ -167,8 +167,17 @@ jobs:
         shell: bash
         working-directory: superprint_desktop
         env:
+          # ⚠️ LES DEUX NOMS SONT NÉCESSAIRES. `tauri signer sign` ne lit pas
+          # `CLE` ni `MOT_DE_PASSE` : il lit `TAURI_SIGNING_PRIVATE_KEY` et
+          # `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Les variables `CLE` /
+          # `MOT_DE_PASSE` ne servent qu'aux messages de ce script ; sans les
+          # deux noms officiels, le signeur répond « Unable to find the private
+          # key » alors que la clé est parfaitement valide — défaut mesuré le
+          # 2 novembre 2026, et il faisait échouer les douze jobs en 30 secondes.
           CLE: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           MOT_DE_PASSE: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           set -eu
           if [ -z "${CLE:-}" ]; then
