@@ -152,10 +152,23 @@ jobs:
       # — mais au bout des trois applications et des quatre plateformes, avec un
       # message qui parle de « signing key » sans dire où la mettre. Ce contrôle
       # échoue en deux secondes, et dit exactement quoi faire.
-      - name: Clé de signature présente
+      #
+      # ⚠️ IL VÉRIFIE AUSSI QUE LA CLÉ DU SECRET EST CELLE QUE L'ON PUBLIE. Une
+      # paire régénérée sans mettre à jour le secret — ou l'inverse — donne une
+      # clé qui SIGNE très bien, mais avec un identifiant différent de celui
+      # annoncé dans `tauri.conf.json` : les paquets produits sont alors signés
+      # par une clé que les applications installées refuseront. Le défaut ne se
+      # voit qu'à l'EMPAQUETAGE, donc après cinq minutes de compilation, sur les
+      # douze combinaisons, avec pour seule trace « exit code 1 » — c'est
+      # exactement ce qui s'est produit pour les 1.7.702 et 1.7.703. On signe
+      # donc ici un fichier d'essai, et on compare les deux identifiants : la
+      # réponse arrive en secondes, et elle est lisible sans ouvrir le journal.
+      - name: Clé de signature présente et cohérente
         shell: bash
+        working-directory: superprint_desktop
         env:
           CLE: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          MOT_DE_PASSE: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           set -eu
           if [ -z "${CLE:-}" ]; then
@@ -163,6 +176,31 @@ jobs:
             exit 1
           fi
           echo "clé de signature présente (${#CLE} caractères)"
+          if [ -z "${MOT_DE_PASSE:-}" ]; then
+            echo "::error::Le secret TAURI_SIGNING_PRIVATE_KEY_PASSWORD est VIDE. La clé existe mais ne peut pas être déchiffrée : la compilation s'arrêterait à l'empaquetage. Valeur attendue : le contenu du fichier superprint-updater.MOT-DE-PASSE.txt de ~/.tauri."
+            exit 1
+          fi
+          printf 'essai' > "$RUNNER_TEMP/essai-signature.txt"
+          if ! npx --no-install tauri signer sign "$RUNNER_TEMP/essai-signature.txt" > "$RUNNER_TEMP/signer.log" 2>&1; then
+            echo "::error title=Signature impossible::npx tauri signer sign a échoué avec la clé fournie — $(tr '\n' ' ' < "$RUNNER_TEMP/signer.log" | tail -c 400)"
+            exit 1
+          fi
+          node -e '
+          const fs = require("fs"), path = require("path");
+          const deco = (b) => Buffer.from(b, "base64").toString("utf8").split("\n").map(s => s.trim()).filter(Boolean);
+          const id = (b) => [...b.subarray(2, 10)].map(x => x.toString(16).padStart(2, "0")).join("").toUpperCase();
+          const tmp = process.env.RUNNER_TEMP;
+          const brut = fs.readFileSync(path.join(tmp, "essai-signature.txt.sig"), "utf8").trim();
+          const lignes = /untrusted comment/.test(brut) ? brut.split("\n").map(s => s.trim()).filter(Boolean) : deco(brut);
+          const idSig = id(Buffer.from(lignes[1], "base64"));
+          const cfg = JSON.parse(fs.readFileSync("src-tauri/tauri.conf.json", "utf8"));
+          const idPub = id(Buffer.from(deco(cfg.plugins.updater.pubkey)[1], "base64"));
+          console.log("clé du secret : " + idSig + " | clé publiée dans tauri.conf.json : " + idPub);
+          if (idSig !== idPub) {
+            console.log("::error title=Clé de signature incohérente::Le secret TAURI_SIGNING_PRIVATE_KEY signe avec la clé " + idSig + ", mais tauri.conf.json publie " + idPub + ". Les paquets seraient signés par une clé que les applications installées refusent, et l empaquetage échoue. Corriger : réécrire le secret avec le contenu de ~/.tauri/superprint-updater.key (348 caractères) et le secret de mot de passe avec ~/.tauri/superprint-updater.MOT-DE-PASSE.txt (48 caractères) — la clé publique de cette paire est 01545A0F4788357F.");
+            process.exit(1);
+          }
+          '
 
       # L'assemblage de la bonne application est le travail de
       # `beforeBuildCommand`, déclaré dans chaque surcouche — il s'exécute donc
